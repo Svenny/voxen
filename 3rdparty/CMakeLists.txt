@@ -44,3 +44,6 @@ set_target_properties(fmt::fmt PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 add_dependencies(fmt::fmt fmt_project-build)
+
+## PlatformFolders dependency
+add_subdirectory(PlatformFolders)
