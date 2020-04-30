@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/vulkan_render.hpp>
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/config.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -67,7 +68,7 @@ private:
 	void requestDeviceExtensions(VkDeviceCreateInfo &create_info);
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
-	constexpr static bool k_enable_layers = true;
+	constexpr static bool k_enable_layers = voxen::BuildConfig::kUseVSLayouts;
 };
 
 VulkanRender::VulkanRender(Window &w) {
@@ -736,9 +737,17 @@ bool VulkanImpl::isDeviceSuitable(VkPhysicalDevice device) {
 	if (format_cnt == 0 || present_mode_cnt == 0)
 		return false;
 
-	if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-		Log::info("GPU {} is what we are looking for", props.deviceName);
-		return true;
+	//TODO: better solution?
+	if (voxen::BuildConfig::kUseIntegrateGPU) {
+		if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+			Log::info("GPU {} is what we are looking for", props.deviceName);
+			return true;
+		}
+	} else {
+		if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			Log::info("GPU {} is what we are looking for", props.deviceName);
+			return true;
+		}
 	}
 	return false;
 }

@@ -69,7 +69,7 @@ DebugDrawOctree::DebugDrawOctree(VkDevice dev, VkRenderPass render_pass, uint32_
 		VkMemoryAllocateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		info.allocationSize = index_buffer_offset + k_index_size * k_num_indices;
-		info.memoryTypeIndex = /*10*/ 0; // Use 10 on Nvidia
+		info.memoryTypeIndex = (voxen::BuildConfig::kUseIntegrateGPU ? 0 : 10); // Use 10 on Nvidia
 		VkResult result = vkAllocateMemory(dev, &info, allocator, &m_memory);
 		if (result != VK_SUCCESS) {
 			Log::error("Failed to allocate memory for buffers");
