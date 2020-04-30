@@ -18,8 +18,8 @@ public:
 	constexpr static bool kIsDebugBuild = true;
 	constexpr static bool kIsReleaseBuild = false;
 #endif
-	constexpr static bool kUseVSLayouts = @USE_VULKAN_LAYERS@;
-	constexpr static bool kUseIntegrateGPU = @USE_INTEGRATE_GPU@;
+	constexpr static bool kUseVulkanLayers = @USE_VULKAN_LAYERS@;
+	constexpr static bool kUseIntegratedGpu = @USE_INTEGRATED_GPU@;
 };
 
 }

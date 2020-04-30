@@ -5,9 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-
-//extern "C" GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
-
 namespace voxen
 {
 

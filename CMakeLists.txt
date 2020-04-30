@@ -11,10 +11,11 @@ string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 # RTTI is only useful for dynamic_cast, which means a design flaw in 99,9% cases
 string(APPEND CMAKE_CXX_FLAGS " -fno-rtti")
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0 )
-    # Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
-    string(APPEND CMAKE_C_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
-    string(APPEND CMAKE_CXX_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
+   (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+	# Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
+	string(APPEND CMAKE_C_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
+	string(APPEND CMAKE_CXX_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
 endif()
 
 # This will teach the built binary to load .so's from its own directory
@@ -30,8 +31,8 @@ project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX " pre-alpha")
 set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
 
-bool_option(USE_VULKAN_LAYERS "Enable using debug vulkan layers" OFF)
-bool_option(USE_INTEGRATE_GPU "Target integrate GPU insteadof discrete" OFF)
+bool_option(USE_VULKAN_LAYERS "Enable using Vulkan validation layers" OFF)
+bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
 
 # Build external dependencies
 add_subdirectory(3rdparty)
