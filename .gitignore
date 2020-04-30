@@ -2,3 +2,5 @@ build/
 # Qt Creator user-specific files
 CMakeLists.txt.user
 .cmake/
+# KDevelop (IDE) program files
+*.kdev4
