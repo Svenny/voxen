@@ -22,3 +22,6 @@ set (VOXEN_HEADERS
 target_sources (voxen PUBLIC ${VOXEN_HEADERS} ${BICYCLE_HEADERS})
 source_group (TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
 source_group (TREE ${CMAKE_SOURCE_DIR}/include/bicycle PREFIX Headers FILES ${BICYCLE_HEADERS})
+
+configure_file(include/voxen/config.hpp.cmake ${CMAKE_CURRENT_BINARY_DIR}/configs/voxen/config.hpp)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/configs)

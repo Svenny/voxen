@@ -1,0 +1,8 @@
+function(bool_option VARNAME text default_value)
+    option(${VARNAME} ${text} ${default_value})
+    if (${VARNAME})
+        set(${VARNAME} true PARENT_SCOPE)
+    else()
+        set(${VARNAME} false PARENT_SCOPE)
+    endif()
+endfunction()

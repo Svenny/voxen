@@ -5,8 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-//extern "C" GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
-
 namespace voxen
 {
 
@@ -56,7 +54,7 @@ void Window::createWindow () {
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
-	glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
+	//glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen, TODO: uncomment?
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	// TODO: this is a temporary hack to simplify Vulkan logic. Remove it
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);

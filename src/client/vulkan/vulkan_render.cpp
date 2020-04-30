@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/vulkan_render.hpp>
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/config.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -66,8 +67,6 @@ private:
 	void requestInstanceLayers(VkInstanceCreateInfo &create_info);
 	void requestDeviceExtensions(VkDeviceCreateInfo &create_info);
 	bool isDeviceSuitable(VkPhysicalDevice device);
-
-	constexpr static bool k_enable_layers = true;
 };
 
 VulkanRender::VulkanRender(Window &w) {
@@ -637,7 +636,7 @@ void VulkanImpl::endFrame() {
 }
 
 void VulkanImpl::requestInstanceLayers(VkInstanceCreateInfo &create_info) {
-	if (!k_enable_layers) {
+	if (!BuildConfig::kUseVulkanLayers) {
 		create_info.enabledLayerCount = 0;
 		return;
 	}
@@ -736,9 +735,17 @@ bool VulkanImpl::isDeviceSuitable(VkPhysicalDevice device) {
 	if (format_cnt == 0 || present_mode_cnt == 0)
 		return false;
 
-	if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-		Log::info("GPU {} is what we are looking for", props.deviceName);
-		return true;
+	//TODO: better solution?
+	if (voxen::BuildConfig::kUseIntegratedGpu) {
+		if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+			Log::info("GPU {} is what we are looking for", props.deviceName);
+			return true;
+		}
+	} else {
+		if (props.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			Log::info("GPU {} is what we are looking for", props.deviceName);
+			return true;
+		}
 	}
 	return false;
 }
