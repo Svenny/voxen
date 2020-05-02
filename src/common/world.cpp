@@ -12,7 +12,13 @@ World::World(const World &other) : m_player(other.m_player), m_terrain(other.m_t
 
 World::~World() {}
 
-void World::update() {
+void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval) {
+	// Update user position
+	double dt = std::chrono::duration_cast<std::chrono::duration<double>>(tick_inverval).count();
+	m_player.pos += queue.player_forward_movement_direction * (float)(queue.forward_speed * dt);
+	m_player.pos += queue.player_strafe_movement_direction* (float)(queue.strafe_speed * dt);
+
+
 	auto pos = m_player.position();
 	m_terrain.updateChunks(pos.x, pos.y, pos.z);
 }

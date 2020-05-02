@@ -1,5 +1,6 @@
 #include <voxen/client/window.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/common/gui.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -21,6 +22,10 @@ void Window::start () {
 		throw std::runtime_error ("GLFW init failed");
 	}
 	createWindow ();
+	glfwSetWindowUserPointer(mWindow, this);
+	//TODO own methods for this stuff and the stuff changing
+	//glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	Log::info("GLFW started successfully, window created");
 	mIsStarted = true;
 }
@@ -54,7 +59,7 @@ void Window::createWindow () {
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
-	//glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen, TODO: uncomment?
+	glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	// TODO: this is a temporary hack to simplify Vulkan logic. Remove it
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);
@@ -68,6 +73,50 @@ void Window::createWindow () {
 
 void Window::glfwErrorCallback (int code, const char *message) noexcept {
 	Log::error("GLFW error {}:\n{}", code, message);
+}
+
+bool Window::attachGUI(voxen::GUI& gui)
+{
+	assert(m_attached_gui == nullptr); //TODO exceptiion throw
+	m_attached_gui = &gui;
+	gui.setWindow(this);
+	glfwSetKeyCallback(mWindow, Window::globalKeyCallback);
+	glfwSetCursorPosCallback(mWindow, Window::globalMouseMovement);
+	glfwSetMouseButtonCallback(mWindow, Window::globalMouseKey);
+	glfwSetScrollCallback(mWindow, Window::globalMouseScroll);
+	return true;
+}
+
+void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) noexcept
+{
+	void* ptr = glfwGetWindowUserPointer(window);
+	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	if (gui)
+		gui->handleCursor(xpos, ypos);
+}
+
+void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept
+{
+	void* ptr = glfwGetWindowUserPointer(window);
+	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	if (gui)
+		gui->handleKey(key, scancode, action, mods);
+}
+
+void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept
+{
+	void* ptr = glfwGetWindowUserPointer(window);
+	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	if (gui)
+		gui->handleMouseKey(button, action, mods);
+}
+
+void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept
+{
+	void* ptr = glfwGetWindowUserPointer(window);
+	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	if (gui)
+		gui->handleMouseScroll(xoffset, yoffset);
 }
 
 }

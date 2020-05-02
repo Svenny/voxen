@@ -7,10 +7,10 @@ namespace voxen
 
 class Player {
 public:
-
 	glm::dvec3 position() const noexcept { return pos; }
 	glm::mat4 cameraMatrix() const noexcept;
-private:
+	glm::mat4 projectionMatrix() const noexcept;
+
 	glm::dvec3 pos { 100, 100, -1100 };
 	glm::dvec3 forward { 0, 0, 1 };
 	glm::dvec3 up { 0, 1, 0 };

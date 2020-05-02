@@ -9,6 +9,8 @@ set (VOXEN_SOURCES
 	src/common/player.cpp
 	src/common/terrain.cpp
 	src/common/world.cpp
+	src/common/gui.cpp
+	src/common/gameview.cpp
 	src/util/assert.cpp
 	src/util/exception.cpp
 	src/util/log.cpp
