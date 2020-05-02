@@ -10,6 +10,7 @@ namespace voxen
 class TerrainChunk {
 public:
 	TerrainChunk(uint32_t size, uint32_t scale, int64_t base_x, int64_t base_y, int64_t base_z);
+	TerrainChunk(const TerrainChunk &other) = default;
 	~TerrainChunk() = default;
 
 	uint32_t size() const noexcept { return m_size; }
@@ -30,6 +31,7 @@ struct TerrainChunkCache;
 class TerrainChunkGenerator {
 public:
 	TerrainChunkGenerator();
+	TerrainChunkGenerator(const TerrainChunkGenerator &other);
 	~TerrainChunkGenerator();
 
 	void generate(TerrainChunk &chunk);
@@ -43,11 +45,12 @@ struct TerrainOctreeNode;
 class TerrainOctree {
 public:
 	TerrainOctree(uint32_t num_xz_chunks, uint32_t num_y_chunks);
+	TerrainOctree(const TerrainOctree &other);
 	~TerrainOctree();
 
 	void updateChunks(double x, double y, double z);
 
-	void walk(std::function<void(int64_t, int64_t, int64_t, int64_t)> callback) const;
+	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
 private:
 	uint32_t m_xz_chunks, m_y_chunks;
 	TerrainChunkGenerator m_chunk_gen;

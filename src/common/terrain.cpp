@@ -78,6 +78,11 @@ private:
 
 TerrainChunkGenerator::TerrainChunkGenerator() : m_cache(new TerrainChunkCache) {}
 
+// TODO: copy cache state?
+TerrainChunkGenerator::TerrainChunkGenerator(const TerrainChunkGenerator &other) : m_cache(new TerrainChunkCache) {
+	(void)other;
+}
+
 TerrainChunkGenerator::~TerrainChunkGenerator() {
 	delete m_cache;
 }
@@ -116,6 +121,18 @@ struct TerrainOctreeNode {
 			m_children[i] = nullptr;
 		m_chunk = new TerrainChunk(k_chunk_size, m_size / k_chunk_size, m_base_x, m_base_y, m_base_z);
 		gen.generate(*m_chunk);
+	}
+
+	TerrainOctreeNode(const TerrainOctreeNode &other)
+	   : m_base_x(other.m_base_x), m_base_y(other.m_base_y), m_base_z(other.m_base_z), m_size(other.m_size) {
+		for (int i = 0; i < 8; i++) {
+			if (other.m_children[i])
+				m_children[i] = new TerrainOctreeNode(*other.m_children[i]);
+			else
+				m_children[i] = nullptr;
+		}
+		if (other.m_chunk)
+			m_chunk = new TerrainChunk(*other.m_chunk);
 	}
 
 	~TerrainOctreeNode() {
@@ -243,6 +260,14 @@ TerrainOctree::TerrainOctree(uint32_t num_xz_chunks, uint32_t num_y_chunks)
 	Log::info("Created terrain octree with {} XZ and {} Y chunks", m_xz_chunks, m_y_chunks);
 }
 
+TerrainOctree::TerrainOctree(const TerrainOctree &other)
+   : m_xz_chunks(other.m_xz_chunks), m_y_chunks(other.m_y_chunks), m_chunk_gen(other.m_chunk_gen) {
+	if (other.m_tree)
+		m_tree = new TerrainOctreeNode(*other.m_tree);
+	else
+		m_tree = nullptr;
+}
+
 TerrainOctree::~TerrainOctree() {
 	delete m_tree;
 }
@@ -252,7 +277,7 @@ void TerrainOctree::updateChunks(double x, double y, double z) {
 	m_tree->updateChunks(x, y, z, m_chunk_gen);
 }
 
-void TerrainOctree::walk(std::function<void(int64_t, int64_t, int64_t, int64_t)> callback) const {
+void TerrainOctree::walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const {
 	std::queue<const TerrainOctreeNode *> q;
 	q.emplace(m_tree);
 	while (!q.empty ()) {
@@ -260,7 +285,7 @@ void TerrainOctree::walk(std::function<void(int64_t, int64_t, int64_t, int64_t)>
 		q.pop();
 		TerrainChunk *chunk = node->m_chunk;
 		if(chunk)
-			callback(chunk->baseX(), chunk->baseY(), chunk->baseZ(), chunk->size()*chunk->scale());
+			visitor(*chunk);
 		for (size_t i = 0; i < 8; i++)
 			if(node->m_children[i])
 				q.push(node->m_children[i]);
