@@ -42,7 +42,7 @@ add_executable(voxen "")
 
 target_include_directories(voxen PUBLIC include 3rdparty/glm)
 
-find_package(glfw3 3.2.1 REQUIRED CONFIG)
+find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)
 target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan)
 

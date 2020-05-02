@@ -7,6 +7,8 @@ struct GLFWwindow;
 namespace voxen
 {
 
+class GUI;
+
 class Window {
 public:
 	constexpr static uint32_t k_width = 1600;
@@ -21,6 +23,8 @@ public:
 
 	GLFWwindow *glfwHandle() const noexcept { return mWindow; }
 
+	bool attachGUI(GUI& gui);
+
 	static Window &instance() noexcept { return gInstance; }
 private:
 	Window() = default;
@@ -34,9 +38,15 @@ private:
 	bool mIsStarted = false;
 
 	GLFWwindow *mWindow;
+	GUI* m_attached_gui = nullptr;
 
 	void logGlfwVersion() const;
 	void createWindow();
+
+	static void globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+	static void globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept;
+	static void globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept;
+	static void globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 
 	static void glfwErrorCallback(int code, const char *message) noexcept;
 };

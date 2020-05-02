@@ -12,4 +12,9 @@ glm::mat4 Player::cameraMatrix() const noexcept {
 	return proj * view;
 }
 
+glm::mat4 Player::projectionMatrix() const noexcept
+{
+	return bicycle::perspective(fovx, fovy, znear, zfar);
+}
+
 }
