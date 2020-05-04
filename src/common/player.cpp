@@ -5,16 +5,22 @@
 namespace voxen
 {
 
-glm::mat4 Player::cameraMatrix() const noexcept {
-	glm::mat4 proj = bicycle::perspective(fovx, fovy, znear, zfar);
-	glm::mat4 view { 0.0f };
-	view = bicycle::lookAt(pos, forward, up);
-	return proj * view;
+void Player::updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept {
+	m_position = new_pos;
+	m_orientation = new_rot;
+	updateSecondaryFactors();
 }
 
-glm::mat4 Player::projectionMatrix() const noexcept
-{
-	return bicycle::perspective(fovx, fovy, znear, zfar);
+void Player::updateSecondaryFactors() noexcept {
+	glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
+
+	m_look_vector = glm::dvec3(rot_mat[0][2], rot_mat[1][2], rot_mat[2][2]);
+	m_right_vector = glm::dvec3(rot_mat[0][0], rot_mat[1][0], rot_mat[2][0]);
+	m_up_vector = glm::dvec3(rot_mat[0][1], rot_mat[1][1], rot_mat[2][1]);
+
+	m_proj_matrix = bicycle::perspective(fovx, fovy, znear, zfar);
+	m_view_matrix = bicycle::lookAt(m_position, m_look_vector, m_up_vector);
+	m_cam_matrix = m_proj_matrix * m_view_matrix;
 }
 
 }
