@@ -25,6 +25,7 @@ void Window::start () {
 	glfwSetWindowUserPointer(mWindow, this);
 	//TODO own methods for this stuff and the stuff changing
 	//glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	Log::info("GLFW started successfully, window created");
 	mIsStarted = true;
