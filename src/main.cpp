@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
 		voxen::VulkanRender *render = new voxen::VulkanRender(wnd);
 
 		voxen::World world;
-		voxen::GUI gui;
+		voxen::Gui gui;
 		wnd.attachGUI(gui);
 		gui.init(world);
 		voxen::DebugQueueRtW render_to_world_queue;

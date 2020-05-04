@@ -75,7 +75,7 @@ void Window::glfwErrorCallback (int code, const char *message) noexcept {
 	Log::error("GLFW error {}:\n{}", code, message);
 }
 
-bool Window::attachGUI(voxen::GUI& gui)
+bool Window::attachGUI(voxen::Gui& gui)
 {
 	assert(m_attached_gui == nullptr); //TODO exceptiion throw
 	m_attached_gui = &gui;
@@ -90,7 +90,7 @@ bool Window::attachGUI(voxen::GUI& gui)
 void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleCursor(xpos, ypos);
 }
@@ -98,7 +98,7 @@ void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) 
 void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleKey(key, scancode, action, mods);
 }
@@ -106,7 +106,7 @@ void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int ac
 void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleMouseKey(button, action, mods);
 }
@@ -114,7 +114,7 @@ void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods
 void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	GUI* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleMouseScroll(xoffset, yoffset);
 }

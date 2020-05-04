@@ -9,9 +9,9 @@ namespace voxen {
 
 struct DebugQueueRtW;
 class World;
-class GUI {
+class Gui {
 public:
-	GUI();
+	   Gui();
 
 	void setWindow(Window* wnd);
 

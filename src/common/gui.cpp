@@ -8,24 +8,24 @@
 
 using namespace voxen;
 
-GUI::GUI() {
+Gui::Gui() {
 }
 
-void GUI::setWindow(Window* window){
+void Gui::setWindow(Window* window){
 	m_window = window;
 }
 
-void voxen::GUI::handleKey(int key, int scancode, int action, int mods)
+void voxen::Gui::handleKey(int key, int scancode, int action, int mods)
 {
 	m_gameview.handleKey(key, scancode, action, mods);
 }
 
-void voxen::GUI::handleCursor(double xpos, double ypos)
+void voxen::Gui::handleCursor(double xpos, double ypos)
 {
 	m_gameview.handleCursor(xpos, ypos);
 }
 
-void voxen::GUI::handleMouseKey(int button, int action, int mods)
+void voxen::Gui::handleMouseKey(int button, int action, int mods)
 {
 	(void)button;
 	(void)action;
@@ -34,22 +34,22 @@ void voxen::GUI::handleMouseKey(int button, int action, int mods)
 	//m_gameview.handleMouseKey(button, action, mods);
 }
 
-void voxen::GUI::handleMouseScroll(double xoffset, double yoffset)
+void voxen::Gui::handleMouseScroll(double xoffset, double yoffset)
 {
 	m_gameview.handleMouseScroll(xoffset, yoffset);
 }
 
-GameView& GUI::view()
+GameView& Gui::view()
 {
 	return m_gameview;
 }
 
-void voxen::GUI::init(const voxen::World& world_start_state)
+void voxen::Gui::init(const voxen::World& world_start_state)
 {
 	m_gameview.init(world_start_state.player());
 }
 
-void voxen::GUI::update(const World& world, DebugQueueRtW& queue)
+void voxen::Gui::update(const World& world, DebugQueueRtW& queue)
 {
 	m_gameview.update(world.player(), queue);
 }
