@@ -7,7 +7,7 @@ struct GLFWwindow;
 namespace voxen
 {
 
-class GUI;
+class Gui;
 
 class Window {
 public:
@@ -23,7 +23,7 @@ public:
 
 	GLFWwindow *glfwHandle() const noexcept { return mWindow; }
 
-	bool attachGUI(GUI& gui);
+	bool attachGUI(Gui& gui);
 
 	static Window &instance() noexcept { return gInstance; }
 private:
@@ -38,7 +38,7 @@ private:
 	bool mIsStarted = false;
 
 	GLFWwindow *mWindow;
-	GUI* m_attached_gui = nullptr;
+	   Gui* m_attached_gui = nullptr;
 
 	void logGlfwVersion() const;
 	void createWindow();
