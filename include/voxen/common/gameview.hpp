@@ -21,10 +21,6 @@ public:
 	bool handleMouseKey(int button, int action, int mods) noexcept;
 	bool handleMouseScroll(double xoffset, double yoffset) noexcept;
 
-	/*
-	glm::mat4 getPVMatrix () const noexcept { return m_proj * m_view; }
-	glm::mat4 getViewMatrix () const noexcept { return m_view; }
-	*/
 private:
 	enum Key : int {
 		KeyForward = 0,
@@ -39,10 +35,6 @@ private:
 		KeyCount
 	};
 
-	glm::mat4 m_proj, m_view;
-	glm::vec3 m_position;
-	glm::quat m_orientation;
-
 	float m_fovDegrees;
 	float m_tanAX2, m_tanAY2;
 
@@ -52,6 +44,10 @@ private:
 	float m_forwardSpeed;
 	float m_strafeSpeed;
 
+	// Mouse position at the time of the latest call to `handleCursor`
+	double m_newest_xpos;
+	double m_newest_ypos;
+	// Mouse position at the time of the latest call to `update`
 	double m_prev_xpos;
 	double m_prev_ypos;
 
