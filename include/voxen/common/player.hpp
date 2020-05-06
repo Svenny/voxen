@@ -8,6 +8,8 @@ namespace voxen
 
 class Player {
 public:
+	Player();
+
 	glm::dvec3 position() const noexcept { return m_position; }
 	glm::dquat orientation() const noexcept { return m_orientation; }
 
@@ -30,9 +32,9 @@ private:
 	double m_fov_x = 1.5, m_fov_y = 1.5 * 9.0 / 16.0;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;
 
-	glm::dvec3 m_look_vector { 0, 0, 1 };
-	glm::dvec3 m_up_vector { 0, 1, 0 };
-	glm::dvec3 m_right_vector { 1, 0, 0 };
+	glm::dvec3 m_look_vector;
+	glm::dvec3 m_up_vector;
+	glm::dvec3 m_right_vector;
 
 	glm::mat4 m_proj_matrix;
 	glm::mat4 m_view_matrix;

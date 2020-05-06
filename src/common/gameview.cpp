@@ -99,6 +99,12 @@ static glm::dquat quatFromEulerAngles (double pitch, double yaw, double roll) no
 
 bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 {
+	if (!m_was_mouse_move) {
+		m_was_mouse_move = true;
+		m_prev_xpos = m_newest_xpos = xpos;
+		m_prev_ypos = m_newest_ypos = ypos;
+		return true;
+	}
 	m_newest_xpos = xpos;
 	m_newest_ypos = ypos;
 	return true;
