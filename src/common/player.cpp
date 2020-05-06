@@ -5,6 +5,10 @@
 namespace voxen
 {
 
+Player::Player() {
+	updateSecondaryFactors();
+}
+
 void Player::updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept {
 	m_position = new_pos;
 	m_orientation = new_rot;

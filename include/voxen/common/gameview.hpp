@@ -42,6 +42,7 @@ private:
 	double m_strafeSpeed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
+	bool m_was_mouse_move = false;
 	double m_newest_xpos;
 	double m_newest_ypos;
 	// Mouse position at the time of the latest call to `update`
