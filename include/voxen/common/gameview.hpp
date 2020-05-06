@@ -35,14 +35,11 @@ private:
 		KeyCount
 	};
 
-	float m_fovDegrees;
-	float m_tanAX2, m_tanAY2;
+	double m_width, m_height;
 
-	float m_width, m_height;
-
-	float m_mouseSensitivity;
-	float m_forwardSpeed;
-	float m_strafeSpeed;
+	double m_mouseSensitivity;
+	double m_forwardSpeed;
+	double m_strafeSpeed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
 	double m_newest_xpos;

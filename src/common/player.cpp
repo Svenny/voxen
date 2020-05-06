@@ -18,7 +18,7 @@ void Player::updateSecondaryFactors() noexcept {
 	m_right_vector = glm::dvec3(rot_mat[0][0], rot_mat[1][0], rot_mat[2][0]);
 	m_up_vector = glm::dvec3(rot_mat[0][1], rot_mat[1][1], rot_mat[2][1]);
 
-	m_proj_matrix = bicycle::perspective(fovx, fovy, znear, zfar);
+	m_proj_matrix = bicycle::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
 	m_view_matrix = bicycle::lookAt(m_position, m_look_vector, m_up_vector);
 	m_cam_matrix = m_proj_matrix * m_view_matrix;
 }
