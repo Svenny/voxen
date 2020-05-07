@@ -21,7 +21,7 @@ int main (int argc, char *argv[]) {
 
 
 	bool isLoggingFPSEnable = false;
-	if (argc > 2 && std::string(argv[1]) == "logging_fps")
+	if (argc == 2 && std::string(argv[1]) == "logging_fps")
 		isLoggingFPSEnable = true;
 
 	try {
