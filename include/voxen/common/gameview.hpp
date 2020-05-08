@@ -72,6 +72,9 @@ private:
 	std::int64_t m_previous_tick_id;
 	Window* m_window;
 
+	bool m_is_got_left_mouse_click;
+	bool m_is_used_orientation_cursor;
+
 	bool m_keyPressed[Key::KeyCount];
 
 private:

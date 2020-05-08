@@ -22,11 +22,8 @@ void Window::start () {
 		throw std::runtime_error ("GLFW init failed");
 	}
 	createWindow ();
+	useRegularCursor();
 	glfwSetWindowUserPointer(mWindow, this);
-	//TODO own methods for this stuff and the stuff changing
-	//glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	Log::info("GLFW started successfully, window created");
 	mIsStarted = true;
 }
@@ -91,7 +88,7 @@ bool Window::attachGUI(voxen::Gui& gui)
 void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleCursor(xpos, ypos);
 }
@@ -99,7 +96,7 @@ void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) 
 void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleKey(key, scancode, action, mods);
 }
@@ -107,7 +104,7 @@ void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int ac
 void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleMouseKey(button, action, mods);
 }
@@ -115,7 +112,7 @@ void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods
 void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
-	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
+	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleMouseScroll(xoffset, yoffset);
 }
@@ -140,5 +137,19 @@ std::pair<double, double> Window::cursorPos() const noexcept
 	glfwGetCursorPos(mWindow, &xpos, &ypos);
 	return std::make_pair(xpos, ypos);
 }
+
+void Window::useRegularCursor()
+{
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	if (glfwRawMouseMotionSupported())
+		glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+}
+
+void Window::useOrientationCursor() {
+	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if (glfwRawMouseMotionSupported())
+		glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+}
+
 
 }
