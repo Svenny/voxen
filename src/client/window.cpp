@@ -80,7 +80,6 @@ bool Window::attachGUI(voxen::Gui& gui)
 {
 	assert(m_attached_gui == nullptr); //TODO exceptiion throw
 	m_attached_gui = &gui;
-	gui.setWindow(this);
 	glfwSetKeyCallback(mWindow, Window::globalKeyCallback);
 	glfwSetCursorPosCallback(mWindow, Window::globalMouseMovement);
 	glfwSetMouseButtonCallback(mWindow, Window::globalMouseKey);
@@ -118,6 +117,27 @@ void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffse
 	   Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
 	if (gui)
 		gui->handleMouseScroll(xoffset, yoffset);
+}
+
+int Window::width() const noexcept
+{
+	int width;
+	glfwGetWindowSize(mWindow, &width, NULL);
+	return width;
+}
+
+int Window::height() const noexcept
+{
+	int height;
+	glfwGetWindowSize(mWindow, NULL, &height);
+	return height;
+}
+
+std::pair<double, double> Window::cursorPos() const noexcept
+{
+	double xpos, ypos;
+	glfwGetCursorPos(mWindow, &xpos, &ypos);
+	return std::make_pair(xpos, ypos);
 }
 
 }
