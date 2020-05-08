@@ -31,6 +31,9 @@ public:
 
 	std::pair<double, double> cursorPos() const noexcept;
 
+	void useRegularCursor();
+	void useOrientationCursor();
+
 	static Window &instance() noexcept { return gInstance; }
 private:
 	Window() = default;

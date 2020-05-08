@@ -24,11 +24,7 @@ void voxen::Gui::handleCursor(double xpos, double ypos)
 
 void voxen::Gui::handleMouseKey(int button, int action, int mods)
 {
-	(void)button;
-	(void)action;
-	(void)mods;
-	// GameView don't support mouse key, so don't call
-	//m_gameview.handleMouseKey(button, action, mods);
+	m_gameview.handleMouseKey(button, action, mods);
 }
 
 void voxen::Gui::handleMouseScroll(double xoffset, double yoffset)
