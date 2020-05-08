@@ -78,7 +78,8 @@ void Window::glfwErrorCallback (int code, const char *message) noexcept {
 
 bool Window::attachGUI(voxen::Gui& gui)
 {
-	assert(m_attached_gui == nullptr); //TODO exceptiion throw
+	if (m_attached_gui != nullptr)
+		throw std::runtime_error ("try to attach gui to window, which already have another attached gui");
 	m_attached_gui = &gui;
 	glfwSetKeyCallback(mWindow, Window::globalKeyCallback);
 	glfwSetCursorPosCallback(mWindow, Window::globalMouseMovement);
