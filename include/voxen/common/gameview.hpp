@@ -15,7 +15,7 @@ public:
 	GameView(Window& window);
 
 	void init(const Player& player) noexcept;
-	void update (const Player& player, DebugQueueRtW& queue, int64_t tick_id) noexcept;
+	void update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
 
 	bool handleKey(int key, int scancode, int action, int mods) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
@@ -69,9 +69,10 @@ private:
 	glm::mat4 m_cam_matrix;
 
 	// Previous tick id
-	std::int64_t m_previous_tick_id;
+	std::uint64_t m_previous_tick_id;
 	Window* m_window;
 
+	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_got_left_mouse_click;
 	bool m_is_used_orientation_cursor;
 

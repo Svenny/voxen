@@ -1,8 +1,6 @@
 #include <voxen/common/world.hpp>
 #include <voxen/util/log.hpp>
 
-#include <glm/ext/quaternion_exponential.hpp>
-
 namespace voxen
 {
 
@@ -15,6 +13,8 @@ World::World(const World &other) : m_player(other.m_player), m_terrain(other.m_t
 World::~World() {}
 
 void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval) {
+	m_tick_id++;
+
 	// Update user position
 	double dt = std::chrono::duration_cast<std::chrono::duration<double>>(tick_inverval).count();
 	glm::dvec3 pos = m_player.position();
@@ -22,9 +22,8 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	pos += queue.player_strafe_movement_direction * (queue.strafe_speed * dt);
 	m_player.updateState(pos, queue.player_orientation);
 
+	// Update chunks
 	m_terrain.updateChunks(pos.x, pos.y, pos.z);
-
-	m_tick_id++;
 }
 
 void World::walkActiveChunks(std::function<void (const TerrainChunk &)> visitor) const {
