@@ -18,7 +18,7 @@ const static float kRollSpeed = 1.5f * 0.01f;
 
 GameView::GameView () :
    m_width (1600), m_height (900), m_mouseSensitivity (kDefaultMouseSensitivity),
-   m_forwardSpeed (kDefaultForwardSpeed), m_strafeSpeed (kDefaultStrafeSpeed) {
+   m_forwardSpeed (kDefaultForwardSpeed), m_strafeSpeed (kDefaultStrafeSpeed), m_previous_tick_id(-1) {
 	for (int i = 0; i < Key::KeyCount; i++)
 		m_keyPressed[i] = false;
 }
@@ -115,49 +115,65 @@ void GameView::resetKeyState() noexcept {
 		m_keyPressed[i] = false;
 }
 
-void GameView::update (const Player& player, DebugQueueRtW& queue) noexcept {
+void GameView::update (const Player& player, DebugQueueRtW& queue, int64_t tick_id) noexcept {
 	glm::dvec3 move_forward_direction{0.0};
 	glm::dvec3 move_strafe_direction{0.0};
 
-	glm::dvec3 dir = player.lookVector();
-	glm::dvec3 right = player.rightVector();
-	glm::dvec3 up = player.upVector();
+	if (m_previous_tick_id < tick_id)
+	{
+		m_player_dir = player.lookVector();
+		m_player_up = player.upVector();
+		m_player_right = player.rightVector();
+		m_orientation = player.orientation();
+	}
 
 	double dx = 0;
 	if (m_keyPressed[Key::KeyLeft]) dx -= 1;
 	if (m_keyPressed[Key::KeyRight]) dx += 1;
-	move_strafe_direction += dx * right;
+	move_strafe_direction += dx * m_player_right;
 
 	double dy = 0;
 	if (m_keyPressed[Key::KeyDown]) dy -= 1;
 	if (m_keyPressed[Key::KeyUp]) dy += 1;
-	move_strafe_direction += dy * up;
+	move_strafe_direction += dy * m_player_up;
 
 	double dz = 0;
 	if (m_keyPressed[Key::KeyBack]) dz -= 1;
 	if (m_keyPressed[Key::KeyForward]) dz += 1;
-	move_forward_direction += dz * dir;
+	move_forward_direction += dz * m_player_dir;
 
 	dx = (m_prev_xpos - m_newest_xpos) * m_mouseSensitivity;
 	m_prev_xpos = m_newest_xpos;
-	double tan_half_fovx = std::tan(player.fovX() * 0.5);
+	double tan_half_fovx = std::tan(m_fov_x * 0.5);
 	double yawAngle = atan (2 * dx * tan_half_fovx / m_width);
 
 	dy = (m_prev_ypos - m_newest_ypos) * m_mouseSensitivity;
 	m_prev_ypos = m_newest_ypos;
-	double tan_half_fovy = std::tan(player.fovY() * 0.5);
+	double tan_half_fovy = std::tan(m_fov_y * 0.5);
 	double pitchAngle = atan (2 * dy * tan_half_fovy / m_height);
 
 	double rollAngle = 0;
 	if (m_keyPressed[Key::KeyRollCCW]) rollAngle -= kRollSpeed;
 	if (m_keyPressed[Key::KeyRollCW]) rollAngle += kRollSpeed;
+
 	auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
+	m_orientation = glm::normalize(rotQuat * m_orientation);
+
+	glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
+	m_player_dir = bicycle::dirFromOrientation(rot_mat);
+	m_player_right = bicycle::rightFromOrientation(rot_mat);
+	m_player_up = bicycle::upFromOrientation(rot_mat);
+
+	m_proj_matrix = bicycle::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+	m_view_matrix = bicycle::lookAt(player.position(), m_player_dir, m_player_up);
+	m_cam_matrix = m_proj_matrix * m_view_matrix;
 
 	queue.player_forward_movement_direction = move_forward_direction;
 	queue.player_strafe_movement_direction = move_strafe_direction;
-	queue.player_rotation_quat = rotQuat;
+	queue.player_orientation = m_orientation;
 	queue.forward_speed = m_forwardSpeed;
 	queue.strafe_speed = m_strafeSpeed;
+	m_previous_tick_id = tick_id;
 }
 
 

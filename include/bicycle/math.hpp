@@ -65,4 +65,16 @@ inline glm::mat4 lookAt(const glm::dvec3 &pos, const glm::dvec3 &forward, const 
 	return mat;
 }
 
+inline glm::dvec3 dirFromOrientation(glm::dmat3 rot_mat) noexcept {
+	return glm::dvec3(rot_mat[0][2], rot_mat[1][2], rot_mat[2][2]);
+}
+
+inline glm::dvec3 upFromOrientation(glm::dmat3 rot_mat) noexcept {
+	return glm::dvec3(rot_mat[0][1], rot_mat[1][1], rot_mat[2][1]);
+}
+
+inline glm::dvec3 rightFromOrientation(glm::dmat3 rot_mat) noexcept {
+	return glm::dvec3(rot_mat[0][0], rot_mat[1][0], rot_mat[2][0]);
+}
+
 }

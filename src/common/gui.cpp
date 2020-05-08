@@ -51,5 +51,5 @@ void voxen::Gui::init(const voxen::World& world_start_state)
 
 void voxen::Gui::update(const World& world, DebugQueueRtW& queue)
 {
-	m_gameview.update(world.player(), queue);
+	m_gameview.update(world.player(), queue, world.tickId());
 }

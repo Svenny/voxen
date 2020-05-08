@@ -88,8 +88,8 @@ void VulkanRender::beginFrame() {
 	m_octree->beginRendering(m_vk->currentCommandBuffer());
 }
 
-void VulkanRender::debugDrawOctreeNode(const Player &player, float base_x, float base_y, float base_z, float size) {
-	m_octree->drawNode(m_vk->currentCommandBuffer(), player.cameraMatrix(), base_x, base_y, base_z, size);
+void VulkanRender::debugDrawOctreeNode(glm::mat4 camera_matrix, float base_x, float base_y, float base_z, float size) {
+	m_octree->drawNode(m_vk->currentCommandBuffer(), camera_matrix, base_x, base_y, base_z, size);
 }
 
 void VulkanRender::endFrame() {

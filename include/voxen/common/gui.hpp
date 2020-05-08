@@ -11,7 +11,7 @@ struct DebugQueueRtW;
 class World;
 class Gui {
 public:
-	   Gui();
+	Gui();
 
 	void setWindow(Window* wnd);
 
