@@ -11,9 +11,7 @@ struct DebugQueueRtW;
 class World;
 class Gui {
 public:
-	Gui();
-
-	void setWindow(Window* wnd);
+	Gui(Window& wnd);
 
 	void handleKey(int key, int scancode, int action, int mods);
 	void handleCursor(double xpos, double ypos);
@@ -26,7 +24,7 @@ public:
 
 	GameView& view();
 private:
-	Window* m_window{nullptr};
+	Window* m_window;
 	GameView m_gameview;
 	// TODO stack for another GUI elements
 };

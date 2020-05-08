@@ -8,12 +8,13 @@ namespace voxen {
 
 
 class Player;
+class Window;
 struct DebugQueueRtW;
 class GameView {
 public:
-	GameView();
+	GameView(Window& window);
 
-	void init(const Player& player);
+	void init(const Player& player) noexcept;
 	void update (const Player& player, DebugQueueRtW& queue, int64_t tick_id) noexcept;
 
 	bool handleKey(int key, int scancode, int action, int mods) noexcept;
@@ -49,7 +50,6 @@ private:
 	double m_strafeSpeed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
-	bool m_was_mouse_move = false;
 	double m_newest_xpos;
 	double m_newest_ypos;
 	// Mouse position at the time of the latest call to `update`
@@ -70,6 +70,7 @@ private:
 
 	// Previous tick id
 	std::int64_t m_previous_tick_id;
+	Window* m_window;
 
 	bool m_keyPressed[Key::KeyCount];
 

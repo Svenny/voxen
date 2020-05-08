@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 
 struct GLFWwindow;
 
@@ -25,6 +26,11 @@ public:
 
 	bool attachGUI(Gui& gui);
 
+	int width() const noexcept;
+	int height() const noexcept;
+
+	std::pair<double, double> cursorPos() const noexcept;
+
 	static Window &instance() noexcept { return gInstance; }
 private:
 	Window() = default;
@@ -38,7 +44,7 @@ private:
 	bool mIsStarted = false;
 
 	GLFWwindow *mWindow;
-	   Gui* m_attached_gui = nullptr;
+	Gui* m_attached_gui = nullptr;
 
 	void logGlfwVersion() const;
 	void createWindow();

@@ -8,11 +8,8 @@
 
 using namespace voxen;
 
-Gui::Gui() {
-}
-
-void Gui::setWindow(Window* window){
-	m_window = window;
+Gui::Gui(Window& window): m_window(&window), m_gameview(window) {
+	window.attachGUI(*this);
 }
 
 void voxen::Gui::handleKey(int key, int scancode, int action, int mods)

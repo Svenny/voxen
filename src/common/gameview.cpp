@@ -16,15 +16,20 @@ const static float kDefaultStrafeSpeed = 25.0f;
 
 const static float kRollSpeed = 1.5f * 0.01f;
 
-GameView::GameView () :
-   m_width (1600), m_height (900), m_mouseSensitivity (kDefaultMouseSensitivity),
-   m_forwardSpeed (kDefaultForwardSpeed), m_strafeSpeed (kDefaultStrafeSpeed), m_previous_tick_id(-1) {
+GameView::GameView (Window& window):
+	m_mouseSensitivity(kDefaultMouseSensitivity), m_forwardSpeed(kDefaultForwardSpeed),
+	m_strafeSpeed(kDefaultStrafeSpeed), m_previous_tick_id(-1), m_window(&window) {
+	m_width = window.width();
+	m_height = window.height();
+	std::pair<double, double> pos = window.cursorPos();
+	m_prev_xpos = pos.first;
+	m_prev_ypos = pos.second;
+
 	for (int i = 0; i < Key::KeyCount; i++)
 		m_keyPressed[i] = false;
 }
 
-void voxen::GameView::init(const voxen::Player& player)
-{
+void voxen::GameView::init(const voxen::Player& player) noexcept {
 	(void)player;
 	resetKeyState();
 }
@@ -99,12 +104,6 @@ static glm::dquat quatFromEulerAngles (double pitch, double yaw, double roll) no
 
 bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 {
-	if (!m_was_mouse_move) {
-		m_was_mouse_move = true;
-		m_prev_xpos = m_newest_xpos = xpos;
-		m_prev_ypos = m_newest_ypos = ypos;
-		return true;
-	}
 	m_newest_xpos = xpos;
 	m_newest_ypos = ypos;
 	return true;
