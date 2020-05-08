@@ -118,7 +118,7 @@ void GameView::resetKeyState() noexcept {
 		m_keyPressed[i] = false;
 }
 
-void GameView::update (const Player& player, DebugQueueRtW& queue, int64_t tick_id) noexcept {
+void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept {
 	if (m_is_used_orientation_cursor) {
 		if (m_is_got_left_mouse_click) {
 			m_window->useRegularCursor();
