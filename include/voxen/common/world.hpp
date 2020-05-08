@@ -15,7 +15,7 @@ namespace voxen
 struct DebugQueueRtW {
 	glm::dvec3 player_forward_movement_direction{0.0f};
 	glm::dvec3 player_strafe_movement_direction{0.0f};
-	glm::dquat player_rotation_quat = glm::identity<glm::dquat>();
+	glm::dquat player_orientation = glm::identity<glm::dquat>();
 	double strafe_speed{50};
 	double forward_speed{25};
 };
@@ -27,16 +27,17 @@ public:
 	~World();
 
 	const Player &player() const noexcept { return m_player; }
+	int64_t tickId() const noexcept {return m_tick_id; }
 
 	double secondsPerTick() const noexcept { return 1.0 / 100.0; } // 100 UPS
 
 	void update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
 
 	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
-	void render(VulkanRender &render);
 public:
 	Player m_player;
 	TerrainOctree m_terrain;
+	int64_t m_tick_id;
 };
 
 }

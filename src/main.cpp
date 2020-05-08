@@ -76,14 +76,14 @@ int main (int argc, char *argv[]) {
 			// and update world via queue
 
 			// Do render
-			voxen::Player player = state.player();
+			glm::mat4 camera_matrix = gui.view().cameraMatrix();
 			render->beginFrame();
-			state.walkActiveChunks([render, player](const voxen::TerrainChunk &chunk) {
+			state.walkActiveChunks([render, camera_matrix](const voxen::TerrainChunk &chunk) {
 				float x = float(chunk.baseX());
 				float y = float(chunk.baseY());
 				float z = float(chunk.baseZ());
 				float sz = float(chunk.size() * chunk.scale());
-				render->debugDrawOctreeNode(player, x, y, z, sz);
+				render->debugDrawOctreeNode(camera_matrix, x, y, z, sz);
 			});
 			render->endFrame();
 			fps_counter++;
