@@ -7,7 +7,7 @@
 #include <atomic>
 #include <string>
 
-namespace voxen
+namespace voxen::client
 {
 
 const char *getVkResultString(VkResult result) noexcept;

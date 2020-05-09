@@ -93,9 +93,9 @@ int main (int argc, char *argv[]) {
 
 		bool isLoggingFPSEnable = main_voxen_config->optionBool("dev", "fps_logging");
 
-		auto &wnd = voxen::Window::instance();
+		auto &wnd = voxen::client::Window::instance();
 		wnd.start(main_voxen_config->optionInt("window", "width"), main_voxen_config->optionInt("window", "height"));
-		voxen::VulkanRender *render = new voxen::VulkanRender(wnd);
+		auto *render = new voxen::client::VulkanRender(wnd);
 
 		voxen::World world;
 		voxen::Gui gui(wnd);

@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-namespace voxen
+namespace voxen::client
 {
 
 class VulkanShader {

@@ -3,7 +3,7 @@
 
 #include <malloc.h>
 
-namespace voxen
+namespace voxen::client
 {
 
 VulkanException::VulkanException(VkResult result, const std::experimental::source_location &loc)

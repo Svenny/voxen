@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-namespace voxen
+namespace voxen::client
 {
 
 VulkanShader::VulkanShader(VkDevice dev) noexcept : m_dev(dev) {}
