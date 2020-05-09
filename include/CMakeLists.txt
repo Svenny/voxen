@@ -10,6 +10,7 @@ set (VOXEN_HEADERS
 	include/voxen/client/vulkan/command_manager.hpp
 	include/voxen/client/vulkan/common.hpp
 	include/voxen/client/vulkan/descriptor_manager.hpp
+	include/voxen/client/vulkan/device.hpp
 	include/voxen/client/vulkan/memory_allocator.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_manager.hpp
