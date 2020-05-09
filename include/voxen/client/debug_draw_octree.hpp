@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bicycle/math.hpp>
+#include <extras/math.hpp>
 
 #include <voxen/client/vulkan/shader.hpp>
 

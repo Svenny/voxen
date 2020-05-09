@@ -1,6 +1,6 @@
 #include <voxen/common/player.hpp>
 
-#include <bicycle/math.hpp>
+#include <extras/math.hpp>
 
 namespace voxen
 {
@@ -18,9 +18,9 @@ void Player::updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept {
 void Player::updateSecondaryFactors() noexcept {
 	glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
 
-	m_look_vector = bicycle::dirFromOrientation(rot_mat);
-	m_right_vector = bicycle::rightFromOrientation(rot_mat);
-	m_up_vector = bicycle::upFromOrientation(rot_mat);
+	m_look_vector = extras::dirFromOrientation(rot_mat);
+	m_right_vector = extras::rightFromOrientation(rot_mat);
+	m_up_vector = extras::upFromOrientation(rot_mat);
 }
 
 }

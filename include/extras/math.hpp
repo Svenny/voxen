@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace bicycle
+namespace extras
 {
 
 inline glm::mat4 translate(float x, float y, float z) noexcept {

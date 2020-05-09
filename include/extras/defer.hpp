@@ -6,7 +6,7 @@
 #include <exception>
 #include <utility>
 
-namespace bicycle
+namespace extras
 {
 
 template<typename F, bool is_fail_only = false>
@@ -50,5 +50,5 @@ public:
 
 #define DEFER_TOKENPASTE(x, y) x ## y
 #define DEFER_TOKENPASTE2(x, y) DEFER_TOKENPASTE(x, y)
-#define defer auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = bicycle::deferrer << [&]
-#define defer_fail auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = bicycle::fail_deferrer << [&]
+#define defer auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::deferrer << [&]
+#define defer_fail auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::fail_deferrer << [&]

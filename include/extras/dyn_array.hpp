@@ -5,7 +5,7 @@
 #include <memory>
 #include <stdexcept>
 
-namespace bicycle
+namespace extras
 {
 
 template<typename T, typename Allocator = std::allocator<T>>
@@ -48,13 +48,13 @@ public:
 
 	T &at(size_type pos) {
 		if (pos >= m_size)
-			throw std::out_of_range("bicycle::dyn_array::at() failed bounds check");
+			throw std::out_of_range("extras::dyn_array::at() failed bounds check");
 		return m_data[pos];
 	}
 
 	const T &at(size_type pos) const {
 		if (pos >= m_size)
-			throw std::out_of_range("bicycle::dyn_array::at() failed bounds check");
+			throw std::out_of_range("extras::dyn_array::at() failed bounds check");
 		return m_data[pos];
 	}
 

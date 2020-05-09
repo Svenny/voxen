@@ -2,7 +2,7 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/util/log.hpp>
 
-#include <bicycle/defer.hpp>
+#include <extras/defer.hpp>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -291,7 +291,7 @@ static constexpr float k_node_colors[6][4] = {
 
 void DebugDrawOctree::drawNode(VkCommandBuffer cmd_buf, const glm::mat4 &view_proj_mat,
                                float base_x, float base_y, float base_z, float size) {
-	glm::mat4 model_mat = bicycle::scale_translate(base_x, base_y, base_z, size);
+	glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 	glm::mat4 mat = view_proj_mat * model_mat;
 	PushConstantsBlock block;
 	memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);

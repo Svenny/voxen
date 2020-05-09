@@ -170,12 +170,12 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		m_orientation = glm::normalize(rotQuat * m_orientation);
 
 		glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
-		m_player_dir = bicycle::dirFromOrientation(rot_mat);
-		m_player_right = bicycle::rightFromOrientation(rot_mat);
-		m_player_up = bicycle::upFromOrientation(rot_mat);
+		m_player_dir = extras::dirFromOrientation(rot_mat);
+		m_player_right = extras::rightFromOrientation(rot_mat);
+		m_player_up = extras::upFromOrientation(rot_mat);
 
-		m_proj_matrix = bicycle::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-		m_view_matrix = bicycle::lookAt(player.position(), m_player_dir, m_player_up);
+		m_proj_matrix = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+		m_view_matrix = extras::lookAt(player.position(), m_player_dir, m_player_up);
 		m_cam_matrix = m_proj_matrix * m_view_matrix;
 
 		queue.player_forward_movement_direction = move_forward_direction;

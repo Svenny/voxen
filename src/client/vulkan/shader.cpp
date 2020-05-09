@@ -2,7 +2,7 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/util/log.hpp>
 
-#include <bicycle/dyn_array.hpp>
+#include <extras/dyn_array.hpp>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,7 +41,7 @@ bool VulkanShader::load(const char *path) {
 		return false;
 	}
 	size_t code_size = file_stat.st_size;
-	bicycle::dyn_array<std::byte> code_bytes(code_size);
+	extras::dyn_array<std::byte> code_bytes(code_size);
 	// TODO: handle EINTR
 	if (read(fd, code_bytes.data(), code_size) < 0) {
 		int code = errno;

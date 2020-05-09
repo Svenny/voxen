@@ -2,9 +2,9 @@
 
 #include <voxen/config.hpp>
 
-#include <bicycle/defer.hpp>
-#include <bicycle/dyn_array.hpp>
-#include <bicycle/math.hpp>
+#include <extras/defer.hpp>
+#include <extras/dyn_array.hpp>
+#include <extras/math.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
