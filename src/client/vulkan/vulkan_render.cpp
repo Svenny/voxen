@@ -638,7 +638,7 @@ void VulkanImpl::endFrame() {
 }
 
 void VulkanImpl::requestInstanceLayers(VkInstanceCreateInfo &create_info) {
-	if (!BuildConfig::kUseVulkanLayers) {
+	if (!BuildConfig::kUseVulkanDebugging) {
 		create_info.enabledLayerCount = 0;
 		return;
 	}
