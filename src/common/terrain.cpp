@@ -151,7 +151,7 @@ struct TerrainOctreeNode {
 		double dy = center_y - y;
 		double dz = center_z - z;
 		double dist = sqrt(dx * dx + dy * dy + dz * dz);
-		if (/*dist < 2 * m_size*/rand()%(512/m_size) == 0) {
+		if (dist < 2 * m_size) {
 			//if (is_collapsed)
 			//	Log::debug()("Splitting octree node ({}, {}, {}) [{}]", m_base_x, m_base_y, m_base_z, m_size);
 			split(gen);
@@ -273,7 +273,6 @@ TerrainOctree::~TerrainOctree() {
 }
 
 void TerrainOctree::updateChunks(double x, double y, double z) {
-	srand(0xDEADBEEF + 8);
 	m_tree->updateChunks(x, y, z, m_chunk_gen);
 }
 
