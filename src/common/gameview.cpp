@@ -30,7 +30,13 @@ GameView::GameView (Window& window):
 }
 
 void voxen::GameView::init(const voxen::Player& player) noexcept {
-	(void)player;
+	m_player_dir = player.lookVector();
+	m_player_up = player.upVector();
+	m_player_right = player.rightVector();
+	m_orientation = player.orientation();
+	m_proj_matrix = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+	m_view_matrix = extras::lookAt(player.position(), m_player_dir, m_player_up);
+	m_cam_matrix = m_proj_matrix * m_view_matrix;
 	resetKeyState();
 }
 
