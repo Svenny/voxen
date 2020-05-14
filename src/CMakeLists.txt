@@ -11,6 +11,7 @@ set (VOXEN_SOURCES
 	src/common/world.cpp
 	src/common/gui.cpp
 	src/common/gameview.cpp
+	src/common/config.cpp
 	src/util/assert.cpp
 	src/util/exception.cpp
 	src/util/log.cpp

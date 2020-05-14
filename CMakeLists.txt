@@ -6,6 +6,11 @@ include(CMakeUtils.cmake)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+# Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
+project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
+set(VOXEN_VERSION_SUFFIX " pre-alpha")
+set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
+
 # Enforce good coding standards to at least some extent
 string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
@@ -18,6 +23,11 @@ if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_
 	string(APPEND CMAKE_CXX_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
 endif()
 
+# Enable filesystem, if needed
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+	string(APPEND CMAKE_CXX_FLAGS " -lstdc++fs")
+endif()
+
 # This will teach the built binary to load .so's from its own directory
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -27,12 +37,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING FORCE)
 endif()
 
-project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
-set(VOXEN_VERSION_SUFFIX " pre-alpha")
-set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
 
 bool_option(USE_VULKAN_LAYERS "Enable using Vulkan validation layers" OFF)
 bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
+bool_option(DEPLOY_BUILD "Build for creating installable version of voxen" OFF)
 
 # Build external dependencies
 add_subdirectory(3rdparty)
@@ -44,7 +52,7 @@ target_include_directories(voxen PUBLIC include 3rdparty/glm)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)
-target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan)
+target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)

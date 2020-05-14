@@ -47,3 +47,6 @@ add_dependencies(fmt::fmt fmt_project-build)
 
 ## PlatformFolders dependency
 add_subdirectory(PlatformFolders)
+
+## cxxopts dependency
+add_subdirectory(cxxopts)
