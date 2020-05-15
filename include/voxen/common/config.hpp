@@ -3,7 +3,14 @@
 #include <filesystem>
 #include <variant>
 #include <string>
+#include <string_view>
 #include <vector>
+#include <map>
+
+#define SI_CONVERT_GENERIC
+#include <simpleini/SimpleIni.h>
+
+using std::string_view;
 
 namespace voxen {
 
@@ -19,31 +26,39 @@ public:
 	using Scheme = std::vector<SchemeEntry>;
 
 	Config(std::filesystem::path config_filepath, Scheme scheme);
+	~Config();
 
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
-	void patch(std::string section, std::string parameter_name, option_t value);
-
-	//void save(); //? Not always save changes in settings?
+	void patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile = false);
 
 	// Throws std::bad_variant_access, voxen::Exception("Option not found")
-	std::string optionString(std::string section, std::string parameter_name);
-	int64_t optionInt(std::string section, std::string parameter_name);
-	double optionDouble(std::string section, std::string parameter_name);
-	bool optionBool(std::string section, std::string parameter_name);
+	std::string optionString(string_view section, string_view parameter_name) const;
+	int64_t optionInt(string_view section, string_view parameter_name) const;
+	double optionDouble(string_view section, string_view  parameter_name) const;
+	bool optionBool(string_view section, string_view parameter_name) const;
 
-	int optionType(std::string section, std::string parameter_name);
+	int optionType(string_view section, string_view parameter_name) const;
 
-	/// Global config scheme
+public:
+
+	// Global config scheme
 	static Scheme mainConfigScheme();
 
-	/// Global config access point
+	// Global config access point
 	static Config* mainConfig();
 
-private:
-	Scheme debug_stored_scheme; //TODO DEV and temporaraly!
+	static std::string optionToString(option_t value);
+
+	// Trhows std::invalid_argument, std::out_of_range
+	static option_t optionFromString(string_view s, int type);
 
 private:
-	static Config* g_instance;
+	std::map<std::string, std::map<std::string, option_t, std::less<>>, std::less<>> m_data;
+	std::filesystem::path m_path;
+	CSimpleIniA m_ini;
+
+private:
+	static std::unique_ptr<Config> g_instance;
 	static const std::filesystem::path kMainConfigRelPath;
 };
 

@@ -50,3 +50,6 @@ add_subdirectory(PlatformFolders)
 
 ## cxxopts dependency
 add_subdirectory(cxxopts)
+
+## SimpleInit dependency
+add_subdirectory(simpleini-4.17)

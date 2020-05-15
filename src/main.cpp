@@ -62,12 +62,6 @@ cxxopts::Options initCli() {
 	return options;
 }
 
-std::string tolower(std::string s) {
-	for (char& c : s)
-		c = tolower(c);
-	return s;
-}
-
 void patchConfig(cxxopts::ParseResult result, voxen::Config* config) {
 	for (auto& keyvalue : result.arguments()) {
 		int sep_idx = keyvalue.key().find(kCliSectionSeparator);
@@ -75,29 +69,7 @@ void patchConfig(cxxopts::ParseResult result, voxen::Config* config) {
 		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
 
 		int type_idx = config->optionType(section, parameter);
-		voxen::Config::option_t value;
-		switch(type_idx) {
-			case 0:
-				static_assert(std::is_same_v<std::string,   std::variant_alternative_t<0, voxen::Config::option_t>>);
-				value = keyvalue.value();
-				break;
-			case 1:
-				static_assert(std::is_same_v<int64_t,   std::variant_alternative_t<1, voxen::Config::option_t>>);
-				value = (int64_t)std::stoi(keyvalue.value());
-				break;
-			case 2:
-				static_assert(std::is_same_v<double,   std::variant_alternative_t<2, voxen::Config::option_t>>);
-				value = std::stod(keyvalue.value());
-				break;
-			case 3:
-				static_assert(std::is_same_v<bool,   std::variant_alternative_t<3, voxen::Config::option_t>>);
-				value = tolower(keyvalue.value()) == "true";
-				break;
-			default:
-				static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
-				break;
-		}
-
+		voxen::Config::option_t value = voxen::Config::optionFromString(keyvalue.value(), type_idx);
 		config->patch(section, parameter, value);
 	}
 }

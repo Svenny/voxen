@@ -52,7 +52,7 @@ target_include_directories(voxen PUBLIC include 3rdparty/glm)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)
-target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts)
+target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts SimpleIni)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
