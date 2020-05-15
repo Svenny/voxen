@@ -25,6 +25,10 @@ GameView::GameView (Window& window):
 	m_prev_xpos = pos.first;
 	m_prev_ypos = pos.second;
 
+	m_fov_x = 1.5;
+	m_fov_y = 1.5 * (double)window.height() / (double)window.width();
+	voxen::Log::info("{} - {} {}", m_fov_y, window.height(), window.width());
+
 	for (int i = 0; i < Key::KeyCount; i++)
 		m_keyPressed[i] = false;
 }
