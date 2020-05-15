@@ -57,6 +57,10 @@ Config::Scheme voxen::Config::mainConfigScheme()
 	s.push_back({"window", "width", "This parameter control voxen window width", 1600L});
 	s.push_back({"window", "height", "This parameter control voxen window height", 900L});
 	s.push_back({"window", "fullscreen", "This parameter enable fullscreen for voxen window", false});
+	s.push_back({"controller", "mouse_sensitivity", "This parameter controls mouse sensitivity", 1.5});
+	s.push_back({"controller", "forward_speed", "This parameter controls player forward speed", 100.0});
+	s.push_back({"controller", "strafe_speed", "This parameter controls player strafe speed", 50.0});
+	s.push_back({"controller", "roll_speed", "This parameter controls player roll speed", 1.5 * 0.01});
 
 	return s;
 }

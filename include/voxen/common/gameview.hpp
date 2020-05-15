@@ -45,9 +45,10 @@ private:
 
 	double m_width, m_height;
 
-	double m_mouseSensitivity;
-	double m_forwardSpeed;
-	double m_strafeSpeed;
+	double m_mouse_sensitivity;
+	double m_forward_speed;
+	double m_strafe_speed;
+	double m_roll_speed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
 	double m_newest_xpos;
