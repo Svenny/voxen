@@ -71,8 +71,10 @@ private:
 
 VulkanRender::VulkanRender(Window &w) {
 	Log::info("Creating Vulkan instance");
-	m_vk = new VulkanImpl(w.glfwHandle(), Window::k_width, Window::k_height);
-	m_octree = new DebugDrawOctree(m_vk->defaultDevice(), m_vk->defaultRenderPass(), Window::k_width, Window::k_height);
+	int w_width = w.width();
+	int w_height = w.height();
+	m_vk = new VulkanImpl(w.glfwHandle(), w_width, w_height);
+	m_octree = new DebugDrawOctree(m_vk->defaultDevice(), m_vk->defaultRenderPass(), w_width, w_height);
 }
 
 VulkanRender::~VulkanRender() {

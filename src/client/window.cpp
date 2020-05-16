@@ -1,6 +1,7 @@
 #include <voxen/client/window.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/common/gui.hpp>
+#include <voxen/common/config.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -11,7 +12,7 @@ namespace voxen
 
 Window Window::gInstance;
 
-void Window::start () {
+void Window::start (int width, int height) {
 	if (mIsStarted)
 		return;
 	Log::info("Starting window and GLFW library");
@@ -21,7 +22,7 @@ void Window::start () {
 		Log::fatal("Couldn't init GLFW!");
 		throw std::runtime_error ("GLFW init failed");
 	}
-	createWindow ();
+	createWindow (width, height);
 	useRegularCursor();
 	glfwSetWindowUserPointer(mWindow, this);
 	Log::info("GLFW started successfully, window created");
@@ -53,7 +54,7 @@ void Window::logGlfwVersion () const {
 	Log::debug("Voxen is running against GLFW {}.{}.{}", major, minor, revision);
 }
 
-void Window::createWindow () {
+void Window::createWindow (int width, int height) {
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
@@ -61,7 +62,7 @@ void Window::createWindow () {
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	// TODO: this is a temporary hack to simplify Vulkan logic. Remove it
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);
-	mWindow = glfwCreateWindow (k_width, k_height, "Voxen", nullptr, nullptr);
+	mWindow = glfwCreateWindow (width, height, "Voxen", nullptr, nullptr);
 	if (!mWindow) {
 		Log::fatal("Couldn't create window!");
 		glfwTerminate ();

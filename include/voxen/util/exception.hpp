@@ -3,6 +3,7 @@
 #include <exception>
 #include <experimental/source_location>
 #include <string>
+#include <fmt/format.h>
 
 namespace voxen
 {
@@ -27,6 +28,19 @@ public:
 	virtual const char *what() const noexcept override { return m_what; }
 protected:
 	const char *m_what;
+};
+
+class FormattedMessageException : public Exception {
+public:
+	explicit FormattedMessageException(std::string_view format_str, const fmt::format_args& format_args,
+	      const std::experimental::source_location &loc = std::experimental::source_location::current());
+	virtual ~FormattedMessageException() override = default;
+
+	virtual const char *what() const noexcept override;
+protected:
+	std::string m_what;
+	bool m_exception_occured;
+	const static char* kExceptionOccuredMsg;
 };
 
 class ErrnoException : public Exception {

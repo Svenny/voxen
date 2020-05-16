@@ -45,9 +45,10 @@ private:
 
 	double m_width, m_height;
 
-	double m_mouseSensitivity;
-	double m_forwardSpeed;
-	double m_strafeSpeed;
+	double m_mouse_sensitivity;
+	double m_forward_speed;
+	double m_strafe_speed;
+	double m_roll_speed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
 	double m_newest_xpos;
@@ -60,7 +61,7 @@ private:
 	glm::dvec3 m_player_up;
 	glm::dvec3 m_player_right;
 	// Gamer view data and parameters
-	double m_fov_x = 1.5, m_fov_y = 1.5 * 9.0 / 16.0;
+	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;
 
 	glm::dquat m_orientation;

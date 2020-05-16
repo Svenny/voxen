@@ -2,6 +2,7 @@
 
 #include <voxen/common/world.hpp>
 #include <voxen/common/player.hpp>
+#include <voxen/common/config.hpp>
 #include <GLFW/glfw3.h>
 
 #include <voxen/util/log.hpp>
@@ -10,20 +11,23 @@
 
 using namespace voxen;
 
-const static float kDefaultMouseSensitivity = 1.5f;
-const static float kDefaultForwardSpeed = 100.0f;
-const static float kDefaultStrafeSpeed = 50.0f;
-
-const static float kRollSpeed = 1.5f * 0.01f;
-
 GameView::GameView (Window& window):
-	m_mouseSensitivity(kDefaultMouseSensitivity), m_forwardSpeed(kDefaultForwardSpeed), m_strafeSpeed(kDefaultStrafeSpeed),
-	m_previous_tick_id(-1), m_window(&window), m_is_got_left_mouse_click(false), m_is_used_orientation_cursor(false) {
+	m_previous_tick_id(-1), m_window(&window),
+	m_is_got_left_mouse_click(false), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
 	m_height = window.height();
 	std::pair<double, double> pos = window.cursorPos();
 	m_prev_xpos = pos.first;
 	m_prev_ypos = pos.second;
+
+	m_fov_x = 1.5;
+	m_fov_y = 1.5 * (double)window.height() / (double)window.width();
+
+	Config* main_config = Config::mainConfig();
+	m_mouse_sensitivity = main_config->optionDouble("controller", "mouse_sensitivity");
+	m_forward_speed = main_config->optionDouble("controller", "forward_speed");
+	m_strafe_speed = main_config->optionDouble("controller", "strafe_speed");
+	m_roll_speed = main_config->optionDouble("controller", "roll_speed");
 
 	for (int i = 0; i < Key::KeyCount; i++)
 		m_keyPressed[i] = false;
@@ -77,13 +81,13 @@ bool GameView::handleMouseScroll(double xoffset, double yoffset) noexcept
 	(void)xoffset;
 	if (yoffset > 0)
 	{
-		m_strafeSpeed = 1.1 * m_strafeSpeed;
-		m_forwardSpeed = 1.1 * m_forwardSpeed;
+		      m_strafe_speed = 1.1 * m_strafe_speed;
+		      m_forward_speed = 1.1 * m_forward_speed;
 	}
 	else
 	{
-		m_strafeSpeed = 0.9 * m_strafeSpeed;
-		m_forwardSpeed = 0.9 * m_forwardSpeed;
+		      m_strafe_speed = 0.9 * m_strafe_speed;
+		      m_forward_speed = 0.9 * m_forward_speed;
 	}
 	return true;
 }
@@ -158,19 +162,19 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		if (m_keyPressed[Key::KeyForward]) dz += 1;
 		move_forward_direction += dz * m_player_dir;
 
-		dx = (m_prev_xpos - m_newest_xpos) * m_mouseSensitivity;
+		dx = (m_prev_xpos - m_newest_xpos) * m_mouse_sensitivity;
 		m_prev_xpos = m_newest_xpos;
 		double tan_half_fovx = std::tan(m_fov_x * 0.5);
 		double yawAngle = atan (2 * dx * tan_half_fovx / m_width);
 
-		dy = (m_prev_ypos - m_newest_ypos) * m_mouseSensitivity;
+		dy = (m_prev_ypos - m_newest_ypos) * m_mouse_sensitivity;
 		m_prev_ypos = m_newest_ypos;
 		double tan_half_fovy = std::tan(m_fov_y * 0.5);
 		double pitchAngle = atan (2 * dy * tan_half_fovy / m_height);
 
 		double rollAngle = 0;
-		if (m_keyPressed[Key::KeyRollCCW]) rollAngle -= kRollSpeed;
-		if (m_keyPressed[Key::KeyRollCW]) rollAngle += kRollSpeed;
+		if (m_keyPressed[Key::KeyRollCCW]) rollAngle -= m_roll_speed;
+		if (m_keyPressed[Key::KeyRollCW]) rollAngle += m_roll_speed;
 
 		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
 		m_orientation = glm::normalize(rotQuat * m_orientation);
@@ -187,8 +191,8 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		queue.player_forward_movement_direction = move_forward_direction;
 		queue.player_strafe_movement_direction = move_strafe_direction;
 		queue.player_orientation = m_orientation;
-		queue.forward_speed = m_forwardSpeed;
-		queue.strafe_speed = m_strafeSpeed;
+		queue.forward_speed = m_forward_speed;
+		queue.strafe_speed = m_strafe_speed;
 		m_previous_tick_id = tick_id;
 	} else {
 		if (m_is_got_left_mouse_click) {

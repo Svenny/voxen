@@ -20,6 +20,7 @@ public:
 #endif
 	constexpr static bool kUseVulkanLayers = @USE_VULKAN_LAYERS@;
 	constexpr static bool kUseIntegratedGpu = @USE_INTEGRATED_GPU@;
+	constexpr static bool kIsDeployBuild = @DEPLOY_BUILD@;
 };
 
 }

@@ -12,13 +12,10 @@ class Gui;
 
 class Window {
 public:
-	constexpr static uint32_t k_width = 1600;
-	constexpr static uint32_t k_height = 900;
-
 	bool shouldClose() const;
 	void pollEvents();
 
-	void start();
+	void start(int width, int height);
 	void stop();
 	bool isStarted() const noexcept { return mIsStarted; }
 
@@ -50,7 +47,7 @@ private:
 	Gui* m_attached_gui = nullptr;
 
 	void logGlfwVersion() const;
-	void createWindow();
+	void createWindow(int width, int height);
 
 	static void globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
 	static void globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept;

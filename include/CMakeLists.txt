@@ -16,6 +16,7 @@ set (VOXEN_HEADERS
 	include/voxen/common/world.hpp
 	include/voxen/common/gui.hpp
 	include/voxen/common/gameview.hpp
+	include/voxen/common/config.hpp
 	include/voxen/util/assert.hpp
 	include/voxen/util/exception.hpp
 	include/voxen/util/log.hpp
