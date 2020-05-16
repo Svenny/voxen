@@ -143,7 +143,6 @@ void Config::patch(string_view section, string_view parameter_name, option_t val
 				it_inter->second = value;
 				if (saveToConfigFile) {
 					const std::string& str = Config::optionToString(value);
-					Log::info("{}::{} {}", section, parameter_name, str);
 					m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
 				}
 				return;
@@ -165,23 +164,23 @@ std::string Config::optionToString(option_t value)
 	int type_idx = value.index();
 	switch(type_idx) {
 		case 0:
-		   static_assert(is_same_v<string, variant_alternative_t<0, Config::option_t>>);
+			static_assert(is_same_v<string, variant_alternative_t<0, Config::option_t>>);
 			return get<string>(value);
 
 		case 1:
-		   static_assert(is_same_v<int64_t, variant_alternative_t<1, Config::option_t>>);
+			static_assert(is_same_v<int64_t, variant_alternative_t<1, Config::option_t>>);
 			return to_string(get<int64_t>(value));
 
 		case 2:
-		   static_assert(is_same_v<double, variant_alternative_t<2, Config::option_t>>);
+			static_assert(is_same_v<double, variant_alternative_t<2, Config::option_t>>);
 			return to_string(get<double>(value));
 
 		case 3:
-		   static_assert(is_same_v<bool, variant_alternative_t<3, Config::option_t>>);
+			static_assert(is_same_v<bool, variant_alternative_t<3, Config::option_t>>);
 			return get<bool>(value) ? "true" : "false";
 
 		default:
-		   static_assert(std::variant_size_v<Config::option_t> == 4);
+			static_assert(std::variant_size_v<Config::option_t> == 4);
 			return "";
 	}
 }
@@ -190,20 +189,20 @@ Config::option_t Config::optionFromString(string_view s, int type)
 {
 	switch(type) {
 		case 0:
-		   static_assert(std::is_same_v<std::string,   std::variant_alternative_t<0, Config::option_t>>);
+			static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, Config::option_t>>);
 			return std::string(s);
 
 		case 1:
-		   static_assert(std::is_same_v<int64_t,   std::variant_alternative_t<1, Config::option_t>>);
+			static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, Config::option_t>>);
 			return (int64_t)std::stoi(s.data());
 
 		case 2:
-		   static_assert(std::is_same_v<double,   std::variant_alternative_t<2, Config::option_t>>);
+			static_assert(std::is_same_v<double, std::variant_alternative_t<2, Config::option_t>>);
 			return std::stod(s.data());
 
 		case 3:
 		{
-		   static_assert(std::is_same_v<bool,   std::variant_alternative_t<3, Config::option_t>>);
+			static_assert(std::is_same_v<bool, std::variant_alternative_t<3, Config::option_t>>);
 			if (s.size() != 4)
 				return false;
 			bool isTrueStr = tolower(s[0]) == 't';
@@ -214,7 +213,7 @@ Config::option_t Config::optionFromString(string_view s, int type)
 		}
 
 		default:
-		   static_assert(std::variant_size_v<Config::option_t> == 4);
+			static_assert(std::variant_size_v<Config::option_t> == 4);
 			return "";
 	}
 }
