@@ -1,19 +1,20 @@
 #pragma once
 
-#include <cassert>
-#include <filesystem>
 #include <voxen/config.hpp>
 
-using namespace std::filesystem;
+#include <cassert>
+#include <filesystem>
 
-namespace voxen {
+namespace voxen
+{
 
-static path voxenHome() {
-	if (BuildConfig::kIsDeployBuild) {
+inline std::filesystem::path voxenHome() {
+	if constexpr (BuildConfig::kIsDeployBuild) {
+		// TODO: implement me
 		assert(false);
-		return path(); // TODO
+		return std::filesystem::path();
 	} else {
-		return current_path();
+		return std::filesystem::current_path();
 	}
 }
 

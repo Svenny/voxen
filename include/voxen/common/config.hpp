@@ -10,9 +10,8 @@
 #define SI_CONVERT_GENERIC
 #include <simpleini/SimpleIni.h>
 
-using std::string_view;
-
-namespace voxen {
+namespace voxen
+{
 
 class Config {
 public:
@@ -29,15 +28,15 @@ public:
 	~Config();
 
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
-	void patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile = false);
+	void patch(std::string_view section, std::string_view parameter_name, option_t value, bool saveToConfigFile = false);
 
 	// Throws std::bad_variant_access, voxen::Exception("Option not found")
-	std::string optionString(string_view section, string_view parameter_name) const;
-	int64_t optionInt(string_view section, string_view parameter_name) const;
-	double optionDouble(string_view section, string_view  parameter_name) const;
-	bool optionBool(string_view section, string_view parameter_name) const;
+	std::string optionString(std::string_view section, std::string_view parameter_name) const;
+	int64_t optionInt(std::string_view section, std::string_view parameter_name) const;
+	double optionDouble(std::string_view section, std::string_view  parameter_name) const;
+	bool optionBool(std::string_view section, std::string_view parameter_name) const;
 
-	int optionType(string_view section, string_view parameter_name) const;
+	int optionType(std::string_view section, std::string_view parameter_name) const;
 
 public:
 
@@ -50,7 +49,7 @@ public:
 	static std::string optionToString(option_t value);
 
 	// Trhows std::invalid_argument, std::out_of_range
-	static option_t optionFromString(string_view s, int type);
+	static option_t optionFromString(std::string_view s, int type);
 
 private:
 	std::map<std::string, std::map<std::string, option_t, std::less<>>, std::less<>> m_data;

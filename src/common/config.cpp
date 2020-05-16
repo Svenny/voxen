@@ -6,8 +6,11 @@
 
 #include <fmt/format.h>
 
-using namespace voxen;
 using namespace std::filesystem;
+using std::string_view;
+
+namespace voxen
+{
 
 const path Config::kMainConfigRelPath = "config.ini";
 std::unique_ptr<Config> Config::g_instance = nullptr;
@@ -28,14 +31,14 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 			value = entry.default_value;
 		} else {
 			int type = entry.default_value.index();
-			value = Config::optionFromString(std::string_view(value_ptr), type);
+			value = Config::optionFromString(string_view(value_ptr), type);
 		}
 		if (m_data.count(entry.section) == 0)
 			m_data[entry.section] = std::map<std::string, option_t, std::less<>>();
 		m_data[entry.section][entry.parameter_name] = value;
 	}
 }
-voxen::Config::~Config()
+Config::~Config()
 {
 	// Not sure, maybe we should move it in ::patch inside saveToConfigFile branch
 	m_ini.SaveFile(m_path.string().c_str());
@@ -49,23 +52,23 @@ Config* Config::mainConfig() {
 	return g_instance.get();
 }
 
-Config::Scheme voxen::Config::mainConfigScheme()
+Config::Scheme Config::mainConfigScheme()
 {
 	Config::Scheme s;
 
-	s.push_back({"dev", "fps_logging", "This parameter enable fps and ups logging into log", false});
-	s.push_back({"window", "width", "This parameter control voxen window width", 1600L});
-	s.push_back({"window", "height", "This parameter control voxen window height", 900L});
-	s.push_back({"window", "fullscreen", "This parameter enable fullscreen for voxen window", false});
-	s.push_back({"controller", "mouse_sensitivity", "This parameter controls mouse sensitivity", 1.5});
-	s.push_back({"controller", "forward_speed", "This parameter controls player forward speed", 100.0});
-	s.push_back({"controller", "strafe_speed", "This parameter controls player strafe speed", 50.0});
-	s.push_back({"controller", "roll_speed", "This parameter controls player roll speed", 1.5 * 0.01});
+	s.push_back({"dev", "fps_logging", "Enable FPS and UPS logging", false});
+	s.push_back({"window", "width", "Voxen window width", 1600L});
+	s.push_back({"window", "height", "Voxen window height", 900L});
+	s.push_back({"window", "fullscreen", "Enable fullscreen for Voxen window", false});
+	s.push_back({"controller", "mouse_sensitivity", "Mouse sensitivity", 1.5});
+	s.push_back({"controller", "forward_speed", "Player forward speed", 100.0});
+	s.push_back({"controller", "strafe_speed", "Player strafe speed", 50.0});
+	s.push_back({"controller", "roll_speed", "Player roll speed", 1.5 * 0.01});
 
 	return s;
 }
 
-bool voxen::Config::optionBool(string_view section, string_view parameter_name) const
+bool Config::optionBool(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -74,11 +77,11 @@ bool voxen::Config::optionBool(string_view section, string_view parameter_name) 
 			return std::get<bool>(it_inter->second);
 	}
 
-	throw voxen::FormattedMessageException("Bool option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("Bool option {}/{} not found", fmt::make_format_args(section, parameter_name));
 	return false;
 }
 
-double voxen::Config::optionDouble(string_view section, string_view parameter_name) const
+double Config::optionDouble(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -87,11 +90,11 @@ double voxen::Config::optionDouble(string_view section, string_view parameter_na
 			return std::get<double>(it_inter->second);
 	}
 
-	throw voxen::FormattedMessageException("Double option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("Double option {}/{} not found", fmt::make_format_args(section, parameter_name));
 	return 0.0;
 }
 
-int64_t voxen::Config::optionInt(string_view section, string_view parameter_name) const
+int64_t Config::optionInt(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -100,11 +103,11 @@ int64_t voxen::Config::optionInt(string_view section, string_view parameter_name
 			return std::get<int64_t>(it_inter->second);
 	}
 
-	throw voxen::FormattedMessageException("Int option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("Int option {}/{} not found", fmt::make_format_args(section, parameter_name));
 	return 0;
 }
 
-std::string voxen::Config::optionString(string_view section, string_view parameter_name) const
+std::string Config::optionString(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -113,11 +116,11 @@ std::string voxen::Config::optionString(string_view section, string_view paramet
 			return std::get<std::string>(it_inter->second);
 	}
 
-	throw voxen::FormattedMessageException("String option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("String option {}/{} not found", fmt::make_format_args(section, parameter_name));
 	return std::string();
 }
 
-int voxen::Config::optionType(string_view section, string_view parameter_name) const
+int Config::optionType(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -126,11 +129,11 @@ int voxen::Config::optionType(string_view section, string_view parameter_name) c
 			return it_inter->second.index();
 	}
 
-	throw voxen::FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
 	return 0;
 }
 
-void voxen::Config::patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile)
+void Config::patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile)
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -140,67 +143,67 @@ void voxen::Config::patch(string_view section, string_view parameter_name, optio
 				it_inter->second = value;
 				if (saveToConfigFile) {
 					const std::string& str = Config::optionToString(value);
-					voxen::Log::info("{}::{} {}", section, parameter_name, str);
+					Log::info("{}::{} {}", section, parameter_name, str);
 					m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
 				}
 				return;
 			} else {
-				throw voxen::FormattedMessageException(
+				throw FormattedMessageException(
 					"Inconsistent types for option {}/{}: try replace {} with {}", fmt::make_format_args(section, parameter_name, it_inter->second.index(), value.index())
 				);
 			}
 		}
 	}
 
-	throw voxen::FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	throw FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
 }
 
-std::string voxen::Config::optionToString(option_t value)
+std::string Config::optionToString(option_t value)
 {
 	using namespace std;
 
 	int type_idx = value.index();
 	switch(type_idx) {
 		case 0:
-			static_assert(is_same_v<string, variant_alternative_t<0, voxen::Config::option_t>>);
+		   static_assert(is_same_v<string, variant_alternative_t<0, Config::option_t>>);
 			return get<string>(value);
 
 		case 1:
-			static_assert(is_same_v<int64_t, variant_alternative_t<1, voxen::Config::option_t>>);
+		   static_assert(is_same_v<int64_t, variant_alternative_t<1, Config::option_t>>);
 			return to_string(get<int64_t>(value));
 
 		case 2:
-			static_assert(is_same_v<double, variant_alternative_t<2, voxen::Config::option_t>>);
+		   static_assert(is_same_v<double, variant_alternative_t<2, Config::option_t>>);
 			return to_string(get<double>(value));
 
 		case 3:
-			static_assert(is_same_v<bool, variant_alternative_t<3, voxen::Config::option_t>>);
+		   static_assert(is_same_v<bool, variant_alternative_t<3, Config::option_t>>);
 			return get<bool>(value) ? "true" : "false";
 
 		default:
-			static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
+		   static_assert(std::variant_size_v<Config::option_t> == 4);
 			return "";
 	}
 }
 
-voxen::Config::option_t voxen::Config::optionFromString(string_view s, int type)
+Config::option_t Config::optionFromString(string_view s, int type)
 {
 	switch(type) {
 		case 0:
-			static_assert(std::is_same_v<std::string,   std::variant_alternative_t<0, voxen::Config::option_t>>);
+		   static_assert(std::is_same_v<std::string,   std::variant_alternative_t<0, Config::option_t>>);
 			return std::string(s);
 
 		case 1:
-			static_assert(std::is_same_v<int64_t,   std::variant_alternative_t<1, voxen::Config::option_t>>);
+		   static_assert(std::is_same_v<int64_t,   std::variant_alternative_t<1, Config::option_t>>);
 			return (int64_t)std::stoi(s.data());
 
 		case 2:
-			static_assert(std::is_same_v<double,   std::variant_alternative_t<2, voxen::Config::option_t>>);
+		   static_assert(std::is_same_v<double,   std::variant_alternative_t<2, Config::option_t>>);
 			return std::stod(s.data());
 
 		case 3:
 		{
-			static_assert(std::is_same_v<bool,   std::variant_alternative_t<3, voxen::Config::option_t>>);
+		   static_assert(std::is_same_v<bool,   std::variant_alternative_t<3, Config::option_t>>);
 			if (s.size() != 4)
 				return false;
 			bool isTrueStr = tolower(s[0]) == 't';
@@ -211,7 +214,9 @@ voxen::Config::option_t voxen::Config::optionFromString(string_view s, int type)
 		}
 
 		default:
-			static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
+		   static_assert(std::variant_size_v<Config::option_t> == 4);
 			return "";
 	}
+}
+
 }
