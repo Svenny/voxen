@@ -1,14 +1,14 @@
 #pragma once
 
-#include<voxen/common/gameview.hpp>
-#include<voxen/client/window.hpp>
+#include <voxen/common/gameview.hpp>
+#include <voxen/common/world.hpp>
+#include <voxen/client/window.hpp>
 
 struct GLFWwindow;
 
-namespace voxen {
+namespace voxen::client
+{
 
-struct DebugQueueRtW;
-class World;
 class Gui {
 public:
 	Gui(Window& wnd);

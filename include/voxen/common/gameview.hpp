@@ -1,18 +1,20 @@
 #pragma once
 
+#include <voxen/client/window.hpp>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <chrono>
 
-namespace voxen {
-
+namespace voxen
+{
 
 class Player;
-class Window;
 struct DebugQueueRtW;
+
 class GameView {
 public:
-	GameView(Window& window);
+	GameView(client::Window& window);
 
 	void init(const Player& player) noexcept;
 	void update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
@@ -71,7 +73,7 @@ private:
 
 	// Previous tick id
 	std::uint64_t m_previous_tick_id;
-	Window* m_window;
+	client::Window* m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_got_left_mouse_click;

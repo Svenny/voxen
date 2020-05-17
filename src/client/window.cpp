@@ -1,13 +1,13 @@
 #include <voxen/client/window.hpp>
+#include <voxen/client/gui.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/common/gui.hpp>
 #include <voxen/common/config.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-namespace voxen
+namespace voxen::client
 {
 
 Window Window::gInstance;
@@ -74,7 +74,7 @@ void Window::glfwErrorCallback (int code, const char *message) noexcept {
 	Log::error("GLFW error {}:\n{}", code, message);
 }
 
-bool Window::attachGUI(voxen::Gui& gui)
+bool Window::attachGUI(Gui& gui)
 {
 	if (m_attached_gui != nullptr)
 		throw std::runtime_error ("try to attach gui to window, which already have another attached gui");

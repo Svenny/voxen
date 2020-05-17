@@ -1,8 +1,8 @@
 #include <voxen/config.hpp>
+#include <voxen/client/gui.hpp>
 #include <voxen/client/window.hpp>
 #include <voxen/client/vulkan/vulkan_render.hpp>
 #include <voxen/common/world.hpp>
-#include <voxen/common/gui.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/util/assert.hpp>
 #include <voxen/util/exception.hpp>
@@ -98,7 +98,7 @@ int main (int argc, char *argv[]) {
 		auto *render = new voxen::client::VulkanRender(wnd);
 
 		voxen::World world;
-		voxen::Gui gui(wnd);
+		voxen::client::Gui gui(wnd);
 		gui.init(world);
 		voxen::DebugQueueRtW render_to_world_queue;
 

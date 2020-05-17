@@ -20,13 +20,13 @@ set (VOXEN_HEADERS
 	include/voxen/client/vulkan/texture_manager.hpp
 	include/voxen/client/vulkan/vulkan_render.hpp
 	include/voxen/client/debug_draw_octree.hpp
+	include/voxen/client/gui.hpp
 	include/voxen/client/input_manager.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/window.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
 	include/voxen/common/world.hpp
-	include/voxen/common/gui.hpp
 	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp
 	include/voxen/util/assert.hpp

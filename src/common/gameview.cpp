@@ -11,7 +11,7 @@
 
 using namespace voxen;
 
-GameView::GameView (Window& window):
+GameView::GameView (client::Window& window):
 	m_previous_tick_id(-1), m_window(&window),
 	m_is_got_left_mouse_click(false), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
