@@ -1,28 +1,27 @@
-#include <voxen/client/vulkan/base.hpp>
+#include <voxen/client/vulkan/instance.hpp>
+
+#include <voxen/config.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/config.hpp>
 
 #include <GLFW/glfw3.h>
-
-#include <tuple>
 
 namespace voxen::client
 {
 
-VulkanBase::VulkanBase() {
+VulkanInstance::VulkanInstance() {
 	if (!checkVulkanSupport())
 		throw MessageException("unsupported or missing Vulkan driver");
 	if (!createInstance())
 		throw MessageException("failed to create Vulkan instance");
 }
 
-VulkanBase::~VulkanBase() {
+VulkanInstance::~VulkanInstance() {
 	Log::debug("Destroying VkInstance");
-	vkDestroyInstance(m_instance, VulkanHostAllocator::callbacks());
+	vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
 }
 
-bool VulkanBase::checkVulkanSupport() const {
+bool VulkanInstance::checkVulkanSupport() const {
 	if (glfwVulkanSupported() != GLFW_TRUE) {
 		Log::error("No supported Vulkan ICD found");
 		return false;
@@ -79,7 +78,7 @@ static std::vector<const char *> getRequiredInstanceExtensions() {
 
 static std::vector<const char *> getRequiredLayers() {
 	if constexpr (!BuildConfig::kUseVulkanDebugging)
-	      return {};
+		return {};
 
 	uint32_t available_count;
 	vkEnumerateInstanceLayerProperties(&available_count, nullptr);
@@ -111,7 +110,7 @@ static std::vector<const char *> getRequiredLayers() {
 	return layer_list;
 }
 
-bool VulkanBase::createInstance() {
+bool VulkanInstance::createInstance() {
 	// Fill VkApplicationInfo
 	auto version = VK_MAKE_VERSION(BuildConfig::kVersionMajor, BuildConfig::kVersionMinor, BuildConfig::kVersionPatch);
 	VkApplicationInfo app_info = {};
@@ -133,7 +132,7 @@ bool VulkanBase::createInstance() {
 	create_info.enabledLayerCount = uint32_t(layer_list.size());
 	create_info.ppEnabledLayerNames = layer_list.data();
 
-	VkResult result = vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_instance);
+	VkResult result = vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		Log::error("vkCreateInstance failed: {}", getVkResultString(result));
 		return false;
