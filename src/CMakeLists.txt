@@ -1,4 +1,5 @@
-set (VOXEN_SOURCES
+set(VOXEN_SOURCES
+	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer_manager.cpp
 	src/client/vulkan/command_manager.cpp
 	src/client/vulkan/common.cpp
@@ -29,5 +30,5 @@ set (VOXEN_SOURCES
 	src/main.cpp
 )
 
-target_sources (voxen PUBLIC ${VOXEN_SOURCES})
-source_group (TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})
+target_sources(voxen PRIVATE ${VOXEN_SOURCES})
+source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})

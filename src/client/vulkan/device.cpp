@@ -6,11 +6,11 @@
 namespace voxen::client
 {
 
-VulkanDevice::VulkanDevice() {
+VulkanDevice::VulkanDevice(VulkanBackend &backend) : m_backend(backend) {
 	throw MessageException("not implemented yet");
 }
 
-VulkanDevice::~VulkanDevice() {
+VulkanDevice::~VulkanDevice() noexcept {
 	Log::debug("Destroying VkDevice");
 	vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
 }

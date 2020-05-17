@@ -9,14 +9,14 @@
 namespace voxen::client
 {
 
-VulkanInstance::VulkanInstance() {
+VulkanInstance::VulkanInstance(VulkanBackend &backend) : m_backend(backend) {
 	if (!checkVulkanSupport())
 		throw MessageException("unsupported or missing Vulkan driver");
 	if (!createInstance())
 		throw MessageException("failed to create Vulkan instance");
 }
 
-VulkanInstance::~VulkanInstance() {
+VulkanInstance::~VulkanInstance() noexcept {
 	Log::debug("Destroying VkInstance");
 	vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
 }

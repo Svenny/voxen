@@ -1,10 +1,11 @@
-set(BICYCLE_HEADERS
+set(EXTRAS_HEADERS
 	include/extras/defer.hpp
 	include/extras/dyn_array.hpp
 	include/extras/math.hpp
 )
 
-set (VOXEN_HEADERS
+set(VOXEN_HEADERS
+	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer_manager.hpp
 	include/voxen/client/vulkan/command_manager.hpp
 	include/voxen/client/vulkan/common.hpp
@@ -34,9 +35,9 @@ set (VOXEN_HEADERS
 	include/voxen/util/log.hpp
 )
 
-target_sources(voxen PUBLIC ${VOXEN_HEADERS} ${BICYCLE_HEADERS})
+target_sources(voxen PUBLIC ${VOXEN_HEADERS} ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
-source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${BICYCLE_HEADERS})
+source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
 configure_file(include/voxen/config.hpp.cmake ${CMAKE_CURRENT_BINARY_DIR}/configs/voxen/config.hpp)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/configs)
