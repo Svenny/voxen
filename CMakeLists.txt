@@ -48,7 +48,7 @@ add_subdirectory(3rdparty)
 # CMake target setup
 add_executable(voxen "")
 
-target_include_directories(voxen PUBLIC include 3rdparty/glm)
+target_include_directories(voxen PUBLIC include 3rdparty/glm 3rdparty/vulkan-headers)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)

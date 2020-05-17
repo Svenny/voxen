@@ -18,7 +18,7 @@ VulkanInstance::VulkanInstance(VulkanBackend &backend) : m_backend(backend) {
 
 VulkanInstance::~VulkanInstance() noexcept {
 	Log::debug("Destroying VkInstance");
-	vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
+	m_backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
 }
 
 bool VulkanInstance::checkVulkanSupport() const {
@@ -28,7 +28,7 @@ bool VulkanInstance::checkVulkanSupport() const {
 	}
 
 	uint32_t version = 0;
-	VkResult result = vkEnumerateInstanceVersion(&version);
+	VkResult result = m_backend.vkEnumerateInstanceVersion(&version);
 	if (result != VK_SUCCESS) {
 		Log::error("vkEnumerateInstanceVersion failed: {}", getVkResultString(result));
 		return false;
@@ -76,14 +76,14 @@ static std::vector<const char *> getRequiredInstanceExtensions() {
 	return ext_list;
 }
 
-static std::vector<const char *> getRequiredLayers() {
+static std::vector<const char *> getRequiredLayers(VulkanBackend &backend) {
 	if constexpr (!BuildConfig::kUseVulkanDebugging)
 		return {};
 
 	uint32_t available_count;
-	vkEnumerateInstanceLayerProperties(&available_count, nullptr);
+	backend.vkEnumerateInstanceLayerProperties(&available_count, nullptr);
 	std::vector<VkLayerProperties> available_props(available_count);
-	vkEnumerateInstanceLayerProperties(&available_count, available_props.data());
+	backend.vkEnumerateInstanceLayerProperties(&available_count, available_props.data());
 
 	std::vector<const char *> layer_list;
 	// Since layers are used only for debugging, we may just skip requesting
@@ -123,7 +123,7 @@ bool VulkanInstance::createInstance() {
 
 	// Fill VkInstanceCreateInfo
 	auto ext_list = getRequiredInstanceExtensions();
-	auto layer_list = getRequiredLayers();
+	auto layer_list = getRequiredLayers(m_backend);
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
@@ -132,7 +132,7 @@ bool VulkanInstance::createInstance() {
 	create_info.enabledLayerCount = uint32_t(layer_list.size());
 	create_info.ppEnabledLayerNames = layer_list.data();
 
-	VkResult result = vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = m_backend.vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		Log::error("vkCreateInstance failed: {}", getVkResultString(result));
 		return false;

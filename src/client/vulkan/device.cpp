@@ -12,7 +12,7 @@ VulkanDevice::VulkanDevice(VulkanBackend &backend) : m_backend(backend) {
 
 VulkanDevice::~VulkanDevice() noexcept {
 	Log::debug("Destroying VkDevice");
-	vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
+	m_backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
 }
 
 }

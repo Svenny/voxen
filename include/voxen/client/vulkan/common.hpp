@@ -2,6 +2,7 @@
 
 #include <voxen/util/exception.hpp>
 
+#define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
 #include <atomic>
