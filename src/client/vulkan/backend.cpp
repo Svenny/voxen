@@ -15,7 +15,7 @@ VulkanBackend::~VulkanBackend() noexcept {
 
 bool VulkanBackend::start() noexcept {
 	if (m_state != State::NotStarted) {
-		Log::warn("Vulkan backend is already started");
+		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
 		return true;
 	}
 
@@ -82,6 +82,22 @@ void VulkanBackend::stop() noexcept {
 
 	Log::info("Vulkan backend stopped");
 	m_state = State::NotStarted;
+}
+
+std::string_view VulkanBackend::stateToString(State state) noexcept {
+	using namespace std::literals;
+	switch (state) {
+	case State::NotStarted:
+		return "Not started"sv;
+	case State::Started:
+		return "Started"sv;
+	case State::DeviceLost:
+		return "Device lost"sv;
+	case State::SwapchainOutOfDate:
+		return "Swapchain out of date"sv;
+	default:
+		return "UNKNOWN STATE"sv;
+	}
 }
 
 bool VulkanBackend::loadPreInstanceApi() noexcept {

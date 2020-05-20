@@ -73,7 +73,7 @@ private:
 
 	// Previous tick id
 	std::uint64_t m_previous_tick_id;
-	client::Window* m_window;
+	client::Window& m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_got_left_mouse_click;

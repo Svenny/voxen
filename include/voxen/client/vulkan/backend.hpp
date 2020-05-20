@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
+#include <string_view>
+
 namespace voxen::client
 {
 
@@ -32,17 +34,17 @@ public:
 	VulkanInstance *instance() const noexcept { return m_instance; }
 	VulkanDevice *device() const noexcept { return m_device; }
 
-#define VK_INSTANCE_API_ENTRY(name) PFN_##name name = nullptr;
-#define VK_DEVICE_API_ENTRY(name) PFN_##name name = nullptr;
-#include <voxen/client/vulkan/api_table.in>
-#undef VK_DEVICE_API_ENTRY
-#undef VK_INSTANCE_API_ENTRY
+	// Declare pointers to Vulkan API entry points, moved
+	// into a separate file because of size and ugliness
+#include "api_table_declare.in"
 
 private:
 	State m_state = State::NotStarted;
 
 	VulkanInstance *m_instance = nullptr;
 	VulkanDevice *m_device = nullptr;
+
+	static std::string_view stateToString(State state) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
