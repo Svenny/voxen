@@ -81,6 +81,13 @@ int main (int argc, char *argv[]) {
 	Log::info("Starting Voxen {}", voxen::BuildConfig::kVersionString);
 
 	try {
+		// Voxen haven't positional arguments, so we need to check, that each argument starts with '-' prefix
+		for (int i = 1; i < argc; i++) {
+			auto view = std::string_view(argv[i]);
+			// Argument always have at least length >= 1, so don't check length
+			if (view[0] != '-')
+				throw voxen::FormattedMessageException("Using not existed argument {}", fmt::make_format_args(view));
+		}
 		cxxopts::Options options = initCli();
 		auto result = options.parse(argc, argv);
 		if (result.count("help")) {
