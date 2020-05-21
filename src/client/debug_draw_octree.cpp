@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace voxen
+namespace voxen::client
 {
 
 constexpr static VkDeviceSize k_vertex_size = 3 * 4;

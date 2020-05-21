@@ -16,7 +16,7 @@
 template <typename T, std::size_t N>
 constexpr std::size_t countof(T const (&)[N]) noexcept { return N; }
 
-namespace voxen
+namespace voxen::client
 {
 
 class VulkanImpl {
@@ -638,7 +638,7 @@ void VulkanImpl::endFrame() {
 }
 
 void VulkanImpl::requestInstanceLayers(VkInstanceCreateInfo &create_info) {
-	if (!BuildConfig::kUseVulkanLayers) {
+	if (!BuildConfig::kUseVulkanDebugging) {
 		create_info.enabledLayerCount = 0;
 		return;
 	}

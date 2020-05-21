@@ -1,0 +1,8 @@
+VK_INSTANCE_API_ENTRY(vkCreateInstance)
+VK_INSTANCE_API_ENTRY(vkDestroyInstance)
+VK_INSTANCE_API_ENTRY(vkEnumerateInstanceVersion)
+VK_INSTANCE_API_ENTRY(vkEnumerateInstanceExtensionProperties)
+VK_INSTANCE_API_ENTRY(vkEnumerateInstanceLayerProperties)
+VK_INSTANCE_API_ENTRY(vkDestroyDevice)
+VK_INSTANCE_API_ENTRY(vkGetDeviceProcAddr)
+VK_DEVICE_API_ENTRY(vkCreateBuffer)

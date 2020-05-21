@@ -1,13 +1,13 @@
 #include <voxen/client/window.hpp>
+#include <voxen/client/gui.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/common/gui.hpp>
 #include <voxen/common/config.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
-namespace voxen
+namespace voxen::client
 {
 
 Window Window::gInstance;
@@ -55,6 +55,8 @@ void Window::logGlfwVersion () const {
 }
 
 void Window::createWindow (int width, int height) {
+	using namespace std::literals;
+
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
@@ -62,7 +64,15 @@ void Window::createWindow (int width, int height) {
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
 	// TODO: this is a temporary hack to simplify Vulkan logic. Remove it
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);
-	mWindow = glfwCreateWindow (width, height, "Voxen", nullptr, nullptr);
+
+	Config *cfg = Config::mainConfig();
+	GLFWmonitor *monitor = nullptr;
+	if (cfg->optionBool("window"sv, "fullscreen"sv)) {
+		// TODO: add possibility select non-primary monitor?
+		monitor = glfwGetPrimaryMonitor();
+	}
+	mWindow = glfwCreateWindow (width, height, "Voxen", monitor, nullptr);
+
 	if (!mWindow) {
 		Log::fatal("Couldn't create window!");
 		glfwTerminate ();
@@ -74,7 +84,7 @@ void Window::glfwErrorCallback (int code, const char *message) noexcept {
 	Log::error("GLFW error {}:\n{}", code, message);
 }
 
-bool Window::attachGUI(voxen::Gui& gui)
+bool Window::attachGUI(Gui& gui)
 {
 	if (m_attached_gui != nullptr)
 		throw std::runtime_error ("try to attach gui to window, which already have another attached gui");

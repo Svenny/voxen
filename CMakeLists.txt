@@ -38,7 +38,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
 endif()
 
 
-bool_option(USE_VULKAN_LAYERS "Enable using Vulkan validation layers" OFF)
+bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation layers, debug extensions)" OFF)
 bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
 bool_option(DEPLOY_BUILD "Build for creating installable version of voxen" OFF)
 
@@ -48,7 +48,7 @@ add_subdirectory(3rdparty)
 # CMake target setup
 add_executable(voxen "")
 
-target_include_directories(voxen PUBLIC include 3rdparty/glm)
+target_include_directories(voxen PUBLIC include 3rdparty/glm 3rdparty/vulkan-headers)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)

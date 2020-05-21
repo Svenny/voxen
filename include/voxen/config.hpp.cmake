@@ -18,7 +18,7 @@ public:
 	constexpr static bool kIsDebugBuild = true;
 	constexpr static bool kIsReleaseBuild = false;
 #endif
-	constexpr static bool kUseVulkanLayers = @USE_VULKAN_LAYERS@;
+	constexpr static bool kUseVulkanDebugging = @USE_VULKAN_DEBUGGING@;
 	constexpr static bool kUseIntegratedGpu = @USE_INTEGRATED_GPU@;
 	constexpr static bool kIsDeployBuild = @DEPLOY_BUILD@;
 };

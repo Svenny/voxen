@@ -5,7 +5,7 @@
 
 struct GLFWwindow;
 
-namespace voxen
+namespace voxen::client
 {
 
 class Gui;

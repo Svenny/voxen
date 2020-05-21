@@ -4,7 +4,7 @@
 #include <voxen/client/debug_draw_octree.hpp>
 #include <voxen/common/player.hpp>
 
-namespace voxen
+namespace voxen::client
 {
 
 class VulkanRender {

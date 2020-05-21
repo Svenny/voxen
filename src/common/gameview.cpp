@@ -11,8 +11,8 @@
 
 using namespace voxen;
 
-GameView::GameView (Window& window):
-	m_previous_tick_id(-1), m_window(&window),
+GameView::GameView (client::Window& window):
+	m_previous_tick_id(-1), m_window(window),
 	m_is_got_left_mouse_click(false), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
 	m_height = window.height();
@@ -131,7 +131,7 @@ void GameView::resetKeyState() noexcept {
 void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept {
 	if (m_is_used_orientation_cursor) {
 		if (m_is_got_left_mouse_click) {
-			m_window->useRegularCursor();
+			m_window.useRegularCursor();
 			m_is_used_orientation_cursor = false;
 			m_is_got_left_mouse_click = false;
 			return;
@@ -196,11 +196,11 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		m_previous_tick_id = tick_id;
 	} else {
 		if (m_is_got_left_mouse_click) {
-			m_window->useOrientationCursor();
+			m_window.useOrientationCursor();
 			m_is_used_orientation_cursor = true;
 			m_is_got_left_mouse_click = false;
 
-			std::pair<double, double> pos = m_window->cursorPos();
+			std::pair<double, double> pos = m_window.cursorPos();
 			m_prev_xpos = pos.first;
 			m_prev_ypos = pos.second;
 		}
