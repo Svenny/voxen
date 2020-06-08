@@ -44,7 +44,7 @@ extern "C"
  * VKAPI_PTR  - Placed between the '(' and '*' in function pointer types.
  *
  * Function declaration:  VKAPI_ATTR void VKAPI_CALL vkCommand(void);
- * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void);
+ * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void) noexcept;
  */
 #if defined(_WIN32)
     // On Windows, Vulkan commands use the stdcall convention
