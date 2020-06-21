@@ -14,6 +14,8 @@ VulkanInstance::VulkanInstance(VulkanBackend &backend) : m_backend(backend) {
 		throw MessageException("unsupported or missing Vulkan driver");
 	if (!createInstance())
 		throw MessageException("failed to create Vulkan instance");
+	if (!backend.loadInstanceLevelApi(m_handle))
+		throw MessageException("failed to load instance-level Vulkan API");
 }
 
 VulkanInstance::~VulkanInstance() noexcept {

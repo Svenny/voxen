@@ -34,6 +34,9 @@ public:
 	VulkanInstance *instance() const noexcept { return m_instance; }
 	VulkanDevice *device() const noexcept { return m_device; }
 
+	bool loadInstanceLevelApi(VkInstance instance) noexcept;
+	bool loadDeviceLevelApi(VkDevice device) noexcept;
+
 	// Declare pointers to Vulkan API entry points, moved
 	// into a separate file because of size and ugliness
 #include "api_table_declare.in"
@@ -47,8 +50,6 @@ private:
 	static std::string_view stateToString(State state) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
-	bool loadInstanceLevelApi(VkInstance instance) noexcept;
-	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadApi() noexcept;
 };
 

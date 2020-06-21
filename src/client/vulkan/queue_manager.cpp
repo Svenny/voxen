@@ -125,19 +125,10 @@ std::vector<VkDeviceQueueCreateInfo> VulkanQueueManager::getCreateInfos() const 
 }
 
 void VulkanQueueManager::getHandles(VulkanBackend &backend, VkDevice device) {
-	// HACK: this method is called in `VulkanDevice` constructor just after
-	// creating VkDevice. Because control is not yet returned to VulkanBackend,
-	// device-level API is not loaded at this point. So here we have to do it ourselves.
-	auto fun = reinterpret_cast<PFN_vkGetDeviceQueue>(backend.vkGetDeviceProcAddr(device, "vkGetDeviceQueue"));
-	if (!fun) {
-		Log::error("Can't load vkGetDeviceQueue entry point");
-		throw MessageException("vkGetDeviceProcAddr failed");
-	}
-
-	fun(device, m_graphics_queue_family, 0, &m_graphics_queue);
-	fun(device, m_compute_queue_family, 0, &m_compute_queue);
-	fun(device, m_transfer_queue_family, 0, &m_transfer_queue);
-	fun(device, m_present_queue_family, 0, &m_present_queue);
+	backend.vkGetDeviceQueue(device, m_graphics_queue_family, 0, &m_graphics_queue);
+	backend.vkGetDeviceQueue(device, m_compute_queue_family, 0, &m_compute_queue);
+	backend.vkGetDeviceQueue(device, m_transfer_queue_family, 0, &m_transfer_queue);
+	backend.vkGetDeviceQueue(device, m_present_queue_family, 0, &m_present_queue);
 }
 
 }
