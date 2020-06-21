@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/client/vulkan/common.hpp>
+#include <voxen/client/window.hpp>
 
 #include <string_view>
 
@@ -9,6 +10,7 @@ namespace voxen::client
 
 class VulkanInstance;
 class VulkanDevice;
+class VulkanSwapchain;
 
 class VulkanBackend {
 public:
@@ -27,13 +29,14 @@ public:
 		SwapchainOutOfDate,
 	};
 
-	bool start() noexcept;
+	bool start(Window &window) noexcept;
 	void stop() noexcept;
 
 	State state() const noexcept { return m_state; }
 
 	VulkanInstance *instance() const noexcept { return m_instance; }
 	VulkanDevice *device() const noexcept { return m_device; }
+	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
@@ -47,6 +50,7 @@ private:
 
 	VulkanInstance *m_instance = nullptr;
 	VulkanDevice *m_device = nullptr;
+	VulkanSwapchain *m_swapchain = nullptr;
 
 	static std::string_view stateToString(State state) noexcept;
 
