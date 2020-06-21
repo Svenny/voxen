@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/swapchain.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -13,7 +14,7 @@ VulkanBackend::~VulkanBackend() noexcept {
 	stop();
 }
 
-bool VulkanBackend::start() noexcept {
+bool VulkanBackend::start(Window &window) noexcept {
 	if (m_state != State::NotStarted) {
 		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
 		return true;
@@ -32,6 +33,7 @@ bool VulkanBackend::start() noexcept {
 	try {
 		m_instance = new VulkanInstance(*this);
 		m_device = new VulkanDevice(*this);
+		m_swapchain = new VulkanSwapchain(*this, window);
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
@@ -63,6 +65,8 @@ void VulkanBackend::stop() noexcept {
 
 	Log::info("Stopping Vulkan backend");
 
+	delete m_swapchain;
+	m_swapchain = nullptr;
 	delete m_device;
 	m_device = nullptr;
 	delete m_instance;
