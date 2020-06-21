@@ -20,8 +20,8 @@ string(APPEND CMAKE_CXX_FLAGS " -fno-rtti")
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
    (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0))
 	# Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
-	string(APPEND CMAKE_C_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
-	string(APPEND CMAKE_CXX_FLAGS " -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=''")
+	string(APPEND CMAKE_C_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=''")
+	string(APPEND CMAKE_CXX_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=''")
 endif()
 
 # Enable filesystem, if needed

@@ -8,8 +8,6 @@
 
 #include <extras/dyn_array.hpp>
 
-#include <GLFW/glfw3.h>
-
 namespace voxen::client
 {
 
@@ -64,13 +62,19 @@ bool VulkanDevice::pickPhysicalDevice() {
 		Log::error("No suitable Vulkan physical device found in the system");
 		return false;
 	}
+
+	VkPhysicalDeviceProperties props;
+	m_backend.vkGetPhysicalDeviceProperties(m_phys_device, &props);
+	Log::info("Selected GPU is '{}'", props.deviceName);
+	uint32_t api = props.apiVersion;
+	Log::info("Vulkan device version is {}.{}.{}", VK_VERSION_MAJOR(api), VK_VERSION_MINOR(api), VK_VERSION_PATCH(api));
 	return true;
 }
 
 bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) {
 	VkPhysicalDeviceProperties props;
 	m_backend.vkGetPhysicalDeviceProperties(device, &props);
-	Log::debug("Found physical device '{}'", props.deviceName);
+	Log::debug("Trying GPU '{}'", props.deviceName);
 
 	// TODO: remove it when saving the selected GPU is available
 	if constexpr (BuildConfig::kUseIntegratedGpu) {
@@ -78,8 +82,7 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) {
 			Log::debug("'{}' is skipped because it's not an integrated GPU", props.deviceName);
 			return false;
 		}
-	}
-	else {
+	} else {
 		if (props.deviceType != VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 			Log::debug("'{}' is skipped because it's not a discrete GPU", props.deviceName);
 			return false;
@@ -95,13 +98,19 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) {
 		return false;
 	}
 
-	Log::info("Selected GPU is '{}'", props.deviceName);
 	return true;
 }
 
 std::vector<const char *> VulkanDevice::getRequiredDeviceExtensions() {
 	std::vector<const char *> ext_list;
-	// TODO: request something?
+
+	ext_list.emplace_back("VK_KHR_swapchain");
+
+	// TODO: warn about unsupported extensions?
+	if (!ext_list.empty())
+		Log::info("Requesting the following Vulkan device extensions:");
+	for (const char *name : ext_list)
+		Log::info("{}", name);
 	return ext_list;
 }
 
