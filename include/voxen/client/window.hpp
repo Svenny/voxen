@@ -25,6 +25,10 @@ public:
 
 	int width() const noexcept;
 	int height() const noexcept;
+	// Note: may be not equal to (width(), height()) because window
+	// size is measured in logical units while framebuffer is in pixels.
+	// See docs for `glfwGetWindowSize` and `glfwGetFramebufferSize`.
+	std::pair<int, int> framebufferSize() const noexcept;
 
 	std::pair<double, double> cursorPos() const noexcept;
 

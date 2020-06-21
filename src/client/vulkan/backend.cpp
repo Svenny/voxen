@@ -82,6 +82,8 @@ std::string_view VulkanBackend::stateToString(State state) noexcept {
 		return "Started"sv;
 	case State::DeviceLost:
 		return "Device lost"sv;
+	case State::SurfaceLost:
+		return "Surface lost"sv;
 	case State::SwapchainOutOfDate:
 		return "Swapchain out of date"sv;
 	default:
@@ -131,6 +133,7 @@ bool VulkanBackend::loadDeviceLevelApi(VkDevice device) noexcept {
 	name = reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(device, #name)); \
 	if (!name) { \
 		Log::warn("Can't load device-level Vulkan API {}", #name); \
+		is_ok = false; \
 	}
 
 	bool is_ok = true;

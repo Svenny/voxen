@@ -23,6 +23,7 @@ public:
 		NotStarted,
 		Started,
 		DeviceLost,
+		SurfaceLost,
 		SwapchainOutOfDate,
 	};
 

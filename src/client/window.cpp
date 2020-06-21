@@ -142,6 +142,13 @@ int Window::height() const noexcept
 	return height;
 }
 
+std::pair<int, int> Window::framebufferSize() const noexcept
+{
+	int width, height;
+	glfwGetFramebufferSize(mWindow, &width, &height);
+	return { width, height };
+}
+
 std::pair<double, double> Window::cursorPos() const noexcept
 {
 	double xpos, ypos;

@@ -20,6 +20,8 @@ public:
 	VkPhysicalDevice physDeviceHandle() const noexcept { return m_phys_device; }
 	VkDevice deviceHandle() const noexcept { return m_device; }
 	const VulkanQueueManager &queueManager() const noexcept { return m_queue_manager; }
+
+	operator VkDevice() const noexcept { return m_device; }
 private:
 	VulkanBackend &m_backend;
 	VkPhysicalDevice m_phys_device = VK_NULL_HANDLE;

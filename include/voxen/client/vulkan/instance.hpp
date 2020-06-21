@@ -19,6 +19,7 @@ public:
 	~VulkanInstance() noexcept;
 
 	VkInstance handle() const noexcept { return m_handle; }
+	operator VkInstance() const noexcept { return m_handle; }
 private:
 	VulkanBackend &m_backend;
 	VkInstance m_handle = VK_NULL_HANDLE;
