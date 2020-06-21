@@ -16,6 +16,7 @@ string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 # RTTI is only useful for dynamic_cast, which means a design flaw in 99,9% cases
 string(APPEND CMAKE_CXX_FLAGS " -fno-rtti")
+
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
    (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0))
 	# Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
@@ -37,10 +38,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING FORCE)
 endif()
 
-
 bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation layers, debug extensions)" OFF)
 bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
-bool_option(DEPLOY_BUILD "Build for creating installable version of voxen" OFF)
+bool_option(DEPLOY_BUILD "Build for creating installable version of Voxen" OFF)
 
 # Build external dependencies
 add_subdirectory(3rdparty)
@@ -48,7 +48,8 @@ add_subdirectory(3rdparty)
 # CMake target setup
 add_executable(voxen "")
 
-target_include_directories(voxen PUBLIC include 3rdparty/glm 3rdparty/vulkan-headers)
+target_include_directories(voxen PUBLIC 3rdparty/glm 3rdparty/vulkan-headers)
+target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)

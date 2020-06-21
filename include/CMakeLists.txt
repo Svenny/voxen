@@ -35,9 +35,10 @@ set(VOXEN_HEADERS
 	include/voxen/util/log.hpp
 )
 
+target_include_directories(voxen PUBLIC include)
 target_sources(voxen PUBLIC ${VOXEN_HEADERS} ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
 configure_file(include/voxen/config.hpp.cmake ${CMAKE_CURRENT_BINARY_DIR}/configs/voxen/config.hpp)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/configs)
+target_include_directories(voxen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/configs)
