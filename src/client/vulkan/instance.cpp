@@ -137,7 +137,7 @@ bool VulkanInstance::createInstance() {
 		Log::error("vkCreateInstance failed: {}", getVkResultString(result));
 		return false;
 	}
-	Log::debug("VkInstance constructed successfully");
+	Log::debug("VkInstance created successfully");
 	return true;
 }
 
