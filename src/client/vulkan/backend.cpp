@@ -31,18 +31,7 @@ bool VulkanBackend::start() noexcept {
 
 	try {
 		m_instance = new VulkanInstance(*this);
-		if (!loadInstanceLevelApi(m_instance->handle())) {
-			Log::error("Loading instance-level Vulkan API failed");
-			stop();
-			return false;
-		}
-
 		m_device = new VulkanDevice(*this);
-		if (!loadDeviceLevelApi(m_device->deviceHandle())) {
-			Log::error("Loading device-level Vulkan API failed");
-			stop();
-			return false;
-		}
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");

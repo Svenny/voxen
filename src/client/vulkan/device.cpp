@@ -18,6 +18,8 @@ VulkanDevice::VulkanDevice(VulkanBackend &backend) : m_backend(backend) {
 		throw MessageException("failed to pick Vulkan physical device");
 	if (!createLogicalDevice())
 		throw MessageException("failed to create Vulkan logical device");
+	if (!backend.loadDeviceLevelApi(m_device))
+		throw MessageException("failed to load device-level Vulkan API");
 	m_queue_manager.getHandles(backend, m_device);
 }
 
