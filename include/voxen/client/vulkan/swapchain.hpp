@@ -16,6 +16,13 @@ public:
 	~VulkanSwapchain();
 
 	void recreateSwapchain();
+
+	VkSurfaceKHR surfaceHandle() const noexcept { return m_surface; }
+	VkSwapchainKHR swapchainHandle() const noexcept { return m_swapchain; }
+	uint32_t numSwapchainImages() const noexcept { return uint32_t(m_swapchain_images.size()); }
+	VkImage swapchainImage(uint32_t idx) const noexcept { return m_swapchain_images[idx]; }
+
+	operator VkSwapchainKHR() const noexcept { return m_swapchain; }
 private:
 	VulkanBackend &m_backend;
 	Window &m_window;

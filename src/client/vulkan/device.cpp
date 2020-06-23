@@ -26,6 +26,12 @@ VulkanDevice::~VulkanDevice() noexcept {
 	m_backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
 }
 
+void VulkanDevice::waitIdle() {
+	VkResult result = m_backend.vkDeviceWaitIdle(m_device);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result);
+}
+
 bool VulkanDevice::pickPhysicalDevice() {
 	// This shouldn't be called in already constructed object
 	vxAssert(m_phys_device == VK_NULL_HANDLE);
@@ -76,6 +82,16 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) {
 	m_backend.vkGetPhysicalDeviceProperties(device, &props);
 	Log::debug("Trying GPU '{}'", props.deviceName);
 
+	auto api_version = std::make_pair(VK_VERSION_MAJOR(props.apiVersion),
+	                                  VK_VERSION_MINOR(props.apiVersion));
+	auto required_api_version = std::make_pair(VulkanInstance::kMinVulkanVersionMajor,
+	                                           VulkanInstance::kMinVulkanVersionMinor);
+	if (api_version < required_api_version) {
+		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}",
+		           api_version.first, api_version.second, required_api_version.first, required_api_version.second);
+		return false;
+	}
+
 	// TODO: remove it when saving the selected GPU is available
 	if constexpr (BuildConfig::kUseIntegratedGpu) {
 		if (props.deviceType != VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
@@ -104,7 +120,11 @@ bool VulkanDevice::isDeviceSuitable(VkPhysicalDevice device) {
 std::vector<const char *> VulkanDevice::getRequiredDeviceExtensions() {
 	std::vector<const char *> ext_list;
 
-	ext_list.emplace_back("VK_KHR_swapchain");
+	// It's dependency `VK_KHR_surface` is guaranteed to
+	// be satisfied by GLFW-provided required extensions list
+	ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	// It's dependency `VK_KHR_get_physical_device_properties2` is promoted to Vulkan 1.1
+	ext_list.emplace_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 
 	// TODO: warn about unsupported extensions?
 	if (!ext_list.empty())
