@@ -12,18 +12,22 @@ namespace voxen::client
 {
 
 VulkanDevice::VulkanDevice(VulkanBackend &backend) : m_backend(backend) {
+	Log::debug("Creating VulkanDevice");
 	if (!pickPhysicalDevice())
 		throw MessageException("failed to pick Vulkan physical device");
 	if (!createLogicalDevice())
 		throw MessageException("failed to create Vulkan logical device");
-	if (!backend.loadDeviceLevelApi(m_device))
+	if (!backend.loadDeviceLevelApi(m_device)) {
+		destroyDevice();
 		throw MessageException("failed to load device-level Vulkan API");
+	}
 	m_queue_manager.getHandles(backend, m_device);
+	Log::debug("VulkanDevice created successfully");
 }
 
 VulkanDevice::~VulkanDevice() noexcept {
-	Log::debug("Destroying VkDevice");
-	m_backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
+	Log::debug("Destroying VulkanDevice");
+	destroyDevice();
 }
 
 void VulkanDevice::waitIdle() {
@@ -161,8 +165,12 @@ bool VulkanDevice::createLogicalDevice() {
 		Log::error("vkCreateDevice failed: {}", getVkResultString(result));
 		return false;
 	}
-	Log::debug("VkDevice created successfully");
 	return true;
+}
+
+void VulkanDevice::destroyDevice() noexcept {
+	m_backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
+	m_backend.unloadDeviceLevelApi();
 }
 
 }

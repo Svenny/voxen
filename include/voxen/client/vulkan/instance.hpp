@@ -26,6 +26,7 @@ private:
 
 	bool checkVulkanSupport() const;
 	bool createInstance();
+	void destroyInstance() noexcept;
 };
 
 }

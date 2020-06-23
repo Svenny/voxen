@@ -35,6 +35,7 @@ private:
 	std::vector<const char *> getRequiredDeviceExtensions();
 	VkPhysicalDeviceFeatures getRequiredFeatures();
 	bool createLogicalDevice();
+	void destroyDevice() noexcept;
 };
 
 }

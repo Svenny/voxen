@@ -39,7 +39,9 @@ public:
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
+	void unloadInstanceLevelApi() noexcept;
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
+	void unloadDeviceLevelApi() noexcept;
 
 	// Declare pointers to Vulkan API entry points, moved
 	// into a separate file because of size and ugliness
@@ -55,7 +57,6 @@ private:
 	static std::string_view stateToString(State state) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
-	void unloadApi() noexcept;
 };
 
 }
