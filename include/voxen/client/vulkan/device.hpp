@@ -17,6 +17,8 @@ public:
 	VulkanDevice &operator = (const VulkanDevice &) = delete;
 	~VulkanDevice() noexcept;
 
+	void waitIdle();
+
 	VkPhysicalDevice physDeviceHandle() const noexcept { return m_phys_device; }
 	VkDevice deviceHandle() const noexcept { return m_device; }
 	const VulkanQueueManager &queueManager() const noexcept { return m_queue_manager; }

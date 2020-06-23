@@ -40,7 +40,7 @@ bool VulkanInstance::checkVulkanSupport() const {
 	uint32_t minor = VK_VERSION_MINOR(version);
 	uint32_t patch = VK_VERSION_PATCH(version);
 	Log::info("Vulkan instance version is {}.{}.{}", major, minor, patch);
-	if (major < kMinVulkanVersionMajor || (major == kMinVulkanVersionMajor && minor < kMinVulkanVersionMinor)) {
+	if (std::make_pair(major, minor) < std::make_pair(kMinVulkanVersionMajor, kMinVulkanVersionMinor)) {
 		Log::error("Vulkan instance version is lower than minimal supported {}.{}",
 		           kMinVulkanVersionMajor, kMinVulkanVersionMinor);
 		return false;
@@ -50,6 +50,7 @@ bool VulkanInstance::checkVulkanSupport() const {
 
 static std::vector<const char *> getRequiredInstanceExtensions() {
 	uint32_t glfw_ext_count = 0;
+	// GLFW guarantees that on success there will be `VK_KHR_surface` at least
 	const char **glfw_ext_list = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
 
 	std::vector<const char *> ext_list;
@@ -67,7 +68,7 @@ static std::vector<const char *> getRequiredInstanceExtensions() {
 	};
 
 	if constexpr (BuildConfig::kUseVulkanDebugging) {
-		addToList("VK_EXT_debug_utils");
+		addToList(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
 	// TODO: warn about unsupported extensions?
