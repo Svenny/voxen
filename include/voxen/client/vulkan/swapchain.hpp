@@ -13,7 +13,7 @@ public:
 	VulkanSwapchain(const VulkanSwapchain &) = delete;
 	VulkanSwapchain &operator = (VulkanSwapchain &&) = delete;
 	VulkanSwapchain &operator = (const VulkanSwapchain &) = delete;
-	~VulkanSwapchain();
+	~VulkanSwapchain() noexcept;
 
 	void recreateSwapchain();
 
@@ -31,10 +31,10 @@ private:
 	std::vector<VkImage> m_swapchain_images;
 
 	void createSurface();
-	void destroySurface();
+	void destroySurface() noexcept;
 	VkSurfaceFormatKHR pickSurfaceFormat();
 	VkPresentModeKHR pickPresentMode();
-	void destroySwapchain();
+	void destroySwapchain() noexcept;
 };
 
 }

@@ -65,13 +65,23 @@ void VulkanBackend::stop() noexcept {
 
 	Log::info("Stopping Vulkan backend");
 
+	// Finish all outstanding operations on VkDevice, if any. If device is lost, calling
+	// vkDeviceWaitIdle will return an error. Ignore it - device is to be destroyed anyway.
+	if (m_device) {
+		try {
+			m_device->waitIdle();
+		}
+		catch (const VulkanException &e) {
+			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", getVkResultString(e.result()));
+		}
+	}
+
 	delete m_swapchain;
 	m_swapchain = nullptr;
 	delete m_device;
 	m_device = nullptr;
 	delete m_instance;
 	m_instance = nullptr;
-	unloadApi();
 
 	Log::info("Vulkan backend stopped");
 	m_state = State::NotStarted;
@@ -132,6 +142,14 @@ bool VulkanBackend::loadInstanceLevelApi(VkInstance instance) noexcept {
 #undef TRY_LOAD
 }
 
+void VulkanBackend::unloadInstanceLevelApi() noexcept {
+#define VK_INSTANCE_API_ENTRY(name) name = nullptr;
+#define VK_DEVICE_API_ENTRY(name)
+#include <voxen/client/vulkan/api_table.in>
+#undef VK_DEVICE_API_ENTRY
+#undef VK_INSTANCE_API_ENTRY
+}
+
 bool VulkanBackend::loadDeviceLevelApi(VkDevice device) noexcept {
 #define TRY_LOAD(name) \
 	name = reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(device, #name)); \
@@ -151,8 +169,8 @@ bool VulkanBackend::loadDeviceLevelApi(VkDevice device) noexcept {
 #undef TRY_LOAD
 }
 
-void VulkanBackend::unloadApi() noexcept {
-#define VK_INSTANCE_API_ENTRY(name) name = nullptr;
+void VulkanBackend::unloadDeviceLevelApi() noexcept {
+#define VK_INSTANCE_API_ENTRY(name)
 #define VK_DEVICE_API_ENTRY(name) name = nullptr;
 #include <voxen/client/vulkan/api_table.in>
 #undef VK_DEVICE_API_ENTRY

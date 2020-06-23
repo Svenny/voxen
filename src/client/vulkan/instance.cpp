@@ -10,17 +10,22 @@ namespace voxen::client
 {
 
 VulkanInstance::VulkanInstance(VulkanBackend &backend) : m_backend(backend) {
+	Log::debug("Creating VulkanInstance");
 	if (!checkVulkanSupport())
 		throw MessageException("unsupported or missing Vulkan driver");
 	if (!createInstance())
 		throw MessageException("failed to create Vulkan instance");
-	if (!backend.loadInstanceLevelApi(m_handle))
+	if (!backend.loadInstanceLevelApi(m_handle)) {
+		// Assuming at least vkDestroyInstance was found...
+		destroyInstance();
 		throw MessageException("failed to load instance-level Vulkan API");
+	}
+	Log::debug("VulkanInstance created successfully");
 }
 
 VulkanInstance::~VulkanInstance() noexcept {
-	Log::debug("Destroying VkInstance");
-	m_backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
+	Log::debug("Destroying VulkanInstance");
+	destroyInstance();
 }
 
 bool VulkanInstance::checkVulkanSupport() const {
@@ -140,8 +145,12 @@ bool VulkanInstance::createInstance() {
 		Log::error("vkCreateInstance failed: {}", getVkResultString(result));
 		return false;
 	}
-	Log::debug("VkInstance created successfully");
 	return true;
+}
+
+void VulkanInstance::destroyInstance() noexcept {
+	m_backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
+	m_backend.unloadInstanceLevelApi();
 }
 
 }

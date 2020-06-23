@@ -14,13 +14,14 @@ namespace voxen::client
 VulkanSwapchain::VulkanSwapchain(VulkanBackend &backend, Window &window)
 	: m_backend(backend), m_window(window)
 {
+	Log::debug("Creating VulkanSwapchain");
 	createSurface();
 	defer_fail { destroySurface(); };
 	recreateSwapchain();
 	Log::debug("VulkanSwapchain created successfully");
 }
 
-VulkanSwapchain::~VulkanSwapchain()
+VulkanSwapchain::~VulkanSwapchain() noexcept
 {
 	Log::debug("Destroying VulkanSwapchain");
 	destroySwapchain();
@@ -30,8 +31,6 @@ VulkanSwapchain::~VulkanSwapchain()
 void VulkanSwapchain::recreateSwapchain()
 {
 	VkPhysicalDevice phys_device = m_backend.device()->physDeviceHandle();
-	VkDevice device = m_backend.device()->deviceHandle();
-	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkSurfaceCapabilitiesKHR caps;
 	VkResult result = m_backend.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_device, m_surface, &caps);
@@ -62,10 +61,8 @@ void VulkanSwapchain::recreateSwapchain()
 	}
 	Log::debug("Requesting at least {} swapchain images", num_images);
 
-	VkSurfaceFormatKHR surface_format = pickSurfaceFormat();
-	VkPresentModeKHR present_mode = pickPresentMode();
-
 	// Fill VkSwapchainCreateInfoKHR
+	VkSurfaceFormatKHR surface_format = pickSurfaceFormat();
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	info.surface = m_surface;
@@ -81,13 +78,22 @@ void VulkanSwapchain::recreateSwapchain()
 	info.pQueueFamilyIndices = nullptr;
 	info.preTransform = caps.currentTransform;
 	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	info.presentMode = present_mode;
+	info.presentMode = pickPresentMode();
 	info.clipped = VK_TRUE;
 	info.oldSwapchain = m_swapchain;
 
+	VkDevice device = m_backend.device()->deviceHandle();
+	auto allocator = VulkanHostAllocator::callbacks();
+	VkSwapchainKHR old_swapchain = m_swapchain;
+
 	result = m_backend.vkCreateSwapchainKHR(device, &info, allocator, &m_swapchain);
-	if (result != VK_SUCCESS)
+	// Old swapchain is retired and should be destroyed in any case
+	m_backend.vkDestroySwapchainKHR(device, old_swapchain, allocator);
+	m_swapchain_images.clear();
+	if (result != VK_SUCCESS) {
+		m_swapchain = VK_NULL_HANDLE;
 		throw VulkanException(result);
+	}
 	defer_fail { destroySwapchain(); };
 
 	result = m_backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, nullptr);
@@ -110,9 +116,23 @@ void VulkanSwapchain::createSurface()
 	VkResult result = glfwCreateWindowSurface(instance, window, allocator, &m_surface);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result);
+	defer_fail { destroySurface(); };
+
+	// Present support should've been checked in VulkanQueueManager when
+	// looking for a present queue family, so it's maybe a double check
+	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
+	uint32_t family = m_backend.device()->queueManager().presentQueueFamily();
+	VkBool32 supported;
+	result = m_backend.vkGetPhysicalDeviceSurfaceSupportKHR(device, family, m_surface, &supported);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result);
+	if (!supported) {
+		Log::error("Selected GPU can't present to this window surface (GLFW bug?)");
+		throw MessageException("physical device can't present to window surface");
+	}
 }
 
-void VulkanSwapchain::destroySurface()
+void VulkanSwapchain::destroySurface() noexcept
 {
 	m_backend.vkDestroySurfaceKHR(*m_backend.instance(), m_surface, VulkanHostAllocator::callbacks());
 }
@@ -168,7 +188,7 @@ VkPresentModeKHR VulkanSwapchain::pickPresentMode()
 	throw MessageException("failed to find suitable present mode");
 }
 
-void VulkanSwapchain::destroySwapchain()
+void VulkanSwapchain::destroySwapchain() noexcept
 {
 	m_backend.vkDestroySwapchainKHR(m_backend.device()->deviceHandle(), m_swapchain, VulkanHostAllocator::callbacks());
 	m_swapchain = VK_NULL_HANDLE;
