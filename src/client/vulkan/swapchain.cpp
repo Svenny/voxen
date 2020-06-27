@@ -61,14 +61,16 @@ void VulkanSwapchain::recreateSwapchain()
 	}
 	Log::debug("Requesting at least {} swapchain images", num_images);
 
+	pickSurfaceFormat();
+	pickPresentMode();
+
 	// Fill VkSwapchainCreateInfoKHR
-	VkSurfaceFormatKHR surface_format = pickSurfaceFormat();
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	info.surface = m_surface;
 	info.minImageCount = num_images;
-	info.imageFormat = surface_format.format;
-	info.imageColorSpace = surface_format.colorSpace;
+	info.imageFormat = m_surface_format.format;
+	info.imageColorSpace = m_surface_format.colorSpace;
 	info.imageExtent = caps.currentExtent;
 	info.imageArrayLayers = 1;
 	// TODO: is that all?
@@ -78,7 +80,7 @@ void VulkanSwapchain::recreateSwapchain()
 	info.pQueueFamilyIndices = nullptr;
 	info.preTransform = caps.currentTransform;
 	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	info.presentMode = pickPresentMode();
+	info.presentMode = m_present_mode;
 	info.clipped = VK_TRUE;
 	info.oldSwapchain = m_swapchain;
 
@@ -137,7 +139,7 @@ void VulkanSwapchain::destroySurface() noexcept
 	m_backend.vkDestroySurfaceKHR(*m_backend.instance(), m_surface, VulkanHostAllocator::callbacks());
 }
 
-VkSurfaceFormatKHR VulkanSwapchain::pickSurfaceFormat()
+void VulkanSwapchain::pickSurfaceFormat()
 {
 	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
 	VkResult result;
@@ -155,14 +157,16 @@ VkSurfaceFormatKHR VulkanSwapchain::pickSurfaceFormat()
 		throw VulkanException(result);
 
 	for (auto format : formats) {
-		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-			return format;
+		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			m_surface_format = format;
+			return;
+		}
 	}
 	Log::error("Surface format BGRA8_SRGB not found");
 	throw MessageException("failed to find suitable surface format");
 }
 
-VkPresentModeKHR VulkanSwapchain::pickPresentMode()
+void VulkanSwapchain::pickPresentMode()
 {
 	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
 	VkResult result;
@@ -181,8 +185,10 @@ VkPresentModeKHR VulkanSwapchain::pickPresentMode()
 
 	// TODO: support configurable/runtime-changeable present modes?
 	for (auto mode : modes) {
-		if (mode == VK_PRESENT_MODE_FIFO_KHR)
-			return mode;
+		if (mode == VK_PRESENT_MODE_FIFO_KHR) {
+			m_present_mode = mode;
+			return;
+		}
 	}
 	Log::error("Present mode VK_PRESENT_MODE_FIFO_KHR not found");
 	throw MessageException("failed to find suitable present mode");
