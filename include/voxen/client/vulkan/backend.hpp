@@ -11,6 +11,7 @@ namespace voxen::client
 class VulkanInstance;
 class VulkanDevice;
 class VulkanSwapchain;
+class VulkanRenderPassCollection;
 
 class VulkanBackend {
 public:
@@ -30,6 +31,7 @@ public:
 	VulkanInstance *instance() const noexcept { return m_instance; }
 	VulkanDevice *device() const noexcept { return m_device; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
+	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -53,6 +55,7 @@ private:
 	VulkanInstance *m_instance = nullptr;
 	VulkanDevice *m_device = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;
+	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
 
 	static VulkanBackend s_instance;
 

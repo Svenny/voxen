@@ -21,6 +21,8 @@ public:
 	VkSwapchainKHR swapchainHandle() const noexcept { return m_swapchain; }
 	uint32_t numSwapchainImages() const noexcept { return uint32_t(m_swapchain_images.size()); }
 	VkImage swapchainImage(uint32_t idx) const noexcept { return m_swapchain_images[idx]; }
+	VkSurfaceFormatKHR surfaceFormat() const noexcept { return m_surface_format; }
+	VkPresentModeKHR presentMode() const noexcept { return m_present_mode; }
 
 	operator VkSwapchainKHR() const noexcept { return m_swapchain; }
 private:
@@ -29,11 +31,13 @@ private:
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
 	std::vector<VkImage> m_swapchain_images;
+	VkSurfaceFormatKHR m_surface_format;
+	VkPresentModeKHR m_present_mode;
 
 	void createSurface();
 	void destroySurface() noexcept;
-	VkSurfaceFormatKHR pickSurfaceFormat();
-	VkPresentModeKHR pickPresentMode();
+	void pickSurfaceFormat();
+	void pickPresentMode();
 	void destroySwapchain() noexcept;
 };
 
