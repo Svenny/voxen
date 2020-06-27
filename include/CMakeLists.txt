@@ -7,7 +7,8 @@ set(EXTRAS_HEADERS
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer_manager.hpp
-	include/voxen/client/vulkan/command_manager.hpp
+	include/voxen/client/vulkan/command_buffer.hpp
+	include/voxen/client/vulkan/command_pool.hpp
 	include/voxen/client/vulkan/common.hpp
 	include/voxen/client/vulkan/descriptor_manager.hpp
 	include/voxen/client/vulkan/device.hpp
