@@ -27,6 +27,8 @@ public:
 	~VulkanCommandBuffer() = default;
 
 	void reset(bool release_resources = false);
+	void begin(const VkCommandBufferBeginInfo &info);
+	void end();
 
 	State state() const noexcept { return m_state; }
 

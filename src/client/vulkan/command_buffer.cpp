@@ -20,4 +20,24 @@ void VulkanCommandBuffer::reset(bool release_resources) {
 	m_state = State::Initial;
 }
 
+void VulkanCommandBuffer::begin(const VkCommandBufferBeginInfo &info) {
+	vxAssert(m_state != State::Recording && m_state != State::Pending);
+
+	VkResult result = VulkanBackend::backend().vkBeginCommandBuffer(m_cmd_buffer, &info);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result);
+	m_state = State::Recording;
+}
+
+void VulkanCommandBuffer::end() {
+	vxAssert(m_state == State::Recording);
+
+	VkResult result = VulkanBackend::backend().vkEndCommandBuffer(m_cmd_buffer);
+	if (result != VK_SUCCESS) {
+		m_state = State::Invalid;
+		throw VulkanException(result);
+	}
+	m_state = State::Executable;
+}
+
 }
