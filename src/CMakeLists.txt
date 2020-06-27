@@ -1,7 +1,8 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer_manager.cpp
-	src/client/vulkan/command_manager.cpp
+	src/client/vulkan/command_buffer.cpp
+	src/client/vulkan/command_pool.cpp
 	src/client/vulkan/common.cpp
 	src/client/vulkan/descriptor_manager.cpp
 	src/client/vulkan/device.cpp
