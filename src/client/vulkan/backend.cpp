@@ -3,6 +3,7 @@
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
+#include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -10,8 +11,16 @@
 namespace voxen::client
 {
 
+VulkanBackend VulkanBackend::s_instance;
+
 VulkanBackend::~VulkanBackend() noexcept {
-	stop();
+	// Backend shouldn't be left in non-stopped state at program termination, should it?
+	vxAssert(m_state == State::NotStarted);
+	// But if assertions are disabled...
+	if (m_state != State::NotStarted) {
+		Log::warn("VulkanBackend left in non-stopped state [{}]!", stateToString(m_state));
+		stop();
+	}
 }
 
 bool VulkanBackend::start(Window &window) noexcept {
