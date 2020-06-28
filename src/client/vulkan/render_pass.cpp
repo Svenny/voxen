@@ -80,14 +80,22 @@ VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
 	subpass_desc.pColorAttachments = &color_buffer_ref;
 	subpass_desc.pDepthStencilAttachment = &depth_stencil_buffer_ref;
 
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	VkRenderPassCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	info.attachmentCount = 2;
 	info.pAttachments = attachments;
 	info.subpassCount = 1;
 	info.pSubpasses = &subpass_desc;
-	info.dependencyCount = 0;
-	info.pDependencies = nullptr;
+	info.dependencyCount = 1;
+	info.pDependencies = &dependency;
 	return VulkanRenderPass(info);
 }
 

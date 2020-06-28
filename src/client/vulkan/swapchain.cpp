@@ -44,10 +44,12 @@ void VulkanSwapchain::recreateSwapchain()
 	} else if (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
 		auto[width, height] = m_window.framebufferSize();
-		caps.currentExtent.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
-		caps.currentExtent.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
+		m_surface_extent.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
+		m_surface_extent.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
+	} else {
+		m_surface_extent = caps.currentExtent;
 	}
-	Log::info("Requesting {}x{} swapchain images", caps.currentExtent.width, caps.currentExtent.height);
+	Log::info("Requesting {}x{} swapchain images", m_surface_extent.width, m_surface_extent.height);
 
 	// Select the number of swapchain images
 	// TODO: support selecting 2/3?
@@ -71,7 +73,7 @@ void VulkanSwapchain::recreateSwapchain()
 	info.minImageCount = num_images;
 	info.imageFormat = m_surface_format.format;
 	info.imageColorSpace = m_surface_format.colorSpace;
-	info.imageExtent = caps.currentExtent;
+	info.imageExtent = m_surface_extent;
 	info.imageArrayLayers = 1;
 	// TODO: is that all?
 	info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

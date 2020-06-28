@@ -129,6 +129,10 @@ std::vector<const char *> VulkanDevice::getRequiredDeviceExtensions() {
 	ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	// It's dependency `VK_KHR_get_physical_device_properties2` is promoted to Vulkan 1.1
 	ext_list.emplace_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+	// It's promoted to Vulkan 1.2, but we need to support 1.1
+	ext_list.emplace_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+	// It's promoted to Vulkan 1.2, but we need to support 1.1
+	ext_list.emplace_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
 	// TODO: warn about unsupported extensions?
 	if (!ext_list.empty())
@@ -138,27 +142,29 @@ std::vector<const char *> VulkanDevice::getRequiredDeviceExtensions() {
 	return ext_list;
 }
 
-VkPhysicalDeviceFeatures VulkanDevice::getRequiredFeatures() {
-	VkPhysicalDeviceFeatures features = {};
-	// TODO: request something?
-	return features;
-}
-
 bool VulkanDevice::createLogicalDevice() {
 	// This shouldn't be called in already constructed object
 	vxAssert(m_device == VK_NULL_HANDLE);
 
+	// Fill VkPhysicalDevice*Features
+	VkPhysicalDeviceImagelessFramebufferFeatures imageless_features = {};
+	imageless_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
+	imageless_features.imagelessFramebuffer = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 features = {};
+	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	features.pNext = &imageless_features;
+
 	// Fill VkDeviceCreateInfo
 	auto queue_create_infos = m_queue_manager.getCreateInfos();
 	auto ext_list = getRequiredDeviceExtensions();
-	auto required_features = getRequiredFeatures();
 	VkDeviceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	create_info.pNext = &features;
 	create_info.queueCreateInfoCount = uint32_t(queue_create_infos.size());
 	create_info.pQueueCreateInfos = queue_create_infos.data();
 	create_info.enabledExtensionCount = uint32_t(ext_list.size());
 	create_info.ppEnabledExtensionNames = ext_list.data();
-	create_info.pEnabledFeatures = &required_features;
 
 	VkResult result = m_backend.vkCreateDevice(m_phys_device, &create_info, VulkanHostAllocator::callbacks(), &m_device);
 	if (result != VK_SUCCESS) {

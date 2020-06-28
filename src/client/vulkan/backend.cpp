@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
@@ -46,6 +47,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_device = new VulkanDevice(*this);
 		m_swapchain = new VulkanSwapchain(*this, window);
 		m_render_pass_collection = new VulkanRenderPassCollection;
+		m_framebuffer_collection = new VulkanFramebufferCollection;
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
@@ -88,6 +90,8 @@ void VulkanBackend::stop() noexcept {
 		}
 	}
 
+	delete m_framebuffer_collection;
+	m_framebuffer_collection = nullptr;
 	delete m_render_pass_collection;
 	m_render_pass_collection = nullptr;
 	delete m_swapchain;
