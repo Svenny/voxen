@@ -7,7 +7,7 @@ namespace voxen::client
 
 // TODO: check for physical device support (tiling/usage bits)
 // TODO: factor it out to attachments collection?
-constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D24_UNORM_S8_UINT;
+inline constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D24_UNORM_S8_UINT;
 
 class VulkanRenderPass {
 public:

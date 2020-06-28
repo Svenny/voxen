@@ -33,7 +33,6 @@ private:
 	bool pickPhysicalDevice();
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	std::vector<const char *> getRequiredDeviceExtensions();
-	VkPhysicalDeviceFeatures getRequiredFeatures();
 	bool createLogicalDevice();
 	void destroyDevice() noexcept;
 };

@@ -12,6 +12,7 @@ class VulkanInstance;
 class VulkanDevice;
 class VulkanSwapchain;
 class VulkanRenderPassCollection;
+class VulkanFramebufferCollection;
 
 class VulkanBackend {
 public:
@@ -32,6 +33,7 @@ public:
 	VulkanDevice *device() const noexcept { return m_device; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
+	VulkanFramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -56,6 +58,7 @@ private:
 	VulkanDevice *m_device = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;
 	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
+	VulkanFramebufferCollection *m_framebuffer_collection = nullptr;
 
 	static VulkanBackend s_instance;
 
