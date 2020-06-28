@@ -15,6 +15,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader.cpp
 	src/client/vulkan/swapchain.cpp
+	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
 	src/client/vulkan/vulkan_render.cpp
 	src/client/debug_draw_octree.cpp
