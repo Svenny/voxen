@@ -21,7 +21,7 @@ VulkanShaderModule::VulkanShaderModule(const char *path) {
 		throw MessageException("null pointer");
 	}
 
-	Log::debug("Loading shader `{}`", path);
+	Log::debug("Loading shader module `{}`", path);
 	// TODO: handle EINTR
 	int fd = open(path, O_RDONLY);
 	if (fd < 0)
@@ -54,6 +54,14 @@ VulkanShaderModule::~VulkanShaderModule() noexcept {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyShaderModule(device, m_shader_module, VulkanHostAllocator::callbacks());
+}
+
+VulkanShaderModuleCollection::VulkanShaderModuleCollection() :
+// TODO: use proper paths
+	m_debug_octree_vertex("vert.spv"),
+	m_debug_octree_fragment("frag.spv")
+{
+	Log::debug("VulkanShaderModuleCollection created sucessfully");
 }
 
 }
