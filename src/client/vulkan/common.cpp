@@ -6,13 +6,18 @@
 namespace voxen::client
 {
 
-VulkanException::VulkanException(VkResult result, const std::experimental::source_location &loc)
+VulkanException::VulkanException(VkResult result, const char *api, const std::experimental::source_location &loc)
    : Exception(loc), m_result(result) {
-	m_message = "Vulkan error: ";
-	m_message += getVkResultString(result);
-	m_message += " (";
-	m_message += getVkResultDescription(result);
-	m_message += ")";
+	// TODO: not exception-safe
+	const char *err = getVkResultString(result);
+	const char *desc = getVkResultDescription(result);
+	if (api) {
+		Log::error("{} failed with error code {}", err, loc);
+		m_message = fmt::format("{} failed: {} ({})", api, err, desc);
+	} else {
+		Log::error("Vulkan API call failed with error code {}", err, loc);
+		m_message = fmt::format("Vulkan error: {} ({})", err, desc);
+	}
 }
 
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,

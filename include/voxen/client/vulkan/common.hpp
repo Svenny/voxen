@@ -16,7 +16,7 @@ const char *getVkResultDescription(VkResult result) noexcept;
 
 class VulkanException : public Exception {
 public:
-	explicit VulkanException(VkResult result, const std::experimental::source_location &loc =
+	explicit VulkanException(VkResult result, const char *api = nullptr, const std::experimental::source_location &loc =
 	      std::experimental::source_location::current());
 	virtual ~VulkanException() override = default;
 

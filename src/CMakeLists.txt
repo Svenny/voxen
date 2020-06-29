@@ -14,6 +14,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/queue_manager.cpp
 	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader.cpp
+	src/client/vulkan/shader_module.cpp
 	src/client/vulkan/swapchain.cpp
 	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp

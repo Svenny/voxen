@@ -16,7 +16,7 @@ public:
 
 	operator VkSemaphore() const noexcept { return m_semaphore; }
 private:
-	VkSemaphore m_semaphore;
+	VkSemaphore m_semaphore = VK_NULL_HANDLE;
 };
 
 class VulkanFence {
@@ -30,7 +30,7 @@ public:
 
 	operator VkFence() const noexcept { return  m_fence; }
 private:
-	VkFence m_fence;
+	VkFence m_fence = VK_NULL_HANDLE;
 };
 
 }

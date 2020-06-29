@@ -20,6 +20,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/queue_manager.hpp
 	include/voxen/client/vulkan/render_pass.hpp
 	include/voxen/client/vulkan/shader.hpp
+	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/vulkan/swapchain.hpp
 	include/voxen/client/vulkan/sync.hpp
 	include/voxen/client/vulkan/texture_manager.hpp
