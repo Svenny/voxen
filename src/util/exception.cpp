@@ -1,5 +1,7 @@
 #include <voxen/util/exception.hpp>
 
+#include <voxen/util/log.hpp>
+
 #include <fmt/format.h>
 
 #include <cstring>
@@ -14,10 +16,17 @@ Exception::Exception(const std::experimental::source_location &loc) : m_where(lo
 	// TODO: this is the best place to print stack trace
 }
 
-ErrnoException::ErrnoException(int code, const std::experimental::source_location &loc)
+ErrnoException::ErrnoException(int code, const char *api, const std::experimental::source_location &loc)
    : Exception(loc) {
+	// TODO: not exception-safe
 	char buf[1024];
-	m_message = fmt::format("Error code {}: {}", code, strerror_r(code, buf, 1024));
+	const char *description = strerror_r(code, buf, 1024);
+	if (api) {
+		Log::error("{} failed with error code {} ({})", api, code, description, loc);
+		m_message = fmt::format("Error code {}: {}", code, description);
+	} else {
+		m_message = fmt::format("Error code {}: {}", code, description);
+	}
 }
 
 FormattedMessageException::FormattedMessageException(

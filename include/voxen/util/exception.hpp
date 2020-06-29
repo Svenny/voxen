@@ -45,7 +45,7 @@ protected:
 
 class ErrnoException : public Exception {
 public:
-	explicit ErrnoException(int code, const std::experimental::source_location &loc =
+	explicit ErrnoException(int code, const char *api = nullptr, const std::experimental::source_location &loc =
 	      std::experimental::source_location::current());
 	virtual ~ErrnoException() override = default;
 
