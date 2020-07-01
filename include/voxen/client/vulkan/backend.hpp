@@ -16,6 +16,7 @@ class VulkanFramebufferCollection;
 class VulkanShaderModuleCollection;
 class VulkanPipelineCache;
 class VulkanPipelineLayoutCollection;
+class VulkanPipelineCollection;
 
 class VulkanBackend {
 public:
@@ -40,6 +41,7 @@ public:
 	VulkanShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
 	VulkanPipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
 	VulkanPipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
+	VulkanPipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -68,6 +70,7 @@ private:
 	VulkanShaderModuleCollection *m_shader_module_collection = nullptr;
 	VulkanPipelineCache *m_pipeline_cache = nullptr;
 	VulkanPipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
+	VulkanPipelineCollection *m_pipeline_collection = nullptr;
 
 	static VulkanBackend s_instance;
 

@@ -3,6 +3,7 @@
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
+#include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
@@ -54,6 +55,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_shader_module_collection = new VulkanShaderModuleCollection;
 		m_pipeline_cache = new VulkanPipelineCache("pipeline.cache");
 		m_pipeline_layout_collection = new VulkanPipelineLayoutCollection;
+		m_pipeline_collection = new VulkanPipelineCollection;
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
@@ -96,6 +98,8 @@ void VulkanBackend::stop() noexcept {
 		}
 	}
 
+	delete m_pipeline_collection;
+	m_pipeline_collection = nullptr;
 	delete m_pipeline_layout_collection;
 	m_pipeline_layout_collection = nullptr;
 	delete m_pipeline_cache;
