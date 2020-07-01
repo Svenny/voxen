@@ -14,6 +14,7 @@ class VulkanSwapchain;
 class VulkanRenderPassCollection;
 class VulkanFramebufferCollection;
 class VulkanShaderModuleCollection;
+class VulkanPipelineCache;
 
 class VulkanBackend {
 public:
@@ -36,6 +37,7 @@ public:
 	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
 	VulkanFramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
 	VulkanShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
+	VulkanPipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -62,6 +64,7 @@ private:
 	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
 	VulkanFramebufferCollection *m_framebuffer_collection = nullptr;
 	VulkanShaderModuleCollection *m_shader_module_collection = nullptr;
+	VulkanPipelineCache *m_pipeline_cache = nullptr;
 
 	static VulkanBackend s_instance;
 
