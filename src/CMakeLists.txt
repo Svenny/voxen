@@ -7,6 +7,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/descriptor_manager.cpp
 	src/client/vulkan/device.cpp
 	src/client/vulkan/framebuffer.cpp
+	src/client/vulkan/image_view.cpp
 	src/client/vulkan/instance.cpp
 	src/client/vulkan/memory_allocator.cpp
 	src/client/vulkan/pipeline.cpp
