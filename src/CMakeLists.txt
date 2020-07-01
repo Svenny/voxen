@@ -9,8 +9,8 @@ set(VOXEN_SOURCES
 	src/client/vulkan/framebuffer.cpp
 	src/client/vulkan/instance.cpp
 	src/client/vulkan/memory_allocator.cpp
+	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
-	src/client/vulkan/pipeline_manager.cpp
 	src/client/vulkan/queue_manager.cpp
 	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader.cpp
@@ -31,6 +31,7 @@ set(VOXEN_SOURCES
 	src/common/config.cpp
 	src/util/assert.cpp
 	src/util/exception.cpp
+	src/util/file.cpp
 	src/util/log.cpp
 	src/main.cpp
 )

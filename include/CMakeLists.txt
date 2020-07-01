@@ -15,8 +15,8 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/instance.hpp
 	include/voxen/client/vulkan/memory_allocator.hpp
+	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
-	include/voxen/client/vulkan/pipeline_manager.hpp
 	include/voxen/client/vulkan/queue_manager.hpp
 	include/voxen/client/vulkan/render_pass.hpp
 	include/voxen/client/vulkan/shader.hpp
@@ -37,6 +37,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/config.hpp
 	include/voxen/util/assert.hpp
 	include/voxen/util/exception.hpp
+	include/voxen/util/file.hpp
 	include/voxen/util/log.hpp
 )
 
