@@ -1,0 +1,77 @@
+#include <voxen/client/vulkan/pipeline_cache.hpp>
+
+#include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/device.hpp>
+
+#include <voxen/util/file.hpp>
+#include <voxen/util/log.hpp>
+
+#include <extras/defer.hpp>
+
+#include <cstdlib>
+
+namespace voxen::client
+{
+
+inline constexpr size_t MAX_PIPELINE_CACHE_SIZE = 1 << 25; // 32 MB
+
+VulkanPipelineCache::VulkanPipelineCache(const char *path) : m_save_path(path) {
+	Log::debug("Creating VulkanPipelineCache");
+	if (path)
+		Log::debug("Trying to preinitialize pipeline cache from `{}`", path);
+	auto cache_data = FileUtils::readFile(path);
+
+	VkPipelineCacheCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	if (cache_data.has_value()) {
+		auto &data = cache_data.value();
+		info.initialDataSize = data.size();
+		info.pInitialData = data.data();
+	}
+
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
+	VkResult result = backend.vkCreatePipelineCache(device, &info, VulkanHostAllocator::callbacks(), &m_cache);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result, "vkCreatePipelineCache");
+	Log::debug("VulkanPipelineCache created successfully");
+}
+
+bool VulkanPipelineCache::dump() noexcept {
+	if (m_save_path.empty())
+		return false;
+
+	// malloc is used for noexcept behavior
+	void *buffer = malloc(MAX_PIPELINE_CACHE_SIZE);
+	if (!buffer) {
+		Log::warn("Out of memory when saving pipeline cache");
+		return false;
+	}
+	defer { free(buffer); };
+
+	size_t buffer_size = MAX_PIPELINE_CACHE_SIZE;
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
+	VkResult result = backend.vkGetPipelineCacheData(device, m_cache, &buffer_size, buffer);
+	if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
+		Log::warn("Vulkan API error when saving pipeline cache: {}", getVkResultString(result));
+		return false;
+	} else if (result == VK_INCOMPLETE) {
+		size_t full_size;
+		result = backend.vkGetPipelineCacheData(device, m_cache, &full_size, nullptr);
+	}
+
+	Log::debug("Saving {} bytes of pipeline cache data to {}", buffer_size, m_save_path);
+	return FileUtils::writeFile(m_save_path.c_str(), buffer, buffer_size);
+}
+
+VulkanPipelineCache::~VulkanPipelineCache() noexcept {
+	Log::debug("Destroying VulkanPipelineCache");
+	dump();
+
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
+	backend.vkDestroyPipelineCache(device, m_cache, VulkanHostAllocator::callbacks());
+}
+
+}
