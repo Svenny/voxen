@@ -11,6 +11,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/memory_allocator.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
+	src/client/vulkan/pipeline_layout.cpp
 	src/client/vulkan/queue_manager.cpp
 	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader.cpp
