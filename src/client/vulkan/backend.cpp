@@ -8,6 +8,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
+#include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/util/assert.hpp>
@@ -49,7 +50,8 @@ bool VulkanBackend::start(Window &window) noexcept {
 	try {
 		m_instance = new VulkanInstance(*this);
 		m_device = new VulkanDevice(*this);
-		m_swapchain = new VulkanSwapchain(*this, window);
+		m_surface = new VulkanSurface(window);
+		m_swapchain = new VulkanSwapchain;
 		m_render_pass_collection = new VulkanRenderPassCollection;
 		m_framebuffer_collection = new VulkanFramebufferCollection;
 		m_shader_module_collection = new VulkanShaderModuleCollection;
@@ -112,6 +114,8 @@ void VulkanBackend::stop() noexcept {
 	m_render_pass_collection = nullptr;
 	delete m_swapchain;
 	m_swapchain = nullptr;
+	delete m_surface;
+	m_surface = nullptr;
 	delete m_device;
 	m_device = nullptr;
 	delete m_instance;

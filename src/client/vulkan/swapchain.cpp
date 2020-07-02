@@ -2,21 +2,19 @@
 
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/surface.hpp>
+
+#include <voxen/util/assert.hpp>
 #include	<voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
 
-#include <GLFW/glfw3.h>
-
 namespace voxen::client
 {
 
-VulkanSwapchain::VulkanSwapchain(VulkanBackend &backend, Window &window)
-	: m_backend(backend), m_window(window)
+VulkanSwapchain::VulkanSwapchain()
 {
 	Log::debug("Creating VulkanSwapchain");
-	createSurface();
-	defer_fail { destroySurface(); };
 	recreateSwapchain();
 	Log::debug("VulkanSwapchain created successfully");
 }
@@ -25,33 +23,119 @@ VulkanSwapchain::~VulkanSwapchain() noexcept
 {
 	Log::debug("Destroying VulkanSwapchain");
 	destroySwapchain();
-	destroySurface();
 }
 
 void VulkanSwapchain::recreateSwapchain()
 {
-	VkPhysicalDevice phys_device = m_backend.device()->physDeviceHandle();
+	auto &backend = VulkanBackend::backend();
+	vxAssert(backend.surface() != nullptr);
+	VkPhysicalDevice phys_device = backend.device()->physDeviceHandle();
+	VkDevice device = *backend.device();
+	VkSurfaceKHR surface = *backend.surface();
+	auto allocator = VulkanHostAllocator::callbacks();
 
-	VkSurfaceCapabilitiesKHR caps;
-	VkResult result = m_backend.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_device, m_surface, &caps);
+	VkSwapchainCreateInfoKHR info = {};
+	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	info.surface = surface;
+	info.imageArrayLayers = 1;
+	// TODO: is that all?
+	info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	info.queueFamilyIndexCount = 0;
+	info.pQueueFamilyIndices = nullptr;
+	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	info.clipped = VK_TRUE;
+	info.oldSwapchain = m_swapchain;
+
+	{
+		VkSurfaceFormatKHR surface_format = backend.surface()->format();
+		info.imageFormat = surface_format.format;
+		info.imageColorSpace = surface_format.colorSpace;
+		info.presentMode = backend.surface()->presentMode();
+	}
+
+	{
+		VkSurfaceCapabilitiesKHR caps;
+		VkResult result = backend.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_device, surface, &caps);
+		if (result != VK_SUCCESS)
+			throw VulkanException(result, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+
+		info.imageExtent = pickImageExtent(caps);
+		info.minImageCount = pickImagesNumber(caps);
+		info.preTransform = caps.currentTransform;
+	}
+
+	VkSwapchainKHR new_swapchain;
+	VkResult result = backend.vkCreateSwapchainKHR(device, &info, allocator, &new_swapchain);
+	// Old swapchain is retired and should be destroyed in any case
+	destroySwapchain();
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkCreateSwapchainKHR");
 
-	// Check for surface extent validity
+	m_swapchain = new_swapchain;
+	defer_fail { destroySwapchain(); };
+
+	m_image_extent = info.imageExtent;
+	getImages();
+	createImageViews();
+}
+
+void VulkanSwapchain::acquireImage()
+{
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
+
+	uint32_t image_index;
+	VkResult result = backend.vkAcquireNextImageKHR(device, m_swapchain, UINT64_MAX,
+	                                                VK_NULL_HANDLE, VK_NULL_HANDLE, &image_index);
+	if (result != VK_SUCCESS) {
+
+	}
+}
+
+void VulkanSwapchain::presentImage()
+{
+
+}
+
+void VulkanSwapchain::destroySwapchain() noexcept
+{
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
+	auto allocator = VulkanHostAllocator::callbacks();
+
+	m_image_extent = { 0, 0 };
+	for (VkImageView view : m_image_views)
+		backend.vkDestroyImageView(device, view, allocator);
+	m_image_views.clear();
+	// Images are destroyed automatically with swapchain
+	m_images.clear();
+
+	backend.vkDestroySwapchainKHR(device, m_swapchain, allocator);
+	m_swapchain = VK_NULL_HANDLE;
+}
+
+VkExtent2D VulkanSwapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
+{
+	VkExtent2D result;
 	if (caps.currentExtent.width == 0 && caps.currentExtent.height == 0) {
+		// TODO: should it be merged with the second case instead?
 		Log::error("Current surface extent is (0, 0), can't create swapchain now (window is minimized?)");
 		throw MessageException("can't create swapchain now");
 	} else if (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
-		auto[width, height] = m_window.framebufferSize();
-		m_surface_extent.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
-		m_surface_extent.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
+		auto[width, height] = VulkanBackend::backend().surface()->window().framebufferSize();
+		result.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
+		result.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
 	} else {
-		m_surface_extent = caps.currentExtent;
+		result = caps.currentExtent;
 	}
-	Log::info("Requesting {}x{} swapchain images", m_surface_extent.width, m_surface_extent.height);
+	Log::info("Requesting {}x{} swapchain images", result.width, result.height);
+	return result;
+}
 
-	// Select the number of swapchain images
+uint32_t VulkanSwapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
+{
 	// TODO: support selecting 2/3?
 	uint32_t num_images = 3;
 	if (num_images < caps.minImageCount) {
@@ -62,145 +146,70 @@ void VulkanSwapchain::recreateSwapchain()
 		num_images = caps.maxImageCount;
 	}
 	Log::debug("Requesting at least {} swapchain images", num_images);
+	return num_images;
+}
 
-	pickSurfaceFormat();
-	pickPresentMode();
+void VulkanSwapchain::getImages()
+{
+	vxAssert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 
-	// Fill VkSwapchainCreateInfoKHR
-	VkSwapchainCreateInfoKHR info = {};
-	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	info.surface = m_surface;
-	info.minImageCount = num_images;
-	info.imageFormat = m_surface_format.format;
-	info.imageColorSpace = m_surface_format.colorSpace;
-	info.imageExtent = m_surface_extent;
-	info.imageArrayLayers = 1;
-	// TODO: is that all?
-	info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	info.queueFamilyIndexCount = 0;
-	info.pQueueFamilyIndices = nullptr;
-	info.preTransform = caps.currentTransform;
-	info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	info.presentMode = m_present_mode;
-	info.clipped = VK_TRUE;
-	info.oldSwapchain = m_swapchain;
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
 
-	VkDevice device = m_backend.device()->deviceHandle();
-	auto allocator = VulkanHostAllocator::callbacks();
-	VkSwapchainKHR old_swapchain = m_swapchain;
-
-	result = m_backend.vkCreateSwapchainKHR(device, &info, allocator, &m_swapchain);
-	// Old swapchain is retired and should be destroyed in any case
-	m_backend.vkDestroySwapchainKHR(device, old_swapchain, allocator);
-	m_swapchain_images.clear();
-	if (result != VK_SUCCESS) {
-		m_swapchain = VK_NULL_HANDLE;
-		throw VulkanException(result);
-	}
-	defer_fail { destroySwapchain(); };
-
-	result = m_backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, nullptr);
+	uint32_t num_images;
+	VkResult result = backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, nullptr);
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkGetSwapchainImagesKHR");
 
 	Log::info("Swapchain has {} images", num_images);
-	m_swapchain_images.resize(num_images);
-	result = m_backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, m_swapchain_images.data());
+	m_images.resize(num_images);
+	result = backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, m_images.data());
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkGetSwapchainImagesKHR");
 }
 
-void VulkanSwapchain::createSurface()
+void VulkanSwapchain::createImageViews()
 {
-	VkInstance instance = *m_backend.instance();
-	GLFWwindow *window = m_window.glfwHandle();
+	vxAssert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
+
+	auto &backend = VulkanBackend::backend();
+	VkDevice device = *backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
-	VkResult result = glfwCreateWindowSurface(instance, window, allocator, &m_surface);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-	defer_fail { destroySurface(); };
+	VkImageViewCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.format = backend.surface()->format().format;
+	info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+	info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+	info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+	info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	info.subresourceRange.baseMipLevel = 0;
+	info.subresourceRange.levelCount = 1;
+	info.subresourceRange.baseArrayLayer = 0;
+	info.subresourceRange.layerCount = 1;
 
-	// Present support should've been checked in VulkanQueueManager when
-	// looking for a present queue family, so it's maybe a double check
-	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
-	uint32_t family = m_backend.device()->queueManager().presentQueueFamily();
-	VkBool32 supported;
-	result = m_backend.vkGetPhysicalDeviceSurfaceSupportKHR(device, family, m_surface, &supported);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-	if (!supported) {
-		Log::error("Selected GPU can't present to this window surface (GLFW bug?)");
-		throw MessageException("physical device can't present to window surface");
-	}
-}
-
-void VulkanSwapchain::destroySurface() noexcept
-{
-	m_backend.vkDestroySurfaceKHR(*m_backend.instance(), m_surface, VulkanHostAllocator::callbacks());
-}
-
-void VulkanSwapchain::pickSurfaceFormat()
-{
-	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
-	VkResult result;
-
-	uint32_t num_formats;
-	std::vector<VkSurfaceFormatKHR> formats;
-	// Get number of surface formats
-	result = m_backend.vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &num_formats, nullptr);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-	// Get descriptions of surface formats
-	formats.resize(num_formats);
-	result = m_backend.vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &num_formats, formats.data());
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-
-	for (auto format : formats) {
-		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-			m_surface_format = format;
-			return;
+	// Position of failed image
+	size_t failed_index = 0;
+	VkResult error_code = VK_SUCCESS;
+	m_image_views.resize(m_images.size());
+	for (size_t i = 0; i < m_images.size(); i++) {
+		info.image = m_images[i];
+		VkResult result = backend.vkCreateImageView(device, &info, allocator, &m_image_views[i]);
+		if (result != VK_SUCCESS) {
+			failed_index = i;
+			error_code = result;
+			break;
 		}
 	}
-	Log::error("Surface format BGRA8_SRGB not found");
-	throw MessageException("failed to find suitable surface format");
-}
 
-void VulkanSwapchain::pickPresentMode()
-{
-	VkPhysicalDevice device = m_backend.device()->physDeviceHandle();
-	VkResult result;
-
-	uint32_t num_modes;
-	std::vector<VkPresentModeKHR> modes;
-	// Get number of present modes
-	result = m_backend.vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &num_modes, nullptr);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-	// Get description of present modes
-	modes.resize(num_modes);
-	result = m_backend.vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &num_modes, modes.data());
-	if (result != VK_SUCCESS)
-		throw VulkanException(result);
-
-	// TODO: support configurable/runtime-changeable present modes?
-	for (auto mode : modes) {
-		if (mode == VK_PRESENT_MODE_FIFO_KHR) {
-			m_present_mode = mode;
-			return;
-		}
-	}
-	Log::error("Present mode VK_PRESENT_MODE_FIFO_KHR not found");
-	throw MessageException("failed to find suitable present mode");
-}
-
-void VulkanSwapchain::destroySwapchain() noexcept
-{
-	m_backend.vkDestroySwapchainKHR(m_backend.device()->deviceHandle(), m_swapchain, VulkanHostAllocator::callbacks());
-	m_swapchain = VK_NULL_HANDLE;
-	m_swapchain_images.clear();
+	if (error_code == VK_SUCCESS)
+		return;
+	// Destroy successfully created images
+	for (size_t i = 0; i < failed_index; i++)
+		backend.vkDestroyImageView(device, m_image_views[i], allocator);
+	throw VulkanException(error_code, "vkCreateImageView");
 }
 
 }

@@ -2,7 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/swapchain.hpp>
+#include <voxen/client/vulkan/surface.hpp>
 
 #include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
@@ -34,10 +34,10 @@ VulkanRenderPassCollection::VulkanRenderPassCollection() :
 
 VkAttachmentDescription VulkanRenderPassCollection::describeSwapchainColorBuffer() {
 	auto &backend = VulkanBackend::backend();
-	vxAssert(backend.swapchain() != nullptr);
+	vxAssert(backend.surface() != nullptr);
 
 	VkAttachmentDescription desc = {};
-	desc.format = VulkanBackend::backend().swapchain()->surfaceFormat().format;
+	desc.format = VulkanBackend::backend().surface()->format().format;
 	desc.samples = VK_SAMPLE_COUNT_1_BIT;
 	desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

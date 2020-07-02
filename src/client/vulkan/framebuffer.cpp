@@ -3,6 +3,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
+#include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/util/assert.hpp>
@@ -35,12 +36,13 @@ VulkanFramebuffer VulkanFramebufferCollection::createSceneFramebuffer() {
 	Log::debug("Creating scene framebuffer");
 
 	auto &backend = VulkanBackend::backend();
+	auto *surface = backend.surface();
 	auto *swapchain = backend.swapchain();
+	vxAssert(surface != nullptr && swapchain != nullptr);
 	vxAssert(backend.renderPassCollection() != nullptr);
-	vxAssert(swapchain != nullptr);
 
-	VkExtent2D frame_size = swapchain->surfaceExtent();
-	VkFormat color_buffer_format = swapchain->surfaceFormat().format;
+	VkExtent2D frame_size = swapchain->imageExtent();
+	VkFormat color_buffer_format = surface->format().format;
 
 	VkFramebufferAttachmentImageInfo attachment_infos[2] = { {}, {} };
 
