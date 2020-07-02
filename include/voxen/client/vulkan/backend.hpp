@@ -10,6 +10,7 @@ namespace voxen::client
 
 class VulkanInstance;
 class VulkanDevice;
+class VulkanSurface;
 class VulkanSwapchain;
 class VulkanRenderPassCollection;
 class VulkanFramebufferCollection;
@@ -35,6 +36,7 @@ public:
 
 	VulkanInstance *instance() const noexcept { return m_instance; }
 	VulkanDevice *device() const noexcept { return m_device; }
+	VulkanSurface *surface() const noexcept { return m_surface; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
 	VulkanFramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
@@ -64,6 +66,7 @@ private:
 
 	VulkanInstance *m_instance = nullptr;
 	VulkanDevice *m_device = nullptr;
+	VulkanSurface *m_surface = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;
 	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
 	VulkanFramebufferCollection *m_framebuffer_collection = nullptr;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/window.hpp>
 
 namespace voxen::client
@@ -8,7 +8,7 @@ namespace voxen::client
 
 class VulkanSwapchain {
 public:
-	explicit VulkanSwapchain(VulkanBackend &backend, Window &window);
+	VulkanSwapchain();
 	VulkanSwapchain(VulkanSwapchain &&) = delete;
 	VulkanSwapchain(const VulkanSwapchain &) = delete;
 	VulkanSwapchain &operator = (VulkanSwapchain &&) = delete;
@@ -16,31 +16,26 @@ public:
 	~VulkanSwapchain() noexcept;
 
 	void recreateSwapchain();
+	void acquireImage();
+	void presentImage();
 
-	VkSurfaceKHR surfaceHandle() const noexcept { return m_surface; }
-	VkSwapchainKHR swapchainHandle() const noexcept { return m_swapchain; }
-	uint32_t numSwapchainImages() const noexcept { return uint32_t(m_swapchain_images.size()); }
-	VkImage swapchainImage(uint32_t idx) const noexcept { return m_swapchain_images[idx]; }
-	VkExtent2D surfaceExtent() const noexcept { return m_surface_extent; }
-	VkSurfaceFormatKHR surfaceFormat() const noexcept { return m_surface_format; }
-	VkPresentModeKHR presentMode() const noexcept { return m_present_mode; }
+	uint32_t numImages() const noexcept { return uint32_t(m_images.size()); }
+	VkImage image(uint32_t idx) const noexcept { return m_images[idx]; }
+	VkImageView imageView(uint32_t idx) const noexcept { return m_image_views[idx]; }
+	VkExtent2D imageExtent() const noexcept { return m_image_extent; }
 
 	operator VkSwapchainKHR() const noexcept { return m_swapchain; }
 private:
-	VulkanBackend &m_backend;
-	Window &m_window;
-	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
-	std::vector<VkImage> m_swapchain_images;
-	VkExtent2D m_surface_extent;
-	VkSurfaceFormatKHR m_surface_format;
-	VkPresentModeKHR m_present_mode;
+	std::vector<VkImage> m_images;
+	std::vector<VkImageView> m_image_views;
+	VkExtent2D m_image_extent;
 
-	void createSurface();
-	void destroySurface() noexcept;
-	void pickSurfaceFormat();
-	void pickPresentMode();
 	void destroySwapchain() noexcept;
+	VkExtent2D pickImageExtent(const VkSurfaceCapabilitiesKHR &caps);
+	uint32_t pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps);
+	void getImages();
+	void createImageViews();
 };
 
 }

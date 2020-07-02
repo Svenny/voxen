@@ -43,7 +43,7 @@ struct DefaultViewportState {
 		auto *swapchain = backend.swapchain();
 		vxAssert(swapchain != nullptr);
 
-		VkExtent2D frame_size = swapchain->surfaceExtent();
+		VkExtent2D frame_size = swapchain->imageExtent();
 
 		scissor.offset = { 0, 0 };
 		scissor.extent = frame_size;
