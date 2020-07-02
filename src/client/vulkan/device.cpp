@@ -154,6 +154,7 @@ bool VulkanDevice::createLogicalDevice() {
 	VkPhysicalDeviceFeatures2 features = {};
 	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	features.pNext = &imageless_features;
+	features.features.fillModeNonSolid = VK_TRUE;
 
 	// Fill VkDeviceCreateInfo
 	auto queue_create_infos = m_queue_manager.getCreateInfos();
