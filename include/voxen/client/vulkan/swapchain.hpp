@@ -16,8 +16,8 @@ public:
 	~VulkanSwapchain() noexcept;
 
 	void recreateSwapchain();
-	void acquireImage();
-	void presentImage();
+	uint32_t acquireImage(VkSemaphore signal_semaphore);
+	void presentImage(uint32_t idx, VkSemaphore wait_semaphore);
 
 	uint32_t numImages() const noexcept { return uint32_t(m_images.size()); }
 	VkImage image(uint32_t idx) const noexcept { return m_images[idx]; }

@@ -78,7 +78,8 @@ VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
 	subpass_desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass_desc.colorAttachmentCount = 1;
 	subpass_desc.pColorAttachments = &color_buffer_ref;
-	subpass_desc.pDepthStencilAttachment = &depth_stencil_buffer_ref;
+	// TODO: uncomment me
+	//subpass_desc.pDepthStencilAttachment = &depth_stencil_buffer_ref;
 
 	VkSubpassDependency dependency = {};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -90,7 +91,8 @@ VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
 
 	VkRenderPassCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	info.attachmentCount = 2;
+	// TODO: change back to 2
+	info.attachmentCount = 1;
 	info.pAttachments = attachments;
 	info.subpassCount = 1;
 	info.pSubpasses = &subpass_desc;

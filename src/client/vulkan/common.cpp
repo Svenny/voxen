@@ -12,7 +12,7 @@ VulkanException::VulkanException(VkResult result, const char *api, const std::ex
 	const char *err = getVkResultString(result);
 	const char *desc = getVkResultDescription(result);
 	if (api) {
-		Log::error("{} failed with error code {}", err, loc);
+		Log::error("{} failed with error code {}", api, err, loc);
 		m_message = fmt::format("{} failed: {} ({})", api, err, desc);
 	} else {
 		Log::error("Vulkan API call failed with error code {}", err, loc);

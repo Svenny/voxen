@@ -15,6 +15,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/image_view.hpp
 	include/voxen/client/vulkan/instance.hpp
+	include/voxen/client/vulkan/main_loop.hpp
 	include/voxen/client/vulkan/memory_allocator.hpp
 	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
