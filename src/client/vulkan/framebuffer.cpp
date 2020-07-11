@@ -66,7 +66,8 @@ VulkanFramebuffer VulkanFramebufferCollection::createSceneFramebuffer() {
 
 	VkFramebufferAttachmentsCreateInfo attachments_info = {};
 	attachments_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
-	attachments_info.attachmentImageInfoCount = 2;
+	// TODO: change back to 2
+	attachments_info.attachmentImageInfoCount = 1;
 	attachments_info.pAttachmentImageInfos = attachment_infos;
 
 	VkFramebufferCreateInfo info = {};
@@ -74,7 +75,8 @@ VulkanFramebuffer VulkanFramebufferCollection::createSceneFramebuffer() {
 	info.pNext = &attachments_info;
 	info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
 	info.renderPass = backend.renderPassCollection()->mainRenderPass();
-	info.attachmentCount = 2;
+	// TODO: change back to 2
+	info.attachmentCount = 1;
 	info.width = frame_size.width;
 	info.height = frame_size.height;
 	info.layers = 1;

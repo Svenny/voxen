@@ -80,22 +80,41 @@ void VulkanSwapchain::recreateSwapchain()
 	createImageViews();
 }
 
-void VulkanSwapchain::acquireImage()
+uint32_t VulkanSwapchain::acquireImage(VkSemaphore signal_semaphore)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 
 	uint32_t image_index;
 	VkResult result = backend.vkAcquireNextImageKHR(device, m_swapchain, UINT64_MAX,
-	                                                VK_NULL_HANDLE, VK_NULL_HANDLE, &image_index);
-	if (result != VK_SUCCESS) {
-
-	}
+	                                                signal_semaphore, VK_NULL_HANDLE, &image_index);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result, "vkAcquireNextImageKHR");
+	return image_index;
 }
 
-void VulkanSwapchain::presentImage()
+void VulkanSwapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 {
+	vxAssert(idx < uint32_t(m_images.size()));
 
+	auto &backend = VulkanBackend::backend();
+	VkQueue queue = backend.device()->queueManager().presentQueue();
+
+	VkResult present_result;
+	VkPresentInfoKHR info = {};
+	info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	info.waitSemaphoreCount = wait_semaphore == VK_NULL_HANDLE ? 0 : 1;
+	info.pWaitSemaphores = &wait_semaphore;
+	info.swapchainCount = 1;
+	info.pSwapchains = &m_swapchain;
+	info.pImageIndices = &idx;
+	info.pResults = &present_result;
+
+	VkResult queue_result = backend.vkQueuePresentKHR(queue, &info);
+	if (queue_result != VK_SUCCESS)
+		throw VulkanException(queue_result, "vkQueuePresentKHR");
+	if (present_result != VK_SUCCESS)
+		throw VulkanException(present_result, "vkQueuePresentKHR[pResults]");
 }
 
 void VulkanSwapchain::destroySwapchain() noexcept
