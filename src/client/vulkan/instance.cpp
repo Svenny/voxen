@@ -93,6 +93,17 @@ static std::vector<const char *> getRequiredLayers(VulkanBackend &backend) {
 	std::vector<VkLayerProperties> available_props(available_count);
 	backend.vkEnumerateInstanceLayerProperties(&available_count, available_props.data());
 
+	if (available_count > 0 && Log::willBeLogged(Log::Level::Debug)) {
+		Log::debug("The following Vulkan layers are available:");
+		for (const auto &layer : available_props) {
+			uint32_t spec_major = VK_VERSION_MAJOR(layer.specVersion);
+			uint32_t spec_minor = VK_VERSION_MINOR(layer.specVersion);
+			uint32_t spec_patch = VK_VERSION_PATCH(layer.specVersion);
+			Log::debug("{} ({}), spec version {}.{}.{}", layer.layerName,
+			           layer.description, spec_major, spec_minor, spec_patch);
+		}
+	}
+
 	std::vector<const char *> layer_list;
 	// Since layers are used only for debugging, we may just skip requesting
 	// unsupported ones. Useful for developing on different machines becuase
@@ -104,15 +115,14 @@ static std::vector<const char *> getRequiredLayers(VulkanBackend &backend) {
 				return;
 			}
 		}
-		Log::warn("Attempted to request validation layer {} which is not available", name);
+		Log::warn("Attempted to request layer {} which is not available", name);
 	};
 
 	addIfAvailable("VK_LAYER_KHRONOS_validation");
-	addIfAvailable("VK_LAYER_LUNARG_standard_validation");
 	addIfAvailable("VK_LAYER_MESA_overlay");
 
 	if (!layer_list.empty())
-		Log::info("Requesting the following Vulkan validation layers:");
+		Log::info("Requesting the following Vulkan layers:");
 	for (const char *name : layer_list)
 		Log::info("{}", name);
 	return layer_list;
