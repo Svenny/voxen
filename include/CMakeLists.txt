@@ -6,7 +6,7 @@ set(EXTRAS_HEADERS
 
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
-	include/voxen/client/vulkan/buffer_manager.hpp
+	include/voxen/client/vulkan/buffer.hpp
 	include/voxen/client/vulkan/command_buffer.hpp
 	include/voxen/client/vulkan/command_pool.hpp
 	include/voxen/client/vulkan/common.hpp
@@ -16,7 +16,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/image_view.hpp
 	include/voxen/client/vulkan/instance.hpp
 	include/voxen/client/vulkan/main_loop.hpp
-	include/voxen/client/vulkan/memory_allocator.hpp
+	include/voxen/client/vulkan/memory.hpp
 	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp

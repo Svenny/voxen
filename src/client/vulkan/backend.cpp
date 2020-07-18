@@ -4,6 +4,7 @@
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/main_loop.hpp>
+#include <voxen/client/vulkan/memory.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -51,6 +52,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 	try {
 		m_instance = new VulkanInstance(*this);
 		m_device = new VulkanDevice(*this);
+		m_device_allocator = new VulkanDeviceAllocator;
 		m_surface = new VulkanSurface(window);
 		m_swapchain = new VulkanSwapchain;
 		m_render_pass_collection = new VulkanRenderPassCollection;
@@ -120,6 +122,8 @@ void VulkanBackend::stop() noexcept {
 	m_swapchain = nullptr;
 	delete m_surface;
 	m_surface = nullptr;
+	delete m_device_allocator;
+	m_device_allocator = nullptr;
 	delete m_device;
 	m_device = nullptr;
 	delete m_instance;

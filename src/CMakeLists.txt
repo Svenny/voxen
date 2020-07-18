@@ -1,6 +1,6 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/backend.cpp
-	src/client/vulkan/buffer_manager.cpp
+	src/client/vulkan/buffer.cpp
 	src/client/vulkan/command_buffer.cpp
 	src/client/vulkan/command_pool.cpp
 	src/client/vulkan/common.cpp
@@ -10,7 +10,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/image_view.cpp
 	src/client/vulkan/instance.cpp
 	src/client/vulkan/main_loop.cpp
-	src/client/vulkan/memory_allocator.cpp
+	src/client/vulkan/memory.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
