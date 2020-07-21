@@ -8,7 +8,7 @@
 namespace voxen::client
 {
 
-VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info)
+VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info, Usage usage)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -19,9 +19,29 @@ VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info)
 		throw VulkanException(result, "vkCreateBuffer");
 	defer_fail { backend.vkDestroyBuffer(device, m_buffer, allocator); };
 
-	VkMemoryRequirements mem_reqs;
-	backend.vkGetBufferMemoryRequirements(device, m_buffer, &mem_reqs);
-	m_memory = backend.deviceAllocator()->allocate(mem_reqs);
+	VulkanDeviceAllocationRequirements reqs = {};
+	backend.vkGetBufferMemoryRequirements(device, m_buffer, &reqs.memory_reqs);
+	switch (usage) {
+	case Usage::DeviceLocal:
+		// Don't need any host-side properties
+		reqs.need_host_visibility = false;
+		break;
+	case Usage::Staging:
+		// Don't need host caching (write combiner is enough for this usage),
+		// but having coherence is preferred as it allows to avoid
+		reqs.need_host_visibility = true;
+		reqs.prefer_host_coherence = true;
+		reqs.prefer_host_caching = false;
+		break;
+	case Usage::Readback:
+		// Don't need host coherence (we may afford a heavy flush/invalidate for
+		// readback), but caching is preferred (because of cache prefetcher?)
+		reqs.need_host_visibility = true;
+		reqs.prefer_host_coherence = false;
+		reqs.prefer_host_caching = true;
+		break;
+	}
+	m_memory = backend.deviceAllocator()->allocate(reqs);
 
 	result = backend.vkBindBufferMemory(device, m_buffer, m_memory.handle(), m_memory.offset());
 	if (result != VK_SUCCESS)

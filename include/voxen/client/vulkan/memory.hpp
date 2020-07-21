@@ -45,6 +45,13 @@ public:
 		VulkanDeviceMemory *slab = nullptr;
 	};
 
+	struct AllocationRequirements {
+		VkMemoryRequirements memory_reqs;
+		bool need_host_visibility;
+		bool prefer_host_coherence;
+		bool prefer_host_caching;
+	};
+
 	VulkanDeviceAllocator();
 	VulkanDeviceAllocator(VulkanDeviceAllocator &&) = delete;
 	VulkanDeviceAllocator(const VulkanDeviceAllocator &) = delete;
@@ -52,15 +59,13 @@ public:
 	VulkanDeviceAllocator &operator = (const VulkanDeviceAllocator &) = delete;
 	~VulkanDeviceAllocator() noexcept;
 
-	Allocation allocate(const VkMemoryRequirements &reqs);
+	Allocation allocate(const AllocationRequirements &reqs);
 private:
-	uint32_t m_staging_memory_type;
-	uint32_t m_device_memory_type;
-
 	VulkanDeviceMemory allocateSlab(uint32_t memory_type, VkDeviceSize bytes);
 };
 
-// A shorthand (kind of)
+// Shorthands (kind of)
 using VulkanDeviceAllocation = VulkanDeviceAllocator::Allocation;
+using VulkanDeviceAllocationRequirements = VulkanDeviceAllocator::AllocationRequirements;
 
 }

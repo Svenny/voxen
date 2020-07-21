@@ -1,4 +1,5 @@
 set(VOXEN_SOURCES
+	src/client/vulkan/algo/debug_octree.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
 	src/client/vulkan/command_buffer.cpp

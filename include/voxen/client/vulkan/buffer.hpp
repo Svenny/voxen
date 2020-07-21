@@ -8,7 +8,13 @@ namespace voxen::client
 
 class VulkanBuffer {
 public:
-	VulkanBuffer(const VkBufferCreateInfo &info);
+	enum class Usage {
+		DeviceLocal,
+		Staging,
+		Readback
+	};
+
+	VulkanBuffer(const VkBufferCreateInfo &info, Usage usage);
 	VulkanBuffer(VulkanBuffer &&) = delete;
 	VulkanBuffer(const VulkanBuffer &) = delete;
 	VulkanBuffer &operator = (VulkanBuffer &&) = delete;
