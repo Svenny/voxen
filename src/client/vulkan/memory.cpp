@@ -76,30 +76,65 @@ VulkanDeviceAllocator::~VulkanDeviceAllocator() noexcept
 	Log::debug("Destroying VulkanDeviceAllocator");
 }
 
-VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const VkMemoryRequirements &reqs)
+VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const AllocationRequirements &reqs)
 {
-	Log::trace("Requested device allocation: {} bytes, align by {}, type mask {:b}", reqs.size, reqs.alignment, reqs.memoryTypeBits);
+	const VkMemoryRequirements &mem_reqs = reqs.memory_reqs;
+	Log::trace("Requested device allocation: {} bytes, align by {}, type mask {:b}",
+	           mem_reqs.size, mem_reqs.alignment, mem_reqs.memoryTypeBits);
 	// TODO: implement actual allocation stategy, this is a temporary stub
 	auto &backend = VulkanBackend::backend();
 	VkPhysicalDevice device = backend.device()->physDeviceHandle();
 
 	VkPhysicalDeviceMemoryProperties mem_props;
 	backend.vkGetPhysicalDeviceMemoryProperties(device, &mem_props);
+
 	uint32_t selected_type = UINT32_MAX;
-	for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
-		if (reqs.memoryTypeBits & (1 << i)) {
-			Log::trace("Allocating from memory type {}/heap {}", i, mem_props.memoryTypes[i].heapIndex);
-			selected_type = i;
-			break;
+	int32_t selected_score = INT32_MIN;
+
+	for (uint32_t type = 0; type < mem_props.memoryTypeCount; type++) {
+		if ((mem_reqs.memoryTypeBits & (1 << type)) == 0) {
+			Log::trace("Skipping type {} which is not supported by memory requirements", type);
+			continue;
+		}
+
+		auto &type_info = mem_props.memoryTypes[type];
+
+		if (reqs.need_host_visibility && !(type_info.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+			Log::trace("Skipping type {} which is not host-visible", type);
+			continue;
+		}
+
+		int32_t score = 0;
+		if (type_info.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			score += 1000;
+		if (type_info.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+			if (reqs.prefer_host_coherence)
+				score += 100;
+			else
+				score -= 100; // Incoherent memory is probably more efficient when coherence is not needed
+		}
+		if (type_info.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+			if (reqs.prefer_host_caching)
+				score += 100;
+			else
+				score -= 100; // Uncached memory is probably more efficient when caching is not needed
+		}
+		Log::trace("Type {}/heap {} has score {}", type, type_info.heapIndex, score);
+
+		if (score > selected_score) {
+			selected_type = type;
+			selected_score = score;
 		}
 	}
+
 	if (selected_type == UINT32_MAX)
 		throw MessageException("can't find suitable device memory type");
+	Log::trace("Allocating from memory type {}", selected_type);
 
 	// TODO: support non-dedicated allocations
 	VkMemoryAllocateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	info.allocationSize = reqs.size;
+	info.allocationSize = mem_reqs.size;
 	info.memoryTypeIndex = selected_type;
 
 	VkDeviceMemory handle;
@@ -108,7 +143,7 @@ VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const VkMemoryRequirement
 		throw VulkanException(result, "vkAllocateMemory");
 
 	Log::trace("Allocated slab 0x{:X}", uint64_t(handle));
-	return Allocation(handle, 0, reqs.size, selected_type);
+	return Allocation(handle, 0, mem_reqs.size, selected_type);
 }
 
 VulkanDeviceMemory VulkanDeviceAllocator::allocateSlab(uint32_t memory_type, VkDeviceSize bytes)
