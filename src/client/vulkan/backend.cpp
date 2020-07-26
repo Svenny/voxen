@@ -54,7 +54,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_instance = new vulkan::Instance;
 		m_physical_device = new vulkan::PhysicalDevice;
 		m_device = new vulkan::Device;
-		m_device_allocator = new VulkanDeviceAllocator;
+		m_device_allocator = new vulkan::DeviceAllocator;
 		m_surface = new VulkanSurface(window);
 		m_swapchain = new VulkanSwapchain;
 		m_render_pass_collection = new VulkanRenderPassCollection;

@@ -6,12 +6,12 @@
 
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
 // --- VulkanDeviceMemory ---
 
-VulkanDeviceMemory::VulkanDeviceMemory(const VkMemoryAllocateInfo &info)
+DeviceMemory::DeviceMemory(const VkMemoryAllocateInfo &info)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -21,7 +21,7 @@ VulkanDeviceMemory::VulkanDeviceMemory(const VkMemoryAllocateInfo &info)
 		throw VulkanException(result, "vkAllocateMemory");
 }
 
-VulkanDeviceMemory::~VulkanDeviceMemory() noexcept
+DeviceMemory::~DeviceMemory() noexcept
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -30,32 +30,30 @@ VulkanDeviceMemory::~VulkanDeviceMemory() noexcept
 
 // --- VulkanDeviceAllocation ---
 
-VulkanDeviceAllocation::Allocation(VkDeviceMemory handle, VkDeviceSize offset,
-                                   VkDeviceSize size, uint32_t memory_type) noexcept
+DeviceAllocation::Allocation(VkDeviceMemory handle, VkDeviceSize offset,
+                             VkDeviceSize size, uint32_t memory_type) noexcept
 	: m_handle(handle), m_offset(offset), m_size(size), m_memory_type(memory_type)
 {
 }
 
-VulkanDeviceAllocation::Allocation(VulkanDeviceAllocation &&other) noexcept
+DeviceAllocation::Allocation(DeviceAllocation &&other) noexcept
 {
 	m_handle = std::exchange(other.m_handle, VkDeviceMemory(VK_NULL_HANDLE));
 	m_offset = std::exchange(other.m_offset, 0);
 	m_size = std::exchange(other.m_size, 0);
 	m_memory_type = std::exchange(other.m_memory_type, UINT32_MAX);
-	slab = std::exchange(other.slab, nullptr);
 }
 
-VulkanDeviceAllocation &VulkanDeviceAllocation::operator = (VulkanDeviceAllocation &&other) noexcept
+DeviceAllocation &DeviceAllocation::operator = (DeviceAllocation &&other) noexcept
 {
 	m_handle = std::exchange(other.m_handle, VkDeviceMemory(VK_NULL_HANDLE));
 	m_offset = std::exchange(other.m_offset, 0);
 	m_size = std::exchange(other.m_size, 0);
 	m_memory_type = std::exchange(other.m_memory_type, UINT32_MAX);
-	slab = std::exchange(other.slab, nullptr);
 	return *this;
 }
 
-VulkanDeviceAllocation::~Allocation() noexcept
+DeviceAllocation::~Allocation() noexcept
 {
 	// TODO: reference counting/memory management by VulkanDeviceAllocator
 	auto &backend = VulkanBackend::backend();
@@ -65,19 +63,19 @@ VulkanDeviceAllocation::~Allocation() noexcept
 
 // --- VulkanDeviceAllocator ---
 
-VulkanDeviceAllocator::VulkanDeviceAllocator()
+DeviceAllocator::DeviceAllocator()
 {
-	Log::debug("Creating VulkanDeviceAllocator");
+	Log::debug("Creating DeviceAllocator");
 	// TODO: find/select memory types
-	Log::debug("VulkanDeviceAllocator created successfully");
+	Log::debug("DeviceAllocator created successfully");
 }
 
-VulkanDeviceAllocator::~VulkanDeviceAllocator() noexcept
+DeviceAllocator::~DeviceAllocator() noexcept
 {
-	Log::debug("Destroying VulkanDeviceAllocator");
+	Log::debug("Destroying DeviceAllocator");
 }
 
-VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const AllocationRequirements &reqs)
+DeviceAllocation DeviceAllocator::allocate(const AllocationRequirements &reqs)
 {
 	const VkMemoryRequirements &mem_reqs = reqs.memory_reqs;
 	Log::trace("Requested device allocation: {} bytes, align by {}, type mask {:b}",
@@ -147,13 +145,13 @@ VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const AllocationRequireme
 	return Allocation(handle, 0, mem_reqs.size, selected_type);
 }
 
-VulkanDeviceMemory VulkanDeviceAllocator::allocateSlab(uint32_t memory_type, VkDeviceSize bytes)
+DeviceMemory DeviceAllocator::allocateSlab(uint32_t memory_type, VkDeviceSize bytes)
 {
 	VkMemoryAllocateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	info.allocationSize = bytes;
 	info.memoryTypeIndex = memory_type;
-	return VulkanDeviceMemory(info);
+	return DeviceMemory(info);
 }
 
 }

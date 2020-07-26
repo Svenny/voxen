@@ -5,10 +5,10 @@
 
 #include <extras/defer.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info, Usage usage)
+Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -19,7 +19,7 @@ VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info, Usage usage)
 		throw VulkanException(result, "vkCreateBuffer");
 	defer_fail { backend.vkDestroyBuffer(device, m_buffer, allocator); };
 
-	VulkanDeviceAllocationRequirements reqs = {};
+	DeviceAllocationRequirements reqs = {};
 	backend.vkGetBufferMemoryRequirements(device, m_buffer, &reqs.memory_reqs);
 	switch (usage) {
 	case Usage::DeviceLocal:
@@ -48,7 +48,7 @@ VulkanBuffer::VulkanBuffer(const VkBufferCreateInfo &info, Usage usage)
 		throw VulkanException(result, "vkBindBufferMemory");
 }
 
-VulkanBuffer::~VulkanBuffer() noexcept
+Buffer::~Buffer() noexcept
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();

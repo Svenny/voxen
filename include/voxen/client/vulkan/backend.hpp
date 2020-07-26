@@ -8,7 +8,6 @@
 namespace voxen::client
 {
 
-class VulkanDeviceAllocator;
 class VulkanSurface;
 class VulkanSwapchain;
 class VulkanRenderPassCollection;
@@ -25,6 +24,7 @@ namespace vulkan
 class Instance;
 class PhysicalDevice;
 class Device;
+class DeviceAllocator;
 
 }
 
@@ -46,7 +46,7 @@ public:
 	vulkan::Instance *instance() const noexcept { return m_instance; }
 	vulkan::PhysicalDevice *physicalDevice() const noexcept { return m_physical_device; }
 	vulkan::Device *device() const noexcept { return m_device; }
-	VulkanDeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
+	vulkan::DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	VulkanSurface *surface() const noexcept { return m_surface; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
@@ -79,7 +79,7 @@ private:
 	vulkan::Instance *m_instance = nullptr;
 	vulkan::PhysicalDevice *m_physical_device = nullptr;
 	vulkan::Device *m_device = nullptr;
-	VulkanDeviceAllocator *m_device_allocator = nullptr;
+	vulkan::DeviceAllocator *m_device_allocator = nullptr;
 	VulkanSurface *m_surface = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;
 	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
