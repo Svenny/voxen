@@ -6,6 +6,7 @@ set(EXTRAS_HEADERS
 
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/algo/debug_octree.hpp
+	include/voxen/client/vulkan/high/mesh.hpp
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer.hpp
 	include/voxen/client/vulkan/command_buffer.hpp
