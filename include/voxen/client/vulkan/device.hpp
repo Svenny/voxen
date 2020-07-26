@@ -1,39 +1,39 @@
 #pragma once
 
-#include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/queue_manager.hpp>
+#include <voxen/client/vulkan/common.hpp>
 
 #include <vector>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanDevice {
+class Device {
 public:
-	explicit VulkanDevice(VulkanBackend &backend);
-	VulkanDevice(VulkanDevice &&) = delete;
-	VulkanDevice(const VulkanDevice &) = delete;
-	VulkanDevice &operator = (VulkanDevice &&) = delete;
-	VulkanDevice &operator = (const VulkanDevice &) = delete;
-	~VulkanDevice() noexcept;
+	Device();
+	Device(Device &&) = delete;
+	Device(const Device &) = delete;
+	Device &operator = (Device &&) = delete;
+	Device &operator = (const Device &) = delete;
+	~Device() noexcept;
 
 	void waitIdle();
 
-	VkPhysicalDevice physDeviceHandle() const noexcept { return m_phys_device; }
-	VkDevice deviceHandle() const noexcept { return m_device; }
-	const VulkanQueueManager &queueManager() const noexcept { return m_queue_manager; }
+	VkQueue graphicsQueue() const noexcept { return m_graphics_queue; }
+	VkQueue computeQueue() const noexcept { return m_compute_queue; }
+	VkQueue transferQueue() const noexcept { return m_transfer_queue; }
+	VkQueue presentQueue() const noexcept { return m_present_queue; }
 
 	operator VkDevice() const noexcept { return m_device; }
 private:
-	VulkanBackend &m_backend;
-	VkPhysicalDevice m_phys_device = VK_NULL_HANDLE;
 	VkDevice m_device = VK_NULL_HANDLE;
-	VulkanQueueManager m_queue_manager;
+	VkQueue m_graphics_queue = VK_NULL_HANDLE;
+	VkQueue m_compute_queue = VK_NULL_HANDLE;
+	VkQueue m_transfer_queue = VK_NULL_HANDLE;
+	VkQueue m_present_queue = VK_NULL_HANDLE;
 
-	bool pickPhysicalDevice();
-	bool isDeviceSuitable(VkPhysicalDevice device);
 	std::vector<const char *> getRequiredDeviceExtensions();
-	bool createLogicalDevice();
+	void createDevice();
+	void getQueueHandles() noexcept;
 	void destroyDevice() noexcept;
 };
 

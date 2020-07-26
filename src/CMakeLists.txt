@@ -13,10 +13,10 @@ set(VOXEN_SOURCES
 	src/client/vulkan/instance.cpp
 	src/client/vulkan/main_loop.cpp
 	src/client/vulkan/memory.cpp
+	src/client/vulkan/physical_device.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
-	src/client/vulkan/queue_manager.cpp
 	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader.cpp
 	src/client/vulkan/shader_module.cpp
