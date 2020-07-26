@@ -1,41 +1,50 @@
 #include <voxen/client/vulkan/instance.hpp>
 
+#include <voxen/client/vulkan/backend.hpp>
+
 #include <voxen/config.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanInstance::VulkanInstance(VulkanBackend &backend) : m_backend(backend) {
-	Log::debug("Creating VulkanInstance");
+Instance::Instance()
+{
+	Log::debug("Creating Instance");
+
 	if (!checkVulkanSupport())
 		throw MessageException("unsupported or missing Vulkan driver");
-	if (!createInstance())
-		throw MessageException("failed to create Vulkan instance");
+	createInstance();
+
+	auto &backend = VulkanBackend::backend();
 	if (!backend.loadInstanceLevelApi(m_handle)) {
 		// Assuming at least vkDestroyInstance was found...
 		destroyInstance();
 		throw MessageException("failed to load instance-level Vulkan API");
 	}
-	Log::debug("VulkanInstance created successfully");
+
+	Log::debug("Instance created successfully");
 }
 
-VulkanInstance::~VulkanInstance() noexcept {
-	Log::debug("Destroying VulkanInstance");
+Instance::~Instance() noexcept
+{
+	Log::debug("Destroying Instance");
 	destroyInstance();
 }
 
-bool VulkanInstance::checkVulkanSupport() const {
+bool Instance::checkVulkanSupport() const
+{
 	if (glfwVulkanSupported() != GLFW_TRUE) {
 		Log::error("No supported Vulkan ICD found");
 		return false;
 	}
 
+	auto &backend = VulkanBackend::backend();
 	uint32_t version = 0;
-	VkResult result = m_backend.vkEnumerateInstanceVersion(&version);
+	VkResult result = backend.vkEnumerateInstanceVersion(&version);
 	if (result != VK_SUCCESS) {
 		Log::error("vkEnumerateInstanceVersion failed: {}", getVkResultString(result));
 		return false;
@@ -53,7 +62,8 @@ bool VulkanInstance::checkVulkanSupport() const {
 	return true;
 }
 
-static std::vector<const char *> getRequiredInstanceExtensions() {
+static std::vector<const char *> getRequiredInstanceExtensions()
+{
 	uint32_t glfw_ext_count = 0;
 	// GLFW guarantees that on success there will be `VK_KHR_surface` at least
 	const char **glfw_ext_list = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
@@ -84,10 +94,12 @@ static std::vector<const char *> getRequiredInstanceExtensions() {
 	return ext_list;
 }
 
-static std::vector<const char *> getRequiredLayers(VulkanBackend &backend) {
+static std::vector<const char *> getRequiredLayers()
+{
 	if constexpr (!BuildConfig::kUseVulkanDebugging)
 		return {};
 
+	auto &backend = VulkanBackend::backend();
 	uint32_t available_count;
 	backend.vkEnumerateInstanceLayerProperties(&available_count, nullptr);
 	std::vector<VkLayerProperties> available_props(available_count);
@@ -128,7 +140,8 @@ static std::vector<const char *> getRequiredLayers(VulkanBackend &backend) {
 	return layer_list;
 }
 
-bool VulkanInstance::createInstance() {
+void Instance::createInstance()
+{
 	// Fill VkApplicationInfo
 	auto version = VK_MAKE_VERSION(BuildConfig::kVersionMajor, BuildConfig::kVersionMinor, BuildConfig::kVersionPatch);
 	VkApplicationInfo app_info = {};
@@ -141,7 +154,7 @@ bool VulkanInstance::createInstance() {
 
 	// Fill VkInstanceCreateInfo
 	auto ext_list = getRequiredInstanceExtensions();
-	auto layer_list = getRequiredLayers(m_backend);
+	auto layer_list = getRequiredLayers();
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
@@ -150,17 +163,17 @@ bool VulkanInstance::createInstance() {
 	create_info.enabledLayerCount = uint32_t(layer_list.size());
 	create_info.ppEnabledLayerNames = layer_list.data();
 
-	VkResult result = m_backend.vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
-	if (result != VK_SUCCESS) {
-		Log::error("vkCreateInstance failed: {}", getVkResultString(result));
-		return false;
-	}
-	return true;
+	auto &backend = VulkanBackend::backend();
+	VkResult result = backend.vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
+	if (result != VK_SUCCESS)
+		throw VulkanException(result, "vkCreateInstance");
 }
 
-void VulkanInstance::destroyInstance() noexcept {
-	m_backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
-	m_backend.unloadInstanceLevelApi();
+void Instance::destroyInstance() noexcept
+{
+	auto &backend = VulkanBackend::backend();
+	backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
+	backend.unloadInstanceLevelApi();
 }
 
 }
