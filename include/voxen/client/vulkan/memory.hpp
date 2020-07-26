@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
+#include <memory>
+
 namespace voxen::client::vulkan
 {
 
@@ -23,15 +25,12 @@ class DeviceAllocator {
 public:
 	class Allocation {
 	public:
-		Allocation() = default;
 		explicit Allocation(VkDeviceMemory handle, VkDeviceSize offset, VkDeviceSize size, uint32_t memory_type) noexcept;
 		Allocation(Allocation &&) noexcept;
-		Allocation(const Allocation &) noexcept;
+		Allocation(const Allocation &) = delete;
 		Allocation &operator = (Allocation &&) noexcept;
-		Allocation &operator = (const Allocation &) noexcept;
+		Allocation &operator = (const Allocation &) = delete;
 		~Allocation() noexcept;
-
-		bool isValid() const noexcept { return m_handle != VK_NULL_HANDLE; }
 
 		VkDeviceMemory handle() const noexcept { return m_handle; }
 		VkDeviceSize offset() const noexcept { return m_offset; }
@@ -58,7 +57,7 @@ public:
 	DeviceAllocator &operator = (const DeviceAllocator &) = delete;
 	~DeviceAllocator() noexcept;
 
-	Allocation allocate(const AllocationRequirements &reqs);
+	std::shared_ptr<Allocation> allocate(const AllocationRequirements &reqs);
 private:
 	DeviceMemory allocateSlab(uint32_t memory_type, VkDeviceSize bytes);
 };
