@@ -59,6 +59,7 @@ DeviceAllocation::~Allocation() noexcept
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkFreeMemory(device, m_handle, VulkanHostAllocator::callbacks());
+	Log::trace("Freed device memory block 0x{:X}", uintptr_t(m_handle));
 }
 
 // --- VulkanDeviceAllocator ---
@@ -75,7 +76,7 @@ DeviceAllocator::~DeviceAllocator() noexcept
 	Log::debug("Destroying DeviceAllocator");
 }
 
-DeviceAllocation DeviceAllocator::allocate(const AllocationRequirements &reqs)
+std::shared_ptr<DeviceAllocation> DeviceAllocator::allocate(const AllocationRequirements &reqs)
 {
 	const VkMemoryRequirements &mem_reqs = reqs.memory_reqs;
 	Log::trace("Requested device allocation: {} bytes, align by {}, type mask {:b}",
@@ -141,8 +142,8 @@ DeviceAllocation DeviceAllocator::allocate(const AllocationRequirements &reqs)
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkAllocateMemory");
 
-	Log::trace("Allocated slab 0x{:X}", uint64_t(handle));
-	return Allocation(handle, 0, mem_reqs.size, selected_type);
+	Log::trace("Allocated device memory block 0x{:X}", uintptr_t(handle));
+	return std::make_shared<Allocation>(handle, 0, mem_reqs.size, selected_type);
 }
 
 DeviceMemory DeviceAllocator::allocateSlab(uint32_t memory_type, VkDeviceSize bytes)

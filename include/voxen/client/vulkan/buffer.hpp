@@ -24,7 +24,7 @@ public:
 	operator VkBuffer() const noexcept { return m_buffer; }
 private:
 	VkBuffer m_buffer;
-	DeviceAllocation m_memory;
+	std::shared_ptr<DeviceAllocation> m_memory;
 };
 
 }

@@ -43,7 +43,7 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 	}
 	m_memory = backend.deviceAllocator()->allocate(reqs);
 
-	result = backend.vkBindBufferMemory(device, m_buffer, m_memory.handle(), m_memory.offset());
+	result = backend.vkBindBufferMemory(device, m_buffer, m_memory->handle(), m_memory->offset());
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkBindBufferMemory");
 }
