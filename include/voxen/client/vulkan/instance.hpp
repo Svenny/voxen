@@ -1,31 +1,29 @@
 #pragma once
 
-#include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanInstance {
+class Instance {
 public:
 	// Minimal supported Vulkan version
 	constexpr static uint32_t kMinVulkanVersionMajor = 1;
 	constexpr static uint32_t kMinVulkanVersionMinor = 1;
 
-	explicit VulkanInstance(VulkanBackend &backend);
-	VulkanInstance(VulkanInstance &&) = delete;
-	VulkanInstance(const VulkanInstance &) = delete;
-	VulkanInstance &operator = (VulkanInstance &&) = delete;
-	VulkanInstance &operator = (const VulkanInstance &) = delete;
-	~VulkanInstance() noexcept;
+	explicit Instance();
+	Instance(Instance &&) = delete;
+	Instance(const Instance &) = delete;
+	Instance &operator = (Instance &&) = delete;
+	Instance &operator = (const Instance &) = delete;
+	~Instance() noexcept;
 
-	VkInstance handle() const noexcept { return m_handle; }
 	operator VkInstance() const noexcept { return m_handle; }
 private:
-	VulkanBackend &m_backend;
 	VkInstance m_handle = VK_NULL_HANDLE;
 
 	bool checkVulkanSupport() const;
-	bool createInstance();
+	void createInstance();
 	void destroyInstance() noexcept;
 };
 

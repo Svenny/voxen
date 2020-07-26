@@ -84,8 +84,8 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 
 	auto api_version = std::make_pair(VK_VERSION_MAJOR(props.apiVersion),
 	                                  VK_VERSION_MINOR(props.apiVersion));
-	auto required_api_version = std::make_pair(VulkanInstance::kMinVulkanVersionMajor,
-	                                           VulkanInstance::kMinVulkanVersionMinor);
+	auto required_api_version = std::make_pair(Instance::kMinVulkanVersionMajor,
+	                                           Instance::kMinVulkanVersionMinor);
 	if (api_version < required_api_version) {
 		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}",
 		           api_version.first, api_version.second, required_api_version.first, required_api_version.second);

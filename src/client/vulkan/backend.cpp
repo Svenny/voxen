@@ -51,7 +51,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 	}
 
 	try {
-		m_instance = new VulkanInstance(*this);
+		m_instance = new vulkan::Instance;
 		m_physical_device = new vulkan::PhysicalDevice;
 		m_device = new vulkan::Device;
 		m_device_allocator = new VulkanDeviceAllocator;
