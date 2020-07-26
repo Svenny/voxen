@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 
 #include <voxen/util/assert.hpp>
@@ -29,7 +30,7 @@ void VulkanSwapchain::recreateSwapchain()
 {
 	auto &backend = VulkanBackend::backend();
 	vxAssert(backend.surface() != nullptr);
-	VkPhysicalDevice phys_device = backend.device()->physDeviceHandle();
+	VkPhysicalDevice phys_device = *backend.physicalDevice();
 	VkDevice device = *backend.device();
 	VkSurfaceKHR surface = *backend.surface();
 	auto allocator = VulkanHostAllocator::callbacks();
@@ -98,7 +99,7 @@ void VulkanSwapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 	vxAssert(idx < uint32_t(m_images.size()));
 
 	auto &backend = VulkanBackend::backend();
-	VkQueue queue = backend.device()->queueManager().presentQueue();
+	VkQueue queue = backend.device()->presentQueue();
 
 	VkResult present_result;
 	VkPresentInfoKHR info = {};

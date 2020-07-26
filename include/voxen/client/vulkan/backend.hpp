@@ -9,7 +9,6 @@ namespace voxen::client
 {
 
 class VulkanInstance;
-class VulkanDevice;
 class VulkanDeviceAllocator;
 class VulkanSurface;
 class VulkanSwapchain;
@@ -20,6 +19,14 @@ class VulkanPipelineCache;
 class VulkanPipelineLayoutCollection;
 class VulkanPipelineCollection;
 class VulkanMainLoop;
+
+namespace vulkan
+{
+
+class PhysicalDevice;
+class Device;
+
+}
 
 class VulkanBackend {
 public:
@@ -37,7 +44,8 @@ public:
 	State state() const noexcept { return m_state; }
 
 	VulkanInstance *instance() const noexcept { return m_instance; }
-	VulkanDevice *device() const noexcept { return m_device; }
+	vulkan::PhysicalDevice *physicalDevice() const noexcept { return m_physical_device; }
+	vulkan::Device *device() const noexcept { return m_device; }
 	VulkanDeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	VulkanSurface *surface() const noexcept { return m_surface; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
@@ -69,7 +77,8 @@ private:
 	State m_state = State::NotStarted;
 
 	VulkanInstance *m_instance = nullptr;
-	VulkanDevice *m_device = nullptr;
+	vulkan::PhysicalDevice *m_physical_device = nullptr;
+	vulkan::Device *m_device = nullptr;
 	VulkanDeviceAllocator *m_device_allocator = nullptr;
 	VulkanSurface *m_surface = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;

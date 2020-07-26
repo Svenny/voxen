@@ -3,6 +3,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
+#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
@@ -15,7 +16,7 @@ VulkanMainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true)
 
 VulkanMainLoop::VulkanMainLoop()
 	: m_image_guard_fences(VulkanBackend::backend().swapchain()->numImages(), VK_NULL_HANDLE),
-	m_graphics_command_pool(VulkanBackend::backend().device()->queueManager().graphicsQueueFamily()),
+	m_graphics_command_pool(VulkanBackend::backend().physicalDevice()->graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
 {
 	Log::debug("VulkanMainLoop created successfully");
@@ -101,7 +102,7 @@ void VulkanMainLoop::drawFrame()
 	submit_info.signalSemaphoreCount = 1;
 	submit_info.pSignalSemaphores = &render_done_semaphore;
 
-	VkQueue queue = backend.device()->queueManager().graphicsQueue();
+	VkQueue queue = backend.device()->graphicsQueue();
 	result = backend.vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkQueueSubmit");

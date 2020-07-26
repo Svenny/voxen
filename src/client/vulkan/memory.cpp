@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/physical_device.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -83,7 +84,7 @@ VulkanDeviceAllocation VulkanDeviceAllocator::allocate(const AllocationRequireme
 	           mem_reqs.size, mem_reqs.alignment, mem_reqs.memoryTypeBits);
 	// TODO: implement actual allocation stategy, this is a temporary stub
 	auto &backend = VulkanBackend::backend();
-	VkPhysicalDevice device = backend.device()->physDeviceHandle();
+	VkPhysicalDevice device = *backend.physicalDevice();
 
 	VkPhysicalDeviceMemoryProperties mem_props;
 	backend.vkGetPhysicalDeviceMemoryProperties(device, &mem_props);
