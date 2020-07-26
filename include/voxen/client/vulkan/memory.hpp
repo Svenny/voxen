@@ -2,24 +2,24 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanDeviceMemory {
+class DeviceMemory {
 public:
-	VulkanDeviceMemory(const VkMemoryAllocateInfo &info);
-	VulkanDeviceMemory(VulkanDeviceMemory &&) = delete;
-	VulkanDeviceMemory(const VulkanDeviceMemory &) = delete;
-	VulkanDeviceMemory &operator = (VulkanDeviceMemory &&) = delete;
-	VulkanDeviceMemory &operator = (const VulkanDeviceMemory &) = delete;
-	~VulkanDeviceMemory() noexcept;
+	DeviceMemory(const VkMemoryAllocateInfo &info);
+	DeviceMemory(DeviceMemory &&) = delete;
+	DeviceMemory(const DeviceMemory &) = delete;
+	DeviceMemory &operator = (DeviceMemory &&) = delete;
+	DeviceMemory &operator = (const DeviceMemory &) = delete;
+	~DeviceMemory() noexcept;
 
 	operator VkDeviceMemory() const noexcept { return m_device_memory; }
 private:
 	VkDeviceMemory m_device_memory = VK_NULL_HANDLE;
 };
 
-class VulkanDeviceAllocator {
+class DeviceAllocator {
 public:
 	class Allocation {
 	public:
@@ -42,7 +42,6 @@ public:
 		VkDeviceSize m_offset = 0;
 		VkDeviceSize m_size = 0;
 		uint32_t m_memory_type = UINT32_MAX;
-		VulkanDeviceMemory *slab = nullptr;
 	};
 
 	struct AllocationRequirements {
@@ -52,20 +51,20 @@ public:
 		bool prefer_host_caching;
 	};
 
-	VulkanDeviceAllocator();
-	VulkanDeviceAllocator(VulkanDeviceAllocator &&) = delete;
-	VulkanDeviceAllocator(const VulkanDeviceAllocator &) = delete;
-	VulkanDeviceAllocator &operator = (VulkanDeviceAllocator &&) = delete;
-	VulkanDeviceAllocator &operator = (const VulkanDeviceAllocator &) = delete;
-	~VulkanDeviceAllocator() noexcept;
+	DeviceAllocator();
+	DeviceAllocator(DeviceAllocator &&) = delete;
+	DeviceAllocator(const DeviceAllocator &) = delete;
+	DeviceAllocator &operator = (DeviceAllocator &&) = delete;
+	DeviceAllocator &operator = (const DeviceAllocator &) = delete;
+	~DeviceAllocator() noexcept;
 
 	Allocation allocate(const AllocationRequirements &reqs);
 private:
-	VulkanDeviceMemory allocateSlab(uint32_t memory_type, VkDeviceSize bytes);
+	DeviceMemory allocateSlab(uint32_t memory_type, VkDeviceSize bytes);
 };
 
 // Shorthands (kind of)
-using VulkanDeviceAllocation = VulkanDeviceAllocator::Allocation;
-using VulkanDeviceAllocationRequirements = VulkanDeviceAllocator::AllocationRequirements;
+using DeviceAllocation = DeviceAllocator::Allocation;
+using DeviceAllocationRequirements = DeviceAllocator::AllocationRequirements;
 
 }

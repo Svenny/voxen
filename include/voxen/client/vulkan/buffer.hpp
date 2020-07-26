@@ -3,10 +3,10 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/vulkan/memory.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanBuffer {
+class Buffer {
 public:
 	enum class Usage {
 		DeviceLocal,
@@ -14,17 +14,17 @@ public:
 		Readback
 	};
 
-	VulkanBuffer(const VkBufferCreateInfo &info, Usage usage);
-	VulkanBuffer(VulkanBuffer &&) = delete;
-	VulkanBuffer(const VulkanBuffer &) = delete;
-	VulkanBuffer &operator = (VulkanBuffer &&) = delete;
-	VulkanBuffer &operator = (const VulkanBuffer &) = delete;
-	~VulkanBuffer() noexcept;
+	Buffer(const VkBufferCreateInfo &info, Usage usage);
+	Buffer(Buffer &&) = delete;
+	Buffer(const Buffer &) = delete;
+	Buffer &operator = (Buffer &&) = delete;
+	Buffer &operator = (const Buffer &) = delete;
+	~Buffer() noexcept;
 
 	operator VkBuffer() const noexcept { return m_buffer; }
 private:
 	VkBuffer m_buffer;
-	VulkanDeviceAllocation m_memory;
+	DeviceAllocation m_memory;
 };
 
 }
