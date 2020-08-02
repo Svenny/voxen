@@ -14,7 +14,7 @@ VulkanSemaphore::VulkanSemaphore() {
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateSemaphore(device, &info, VulkanHostAllocator::callbacks(), &m_semaphore);
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkCreateSemaphore");
 }
 
 VulkanSemaphore::~VulkanSemaphore() noexcept {
@@ -33,7 +33,7 @@ VulkanFence::VulkanFence(bool create_signaled) {
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateFence(device, &info, VulkanHostAllocator::callbacks(), &m_fence);
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkCreateFence");
 }
 
 VulkanFence::~VulkanFence() noexcept {
