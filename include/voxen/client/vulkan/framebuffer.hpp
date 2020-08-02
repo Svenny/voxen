@@ -2,37 +2,37 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanFramebuffer {
+class Framebuffer {
 public:
-	explicit VulkanFramebuffer(const VkFramebufferCreateInfo &info);
-	VulkanFramebuffer(VulkanFramebuffer &&) = delete;
-	VulkanFramebuffer(const VulkanFramebuffer &) = delete;
-	VulkanFramebuffer &operator = (VulkanFramebuffer &&) = delete;
-	VulkanFramebuffer &operator = (const VulkanFramebuffer &) = delete;
-	~VulkanFramebuffer() noexcept;
+	explicit Framebuffer(const VkFramebufferCreateInfo &info);
+	Framebuffer(Framebuffer &&) = delete;
+	Framebuffer(const Framebuffer &) = delete;
+	Framebuffer &operator = (Framebuffer &&) = delete;
+	Framebuffer &operator = (const Framebuffer &) = delete;
+	~Framebuffer() noexcept;
 
 	operator VkFramebuffer() const noexcept { return m_framebuffer; }
 private:
 	VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
 };
 
-class VulkanFramebufferCollection {
+class FramebufferCollection {
 public:
-	VulkanFramebufferCollection();
-	VulkanFramebufferCollection(VulkanFramebufferCollection &&) = delete;
-	VulkanFramebufferCollection(const VulkanFramebufferCollection &) = delete;
-	VulkanFramebufferCollection &operator = (VulkanFramebufferCollection &&) = delete;
-	VulkanFramebufferCollection &operator = (const VulkanFramebufferCollection &) = delete;
-	~VulkanFramebufferCollection() = default;
+	FramebufferCollection();
+	FramebufferCollection(FramebufferCollection &&) = delete;
+	FramebufferCollection(const FramebufferCollection &) = delete;
+	FramebufferCollection &operator = (FramebufferCollection &&) = delete;
+	FramebufferCollection &operator = (const FramebufferCollection &) = delete;
+	~FramebufferCollection() = default;
 
-	VulkanFramebuffer &sceneFramebuffer() noexcept { return m_scene_framebuffer; }
+	Framebuffer &sceneFramebuffer() noexcept { return m_scene_framebuffer; }
 private:
-	VulkanFramebuffer m_scene_framebuffer;
+	Framebuffer m_scene_framebuffer;
 
-	VulkanFramebuffer createSceneFramebuffer();
+	Framebuffer createSceneFramebuffer();
 };
 
 }

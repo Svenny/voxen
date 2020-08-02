@@ -2,17 +2,17 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanPipelineCollection {
+class PipelineCollection {
 public:
-	VulkanPipelineCollection();
-	VulkanPipelineCollection(VulkanPipelineCollection &&) = delete;
-	VulkanPipelineCollection(const VulkanPipelineCollection &) = delete;
-	VulkanPipelineCollection &operator = (VulkanPipelineCollection &&) = delete;
-	VulkanPipelineCollection &operator = (const VulkanPipelineCollection &) = delete;
-	~VulkanPipelineCollection() noexcept;
+	PipelineCollection();
+	PipelineCollection(PipelineCollection &&) = delete;
+	PipelineCollection(const PipelineCollection &) = delete;
+	PipelineCollection &operator = (PipelineCollection &&) = delete;
+	PipelineCollection &operator = (const PipelineCollection &) = delete;
+	~PipelineCollection() noexcept;
 
 	VkPipeline operator[](uint32_t idx) const noexcept { return m_graphics_pipelines[idx]; }
 

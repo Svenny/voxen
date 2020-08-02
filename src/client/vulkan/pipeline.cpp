@@ -11,7 +11,7 @@
 #include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
 struct VertexFormatPositionOnly {
@@ -138,7 +138,7 @@ struct GraphicsPipelineParts {
 		}
 	}
 
-	VkGraphicsPipelineCreateInfo create_infos[VulkanPipelineCollection::NUM_GRAPHICS_PIPELINES];
+	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
 
 	const VertexFormatPositionOnly vert_fmt_pos_only;
 	const DefaultViewportState default_viewport_state;
@@ -159,9 +159,9 @@ template<uint32_t ID>
 void addParts(GraphicsPipelineParts &parts, VulkanBackend &backend);
 
 template<>
-void addParts<VulkanPipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, VulkanBackend &backend) {
+void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, VulkanBackend &backend) {
 	auto &my_parts = parts.debug_octree_parts;
-	auto &my_create_info = parts.create_infos[VulkanPipelineCollection::DEBUG_OCTREE_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_OCTREE_PIPELINE];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -206,14 +206,14 @@ void addParts<VulkanPipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineP
 
 template<uint32_t ID>
 void fillPipelineParts(GraphicsPipelineParts &parts, VulkanBackend &backend) {
-	if constexpr (ID < VulkanPipelineCollection::NUM_GRAPHICS_PIPELINES) {
+	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
 		addParts<ID>(parts, backend);
 		fillPipelineParts<ID + 1>(parts, backend);
 	}
 }
 
-VulkanPipelineCollection::VulkanPipelineCollection() {
-	Log::debug("Creating VulkanPipelineCollection");
+PipelineCollection::PipelineCollection() {
+	Log::debug("Creating PipelineCollection");
 
 	auto &backend = VulkanBackend::backend();
 	vxAssert(backend.pipelineCache() != nullptr);
@@ -233,11 +233,11 @@ VulkanPipelineCollection::VulkanPipelineCollection() {
 		throw VulkanException(result);
 	}
 
-	Log::debug("VulkanPipelineCollection created successfully");
+	Log::debug("PipelineCollection created successfully");
 }
 
-VulkanPipelineCollection::~VulkanPipelineCollection() noexcept {
-	Log::debug("Destroying VulkanPipelineCollection");
+PipelineCollection::~PipelineCollection() noexcept {
+	Log::debug("Destroying PipelineCollection");
 
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();

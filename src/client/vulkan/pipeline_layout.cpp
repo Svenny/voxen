@@ -5,10 +5,10 @@
 
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanPipelineLayout::VulkanPipelineLayout(const VkPipelineLayoutCreateInfo &info) {
+PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info) {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreatePipelineLayout(device, &info, VulkanHostAllocator::callbacks(), &m_layout);
@@ -16,19 +16,19 @@ VulkanPipelineLayout::VulkanPipelineLayout(const VkPipelineLayoutCreateInfo &inf
 		throw VulkanException(result);
 }
 
-VulkanPipelineLayout::~VulkanPipelineLayout() noexcept {
+PipelineLayout::~PipelineLayout() noexcept {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyPipelineLayout(device, m_layout, VulkanHostAllocator::callbacks());
 }
 
-VulkanPipelineLayoutCollection::VulkanPipelineLayoutCollection()
+PipelineLayoutCollection::PipelineLayoutCollection()
 	: m_descriptorless_layout(createDescriptorlessLayout())
 {
-	Log::debug("VulkanPipelineLayoutCollection created successfully");
+	Log::debug("PipelineLayoutCollection created successfully");
 }
 
-VulkanPipelineLayout VulkanPipelineLayoutCollection::createDescriptorlessLayout() {
+PipelineLayout PipelineLayoutCollection::createDescriptorlessLayout() {
 	VkPushConstantRange range;
 	range.offset = 0;
 	range.size = 128;
@@ -38,7 +38,7 @@ VulkanPipelineLayout VulkanPipelineLayoutCollection::createDescriptorlessLayout(
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	info.pushConstantRangeCount = 1;
 	info.pPushConstantRanges = &range;
-	return VulkanPipelineLayout(info);
+	return PipelineLayout(info);
 }
 
 }

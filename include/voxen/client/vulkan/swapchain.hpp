@@ -3,17 +3,17 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/window.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanSwapchain {
+class Swapchain {
 public:
-	VulkanSwapchain();
-	VulkanSwapchain(VulkanSwapchain &&) = delete;
-	VulkanSwapchain(const VulkanSwapchain &) = delete;
-	VulkanSwapchain &operator = (VulkanSwapchain &&) = delete;
-	VulkanSwapchain &operator = (const VulkanSwapchain &) = delete;
-	~VulkanSwapchain() noexcept;
+	Swapchain();
+	Swapchain(Swapchain &&) = delete;
+	Swapchain(const Swapchain &) = delete;
+	Swapchain &operator = (Swapchain &&) = delete;
+	Swapchain &operator = (const Swapchain &) = delete;
+	~Swapchain() noexcept;
 
 	void recreateSwapchain();
 	uint32_t acquireImage(VkSemaphore signal_semaphore);

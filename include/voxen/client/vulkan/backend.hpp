@@ -8,15 +8,6 @@
 namespace voxen::client
 {
 
-class VulkanSurface;
-class VulkanSwapchain;
-class VulkanRenderPassCollection;
-class VulkanFramebufferCollection;
-class VulkanShaderModuleCollection;
-class VulkanPipelineCache;
-class VulkanPipelineLayoutCollection;
-class VulkanPipelineCollection;
-
 namespace vulkan
 {
 
@@ -25,6 +16,15 @@ class PhysicalDevice;
 class Device;
 class DeviceAllocator;
 class TransferManager;
+class Surface;
+class Swapchain;
+class RenderPassCollection;
+class FramebufferCollection;
+class ShaderModuleCollection;
+class PipelineCache;
+class PipelineLayoutCollection;
+class PipelineCollection;
+
 class MainLoop;
 class AlgoDebugOctree;
 
@@ -50,16 +50,16 @@ public:
 	vulkan::Device *device() const noexcept { return m_device; }
 	vulkan::DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	vulkan::TransferManager *transferManager() const noexcept { return m_transfer_manager; }
-	VulkanSurface *surface() const noexcept { return m_surface; }
-	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
-	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
-	VulkanFramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
-	VulkanShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
-	VulkanPipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
-	VulkanPipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
-	VulkanPipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
-	vulkan::MainLoop *mainLoop() const noexcept { return m_main_loop; }
+	vulkan::Surface *surface() const noexcept { return m_surface; }
+	vulkan::Swapchain *swapchain() const noexcept { return m_swapchain; }
+	vulkan::RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
+	vulkan::FramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
+	vulkan::ShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
+	vulkan::PipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
+	vulkan::PipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
+	vulkan::PipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
 
+	vulkan::MainLoop *mainLoop() const noexcept { return m_main_loop; }
 	vulkan::AlgoDebugOctree *algoDebugOctree() const noexcept { return m_algo_debug_octree; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
@@ -86,16 +86,16 @@ private:
 	vulkan::Device *m_device = nullptr;
 	vulkan::DeviceAllocator *m_device_allocator = nullptr;
 	vulkan::TransferManager *m_transfer_manager = nullptr;
-	VulkanSurface *m_surface = nullptr;
-	VulkanSwapchain *m_swapchain = nullptr;
-	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
-	VulkanFramebufferCollection *m_framebuffer_collection = nullptr;
-	VulkanShaderModuleCollection *m_shader_module_collection = nullptr;
-	VulkanPipelineCache *m_pipeline_cache = nullptr;
-	VulkanPipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
-	VulkanPipelineCollection *m_pipeline_collection = nullptr;
-	vulkan::MainLoop *m_main_loop = nullptr;
+	vulkan::Surface *m_surface = nullptr;
+	vulkan::Swapchain *m_swapchain = nullptr;
+	vulkan::RenderPassCollection *m_render_pass_collection = nullptr;
+	vulkan::FramebufferCollection *m_framebuffer_collection = nullptr;
+	vulkan::ShaderModuleCollection *m_shader_module_collection = nullptr;
+	vulkan::PipelineCache *m_pipeline_cache = nullptr;
+	vulkan::PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
+	vulkan::PipelineCollection *m_pipeline_collection = nullptr;
 
+	vulkan::MainLoop *m_main_loop = nullptr;
 	vulkan::AlgoDebugOctree *m_algo_debug_octree = nullptr;
 
 	static VulkanBackend s_instance;
