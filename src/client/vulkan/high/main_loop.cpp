@@ -1,4 +1,4 @@
-#include <voxen/client/vulkan/main_loop.hpp>
+#include <voxen/client/vulkan/high/main_loop.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
@@ -9,25 +9,25 @@
 
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanMainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
+MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
-VulkanMainLoop::VulkanMainLoop()
+MainLoop::MainLoop()
 	: m_image_guard_fences(VulkanBackend::backend().swapchain()->numImages(), VK_NULL_HANDLE),
 	m_graphics_command_pool(VulkanBackend::backend().physicalDevice()->graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
 {
-	Log::debug("VulkanMainLoop created successfully");
+	Log::debug("MainLoop created successfully");
 }
 
-VulkanMainLoop::~VulkanMainLoop() noexcept
+MainLoop::~MainLoop() noexcept
 {
-	Log::debug("Destroying VulkanMainLoop");
+	Log::debug("Destroying MainLoop");
 }
 
-void VulkanMainLoop::drawFrame()
+void MainLoop::drawFrame()
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();

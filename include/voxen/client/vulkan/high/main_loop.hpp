@@ -7,19 +7,19 @@
 
 #include <extras/dyn_array.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanMainLoop {
+class MainLoop {
 public:
 	static inline constexpr size_t MAX_PENDING_FRAMES = 2;
 
-	VulkanMainLoop();
-	VulkanMainLoop(VulkanMainLoop &&) = delete;
-	VulkanMainLoop(const VulkanMainLoop &) = delete;
-	VulkanMainLoop &operator = (VulkanMainLoop &&) = delete;
-	VulkanMainLoop &operator = (const VulkanMainLoop &) = delete;
-	~VulkanMainLoop() noexcept;
+	MainLoop();
+	MainLoop(MainLoop &&) = delete;
+	MainLoop(const MainLoop &) = delete;
+	MainLoop &operator = (MainLoop &&) = delete;
+	MainLoop &operator = (const MainLoop &) = delete;
+	~MainLoop() noexcept;
 
 	void drawFrame();
 private:
@@ -35,8 +35,8 @@ private:
 	extras::dyn_array<VkFence> m_image_guard_fences;
 	PendingFrameSyncs m_pending_frame_syncs[MAX_PENDING_FRAMES];
 
-	VulkanCommandPool m_graphics_command_pool;
-	extras::dyn_array<VulkanCommandBuffer> m_graphics_command_buffers;
+	CommandPool m_graphics_command_pool;
+	extras::dyn_array<CommandBuffer> m_graphics_command_buffers;
 };
 
 }

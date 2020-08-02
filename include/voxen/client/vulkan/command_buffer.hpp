@@ -2,10 +2,10 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanCommandBuffer {
+class CommandBuffer {
 public:
 	enum class State {
 		Initial,
@@ -15,16 +15,16 @@ public:
 		Invalid
 	};
 
-	VulkanCommandBuffer() = default;
+	CommandBuffer() = default;
 
-	explicit VulkanCommandBuffer(VkCommandBuffer cmd_buffer, State state) noexcept
+	explicit CommandBuffer(VkCommandBuffer cmd_buffer, State state) noexcept
 		: m_cmd_buffer(cmd_buffer), m_state(state) {}
 
-	VulkanCommandBuffer(VulkanCommandBuffer &&other) = default;
-	VulkanCommandBuffer(const VulkanCommandBuffer &) = delete;
-	VulkanCommandBuffer& operator = (VulkanCommandBuffer &&) = default;
-	VulkanCommandBuffer& operator = (const VulkanCommandBuffer &) = delete;
-	~VulkanCommandBuffer() = default;
+	CommandBuffer(CommandBuffer &&other) = default;
+	CommandBuffer(const CommandBuffer &) = delete;
+	CommandBuffer& operator = (CommandBuffer &&) = default;
+	CommandBuffer& operator = (const CommandBuffer &) = delete;
+	~CommandBuffer() = default;
 
 	void reset(bool release_resources = false);
 	void begin(const VkCommandBufferBeginInfo &info);

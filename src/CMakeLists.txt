@@ -1,6 +1,8 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/debug_octree.cpp
+	src/client/vulkan/high/main_loop.cpp
 	src/client/vulkan/high/mesh.cpp
+	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
 	src/client/vulkan/command_buffer.cpp
@@ -11,7 +13,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/framebuffer.cpp
 	src/client/vulkan/image_view.cpp
 	src/client/vulkan/instance.cpp
-	src/client/vulkan/main_loop.cpp
 	src/client/vulkan/memory.cpp
 	src/client/vulkan/physical_device.cpp
 	src/client/vulkan/pipeline.cpp
