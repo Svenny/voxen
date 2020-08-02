@@ -3,11 +3,14 @@
 #include <voxen/common/world.hpp>
 #include <voxen/common/player.hpp>
 #include <voxen/common/config.hpp>
-#include <GLFW/glfw3.h>
 
 #include <voxen/util/log.hpp>
 
+#include <extras/math.hpp>
+
 #include <glm/gtc/quaternion.hpp>
+
+#include <GLFW/glfw3.h>
 
 using namespace voxen;
 

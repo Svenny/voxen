@@ -9,7 +9,7 @@
 namespace voxen::client
 {
 
-Gui::Gui(Window& window): m_window(&window), m_gameview(window) {
+Gui::Gui(Window& window): m_gameview(window) {
 	window.attachGUI(*this);
 }
 

@@ -4,8 +4,6 @@
 #include <voxen/common/player.hpp>
 #include <voxen/common/terrain.hpp>
 
-#include <voxen/client/vulkan/vulkan_render.hpp>
-
 #include <functional>
 
 namespace voxen

@@ -1,7 +1,7 @@
 #include <voxen/config.hpp>
 #include <voxen/client/gui.hpp>
+#include <voxen/client/render.hpp>
 #include <voxen/client/window.hpp>
-#include <voxen/client/vulkan/vulkan_render.hpp>
 #include <voxen/common/world.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/util/assert.hpp>
@@ -102,11 +102,11 @@ int main (int argc, char *argv[]) {
 
 		auto &wnd = voxen::client::Window::instance();
 		wnd.start(main_voxen_config->optionInt("window", "width"), main_voxen_config->optionInt("window", "height"));
-		auto *render = new voxen::client::VulkanRender(wnd);
+		auto render = std::make_unique<voxen::client::Render>(wnd);
 
 		voxen::World world;
-		voxen::client::Gui gui(wnd);
-		gui.init(world);
+		auto gui = std::make_unique<voxen::client::Gui>(wnd);
+		gui->init(world);
 		voxen::DebugQueueRtW render_to_world_queue;
 
 		auto last_tick_time = high_resolution_clock::now();
@@ -145,25 +145,15 @@ int main (int argc, char *argv[]) {
 			voxen::World state(world);
 			// Input handle
 			wnd.pollEvents();
-			gui.update(state, render_to_world_queue);
+			gui->update(state, render_to_world_queue);
 			// GUI now handled a lot of callbacks (events) from Window
 			// and update world via queue
 
 			// Do render
-			glm::mat4 camera_matrix = gui.view().cameraMatrix();
-			render->beginFrame();
-			state.walkActiveChunks([render, camera_matrix](const voxen::TerrainChunk &chunk) {
-				float x = float(chunk.baseX());
-				float y = float(chunk.baseY());
-				float z = float(chunk.baseZ());
-				float sz = float(chunk.size() * chunk.scale());
-				render->debugDrawOctreeNode(camera_matrix, x, y, z, sz);
-			});
-			render->endFrame();
+			render->drawFrame(state, gui->view());
 			fps_counter++;
 		}
 
-		delete render;
 		wnd.stop();
 	}
 	catch (const voxen::Exception &e) {
