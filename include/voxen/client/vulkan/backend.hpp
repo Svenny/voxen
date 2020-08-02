@@ -16,7 +16,6 @@ class VulkanShaderModuleCollection;
 class VulkanPipelineCache;
 class VulkanPipelineLayoutCollection;
 class VulkanPipelineCollection;
-class VulkanMainLoop;
 
 namespace vulkan
 {
@@ -25,6 +24,7 @@ class Instance;
 class PhysicalDevice;
 class Device;
 class DeviceAllocator;
+class MainLoop;
 
 }
 
@@ -55,7 +55,7 @@ public:
 	VulkanPipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
 	VulkanPipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
 	VulkanPipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
-	VulkanMainLoop *mainLoop() const noexcept { return m_main_loop; }
+	vulkan::MainLoop *mainLoop() const noexcept { return m_main_loop; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -88,7 +88,7 @@ private:
 	VulkanPipelineCache *m_pipeline_cache = nullptr;
 	VulkanPipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 	VulkanPipelineCollection *m_pipeline_collection = nullptr;
-	VulkanMainLoop *m_main_loop = nullptr;
+	vulkan::MainLoop *m_main_loop = nullptr;
 
 	static VulkanBackend s_instance;
 

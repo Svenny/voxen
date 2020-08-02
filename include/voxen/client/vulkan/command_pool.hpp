@@ -5,20 +5,20 @@
 
 #include <extras/dyn_array.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanCommandPool {
+class CommandPool {
 public:
-	explicit VulkanCommandPool(uint32_t queue_family);
-	VulkanCommandPool(VulkanCommandPool &&) = delete;
-	VulkanCommandPool(const VulkanCommandPool &) = delete;
-	VulkanCommandPool& operator = (VulkanCommandPool &&) = delete;
-	VulkanCommandPool& operator = (const VulkanCommandPool &) = delete;
-	~VulkanCommandPool() noexcept;
+	explicit CommandPool(uint32_t queue_family);
+	CommandPool(CommandPool &&) = delete;
+	CommandPool(const CommandPool &) = delete;
+	CommandPool& operator = (CommandPool &&) = delete;
+	CommandPool& operator = (const CommandPool &) = delete;
+	~CommandPool() noexcept;
 
-	extras::dyn_array<VulkanCommandBuffer> allocateCommandBuffers(uint32_t count, bool secondary = false);
-	void freeCommandBuffers(extras::dyn_array<VulkanCommandBuffer> &buffers);
+	extras::dyn_array<CommandBuffer> allocateCommandBuffers(uint32_t count, bool secondary = false);
+	void freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers);
 	void trim() noexcept;
 	void reset(bool release_resources = false);
 
