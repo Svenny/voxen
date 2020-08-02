@@ -2,41 +2,47 @@
 
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/window.hpp>
+#include <voxen/common/gameview.hpp>
+#include <voxen/common/world.hpp>
 
 #include <string_view>
 
 namespace voxen::client::vulkan
 {
 
-class Instance;
-class PhysicalDevice;
+class AlgoDebugOctree;
 class Device;
 class DeviceAllocator;
-class TransferManager;
+class FramebufferCollection;
+class Instance;
+class MainLoop;
+class PhysicalDevice;
+class PipelineCache;
+class PipelineCollection;
+class PipelineLayoutCollection;
+class RenderPassCollection;
+class ShaderModuleCollection;
 class Surface;
 class Swapchain;
-class RenderPassCollection;
-class FramebufferCollection;
-class ShaderModuleCollection;
-class PipelineCache;
-class PipelineLayoutCollection;
-class PipelineCollection;
-
-class MainLoop;
-class AlgoDebugOctree;
+class TransferManager;
 
 class Backend {
 public:
 	enum class State {
 		NotStarted,
 		Started,
-		DeviceLost,
+		Broken,
 		SurfaceLost,
 		SwapchainOutOfDate,
 	};
 
 	bool start(Window &window) noexcept;
 	void stop() noexcept;
+
+	bool drawFrame(const World &state, const GameView &view) noexcept;
+
+	bool recreateSurface(Window &window) noexcept;
+	bool recreateSwapchain(Window &window) noexcept;
 
 	State state() const noexcept { return m_state; }
 
@@ -45,13 +51,13 @@ public:
 	Device *device() const noexcept { return m_device; }
 	DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	TransferManager *transferManager() const noexcept { return m_transfer_manager; }
-	Surface *surface() const noexcept { return m_surface; }
-	Swapchain *swapchain() const noexcept { return m_swapchain; }
-	RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
-	FramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
 	ShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
 	PipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
 	PipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
+	Surface *surface() const noexcept { return m_surface; }
+	RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
+	Swapchain *swapchain() const noexcept { return m_swapchain; }
+	FramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
 	PipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
 
 	MainLoop *mainLoop() const noexcept { return m_main_loop; }
@@ -81,13 +87,13 @@ private:
 	Device *m_device = nullptr;
 	DeviceAllocator *m_device_allocator = nullptr;
 	TransferManager *m_transfer_manager = nullptr;
-	Surface *m_surface = nullptr;
-	Swapchain *m_swapchain = nullptr;
-	RenderPassCollection *m_render_pass_collection = nullptr;
-	FramebufferCollection *m_framebuffer_collection = nullptr;
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
 	PipelineCache *m_pipeline_cache = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
+	Surface *m_surface = nullptr;
+	RenderPassCollection *m_render_pass_collection = nullptr;
+	Swapchain *m_swapchain = nullptr;
+	FramebufferCollection *m_framebuffer_collection = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
 
 	MainLoop *m_main_loop = nullptr;
@@ -98,6 +104,15 @@ private:
 	static std::string_view stateToString(State state) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
+
+	enum class StartStopMode {
+		Everything,
+		SurfaceDependentOnly,
+		SwapchainDependentOnly
+	};
+
+	bool doStart(Window &window, StartStopMode mode) noexcept;
+	void doStop(StartStopMode mode) noexcept;
 
 	Backend() = default;
 	Backend(Backend &&) = delete;

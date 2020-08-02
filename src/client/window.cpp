@@ -62,8 +62,6 @@ void Window::createWindow (int width, int height) {
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
 	glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
 	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
-	// TODO: this is a temporary hack to simplify Vulkan logic. Remove it
-	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE);
 
 	Config *cfg = Config::mainConfig();
 	GLFWmonitor *monitor = nullptr;

@@ -19,6 +19,7 @@ public:
 
 	void drawFrame(const World &state, const GameView &view);
 private:
+	Window &m_window;
 };
 
 }

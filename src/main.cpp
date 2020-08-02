@@ -154,6 +154,10 @@ int main (int argc, char *argv[]) {
 			fps_counter++;
 		}
 
+		// `render` and `gui` must be destroyed before calling `wnd.stop()`
+		// TODO: do something about Window's lifetime management?
+		render.reset();
+		gui.reset();
 		wnd.stop();
 	}
 	catch (const voxen::Exception &e) {
