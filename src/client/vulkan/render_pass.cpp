@@ -15,7 +15,7 @@ RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_render_pass);
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkCreateRenderPass");
 }
 
 RenderPass::~RenderPass() noexcept {

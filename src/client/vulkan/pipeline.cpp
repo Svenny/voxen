@@ -230,7 +230,7 @@ PipelineCollection::PipelineCollection() {
 		// Some pipelines could have been successfully created, destroy them
 		for (VkPipeline pipe : m_graphics_pipelines)
 			backend.vkDestroyPipeline(device, pipe, allocator);
-		throw VulkanException(result);
+		throw VulkanException(result, "vkDestroyPipeline");
 	}
 
 	Log::debug("PipelineCollection created successfully");

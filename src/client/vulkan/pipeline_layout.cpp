@@ -13,7 +13,7 @@ PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info) {
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreatePipelineLayout(device, &info, VulkanHostAllocator::callbacks(), &m_layout);
 	if (result != VK_SUCCESS)
-		throw VulkanException(result);
+		throw VulkanException(result, "vkCreatePipelineLayout");
 }
 
 PipelineLayout::~PipelineLayout() noexcept {
