@@ -2,37 +2,37 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanShaderModule {
+class ShaderModule {
 public:
-	explicit VulkanShaderModule(const char *path);
-	VulkanShaderModule(VulkanShaderModule &&) = delete;
-	VulkanShaderModule(const VulkanShaderModule &) = delete;
-	VulkanShaderModule &operator = (VulkanShaderModule &&) = delete;
-	VulkanShaderModule &operator = (const VulkanShaderModule &) = delete;
-	~VulkanShaderModule() noexcept;
+	explicit ShaderModule(const char *path);
+	ShaderModule(ShaderModule &&) = delete;
+	ShaderModule(const ShaderModule &) = delete;
+	ShaderModule &operator = (ShaderModule &&) = delete;
+	ShaderModule &operator = (const ShaderModule &) = delete;
+	~ShaderModule() noexcept;
 
 	operator VkShaderModule() const noexcept { return m_shader_module; }
 private:
 	VkShaderModule m_shader_module = VK_NULL_HANDLE;
 };
 
-class VulkanShaderModuleCollection {
+class ShaderModuleCollection {
 public:
-	VulkanShaderModuleCollection();
-	VulkanShaderModuleCollection(VulkanShaderModuleCollection &&) = delete;
-	VulkanShaderModuleCollection(const VulkanShaderModuleCollection &) = delete;
-	VulkanShaderModuleCollection &operator = (VulkanShaderModuleCollection &&) = delete;
-	VulkanShaderModuleCollection &operator = (const VulkanShaderModuleCollection &) = delete;
-	~VulkanShaderModuleCollection() = default;
+	ShaderModuleCollection();
+	ShaderModuleCollection(ShaderModuleCollection &&) = delete;
+	ShaderModuleCollection(const ShaderModuleCollection &) = delete;
+	ShaderModuleCollection &operator = (ShaderModuleCollection &&) = delete;
+	ShaderModuleCollection &operator = (const ShaderModuleCollection &) = delete;
+	~ShaderModuleCollection() = default;
 
-	VulkanShaderModule &debugOctreeVertexShader() noexcept { return m_debug_octree_vertex; }
-	VulkanShaderModule &debugOctreeFragmentShader() noexcept { return m_debug_octree_fragment; }
+	ShaderModule &debugOctreeVertexShader() noexcept { return m_debug_octree_vertex; }
+	ShaderModule &debugOctreeFragmentShader() noexcept { return m_debug_octree_fragment; }
 private:
-	VulkanShaderModule m_debug_octree_vertex;
-	VulkanShaderModule m_debug_octree_fragment;
+	ShaderModule m_debug_octree_vertex;
+	ShaderModule m_debug_octree_fragment;
 };
 
 }

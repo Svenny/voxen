@@ -4,17 +4,17 @@
 
 #include <voxen/client/window.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanSurface {
+class Surface {
 public:
-	explicit VulkanSurface(Window &window);
-	VulkanSurface(VulkanSurface &&) = delete;
-	VulkanSurface(const VulkanSurface &) = delete;
-	VulkanSurface &operator = (VulkanSurface &&) = delete;
-	VulkanSurface &operator = (const VulkanSurface &) = delete;
-	~VulkanSurface() noexcept;
+	explicit Surface(Window &window);
+	Surface(Surface &&) = delete;
+	Surface(const Surface &) = delete;
+	Surface &operator = (Surface &&) = delete;
+	Surface &operator = (const Surface &) = delete;
+	~Surface() noexcept;
 
 	Window &window() noexcept { return m_window; }
 	VkSurfaceFormatKHR format() const noexcept { return m_surface_format; }

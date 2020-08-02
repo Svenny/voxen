@@ -2,17 +2,17 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanPipelineCache {
+class PipelineCache {
 public:
-	explicit VulkanPipelineCache(const char *path = nullptr);
-	VulkanPipelineCache(VulkanPipelineCache &&) = delete;
-	VulkanPipelineCache(const VulkanPipelineCache &) = delete;
-	VulkanPipelineCache &operator = (VulkanPipelineCache &&) = delete;
-	VulkanPipelineCache &operator = (const VulkanPipelineCache &) = delete;
-	~VulkanPipelineCache() noexcept;
+	explicit PipelineCache(const char *path = nullptr);
+	PipelineCache(PipelineCache &&) = delete;
+	PipelineCache(const PipelineCache &) = delete;
+	PipelineCache &operator = (PipelineCache &&) = delete;
+	PipelineCache &operator = (const PipelineCache &) = delete;
+	~PipelineCache() noexcept;
 
 	// noexcept style is used because this function is automatically called in destructor
 	bool dump() noexcept;

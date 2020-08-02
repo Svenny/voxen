@@ -9,10 +9,10 @@
 #include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanFramebuffer::VulkanFramebuffer(const VkFramebufferCreateInfo &info) {
+Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info) {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateFramebuffer(device, &info, VulkanHostAllocator::callbacks(), &m_framebuffer);
@@ -20,19 +20,19 @@ VulkanFramebuffer::VulkanFramebuffer(const VkFramebufferCreateInfo &info) {
 		throw VulkanException(result);
 }
 
-VulkanFramebuffer::~VulkanFramebuffer() noexcept {
+Framebuffer::~Framebuffer() noexcept {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyFramebuffer(device, m_framebuffer, VulkanHostAllocator::callbacks());
 }
 
-VulkanFramebufferCollection::VulkanFramebufferCollection() :
+FramebufferCollection::FramebufferCollection() :
 	m_scene_framebuffer(createSceneFramebuffer())
 {
-	Log::debug("VulkanFramebufferCollection created successfully");
+	Log::debug("FramebufferCollection created successfully");
 }
 
-VulkanFramebuffer VulkanFramebufferCollection::createSceneFramebuffer() {
+Framebuffer FramebufferCollection::createSceneFramebuffer() {
 	Log::debug("Creating scene framebuffer");
 
 	auto &backend = VulkanBackend::backend();
@@ -80,7 +80,7 @@ VulkanFramebuffer VulkanFramebufferCollection::createSceneFramebuffer() {
 	info.width = frame_size.width;
 	info.height = frame_size.height;
 	info.layers = 1;
-	return VulkanFramebuffer(info);
+	return Framebuffer(info);
 }
 
 }

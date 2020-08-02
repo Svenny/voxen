@@ -7,10 +7,10 @@
 #include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanRenderPass::VulkanRenderPass(const VkRenderPassCreateInfo &info) {
+RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_render_pass);
@@ -18,21 +18,21 @@ VulkanRenderPass::VulkanRenderPass(const VkRenderPassCreateInfo &info) {
 		throw VulkanException(result);
 }
 
-VulkanRenderPass::~VulkanRenderPass() noexcept {
+RenderPass::~RenderPass() noexcept {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyRenderPass(device, m_render_pass, VulkanHostAllocator::callbacks());
 }
 
-VulkanRenderPassCollection::VulkanRenderPassCollection() :
+RenderPassCollection::RenderPassCollection() :
 	m_swapchain_color_buffer(describeSwapchainColorBuffer()),
 	m_scene_depth_stencil_buffer(describeSceneDepthStencilBuffer()),
 	m_main_render_pass(createMainRenderPass())
 {
-	Log::debug("VulkanRenderPassCollection created successfully");
+	Log::debug("RenderPassCollection created successfully");
 }
 
-VkAttachmentDescription VulkanRenderPassCollection::describeSwapchainColorBuffer() {
+VkAttachmentDescription RenderPassCollection::describeSwapchainColorBuffer() {
 	auto &backend = VulkanBackend::backend();
 	vxAssert(backend.surface() != nullptr);
 
@@ -48,7 +48,7 @@ VkAttachmentDescription VulkanRenderPassCollection::describeSwapchainColorBuffer
 	return desc;
 }
 
-VkAttachmentDescription VulkanRenderPassCollection::describeSceneDepthStencilBuffer() {
+VkAttachmentDescription RenderPassCollection::describeSceneDepthStencilBuffer() {
 	VkAttachmentDescription desc = {};
 	desc.format = SCENE_DEPTH_STENCIL_BUFFER_FORMAT;
 	desc.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -62,7 +62,7 @@ VkAttachmentDescription VulkanRenderPassCollection::describeSceneDepthStencilBuf
 	return desc;
 }
 
-VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
+RenderPass RenderPassCollection::createMainRenderPass() {
 	Log::debug("Creating main render pass");
 
 	VkAttachmentDescription attachments[2] = { m_swapchain_color_buffer, m_scene_depth_stencil_buffer };
@@ -99,7 +99,7 @@ VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
 	info.pSubpasses = &subpass_desc;
 	info.dependencyCount = 1;
 	info.pDependencies = &dependency;
-	return VulkanRenderPass(info);
+	return RenderPass(info);
 }
 
 }

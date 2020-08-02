@@ -11,13 +11,13 @@
 
 #include <GLFW/glfw3.h>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanSurface::VulkanSurface(Window &window)
+Surface::Surface(Window &window)
 	: m_window(window)
 {
-	Log::debug("Creating VulkanSurface");
+	Log::debug("Creating Surface");
 	auto &backend = VulkanBackend::backend();
 	VkInstance instance = *backend.instance();
 	auto allocator = VulkanHostAllocator::callbacks();
@@ -30,18 +30,18 @@ VulkanSurface::VulkanSurface(Window &window)
 	checkPresentSupport();
 	pickSurfaceFormat();
 	pickPresentMode();
-	Log::debug("VulkanSurface created successfully");
+	Log::debug("Surface created successfully");
 }
 
-VulkanSurface::~VulkanSurface() noexcept
+Surface::~Surface() noexcept
 {
-	Log::debug("Destroying VulkanSurface");
+	Log::debug("Destroying Surface");
 	auto &backend = VulkanBackend::backend();
 	VkInstance instance = *backend.instance();
 	backend.vkDestroySurfaceKHR(instance, m_surface, VulkanHostAllocator::callbacks());
 }
 
-void VulkanSurface::checkPresentSupport()
+void Surface::checkPresentSupport()
 {
 	auto &backend = VulkanBackend::backend();
 	// Present support should've been checked in VulkanQueueManager when
@@ -60,7 +60,7 @@ void VulkanSurface::checkPresentSupport()
 	}
 }
 
-void VulkanSurface::pickSurfaceFormat()
+void Surface::pickSurfaceFormat()
 {
 	auto &backend = VulkanBackend::backend();
 	VkPhysicalDevice device = *backend.physicalDevice();
@@ -87,7 +87,7 @@ void VulkanSurface::pickSurfaceFormat()
 	throw MessageException("failed to find suitable surface format");
 }
 
-void VulkanSurface::pickPresentMode()
+void Surface::pickPresentMode()
 {
 	auto &backend = VulkanBackend::backend();
 	VkPhysicalDevice device = *backend.physicalDevice();

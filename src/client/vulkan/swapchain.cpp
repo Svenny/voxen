@@ -11,23 +11,23 @@
 
 #include <extras/defer.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanSwapchain::VulkanSwapchain()
+Swapchain::Swapchain()
 {
-	Log::debug("Creating VulkanSwapchain");
+	Log::debug("Creating Swapchain");
 	recreateSwapchain();
-	Log::debug("VulkanSwapchain created successfully");
+	Log::debug("Swapchain created successfully");
 }
 
-VulkanSwapchain::~VulkanSwapchain() noexcept
+Swapchain::~Swapchain() noexcept
 {
-	Log::debug("Destroying VulkanSwapchain");
+	Log::debug("Destroying Swapchain");
 	destroySwapchain();
 }
 
-void VulkanSwapchain::recreateSwapchain()
+void Swapchain::recreateSwapchain()
 {
 	auto &backend = VulkanBackend::backend();
 	vxAssert(backend.surface() != nullptr);
@@ -82,7 +82,7 @@ void VulkanSwapchain::recreateSwapchain()
 	createImageViews();
 }
 
-uint32_t VulkanSwapchain::acquireImage(VkSemaphore signal_semaphore)
+uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -95,7 +95,7 @@ uint32_t VulkanSwapchain::acquireImage(VkSemaphore signal_semaphore)
 	return image_index;
 }
 
-void VulkanSwapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
+void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 {
 	vxAssert(idx < uint32_t(m_images.size()));
 
@@ -119,7 +119,7 @@ void VulkanSwapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 		throw VulkanException(present_result, "vkQueuePresentKHR[pResults]");
 }
 
-void VulkanSwapchain::destroySwapchain() noexcept
+void Swapchain::destroySwapchain() noexcept
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -136,7 +136,7 @@ void VulkanSwapchain::destroySwapchain() noexcept
 	m_swapchain = VK_NULL_HANDLE;
 }
 
-VkExtent2D VulkanSwapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
+VkExtent2D Swapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
 {
 	VkExtent2D result;
 	if (caps.currentExtent.width == 0 && caps.currentExtent.height == 0) {
@@ -155,7 +155,7 @@ VkExtent2D VulkanSwapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps
 	return result;
 }
 
-uint32_t VulkanSwapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
+uint32_t Swapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
 {
 	// TODO: support selecting 2/3?
 	uint32_t num_images = 3;
@@ -170,7 +170,7 @@ uint32_t VulkanSwapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
 	return num_images;
 }
 
-void VulkanSwapchain::getImages()
+void Swapchain::getImages()
 {
 	vxAssert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 
@@ -189,7 +189,7 @@ void VulkanSwapchain::getImages()
 		throw VulkanException(result, "vkGetSwapchainImagesKHR");
 }
 
-void VulkanSwapchain::createImageViews()
+void Swapchain::createImageViews()
 {
 	vxAssert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
 

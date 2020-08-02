@@ -59,16 +59,16 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_device = new vulkan::Device;
 		m_device_allocator = new vulkan::DeviceAllocator;
 		m_transfer_manager = new vulkan::TransferManager;
-		m_surface = new VulkanSurface(window);
-		m_swapchain = new VulkanSwapchain;
-		m_render_pass_collection = new VulkanRenderPassCollection;
-		m_framebuffer_collection = new VulkanFramebufferCollection;
-		m_shader_module_collection = new VulkanShaderModuleCollection;
-		m_pipeline_cache = new VulkanPipelineCache("pipeline.cache");
-		m_pipeline_layout_collection = new VulkanPipelineLayoutCollection;
-		m_pipeline_collection = new VulkanPipelineCollection;
-		m_main_loop = new vulkan::MainLoop;
+		m_surface = new vulkan::Surface(window);
+		m_swapchain = new vulkan::Swapchain;
+		m_render_pass_collection = new vulkan::RenderPassCollection;
+		m_framebuffer_collection = new vulkan::FramebufferCollection;
+		m_shader_module_collection = new vulkan::ShaderModuleCollection;
+		m_pipeline_cache = new vulkan::PipelineCache("pipeline.cache");
+		m_pipeline_layout_collection = new vulkan::PipelineLayoutCollection;
+		m_pipeline_collection = new vulkan::PipelineCollection;
 
+		m_main_loop = new vulkan::MainLoop;
 		m_algo_debug_octree = new vulkan::AlgoDebugOctree;
 	}
 	catch (const Exception &e) {
@@ -114,9 +114,9 @@ void VulkanBackend::stop() noexcept {
 
 	delete m_algo_debug_octree;
 	m_algo_debug_octree = nullptr;
-
 	delete m_main_loop;
 	m_main_loop = nullptr;
+
 	delete m_pipeline_collection;
 	m_pipeline_collection = nullptr;
 	delete m_pipeline_layout_collection;

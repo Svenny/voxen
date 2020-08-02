@@ -10,13 +10,14 @@
 
 #include <cstdlib>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
 inline constexpr size_t MAX_PIPELINE_CACHE_SIZE = 1 << 25; // 32 MB
 
-VulkanPipelineCache::VulkanPipelineCache(const char *path) : m_save_path(path) {
-	Log::debug("Creating VulkanPipelineCache");
+PipelineCache::PipelineCache(const char *path) : m_save_path(path)
+{
+	Log::debug("Creating PipelineCache");
 	if (path)
 		Log::debug("Trying to preinitialize pipeline cache from `{}`", path);
 	auto cache_data = FileUtils::readFile(path);
@@ -34,10 +35,11 @@ VulkanPipelineCache::VulkanPipelineCache(const char *path) : m_save_path(path) {
 	VkResult result = backend.vkCreatePipelineCache(device, &info, VulkanHostAllocator::callbacks(), &m_cache);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreatePipelineCache");
-	Log::debug("VulkanPipelineCache created successfully");
+	Log::debug("PipelineCache created successfully");
 }
 
-bool VulkanPipelineCache::dump() noexcept {
+bool PipelineCache::dump() noexcept
+{
 	if (m_save_path.empty())
 		return false;
 
@@ -65,8 +67,9 @@ bool VulkanPipelineCache::dump() noexcept {
 	return FileUtils::writeFile(m_save_path.c_str(), buffer, buffer_size);
 }
 
-VulkanPipelineCache::~VulkanPipelineCache() noexcept {
-	Log::debug("Destroying VulkanPipelineCache");
+PipelineCache::~PipelineCache() noexcept
+{
+	Log::debug("Destroying PipelineCache");
 	dump();
 
 	auto &backend = VulkanBackend::backend();

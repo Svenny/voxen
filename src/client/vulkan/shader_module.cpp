@@ -6,10 +6,10 @@
 #include <voxen/util/file.hpp>
 #include <voxen/util/log.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanShaderModule::VulkanShaderModule(const char *path) {
+ShaderModule::ShaderModule(const char *path) {
 	if (!path) {
 		Log::error("Null pointer passed as path");
 		throw MessageException("null pointer");
@@ -31,18 +31,18 @@ VulkanShaderModule::VulkanShaderModule(const char *path) {
 		throw VulkanException(result, "vkCreateShaderModule");
 }
 
-VulkanShaderModule::~VulkanShaderModule() noexcept {
+ShaderModule::~ShaderModule() noexcept {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyShaderModule(device, m_shader_module, VulkanHostAllocator::callbacks());
 }
 
-VulkanShaderModuleCollection::VulkanShaderModuleCollection() :
+ShaderModuleCollection::ShaderModuleCollection() :
 // TODO: use proper paths
 	m_debug_octree_vertex("vert.spv"),
 	m_debug_octree_fragment("frag.spv")
 {
-	Log::debug("VulkanShaderModuleCollection created sucessfully");
+	Log::debug("ShaderModuleCollection created sucessfully");
 }
 
 }
