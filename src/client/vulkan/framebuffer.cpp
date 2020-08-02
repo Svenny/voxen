@@ -13,7 +13,7 @@ namespace voxen::client::vulkan
 {
 
 Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info) {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateFramebuffer(device, &info, VulkanHostAllocator::callbacks(), &m_framebuffer);
 	if (result != VK_SUCCESS)
@@ -21,7 +21,7 @@ Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info) {
 }
 
 Framebuffer::~Framebuffer() noexcept {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyFramebuffer(device, m_framebuffer, VulkanHostAllocator::callbacks());
 }
@@ -35,7 +35,7 @@ FramebufferCollection::FramebufferCollection() :
 Framebuffer FramebufferCollection::createSceneFramebuffer() {
 	Log::debug("Creating scene framebuffer");
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	auto *surface = backend.surface();
 	auto *swapchain = backend.swapchain();
 	vxAssert(surface != nullptr && swapchain != nullptr);

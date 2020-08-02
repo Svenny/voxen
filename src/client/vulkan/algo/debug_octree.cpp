@@ -43,7 +43,7 @@ AlgoDebugOctree::AlgoDebugOctree() :
 
 void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const World &state, const GameView &view)
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = *backend.pipelineLayoutCollection();
 	auto &pipeline_collection = *backend.pipelineCollection();
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_OCTREE_PIPELINE];

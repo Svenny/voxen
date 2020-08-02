@@ -10,18 +10,18 @@ namespace voxen::client
 {
 
 Render::Render(Window &window) {
-	if (!VulkanBackend::backend().start(window)) {
+	if (!vulkan::Backend::backend().start(window)) {
 		Log::error("Render subsystem couldn't launch");
 		throw MessageException("failed to start render subsystem");
 	}
 }
 
 Render::~Render() {
-	VulkanBackend::backend().stop();
+	vulkan::Backend::backend().stop();
 }
 
 void Render::drawFrame(const World &state, const GameView &view) {
-	VulkanBackend::backend().mainLoop()->drawFrame(state, view);
+	vulkan::Backend::backend().mainLoop()->drawFrame(state, view);
 }
 
 }

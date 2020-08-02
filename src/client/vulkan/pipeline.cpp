@@ -39,7 +39,7 @@ struct VertexFormatPositionOnly {
 
 struct DefaultViewportState {
 	DefaultViewportState() noexcept {
-		auto &backend = VulkanBackend::backend();
+		auto &backend = Backend::backend();
 		auto *swapchain = backend.swapchain();
 		vxAssert(swapchain != nullptr);
 
@@ -128,7 +128,7 @@ struct DisabledBlendState {
 
 struct GraphicsPipelineParts {
 	GraphicsPipelineParts() noexcept {
-		auto &backend = VulkanBackend::backend();
+		auto &backend = Backend::backend();
 		vxAssert(backend.shaderModuleCollection() != nullptr && backend.pipelineLayoutCollection() != nullptr);
 
 		for (auto &info : create_infos) {
@@ -156,10 +156,10 @@ struct GraphicsPipelineParts {
 };
 
 template<uint32_t ID>
-void addParts(GraphicsPipelineParts &parts, VulkanBackend &backend);
+void addParts(GraphicsPipelineParts &parts, Backend &backend);
 
 template<>
-void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, VulkanBackend &backend) {
+void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend) {
 	auto &my_parts = parts.debug_octree_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_OCTREE_PIPELINE];
 
@@ -205,7 +205,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 }
 
 template<uint32_t ID>
-void fillPipelineParts(GraphicsPipelineParts &parts, VulkanBackend &backend) {
+void fillPipelineParts(GraphicsPipelineParts &parts, Backend &backend) {
 	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
 		addParts<ID>(parts, backend);
 		fillPipelineParts<ID + 1>(parts, backend);
@@ -215,7 +215,7 @@ void fillPipelineParts(GraphicsPipelineParts &parts, VulkanBackend &backend) {
 PipelineCollection::PipelineCollection() {
 	Log::debug("Creating PipelineCollection");
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	vxAssert(backend.pipelineCache() != nullptr);
 	VkDevice device = *backend.device();
 	VkPipelineCache cache = *backend.pipelineCache();
@@ -239,7 +239,7 @@ PipelineCollection::PipelineCollection() {
 PipelineCollection::~PipelineCollection() noexcept {
 	Log::debug("Destroying PipelineCollection");
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 

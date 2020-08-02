@@ -10,11 +10,11 @@ namespace voxen::client::vulkan
 {
 
 TransferManager::TransferManager()
-	: m_command_pool(VulkanBackend::backend().physicalDevice()->transferQueueFamily()),
+	: m_command_pool(Backend::backend().physicalDevice()->transferQueueFamily()),
 	m_command_buffers(m_command_pool.allocateCommandBuffers(1)),
 	m_staging_buffer(createStagingBuffer())
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkDeviceMemory memory = m_staging_buffer.allocation().handle();
 	VkResult result = backend.vkMapMemory(device, memory, 0, VK_WHOLE_SIZE, 0, &m_staging_mapped_data);
@@ -60,7 +60,7 @@ void TransferManager::uploadToBuffer(VkBuffer buffer, const void *data, VkDevice
 	uintptr_t ptr = uintptr_t(m_staging_mapped_data) + uintptr_t(m_staging_written);
 	memcpy(reinterpret_cast<void *>(ptr), data, size);
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkBufferCopy copy = {};
 	copy.srcOffset = m_staging_written;
 	copy.dstOffset = 0;
@@ -79,7 +79,7 @@ void TransferManager::ensureUploadsDone()
 	m_command_buffers[0].end();
 	m_staging_written = 0;
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	auto &device = *backend.device();
 
 	VkSubmitInfo info = {};

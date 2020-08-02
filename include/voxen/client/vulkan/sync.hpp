@@ -2,31 +2,31 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanSemaphore {
+class Semaphore {
 public:
-	explicit VulkanSemaphore();
-	VulkanSemaphore(VulkanSemaphore &&) = delete;
-	VulkanSemaphore(const VulkanSemaphore &) = delete;
-	VulkanSemaphore &operator = (VulkanSemaphore &&) = delete;
-	VulkanSemaphore &operator = (const VulkanSemaphore &) = delete;
-	~VulkanSemaphore() noexcept;
+	explicit Semaphore();
+	Semaphore(Semaphore &&) = delete;
+	Semaphore(const Semaphore &) = delete;
+	Semaphore &operator = (Semaphore &&) = delete;
+	Semaphore &operator = (const Semaphore &) = delete;
+	~Semaphore() noexcept;
 
 	operator VkSemaphore() const noexcept { return m_semaphore; }
 private:
 	VkSemaphore m_semaphore = VK_NULL_HANDLE;
 };
 
-class VulkanFence {
+class Fence {
 public:
-	explicit VulkanFence(bool create_signaled = false);
-	VulkanFence(VulkanFence &&) = delete;
-	VulkanFence(const VulkanFence &) = delete;
-	VulkanFence &operator = (VulkanFence &&) = delete;
-	VulkanFence &operator = (const VulkanFence &) = delete;
-	~VulkanFence() noexcept;
+	explicit Fence(bool create_signaled = false);
+	Fence(Fence &&) = delete;
+	Fence(const Fence &) = delete;
+	Fence &operator = (Fence &&) = delete;
+	Fence &operator = (const Fence &) = delete;
+	~Fence() noexcept;
 
 	operator VkFence() const noexcept { return  m_fence; }
 private:
