@@ -82,7 +82,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		}
 	}
 
-	TransferManager *transfer = VulkanBackend::backend().transferManager();
+	TransferManager *transfer = Backend::backend().transferManager();
 
 	if (m_vertex_format != VertexFormat::Nothing) {
 		VkDeviceSize vertex_buffer_size = getVertexElementSize(m_vertex_format) * create_info.num_vertices;
@@ -114,7 +114,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 
 void Mesh::bindBuffers(VkCommandBuffer cmd_buffer)
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 
 	if (m_vertex_buffer.has_value()) {
 		VkBuffer vertex_buffer = m_vertex_buffer.value();

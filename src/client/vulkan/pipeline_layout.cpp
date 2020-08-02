@@ -9,7 +9,7 @@ namespace voxen::client::vulkan
 {
 
 PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info) {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreatePipelineLayout(device, &info, VulkanHostAllocator::callbacks(), &m_layout);
 	if (result != VK_SUCCESS)
@@ -17,7 +17,7 @@ PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info) {
 }
 
 PipelineLayout::~PipelineLayout() noexcept {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyPipelineLayout(device, m_layout, VulkanHostAllocator::callbacks());
 }

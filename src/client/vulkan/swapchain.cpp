@@ -29,7 +29,7 @@ Swapchain::~Swapchain() noexcept
 
 void Swapchain::recreateSwapchain()
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	vxAssert(backend.surface() != nullptr);
 	VkPhysicalDevice phys_device = *backend.physicalDevice();
 	VkDevice device = *backend.device();
@@ -84,7 +84,7 @@ void Swapchain::recreateSwapchain()
 
 uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 
 	uint32_t image_index;
@@ -99,7 +99,7 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 {
 	vxAssert(idx < uint32_t(m_images.size()));
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkQueue queue = backend.device()->presentQueue();
 
 	VkResult present_result;
@@ -121,7 +121,7 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 
 void Swapchain::destroySwapchain() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
@@ -145,7 +145,7 @@ VkExtent2D Swapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
 		throw MessageException("can't create swapchain now");
 	} else if (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
-		auto[width, height] = VulkanBackend::backend().surface()->window().framebufferSize();
+		auto[width, height] = Backend::backend().surface()->window().framebufferSize();
 		result.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
 		result.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
 	} else {
@@ -174,7 +174,7 @@ void Swapchain::getImages()
 {
 	vxAssert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 
 	uint32_t num_images;
@@ -193,7 +193,7 @@ void Swapchain::createImageViews()
 {
 	vxAssert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 

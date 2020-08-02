@@ -13,7 +13,7 @@ namespace voxen::client::vulkan
 
 DeviceMemory::DeviceMemory(const VkMemoryAllocateInfo &info)
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 
 	VkResult result = backend.vkAllocateMemory(device, &info, VulkanHostAllocator::callbacks(), &m_device_memory);
@@ -23,7 +23,7 @@ DeviceMemory::DeviceMemory(const VkMemoryAllocateInfo &info)
 
 DeviceMemory::~DeviceMemory() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkFreeMemory(device, m_device_memory, VulkanHostAllocator::callbacks());
 }
@@ -56,7 +56,7 @@ DeviceAllocation &DeviceAllocation::operator = (DeviceAllocation &&other) noexce
 DeviceAllocation::~Allocation() noexcept
 {
 	// TODO: reference counting/memory management by VulkanDeviceAllocator
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkFreeMemory(device, m_handle, VulkanHostAllocator::callbacks());
 	Log::trace("Freed device memory block 0x{:X}", uintptr_t(m_handle));
@@ -82,7 +82,7 @@ std::shared_ptr<DeviceAllocation> DeviceAllocator::allocate(const AllocationRequ
 	Log::trace("Requested device allocation: {} bytes, align by {}, type mask {:b}",
 	           mem_reqs.size, mem_reqs.alignment, mem_reqs.memoryTypeBits);
 	// TODO: implement actual allocation stategy, this is a temporary stub
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkPhysicalDevice device = *backend.physicalDevice();
 
 	VkPhysicalDeviceMemoryProperties mem_props;

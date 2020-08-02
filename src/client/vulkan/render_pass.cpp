@@ -11,7 +11,7 @@ namespace voxen::client::vulkan
 {
 
 RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_render_pass);
 	if (result != VK_SUCCESS)
@@ -19,7 +19,7 @@ RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
 }
 
 RenderPass::~RenderPass() noexcept {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyRenderPass(device, m_render_pass, VulkanHostAllocator::callbacks());
 }
@@ -33,11 +33,11 @@ RenderPassCollection::RenderPassCollection() :
 }
 
 VkAttachmentDescription RenderPassCollection::describeSwapchainColorBuffer() {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	vxAssert(backend.surface() != nullptr);
 
 	VkAttachmentDescription desc = {};
-	desc.format = VulkanBackend::backend().surface()->format().format;
+	desc.format = Backend::backend().surface()->format().format;
 	desc.samples = VK_SAMPLE_COUNT_1_BIT;
 	desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

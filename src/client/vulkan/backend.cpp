@@ -22,22 +22,22 @@
 
 #include <GLFW/glfw3.h>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-VulkanBackend VulkanBackend::s_instance;
+Backend Backend::s_instance;
 
-VulkanBackend::~VulkanBackend() noexcept {
+Backend::~Backend() noexcept {
 	// Backend shouldn't be left in non-stopped state at program termination, should it?
 	vxAssert(m_state == State::NotStarted);
 	// But if assertions are disabled...
 	if (m_state != State::NotStarted) {
-		Log::warn("VulkanBackend left in non-stopped state [{}]!", stateToString(m_state));
+		Log::warn("Backend left in non-stopped state [{}]!", stateToString(m_state));
 		stop();
 	}
 }
 
-bool VulkanBackend::start(Window &window) noexcept {
+bool Backend::start(Window &window) noexcept {
 	if (m_state != State::NotStarted) {
 		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
 		return true;
@@ -54,22 +54,22 @@ bool VulkanBackend::start(Window &window) noexcept {
 	}
 
 	try {
-		m_instance = new vulkan::Instance;
-		m_physical_device = new vulkan::PhysicalDevice;
-		m_device = new vulkan::Device;
-		m_device_allocator = new vulkan::DeviceAllocator;
-		m_transfer_manager = new vulkan::TransferManager;
-		m_surface = new vulkan::Surface(window);
-		m_swapchain = new vulkan::Swapchain;
-		m_render_pass_collection = new vulkan::RenderPassCollection;
-		m_framebuffer_collection = new vulkan::FramebufferCollection;
-		m_shader_module_collection = new vulkan::ShaderModuleCollection;
-		m_pipeline_cache = new vulkan::PipelineCache("pipeline.cache");
-		m_pipeline_layout_collection = new vulkan::PipelineLayoutCollection;
-		m_pipeline_collection = new vulkan::PipelineCollection;
+		m_instance = new Instance;
+		m_physical_device = new PhysicalDevice;
+		m_device = new Device;
+		m_device_allocator = new DeviceAllocator;
+		m_transfer_manager = new TransferManager;
+		m_surface = new Surface(window);
+		m_swapchain = new Swapchain;
+		m_render_pass_collection = new RenderPassCollection;
+		m_framebuffer_collection = new FramebufferCollection;
+		m_shader_module_collection = new ShaderModuleCollection;
+		m_pipeline_cache = new PipelineCache("pipeline.cache");
+		m_pipeline_layout_collection = new PipelineLayoutCollection;
+		m_pipeline_collection = new PipelineCollection;
 
-		m_main_loop = new vulkan::MainLoop;
-		m_algo_debug_octree = new vulkan::AlgoDebugOctree;
+		m_main_loop = new MainLoop;
+		m_algo_debug_octree = new AlgoDebugOctree;
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
@@ -95,7 +95,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 	return true;
 }
 
-void VulkanBackend::stop() noexcept {
+void Backend::stop() noexcept {
 	if (m_state == State::NotStarted)
 		return;
 
@@ -148,7 +148,7 @@ void VulkanBackend::stop() noexcept {
 	m_state = State::NotStarted;
 }
 
-std::string_view VulkanBackend::stateToString(State state) noexcept {
+std::string_view Backend::stateToString(State state) noexcept {
 	using namespace std::literals;
 	switch (state) {
 	case State::NotStarted:
@@ -166,7 +166,7 @@ std::string_view VulkanBackend::stateToString(State state) noexcept {
 	}
 }
 
-bool VulkanBackend::loadPreInstanceApi() noexcept {
+bool Backend::loadPreInstanceApi() noexcept {
 #define TRY_LOAD(name) \
 	name = reinterpret_cast<PFN_##name>(glfwGetInstanceProcAddress(VK_NULL_HANDLE, #name)); \
 	if (!name) { \
@@ -184,7 +184,7 @@ bool VulkanBackend::loadPreInstanceApi() noexcept {
 #undef TRY_LOAD
 }
 
-bool VulkanBackend::loadInstanceLevelApi(VkInstance instance) noexcept {
+bool Backend::loadInstanceLevelApi(VkInstance instance) noexcept {
 #define TRY_LOAD(name) \
 	name = reinterpret_cast<PFN_##name>(glfwGetInstanceProcAddress(instance, #name)); \
 	if (!name) { \
@@ -203,7 +203,7 @@ bool VulkanBackend::loadInstanceLevelApi(VkInstance instance) noexcept {
 #undef TRY_LOAD
 }
 
-void VulkanBackend::unloadInstanceLevelApi() noexcept {
+void Backend::unloadInstanceLevelApi() noexcept {
 #define VK_INSTANCE_API_ENTRY(name) name = nullptr;
 #define VK_DEVICE_API_ENTRY(name)
 #include <voxen/client/vulkan/api_table.in>
@@ -211,7 +211,7 @@ void VulkanBackend::unloadInstanceLevelApi() noexcept {
 #undef VK_INSTANCE_API_ENTRY
 }
 
-bool VulkanBackend::loadDeviceLevelApi(VkDevice device) noexcept {
+bool Backend::loadDeviceLevelApi(VkDevice device) noexcept {
 #define TRY_LOAD(name) \
 	name = reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(device, #name)); \
 	if (!name) { \
@@ -230,7 +230,7 @@ bool VulkanBackend::loadDeviceLevelApi(VkDevice device) noexcept {
 #undef TRY_LOAD
 }
 
-void VulkanBackend::unloadDeviceLevelApi() noexcept {
+void Backend::unloadDeviceLevelApi() noexcept {
 #define VK_INSTANCE_API_ENTRY(name)
 #define VK_DEVICE_API_ENTRY(name) name = nullptr;
 #include <voxen/client/vulkan/api_table.in>

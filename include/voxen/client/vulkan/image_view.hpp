@@ -2,17 +2,17 @@
 
 #include <voxen/client/vulkan/command_buffer.hpp>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-class VulkanImageView {
+class ImageView {
 public:
-	VulkanImageView(const VkImageViewCreateInfo &info);
-	VulkanImageView(VulkanImageView &&) = delete;
-	VulkanImageView(const VulkanImageView &) = delete;
-	VulkanImageView &operator = (VulkanImageView &&) = delete;
-	VulkanImageView &operator = (const VulkanImageView &) = delete;
-	~VulkanImageView() noexcept;
+	ImageView(const VkImageViewCreateInfo &info);
+	ImageView(ImageView &&) = delete;
+	ImageView(const ImageView &) = delete;
+	ImageView &operator = (ImageView &&) = delete;
+	ImageView &operator = (const ImageView &) = delete;
+	~ImageView() noexcept;
 
 	operator VkImageView() const noexcept { return m_view; }
 private:

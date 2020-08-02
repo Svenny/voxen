@@ -18,7 +18,7 @@ PhysicalDevice::PhysicalDevice()
 {
 	Log::debug("Creating PhysicalDevice");
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkInstance instance = *backend.instance();
 
 	uint32_t num_devices = 0;
@@ -66,7 +66,7 @@ void PhysicalDevice::logDeviceMemoryStats() const
 	mem_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
 	mem_props.pNext = &mem_budget;
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	backend.vkGetPhysicalDeviceMemoryProperties2(m_device, &mem_props);
 
 	uint32_t num_heaps = mem_props.memoryProperties.memoryHeapCount;
@@ -118,7 +118,7 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 	// This shouldn't be called in already constructed object
 	vxAssert(m_device == VK_NULL_HANDLE);
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 
 	uint32_t num_families = 0;
 	backend.vkGetPhysicalDeviceQueueFamilyProperties(device, &num_families, nullptr);

@@ -10,7 +10,7 @@ namespace voxen::client::vulkan
 
 Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
@@ -50,7 +50,7 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 
 Buffer::~Buffer() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyBuffer(device, m_buffer, VulkanHostAllocator::callbacks());
 }

@@ -14,7 +14,7 @@ CommandPool::CommandPool(uint32_t queue_family) {
 	info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	info.queueFamilyIndex = queue_family;
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkCreateCommandPool(device, &info, VulkanHostAllocator::callbacks(), &m_cmd_pool);
 	if (result != VK_SUCCESS)
@@ -30,7 +30,7 @@ extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t co
 	info.level = secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	info.commandBufferCount = count;
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkAllocateCommandBuffers(device, &info, handles.data());
 	if (result != VK_SUCCESS)
@@ -47,7 +47,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) 
 	for (size_t i = 0; i < buffers.size(); i++)
 		handles[i] = buffers[i];
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkFreeCommandBuffers(device, m_cmd_pool, uint32_t(buffers.size()), handles.data());
 	for (auto &buf : buffers)
@@ -55,7 +55,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) 
 }
 
 void CommandPool::trim() noexcept {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkTrimCommandPool(device, m_cmd_pool, 0);
 }
@@ -65,7 +65,7 @@ void CommandPool::reset(bool release_resources) {
 	if (release_resources)
 		flags = VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT;
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	VkResult result = backend.vkResetCommandPool(device, m_cmd_pool, flags);
 	if (result != VK_SUCCESS)
@@ -73,7 +73,7 @@ void CommandPool::reset(bool release_resources) {
 }
 
 CommandPool::~CommandPool() noexcept {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
 	backend.vkDestroyCommandPool(device, m_cmd_pool, VulkanHostAllocator::callbacks());
 }

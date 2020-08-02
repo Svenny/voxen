@@ -19,7 +19,7 @@ Instance::Instance()
 		throw MessageException("unsupported or missing Vulkan driver");
 	createInstance();
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	if (!backend.loadInstanceLevelApi(m_handle)) {
 		// Assuming at least vkDestroyInstance was found...
 		destroyInstance();
@@ -42,7 +42,7 @@ bool Instance::checkVulkanSupport() const
 		return false;
 	}
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	uint32_t version = 0;
 	VkResult result = backend.vkEnumerateInstanceVersion(&version);
 	if (result != VK_SUCCESS) {
@@ -99,7 +99,7 @@ static std::vector<const char *> getRequiredLayers()
 	if constexpr (!BuildConfig::kUseVulkanDebugging)
 		return {};
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	uint32_t available_count;
 	backend.vkEnumerateInstanceLayerProperties(&available_count, nullptr);
 	std::vector<VkLayerProperties> available_props(available_count);
@@ -163,7 +163,7 @@ void Instance::createInstance()
 	create_info.enabledLayerCount = uint32_t(layer_list.size());
 	create_info.ppEnabledLayerNames = layer_list.data();
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkResult result = backend.vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateInstance");
@@ -171,7 +171,7 @@ void Instance::createInstance()
 
 void Instance::destroyInstance() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
 	backend.unloadInstanceLevelApi();
 }

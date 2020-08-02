@@ -28,9 +28,9 @@ public:
 private:
 	struct PendingFrameSyncs {
 		PendingFrameSyncs();
-		VulkanSemaphore frame_acquired_semaphore;
-		VulkanSemaphore render_done_semaphore;
-		VulkanFence render_done_fence;
+		Semaphore frame_acquired_semaphore;
+		Semaphore render_done_semaphore;
+		Fence render_done_fence;
 	};
 
 	size_t m_frame_id = 0;

@@ -18,7 +18,7 @@ Device::Device()
 
 	createDevice();
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	if (!backend.loadDeviceLevelApi(m_device)) {
 		destroyDevice();
 		throw MessageException("failed to load device-level Vulkan API");
@@ -37,7 +37,7 @@ Device::~Device() noexcept
 
 void Device::waitIdle()
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	VkResult result = backend.vkDeviceWaitIdle(m_device);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkDeviceWaitIdle");
@@ -81,7 +81,7 @@ void Device::createDevice()
 	features.pNext = &imageless_features;
 	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
 
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	auto &phys_device = *backend.physicalDevice();
 
 	// Fill VkDeviceQueueCreateInfo's
@@ -129,7 +129,7 @@ void Device::createDevice()
 
 void Device::getQueueHandles() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	auto &phys_device = *backend.physicalDevice();
 	backend.vkGetDeviceQueue(m_device, phys_device.graphicsQueueFamily(), 0, &m_graphics_queue);
 	backend.vkGetDeviceQueue(m_device, phys_device.computeQueueFamily(), 0, &m_compute_queue);
@@ -139,7 +139,7 @@ void Device::getQueueHandles() noexcept
 
 void Device::destroyDevice() noexcept
 {
-	auto &backend = VulkanBackend::backend();
+	auto &backend = Backend::backend();
 	backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
 	backend.unloadDeviceLevelApi();
 }
