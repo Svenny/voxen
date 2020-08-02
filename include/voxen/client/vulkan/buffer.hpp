@@ -21,9 +21,11 @@ public:
 	Buffer &operator = (const Buffer &) = delete;
 	~Buffer() noexcept;
 
+	DeviceAllocation &allocation() { return *m_memory; }
+
 	operator VkBuffer() const noexcept { return m_buffer; }
 private:
-	VkBuffer m_buffer;
+	VkBuffer m_buffer = VK_NULL_HANDLE;
 	std::shared_ptr<DeviceAllocation> m_memory;
 };
 

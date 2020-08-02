@@ -1,5 +1,6 @@
 #include <voxen/client/vulkan/high/main_loop.hpp>
 
+#include <voxen/client/vulkan/algo/debug_octree.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
@@ -27,7 +28,7 @@ MainLoop::~MainLoop() noexcept
 	Log::debug("Destroying MainLoop");
 }
 
-void MainLoop::drawFrame()
+void MainLoop::drawFrame(const World &state, const GameView &view)
 {
 	auto &backend = VulkanBackend::backend();
 	VkDevice device = *backend.device();
@@ -85,6 +86,9 @@ void MainLoop::drawFrame()
 	clear_values[1].depthStencil = { 0.0f, 0 };
 	render_begin_info.pClearValues = clear_values;
 	backend.vkCmdBeginRenderPass(cmd_buf, &render_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+	backend.algoDebugOctree()->executePass(cmd_buf, state, view);
+
 	backend.vkCmdEndRenderPass(cmd_buf);
 
 	result = backend.vkEndCommandBuffer(cmd_buf);

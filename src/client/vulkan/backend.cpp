@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/instance.hpp>
@@ -13,6 +14,8 @@
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
+
+#include <voxen/client/vulkan/algo/debug_octree.hpp>
 
 #include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
@@ -55,6 +58,7 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_physical_device = new vulkan::PhysicalDevice;
 		m_device = new vulkan::Device;
 		m_device_allocator = new vulkan::DeviceAllocator;
+		m_transfer_manager = new vulkan::TransferManager;
 		m_surface = new VulkanSurface(window);
 		m_swapchain = new VulkanSwapchain;
 		m_render_pass_collection = new VulkanRenderPassCollection;
@@ -64,6 +68,8 @@ bool VulkanBackend::start(Window &window) noexcept {
 		m_pipeline_layout_collection = new VulkanPipelineLayoutCollection;
 		m_pipeline_collection = new VulkanPipelineCollection;
 		m_main_loop = new vulkan::MainLoop;
+
+		m_algo_debug_octree = new vulkan::AlgoDebugOctree;
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
@@ -106,6 +112,9 @@ void VulkanBackend::stop() noexcept {
 		}
 	}
 
+	delete m_algo_debug_octree;
+	m_algo_debug_octree = nullptr;
+
 	delete m_main_loop;
 	m_main_loop = nullptr;
 	delete m_pipeline_collection;
@@ -124,6 +133,8 @@ void VulkanBackend::stop() noexcept {
 	m_swapchain = nullptr;
 	delete m_surface;
 	m_surface = nullptr;
+	delete m_transfer_manager;
+	m_transfer_manager = nullptr;
 	delete m_device_allocator;
 	m_device_allocator = nullptr;
 	delete m_device;

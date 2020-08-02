@@ -5,6 +5,9 @@
 #include <voxen/client/vulkan/command_pool.hpp>
 #include <voxen/client/vulkan/sync.hpp>
 
+#include <voxen/common/world.hpp>
+#include <voxen/common/gameview.hpp>
+
 #include <extras/dyn_array.hpp>
 
 namespace voxen::client::vulkan
@@ -21,7 +24,7 @@ public:
 	MainLoop &operator = (const MainLoop &) = delete;
 	~MainLoop() noexcept;
 
-	void drawFrame();
+	void drawFrame(const World &state, const GameView &view);
 private:
 	struct PendingFrameSyncs {
 		PendingFrameSyncs();
