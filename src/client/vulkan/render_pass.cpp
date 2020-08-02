@@ -79,6 +79,7 @@ VulkanRenderPass VulkanRenderPassCollection::createMainRenderPass() {
 	subpass_desc.colorAttachmentCount = 1;
 	subpass_desc.pColorAttachments = &color_buffer_ref;
 	// TODO: uncomment me
+	(void)depth_stencil_buffer_ref;
 	//subpass_desc.pDepthStencilAttachment = &depth_stencil_buffer_ref;
 
 	VkSubpassDependency dependency = {};

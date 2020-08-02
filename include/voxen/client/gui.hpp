@@ -24,7 +24,6 @@ public:
 
 	GameView& view();
 private:
-	Window* m_window;
 	GameView m_gameview;
 	// TODO stack for another GUI elements
 };

@@ -19,14 +19,11 @@ set(VOXEN_SOURCES
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
 	src/client/vulkan/render_pass.cpp
-	src/client/vulkan/shader.cpp
 	src/client/vulkan/shader_module.cpp
 	src/client/vulkan/surface.cpp
 	src/client/vulkan/swapchain.cpp
 	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
-	src/client/vulkan/vulkan_render.cpp
-	src/client/debug_draw_octree.cpp
 	src/client/gui.cpp
 	src/client/input_manager.cpp
 	src/client/render.cpp

@@ -25,14 +25,11 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp
 	include/voxen/client/vulkan/render_pass.hpp
-	include/voxen/client/vulkan/shader.hpp
 	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/vulkan/surface.hpp
 	include/voxen/client/vulkan/swapchain.hpp
 	include/voxen/client/vulkan/sync.hpp
 	include/voxen/client/vulkan/texture_manager.hpp
-	include/voxen/client/vulkan/vulkan_render.hpp
-	include/voxen/client/debug_draw_octree.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/input_manager.hpp
 	include/voxen/client/render.hpp
