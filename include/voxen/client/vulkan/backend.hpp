@@ -24,7 +24,9 @@ class Instance;
 class PhysicalDevice;
 class Device;
 class DeviceAllocator;
+class TransferManager;
 class MainLoop;
+class AlgoDebugOctree;
 
 }
 
@@ -47,6 +49,7 @@ public:
 	vulkan::PhysicalDevice *physicalDevice() const noexcept { return m_physical_device; }
 	vulkan::Device *device() const noexcept { return m_device; }
 	vulkan::DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
+	vulkan::TransferManager *transferManager() const noexcept { return m_transfer_manager; }
 	VulkanSurface *surface() const noexcept { return m_surface; }
 	VulkanSwapchain *swapchain() const noexcept { return m_swapchain; }
 	VulkanRenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
@@ -56,6 +59,8 @@ public:
 	VulkanPipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
 	VulkanPipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
 	vulkan::MainLoop *mainLoop() const noexcept { return m_main_loop; }
+
+	vulkan::AlgoDebugOctree *algoDebugOctree() const noexcept { return m_algo_debug_octree; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -80,6 +85,7 @@ private:
 	vulkan::PhysicalDevice *m_physical_device = nullptr;
 	vulkan::Device *m_device = nullptr;
 	vulkan::DeviceAllocator *m_device_allocator = nullptr;
+	vulkan::TransferManager *m_transfer_manager = nullptr;
 	VulkanSurface *m_surface = nullptr;
 	VulkanSwapchain *m_swapchain = nullptr;
 	VulkanRenderPassCollection *m_render_pass_collection = nullptr;
@@ -89,6 +95,8 @@ private:
 	VulkanPipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 	VulkanPipelineCollection *m_pipeline_collection = nullptr;
 	vulkan::MainLoop *m_main_loop = nullptr;
+
+	vulkan::AlgoDebugOctree *m_algo_debug_octree = nullptr;
 
 	static VulkanBackend s_instance;
 
