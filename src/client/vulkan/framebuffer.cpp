@@ -6,7 +6,6 @@
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
@@ -38,8 +37,8 @@ Framebuffer FramebufferCollection::createSceneFramebuffer() {
 	auto &backend = Backend::backend();
 	auto *surface = backend.surface();
 	auto *swapchain = backend.swapchain();
-	vxAssert(surface != nullptr && swapchain != nullptr);
-	vxAssert(backend.renderPassCollection() != nullptr);
+	assert(surface != nullptr && swapchain != nullptr);
+	assert(backend.renderPassCollection() != nullptr);
 
 	VkExtent2D frame_size = swapchain->imageExtent();
 	VkFormat color_buffer_format = surface->format().format;

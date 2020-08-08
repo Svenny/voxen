@@ -4,7 +4,6 @@
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
@@ -34,7 +33,7 @@ RenderPassCollection::RenderPassCollection() :
 
 VkAttachmentDescription RenderPassCollection::describeSwapchainColorBuffer() {
 	auto &backend = Backend::backend();
-	vxAssert(backend.surface() != nullptr);
+	assert(backend.surface() != nullptr);
 
 	VkAttachmentDescription desc = {};
 	desc.format = Backend::backend().surface()->format().format;

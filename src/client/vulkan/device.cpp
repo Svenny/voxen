@@ -3,7 +3,6 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -69,7 +68,7 @@ std::vector<const char *> Device::getRequiredDeviceExtensions()
 void Device::createDevice()
 {
 	// This shouldn't be called in already constructed object
-	vxAssert(m_device == VK_NULL_HANDLE);
+	assert(m_device == VK_NULL_HANDLE);
 
 	// Fill VkPhysicalDevice*Features
 	VkPhysicalDeviceImagelessFramebufferFeatures imageless_features = {};

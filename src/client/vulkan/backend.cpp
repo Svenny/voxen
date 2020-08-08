@@ -17,7 +17,6 @@
 
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -30,12 +29,7 @@ Backend Backend::s_instance;
 Backend::~Backend() noexcept
 {
 	// Backend shouldn't be left in non-stopped state at program termination, should it?
-	vxAssert(m_state == State::NotStarted);
-	// But if assertions are disabled...
-	if (m_state != State::NotStarted) {
-		Log::warn("Backend left in non-stopped state [{}]!", stateToString(m_state));
-		stop();
-	}
+	assert(m_state == State::NotStarted);
 }
 
 bool Backend::start(Window &window) noexcept
