@@ -8,7 +8,6 @@
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
@@ -41,7 +40,7 @@ struct DefaultViewportState {
 	DefaultViewportState() noexcept {
 		auto &backend = Backend::backend();
 		auto *swapchain = backend.swapchain();
-		vxAssert(swapchain != nullptr);
+		assert(swapchain != nullptr);
 
 		VkExtent2D frame_size = swapchain->imageExtent();
 
@@ -129,7 +128,7 @@ struct DisabledBlendState {
 struct GraphicsPipelineParts {
 	GraphicsPipelineParts() noexcept {
 		auto &backend = Backend::backend();
-		vxAssert(backend.shaderModuleCollection() != nullptr && backend.pipelineLayoutCollection() != nullptr);
+		assert(backend.shaderModuleCollection() != nullptr && backend.pipelineLayoutCollection() != nullptr);
 
 		for (auto &info : create_infos) {
 			info = {};
@@ -216,7 +215,7 @@ PipelineCollection::PipelineCollection() {
 	Log::debug("Creating PipelineCollection");
 
 	auto &backend = Backend::backend();
-	vxAssert(backend.pipelineCache() != nullptr);
+	assert(backend.pipelineCache() != nullptr);
 	VkDevice device = *backend.device();
 	VkPipelineCache cache = *backend.pipelineCache();
 	auto allocator = VulkanHostAllocator::callbacks();

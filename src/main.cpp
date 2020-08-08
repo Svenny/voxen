@@ -4,7 +4,6 @@
 #include <voxen/client/window.hpp>
 #include <voxen/common/world.hpp>
 #include <voxen/common/config.hpp>
-#include <voxen/util/assert.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 

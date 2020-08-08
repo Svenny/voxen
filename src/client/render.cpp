@@ -3,7 +3,6 @@
 #include <voxen/client/vulkan/high/main_loop.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -50,7 +49,7 @@ void Render::drawFrame(const World &state, const GameView &view)
 		}
 		else {
 			// This branch must be unreachable
-			vxAssertStrong(false);
+			assert(false);
 		}
 	}
 }

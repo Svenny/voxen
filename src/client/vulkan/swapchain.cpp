@@ -6,8 +6,7 @@
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 
-#include <voxen/util/assert.hpp>
-#include	<voxen/util/log.hpp>
+#include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
 
@@ -30,7 +29,7 @@ Swapchain::~Swapchain() noexcept
 void Swapchain::recreateSwapchain()
 {
 	auto &backend = Backend::backend();
-	vxAssert(backend.surface() != nullptr);
+	assert(backend.surface() != nullptr);
 	VkPhysicalDevice phys_device = *backend.physicalDevice();
 	VkDevice device = *backend.device();
 	VkSurfaceKHR surface = *backend.surface();
@@ -97,7 +96,7 @@ uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 
 void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 {
-	vxAssert(idx < uint32_t(m_images.size()));
+	assert(idx < uint32_t(m_images.size()));
 
 	auto &backend = Backend::backend();
 	VkQueue queue = backend.device()->presentQueue();
@@ -172,7 +171,7 @@ uint32_t Swapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
 
 void Swapchain::getImages()
 {
-	vxAssert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
+	assert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 
 	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
@@ -191,7 +190,7 @@ void Swapchain::getImages()
 
 void Swapchain::createImageViews()
 {
-	vxAssert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
+	assert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
 
 	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();

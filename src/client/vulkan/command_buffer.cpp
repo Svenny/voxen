@@ -2,14 +2,12 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 
-#include <voxen/util/assert.hpp>
-
 namespace voxen::client::vulkan
 {
 
 void CommandBuffer::reset(bool release_resources)
 {
-	vxAssert(m_state != State::Pending);
+	assert(m_state != State::Pending);
 
 	VkCommandBufferResetFlags flags = 0;
 	if (release_resources)
@@ -23,7 +21,7 @@ void CommandBuffer::reset(bool release_resources)
 
 void CommandBuffer::begin(const VkCommandBufferBeginInfo &info)
 {
-	vxAssert(m_state != State::Recording && m_state != State::Pending);
+	assert(m_state != State::Recording && m_state != State::Pending);
 
 	VkResult result = Backend::backend().vkBeginCommandBuffer(m_cmd_buffer, &info);
 	if (result != VK_SUCCESS)
@@ -33,7 +31,7 @@ void CommandBuffer::begin(const VkCommandBufferBeginInfo &info)
 
 void CommandBuffer::end()
 {
-	vxAssert(m_state == State::Recording);
+	assert(m_state == State::Recording);
 
 	VkResult result = Backend::backend().vkEndCommandBuffer(m_cmd_buffer);
 	if (result != VK_SUCCESS) {

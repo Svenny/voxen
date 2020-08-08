@@ -3,7 +3,6 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/instance.hpp>
 
-#include <voxen/util/assert.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -116,7 +115,7 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 {
 	// This shouldn't be called in already constructed object
-	vxAssert(m_device == VK_NULL_HANDLE);
+	assert(m_device == VK_NULL_HANDLE);
 
 	auto &backend = Backend::backend();
 
