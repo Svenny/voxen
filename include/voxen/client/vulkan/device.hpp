@@ -33,7 +33,7 @@ private:
 
 	std::vector<const char *> getRequiredDeviceExtensions();
 	void createDevice();
-	void getQueueHandles() noexcept;
+	void obtainQueueHandles() noexcept;
 	void destroyDevice() noexcept;
 };
 

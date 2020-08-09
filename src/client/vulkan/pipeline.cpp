@@ -161,17 +161,18 @@ template<>
 void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend) {
 	auto &my_parts = parts.debug_octree_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_OCTREE_PIPELINE];
+	auto &module_collection = *backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = backend.shaderModuleCollection()->debugOctreeVertexShader();
+	vert_stage_info.module = module_collection[ShaderModuleCollection::DEBUG_OCTREE_VERTEX];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = backend.shaderModuleCollection()->debugOctreeFragmentShader();
+	frag_stage_info.module = module_collection[ShaderModuleCollection::DEBUG_OCTREE_FRAGMENT];
 	frag_stage_info.pName = "main";
 
 	auto &input_assembly_info = my_parts.input_assembly_info;
@@ -203,7 +204,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.subpass = 0;
 }
 
-template<uint32_t ID>
+template<uint32_t ID = 0>
 void fillPipelineParts(GraphicsPipelineParts &parts, Backend &backend) {
 	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
 		addParts<ID>(parts, backend);
@@ -221,10 +222,11 @@ PipelineCollection::PipelineCollection() {
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
-	fillPipelineParts<0>(*graphics_parts, backend);
+	fillPipelineParts(*graphics_parts, backend);
 
 	VkResult result = backend.vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
-	                                                    graphics_parts->create_infos, allocator, m_graphics_pipelines);
+	                                                    graphics_parts->create_infos, allocator,
+	                                                    m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
 		// Some pipelines could have been successfully created, destroy them
 		for (VkPipeline pipe : m_graphics_pipelines)
@@ -244,6 +246,11 @@ PipelineCollection::~PipelineCollection() noexcept {
 
 	for (VkPipeline pipe : m_graphics_pipelines)
 		backend.vkDestroyPipeline(device, pipe, allocator);
+}
+
+VkPipeline PipelineCollection::operator[](GraphicsPipelineId idx) const
+{
+	return m_graphics_pipelines.at(idx);
 }
 
 }

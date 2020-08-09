@@ -7,12 +7,17 @@ namespace voxen::client::vulkan
 
 class ShaderModule {
 public:
+	ShaderModule() = default;
 	explicit ShaderModule(const char *path);
 	ShaderModule(ShaderModule &&) = delete;
 	ShaderModule(const ShaderModule &) = delete;
 	ShaderModule &operator = (ShaderModule &&) = delete;
 	ShaderModule &operator = (const ShaderModule &) = delete;
 	~ShaderModule() noexcept;
+
+	void load(const char *path);
+	void unload() noexcept;
+	bool isLoaded() const noexcept { return m_shader_module != VK_NULL_HANDLE; }
 
 	operator VkShaderModule() const noexcept { return m_shader_module; }
 private:
@@ -28,11 +33,16 @@ public:
 	ShaderModuleCollection &operator = (const ShaderModuleCollection &) = delete;
 	~ShaderModuleCollection() = default;
 
-	ShaderModule &debugOctreeVertexShader() noexcept { return m_debug_octree_vertex; }
-	ShaderModule &debugOctreeFragmentShader() noexcept { return m_debug_octree_fragment; }
+	enum ShaderId : uint32_t {
+		DEBUG_OCTREE_VERTEX,
+		DEBUG_OCTREE_FRAGMENT,
+
+		NUM_SHADERS
+	};
+
+	const ShaderModule &operator [](ShaderId idx) const;
 private:
-	ShaderModule m_debug_octree_vertex;
-	ShaderModule m_debug_octree_fragment;
+	std::array<ShaderModule, NUM_SHADERS> m_shader_modules;
 };
 
 }

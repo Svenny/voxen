@@ -14,16 +14,15 @@ public:
 	PipelineCollection &operator = (const PipelineCollection &) = delete;
 	~PipelineCollection() noexcept;
 
-	VkPipeline operator[](uint32_t idx) const noexcept { return m_graphics_pipelines[idx]; }
-
 	enum GraphicsPipelineId : uint32_t {
 		DEBUG_OCTREE_PIPELINE,
 
 		NUM_GRAPHICS_PIPELINES
 	};
-private:
-	VkPipeline m_graphics_pipelines[NUM_GRAPHICS_PIPELINES];
 
+	VkPipeline operator[](GraphicsPipelineId idx) const;
+private:
+	std::array<VkPipeline, NUM_GRAPHICS_PIPELINES> m_graphics_pipelines;
 };
 
 }
