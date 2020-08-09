@@ -79,7 +79,7 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const World &state
 		block.color[2] = NODE_COLORS[idx][2];
 		block.color[3] = NODE_COLORS[idx][3];
 		backend.vkCmdPushConstants(cmd_buffer, pipeline_layout,
-		                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+		                           VK_SHADER_STAGE_ALL,
 		                           0, sizeof(block), &block);
 		// TODO: Mesh must support drawing itself
 		backend.vkCmdDrawIndexed(cmd_buffer, std::size(INDEX_BUFFER_DATA), 1, 0, 0, 0);
