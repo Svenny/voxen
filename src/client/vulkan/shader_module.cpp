@@ -60,7 +60,7 @@ ShaderModule::~ShaderModule() noexcept
 template<uint32_t ID>
 extern const char *SHADER_MODULE_PATH;
 #define ADD_SHADER_PATH(name, path) \
-	template<> inline static const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
+	template<> inline const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
 // TODO: use proper paths
 ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "vert.spv")
 ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "frag.spv")
