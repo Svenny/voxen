@@ -127,8 +127,8 @@ struct DisabledBlendState {
 
 struct GraphicsPipelineParts {
 	GraphicsPipelineParts() noexcept {
-		auto &backend = Backend::backend();
-		assert(backend.shaderModuleCollection() != nullptr && backend.pipelineLayoutCollection() != nullptr);
+		assert(Backend::backend().shaderModuleCollection() != nullptr &&
+		       Backend::backend().pipelineLayoutCollection() != nullptr);
 
 		for (auto &info : create_infos) {
 			info = {};
