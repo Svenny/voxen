@@ -61,9 +61,9 @@ template<uint32_t ID>
 extern const char *SHADER_MODULE_PATH;
 #define ADD_SHADER_PATH(name, path) \
 	template<> inline const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
-// TODO: use proper paths
-ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "vert.spv")
-ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "frag.spv")
+
+ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "assets/shaders/debug/octree.vert.spv")
+ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
 
 template<uint32_t ID = 0, typename T>
 static void loadShaderModules(T &array)
