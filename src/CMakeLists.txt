@@ -42,7 +42,7 @@ set(VOXEN_SOURCES
 target_sources(voxen PRIVATE ${VOXEN_SOURCES})
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})
 
-set(GLSLC_COMMAND glslc)
+find_program(GLSL_COMPILER glslc)
 
 set(VOXEN_SHADERS
 	debug/octree.vert
@@ -57,7 +57,7 @@ foreach(SHADER ${VOXEN_SHADERS})
 	get_filename_component(SHADER_DIR ${SHADER_BIN} DIRECTORY)
 	file(MAKE_DIRECTORY ${SHADER_DIR})
 	add_custom_command(OUTPUT ${SHADER_BIN} DEPENDS ${SHADER_SOURCE} COMMENT "Building SPIR-V for shader ${SHADER}"
-		COMMAND ${GLSLC_COMMAND} -O ${SHADER_SOURCE} -o ${SHADER_BIN})
+		COMMAND ${GLSL_COMPILER} -O ${SHADER_SOURCE} -o ${SHADER_BIN})
 	list(APPEND VOXEN_SHADER_BINARIES ${SHADER_BIN})
 	message(STATUS "Compiling shader ${SHADER}, source ${SHADER_SOURCE}, binary ${SHADER_BIN}")
 endforeach()
