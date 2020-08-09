@@ -19,7 +19,7 @@ public:
 	uint32_t acquireImage(VkSemaphore signal_semaphore);
 	void presentImage(uint32_t idx, VkSemaphore wait_semaphore);
 
-	uint32_t numImages() const noexcept { return uint32_t(m_images.size()); }
+	uint32_t numImages() const noexcept;
 	VkImage image(uint32_t idx) const noexcept { return m_images[idx]; }
 	VkImageView imageView(uint32_t idx) const noexcept { return m_image_views[idx]; }
 	VkExtent2D imageExtent() const noexcept { return m_image_extent; }
@@ -34,7 +34,7 @@ private:
 	void destroySwapchain() noexcept;
 	VkExtent2D pickImageExtent(const VkSurfaceCapabilitiesKHR &caps);
 	uint32_t pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps);
-	void getImages();
+	void obtainImages();
 	void createImageViews();
 };
 

@@ -77,7 +77,7 @@ void Swapchain::recreateSwapchain()
 	defer_fail { destroySwapchain(); };
 
 	m_image_extent = info.imageExtent;
-	getImages();
+	obtainImages();
 	createImageViews();
 }
 
@@ -96,7 +96,7 @@ uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 
 void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 {
-	assert(idx < uint32_t(m_images.size()));
+	assert(idx < m_images.size());
 
 	auto &backend = Backend::backend();
 	VkQueue queue = backend.device()->presentQueue();
@@ -116,6 +116,13 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 		throw VulkanException(queue_result, "vkQueuePresentKHR");
 	if (present_result != VK_SUCCESS)
 		throw VulkanException(present_result, "vkQueuePresentKHR[pResults]");
+}
+
+uint32_t Swapchain::numImages() const noexcept
+{
+	// We guarantee that `m_images.size()` will always fit in `uint32_t` because
+	// Vulkan uses this type in `vkGetSwapchainImagesKHR` for enumerating images
+	return uint32_t(m_images.size());
 }
 
 void Swapchain::destroySwapchain() noexcept
@@ -169,7 +176,7 @@ uint32_t Swapchain::pickImagesNumber(const VkSurfaceCapabilitiesKHR &caps)
 	return num_images;
 }
 
-void Swapchain::getImages()
+void Swapchain::obtainImages()
 {
 	assert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 

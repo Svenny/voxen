@@ -23,7 +23,7 @@ Device::Device()
 		throw MessageException("failed to load device-level Vulkan API");
 	}
 
-	getQueueHandles();
+	obtainQueueHandles();
 
 	Log::debug("Device created successfully");
 }
@@ -126,7 +126,7 @@ void Device::createDevice()
 		throw VulkanException(result, "vkCreateDevice");
 }
 
-void Device::getQueueHandles() noexcept
+void Device::obtainQueueHandles() noexcept
 {
 	auto &backend = Backend::backend();
 	auto &phys_device = *backend.physicalDevice();
