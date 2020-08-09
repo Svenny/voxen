@@ -137,6 +137,10 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 			m_window.useRegularCursor();
 			m_is_used_orientation_cursor = false;
 			m_is_got_left_mouse_click = false;
+
+			// Reset user movement
+			queue.player_forward_movement_direction = glm::dvec3{0.0};
+			queue.player_strafe_movement_direction = glm::dvec3{0.0};
 			return;
 		}
 
