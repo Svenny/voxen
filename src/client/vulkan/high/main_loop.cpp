@@ -69,9 +69,12 @@ void MainLoop::drawFrame(const World &state, const GameView &view)
 
 	VkRenderPassAttachmentBeginInfo attachment_info = {};
 	attachment_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
-	attachment_info.attachmentCount = 1;
-	VkImageView color_buffer = swapchain->imageView(swapchain_image_id);
-	attachment_info.pAttachments = &color_buffer;
+	VkImageView attachments[2] = {
+		swapchain->imageView(swapchain_image_id),
+		backend.framebufferCollection()->sceneDepthStencilBufferView()
+	};
+	attachment_info.attachmentCount = std::size(attachments);
+	attachment_info.pAttachments = attachments;
 
 	VkRenderPassBeginInfo render_begin_info = {};
 	render_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <voxen/client/vulkan/common.hpp>
+#include <voxen/client/vulkan/image.hpp>
+#include <voxen/client/vulkan/image_view.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -28,10 +30,18 @@ public:
 	FramebufferCollection &operator = (const FramebufferCollection &) = delete;
 	~FramebufferCollection() = default;
 
+	Image &sceneDepthStencilBuffer() noexcept { return m_scene_depth_stencil_buffer; }
+	ImageView &sceneDepthStencilBufferView() noexcept { return m_scene_depth_stencil_buffer_view; }
+
 	Framebuffer &sceneFramebuffer() noexcept { return m_scene_framebuffer; }
 private:
+	Image m_scene_depth_stencil_buffer;
+	ImageView m_scene_depth_stencil_buffer_view;
+
 	Framebuffer m_scene_framebuffer;
 
+	Image createSceneDepthStencilBuffer();
+	ImageView createSceneDepthStencilBufferView();
 	Framebuffer createSceneFramebuffer();
 };
 
