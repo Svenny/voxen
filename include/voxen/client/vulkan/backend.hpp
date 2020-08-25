@@ -3,7 +3,7 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/window.hpp>
 #include <voxen/common/gameview.hpp>
-#include <voxen/common/world.hpp>
+#include <voxen/common/world_state.hpp>
 
 #include <string_view>
 
@@ -39,7 +39,7 @@ public:
 	bool start(Window &window) noexcept;
 	void stop() noexcept;
 
-	bool drawFrame(const World &state, const GameView &view) noexcept;
+	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
 
 	bool recreateSurface(Window &window) noexcept;
 	bool recreateSwapchain(Window &window) noexcept;

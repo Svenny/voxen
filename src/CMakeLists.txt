@@ -29,11 +29,16 @@ set(VOXEN_SOURCES
 	src/client/input_manager.cpp
 	src/client/render.cpp
 	src/client/window.cpp
+	src/common/terrain/cache.cpp
+	src/common/terrain/chunk.cpp
+	src/common/terrain/generator.cpp
+	src/common/terrain/loader.cpp
 	src/common/player.cpp
 	src/common/terrain.cpp
-	src/common/world.cpp
+	src/common/world_state.cpp
 	src/common/gameview.cpp
 	src/common/config.cpp
+	src/server/world.cpp
 	src/util/exception.cpp
 	src/util/file.cpp
 	src/util/log.cpp

@@ -69,7 +69,7 @@ void Backend::stop() noexcept
 	m_state = State::NotStarted;
 }
 
-bool Backend::drawFrame(const World &state, const GameView &view) noexcept
+bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 {
 	if (!m_main_loop) {
 		Log::error("No MainLoop - refusing to draw the frame");

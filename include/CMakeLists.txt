@@ -35,11 +35,16 @@ set(VOXEN_HEADERS
 	include/voxen/client/input_manager.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/window.hpp
+	include/voxen/common/terrain/cache.hpp
+	include/voxen/common/terrain/chunk.hpp
+	include/voxen/common/terrain/generator.hpp
+	include/voxen/common/terrain/loader.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
-	include/voxen/common/world.hpp
+	include/voxen/common/world_state.hpp
 	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp
+	include/voxen/server/world.hpp
 	include/voxen/util/exception.hpp
 	include/voxen/util/file.hpp
 	include/voxen/util/log.hpp

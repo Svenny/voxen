@@ -41,7 +41,7 @@ AlgoDebugOctree::AlgoDebugOctree() :
 	Log::debug("AlgoDebugOctree created successfully");
 }
 
-void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const World &state, const GameView &view)
+void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = *backend.pipelineLayoutCollection();
@@ -67,7 +67,7 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const World &state
 		float base_x = float(chunk.baseX());
 		float base_y = float(chunk.baseY());
 		float base_z = float(chunk.baseZ());
-		float size = float(chunk.size() * chunk.scale());
+		float size = float(TerrainChunk::SIZE * chunk.scale());
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 

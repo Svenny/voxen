@@ -28,7 +28,7 @@ MainLoop::~MainLoop() noexcept
 	Log::debug("Destroying MainLoop");
 }
 
-void MainLoop::drawFrame(const World &state, const GameView &view)
+void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();

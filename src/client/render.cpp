@@ -23,7 +23,7 @@ Render::~Render()
 	vulkan::Backend::backend().stop();
 }
 
-void Render::drawFrame(const World &state, const GameView &view)
+void Render::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = vulkan::Backend::backend();
 	if (!backend.drawFrame(state, view)) {
