@@ -1,6 +1,7 @@
 #include <voxen/common/terrain/chunk.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 namespace voxen
