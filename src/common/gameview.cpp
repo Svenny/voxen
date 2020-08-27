@@ -1,6 +1,6 @@
 #include <voxen/common/gameview.hpp>
 
-#include <voxen/common/world.hpp>
+#include <voxen/common/world_state.hpp>
 #include <voxen/common/player.hpp>
 #include <voxen/common/config.hpp>
 
@@ -132,6 +132,8 @@ void GameView::resetKeyState() noexcept {
 }
 
 void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept {
+	std::lock_guard<std::mutex> lock { queue.mutex };
+
 	if (m_is_used_orientation_cursor) {
 		if (m_is_got_left_mouse_click) {
 			m_window.useRegularCursor();

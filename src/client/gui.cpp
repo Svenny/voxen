@@ -1,10 +1,10 @@
 #include <voxen/client/gui.hpp>
 
-#include <functional>
+#include <voxen/util/log.hpp>
+
 #include <GLFW/glfw3.h>
 
-#include <voxen/common/world.hpp>
-#include <voxen/util/log.hpp>
+#include <functional>
 
 namespace voxen::client
 {
@@ -38,12 +38,12 @@ GameView& Gui::view()
 	return m_gameview;
 }
 
-void Gui::init(const World& world_start_state)
+void Gui::init(const WorldState& world_start_state)
 {
 	m_gameview.init(world_start_state.player());
 }
 
-void Gui::update(const World& world, DebugQueueRtW& queue)
+void Gui::update(const WorldState& world, DebugQueueRtW& queue)
 {
 	m_gameview.update(world.player(), queue, world.tickId());
 }

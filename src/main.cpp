@@ -2,17 +2,20 @@
 #include <voxen/client/gui.hpp>
 #include <voxen/client/render.hpp>
 #include <voxen/client/window.hpp>
-#include <voxen/common/world.hpp>
+#include <voxen/common/world_state.hpp>
 #include <voxen/common/config.hpp>
+#include <voxen/server/world.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <cxxopts.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <string>
 #include <algorithm>
 #include <variant>
+#include <thread>
 
 static const std::string kCliSectionSeparator = "__";
 
@@ -73,7 +76,31 @@ void patchConfig(cxxopts::ParseResult result, voxen::Config* config) {
 	}
 }
 
-int main (int argc, char *argv[]) {
+// TODO: use queue or some "inter-thread data exchange" object
+std::atomic_bool g_stop { false };
+std::atomic_int64_t g_ups_counter { 0 };
+
+void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_world_queue)
+{
+	using namespace std::chrono;
+
+	auto last_tick_time = high_resolution_clock::now();
+	const duration<int64_t, std::nano> tick_inverval { int64_t(world.secondsPerTick() * 1'000'000'000.0) };
+	auto next_tick_time = last_tick_time + tick_inverval;
+
+	while (!g_stop.load()) {
+		auto cur_time = high_resolution_clock::now();
+		while (cur_time >= next_tick_time) {
+			world.update(render_to_world_queue, tick_inverval);
+			next_tick_time += tick_inverval;
+			g_ups_counter.fetch_add(1, std::memory_order_relaxed);
+		}
+		std::this_thread::sleep_until(next_tick_time - milliseconds(1));
+	}
+}
+
+int main(int argc, char *argv[])
+{
 	using voxen::Log;
 	using namespace std::chrono;
 
@@ -103,55 +130,45 @@ int main (int argc, char *argv[]) {
 		wnd.start(main_voxen_config->optionInt("window", "width"), main_voxen_config->optionInt("window", "height"));
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
-		voxen::World world;
+		voxen::server::World world;
 		auto gui = std::make_unique<voxen::client::Gui>(wnd);
-		gui->init(world);
+		gui->init(*world.getLastState());
 		voxen::DebugQueueRtW render_to_world_queue;
 
-		auto last_tick_time = high_resolution_clock::now();
-		const duration<int64_t, std::nano> tick_inverval { int64_t(world.secondsPerTick() * 1'000'000'000.0) };
-		auto next_tick_time = last_tick_time + tick_inverval;
+		std::thread world_thread(worldThread, std::ref(world), std::ref(render_to_world_queue));
 
 		int64_t fps_counter = 0;
-		int64_t ups_counter = 0;
 		auto time_point_counter = high_resolution_clock::now();
 		while (!wnd.shouldClose()) {
-			if (isLoggingFPSEnable)
-			{
+			// Write all possibly buffered log messages
+			fflush(stdout);
+
+			if (isLoggingFPSEnable) {
 				duration<double> dur = (high_resolution_clock::now() - time_point_counter);
-				if (dur.count() > 1)
-				{
-					Log::info("FPS: {} UPS: {}", (int)(fps_counter/dur.count()), (int)(ups_counter/dur.count()));
+				double elapsed = dur.count();
+				if (elapsed > 2) {
+					int64_t ups_counter = g_ups_counter.exchange(0, std::memory_order_relaxed);
+					Log::info("FPS: {:.1f} UPS: {:.1f}", fps_counter / elapsed, ups_counter / elapsed);
 					fps_counter = 0;
-					ups_counter = 0;
 					time_point_counter = high_resolution_clock::now();
 				}
 			}
 
-			fflush(stdout);
-
-			// World
-			auto cur_time = high_resolution_clock::now();
-			while (cur_time >= next_tick_time) {
-				ups_counter++;
-				world.update(render_to_world_queue, tick_inverval);
-				next_tick_time += tick_inverval;
-			}
-
-			//GUI
-
-			// TODO .getLastState();
-			voxen::World state(world);
+			auto last_state_ptr = world.getLastState();
+			const voxen::WorldState &last_state = *last_state_ptr;
 			// Input handle
 			wnd.pollEvents();
-			gui->update(state, render_to_world_queue);
+			gui->update(last_state, render_to_world_queue);
 			// GUI now handled a lot of callbacks (events) from Window
 			// and update world via queue
 
 			// Do render
-			render->drawFrame(state, gui->view());
+			render->drawFrame(last_state, gui->view());
 			fps_counter++;
 		}
+
+		g_stop.store(true);
+		world_thread.join();
 
 		// `render` and `gui` must be destroyed before calling `wnd.stop()`
 		// TODO: do something about Window's lifetime management?
