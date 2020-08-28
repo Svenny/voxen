@@ -54,7 +54,7 @@ target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<OR:$<CONFIG:Debug>,$
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
-target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts SimpleIni Threads::Threads)
+target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts SimpleIni Threads::Threads PlatformFolders)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)

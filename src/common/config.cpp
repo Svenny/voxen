@@ -1,7 +1,7 @@
 #include <voxen/common/config.hpp>
 
 #include <voxen/util/exception.hpp>
-#include <voxen/util/voxen_home.hpp>
+#include <voxen/common/filemanager.hpp>
 #include <voxen/util/log.hpp>
 
 #include <fmt/format.h>
@@ -12,7 +12,7 @@ using std::string_view;
 namespace voxen
 {
 
-const path Config::kMainConfigRelPath = "config.ini";
+const path Config::kMainConfigRelPath = "configs/main.ini";
 std::unique_ptr<Config> Config::g_instance = nullptr;
 
 Config::Config(path path, Config::Scheme scheme): m_path(path) {
@@ -40,13 +40,14 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 }
 Config::~Config()
 {
-	// Not sure, maybe we should move it in ::patch inside saveToConfigFile branch
+	// NOTE(sirgienko) Not sure, maybe we should move it in ::patch inside saveToConfigFile branch
+	FileManager::makeDirsForFile(m_path);
 	m_ini.SaveFile(m_path.string().c_str());
 }
 
 Config* Config::mainConfig() {
 	if(!g_instance) {
-		path config_path = voxenHome() / kMainConfigRelPath;
+		path config_path = FileManager::userDataPath() / kMainConfigRelPath;
 		g_instance = std::make_unique<Config>(config_path, mainConfigScheme());
 	}
 	return g_instance.get();

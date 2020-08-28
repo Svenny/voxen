@@ -38,9 +38,9 @@ set(VOXEN_SOURCES
 	src/common/world_state.cpp
 	src/common/gameview.cpp
 	src/common/config.cpp
+	src/common/filemanager.cpp
 	src/server/world.cpp
 	src/util/exception.cpp
-	src/util/file.cpp
 	src/util/log.cpp
 	src/main.cpp
 )
@@ -59,7 +59,7 @@ set(VOXEN_SHADER_BINARIES)
 
 foreach(SHADER ${VOXEN_SHADERS})
 	set(SHADER_SOURCE ${CMAKE_SOURCE_DIR}/src/shaders/${SHADER})
-	set(SHADER_BIN ${CMAKE_BINARY_DIR}/assets/shaders/${SHADER}.spv)
+	set(SHADER_BIN ${CMAKE_BINARY_DIR}/data/game/assets/shaders/${SHADER}.spv)
 	get_filename_component(SHADER_DIR ${SHADER_BIN} DIRECTORY)
 	file(MAKE_DIRECTORY ${SHADER_DIR})
 	add_custom_command(OUTPUT ${SHADER_BIN} DEPENDS ${SHADER_SOURCE} COMMENT "Building SPIR-V for shader ${SHADER}"

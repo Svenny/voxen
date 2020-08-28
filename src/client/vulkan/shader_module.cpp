@@ -3,28 +3,28 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
 
-#include <voxen/util/file.hpp>
+#include <voxen/common/filemanager.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
 {
 
-ShaderModule::ShaderModule(const char *path)
+ShaderModule::ShaderModule(const char *relative_path)
 {
-	load(path);
+	load(relative_path);
 }
 
-void ShaderModule::load(const char *path)
+void ShaderModule::load(const char *relative_path)
 {
 	unload();
 
-	if (!path) {
+	if (!relative_path) {
 		Log::error("Null pointer passed as path");
 		throw MessageException("null pointer");
 	}
 
-	Log::debug("Loading shader module `{}`", path);
-	auto code = FileUtils::readFile(path);
+	Log::debug("Loading shader module `{}`", relative_path);
+	auto code = FileManager::readFile(relative_path);
 	auto &code_bytes = code.value();
 
 	VkShaderModuleCreateInfo info = {};

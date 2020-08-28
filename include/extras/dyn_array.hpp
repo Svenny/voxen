@@ -93,6 +93,12 @@ public:
 		std::uninitialized_fill_n(m_data, count, value);
 	}
 
+	/// This constructor with owning changing from raw allocated memory.
+	constexpr explicit dyn_array(T* data, size_type count, const Allocator &alloc = Allocator()): m_size(count), m_data(data), m_alloc(alloc)
+	{
+		// do nothing
+	}
+
 	constexpr explicit dyn_array(size_type count, const Allocator &alloc = Allocator())
 	: m_size(count), m_alloc(alloc) {
 		m_data = std::allocator_traits<Allocator>::allocate(m_alloc, count);
