@@ -8,14 +8,14 @@ namespace voxen::client::vulkan
 class ShaderModule {
 public:
 	ShaderModule() = default;
-	explicit ShaderModule(const char *path);
+	explicit ShaderModule(const char *relative_path);
 	ShaderModule(ShaderModule &&) = delete;
 	ShaderModule(const ShaderModule &) = delete;
 	ShaderModule &operator = (ShaderModule &&) = delete;
 	ShaderModule &operator = (const ShaderModule &) = delete;
 	~ShaderModule() noexcept;
 
-	void load(const char *path);
+	void load(const char *relative_path);
 	void unload() noexcept;
 	bool isLoaded() const noexcept { return m_shader_module != VK_NULL_HANDLE; }
 

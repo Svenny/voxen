@@ -3,7 +3,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
 
-#include <voxen/util/file.hpp>
+#include <voxen/common/filemanager.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
@@ -20,7 +20,7 @@ PipelineCache::PipelineCache(const char *path) : m_save_path(path)
 	Log::debug("Creating PipelineCache");
 	if (path)
 		Log::debug("Trying to preinitialize pipeline cache from `{}`", path);
-	auto cache_data = FileUtils::readFile(path);
+	auto cache_data = FileManager::readUserFile(path);
 
 	VkPipelineCacheCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -64,7 +64,7 @@ bool PipelineCache::dump() noexcept
 	}
 
 	Log::debug("Saving {} bytes of pipeline cache data to {}", buffer_size, m_save_path);
-	return FileUtils::writeFile(m_save_path.c_str(), buffer, buffer_size);
+	return FileManager::writeUserFile(m_save_path, buffer, buffer_size);
 }
 
 PipelineCache::~PipelineCache() noexcept

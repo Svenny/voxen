@@ -44,9 +44,9 @@ set(VOXEN_HEADERS
 	include/voxen/common/world_state.hpp
 	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp
+	include/voxen/common/filemanager.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/exception.hpp
-	include/voxen/util/file.hpp
 	include/voxen/util/log.hpp
 )
 
