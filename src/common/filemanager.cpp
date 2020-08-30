@@ -142,9 +142,6 @@ struct ReportableWorkerState {
 	std::mutex state_mutex;
 	bool has_task;
 	bool live_forever;
-	std::queue<packaged_task<optional<dyn_array<std::byte>>()>> read_tasks_queue;
-	std::queue<packaged_task<optional<string>()>> read_text_tasks_queue;
-	std::queue<packaged_task<bool()>> write_tasks_queue;
 	std::queue<packaged_task<void()>> tasks_queue;
 };
 
@@ -152,19 +149,6 @@ struct ReportableWorker {
 	thread worker;
 	ReportableWorkerState state;
 };
-
-template<typename T> void runTaskFromQueue(ReportableWorkerState* state, std::queue<packaged_task<T()>>& queue)
-{
-	assert(queue.size() == 1);
-	packaged_task<T()> task = std::move(queue.front());
-	queue.pop();
-	state->state_mutex.unlock();
-
-	task();
-
-	state->state_mutex.lock();
-	state->has_task = false;
-}
 
 class FileIoThreadPool {
 public:
@@ -194,6 +178,7 @@ public:
 
 	void enqueueTask(std::function<void()>&& task_function)
 	{
+		voxen::Log::info("enqueueTask");
 		cleanup_finished_workers();
 
 		packaged_task<void()> task(task_function);
@@ -235,17 +220,16 @@ private:
 		while(!state->is_exit.load())
 		{
 			state->state_mutex.lock();
-			if (state->read_tasks_queue.size() == 1)
+			if (state->tasks_queue.size() == 1)
 			{
-				runTaskFromQueue(state, state->read_tasks_queue);
-			}
-			if (state->read_text_tasks_queue.size() == 1)
-			{
-				runTaskFromQueue(state, state->read_text_tasks_queue);
-			}
-			else if (state->write_tasks_queue.size() == 1)
-			{
-				runTaskFromQueue(state, state->write_tasks_queue);
+				packaged_task<void()> task = std::move(state->tasks_queue.front());
+				state->tasks_queue.pop();
+				state->state_mutex.unlock();
+
+				task();
+
+				state->state_mutex.lock();
+				state->has_task = false;
 			}
 			state->state_mutex.unlock();
 
@@ -309,11 +293,19 @@ static impl::FileIoThreadPool file_manager_threadpool;
 
 namespace voxen {
 
-string FileManager::profile_name = "default";
+path FileManager::user_data_path;
+path FileManager::game_data_path;
 
-void FileManager::setProfileName(const string& profile_name)
+void FileManager::setProfileName(std::string profile_name)
 {
-	FileManager::profile_name = profile_name;
+	if constexpr (BuildConfig::kIsDeployBuild) {
+		assert(false);
+		user_data_path = std::filesystem::path(sago::getDataHome()) / "voxen/";
+	} else {
+		user_data_path = std::filesystem::current_path() / "data/user" / profile_name;
+		game_data_path = std::filesystem::current_path() / "data/game";
+
+	}
 }
 
 optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_path) noexcept
@@ -399,39 +391,17 @@ bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path) no
 
 path FileManager::userDataPath() noexcept
 {
-	try {
-		if constexpr (BuildConfig::kIsDeployBuild) {
-			return std::filesystem::path(sago::getDataHome()) / "voxen/";
-		} else {
-			return std::filesystem::current_path() / "data/user" / profile_name;
-		}
-	}
-	catch (const std::filesystem::filesystem_error &e) {
-		voxen::Log::error("Filesystem error: {}", e.what());
-		return std::filesystem::path();
-	}
+	return user_data_path;
 }
 
 path FileManager::gameDataPath() noexcept
 {
-	try {
-		if constexpr (BuildConfig::kIsDeployBuild) {
-			// TODO: implement me
-			assert(false);
-			return std::filesystem::path();
-		} else {
-			return std::filesystem::current_path() / "data/game";
-		}
-	}
-	catch (const std::filesystem::filesystem_error &e) {
-		voxen::Log::error("Filesystem error: {}", e.what());
-		return std::filesystem::path();
-	}
+	return game_data_path;
 }
 
 std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise;
+	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = promise]() mutable {
@@ -443,7 +413,7 @@ std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAs
 
 std::future<std::optional<extras::dyn_array<std::byte> > > FileManager::readUserFileAsync(std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<extras::dyn_array<std::byte>>>> promise;
+	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
@@ -455,7 +425,7 @@ std::future<std::optional<extras::dyn_array<std::byte> > > FileManager::readUser
 
 std::future<std::optional<std::string>> FileManager::readTextFileAsync(std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<string>>> promise;
+	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
 	std::future<optional<string>> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
@@ -467,7 +437,7 @@ std::future<std::optional<std::string>> FileManager::readTextFileAsync(std::file
 
 std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<string>>> promise;
+	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
 	std::future<optional<string>> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
@@ -479,7 +449,7 @@ std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::
 
 std::future<bool> FileManager::writeUserFileAsync(std::filesystem::path relative_path, const void* data, size_t size, bool create_directories) noexcept
 {
-	std::shared_ptr<std::promise<bool>> promise;
+	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
 	std::future<bool> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise), data, size, create_directories]() mutable {
@@ -491,7 +461,7 @@ std::future<bool> FileManager::writeUserFileAsync(std::filesystem::path relative
 
 std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, const std::string&& text, bool create_directories) noexcept
 {
-	std::shared_ptr<std::promise<bool>> promise;
+	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
 	std::future<bool> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise), txt = std::move(text), create_directories]() mutable {

@@ -12,7 +12,7 @@ namespace voxen
 
 class FileManager {
 public:
-	static void setProfileName(const std::string& profile_name);
+	static void setProfileName(std::string profile_name = "default");
 
 	static std::optional<extras::dyn_array<std::byte>> readUserFile(const std::filesystem::path& relative_path) noexcept;
 	static bool writeUserFile(const std::filesystem::path& relative_path, const void *data, size_t size, bool create_directories = true) noexcept;
@@ -36,6 +36,7 @@ public:
 	static std::filesystem::path gameDataPath() noexcept;
 
 private:
-	static std::string profile_name;
+	static std::filesystem::path user_data_path;
+	static std::filesystem::path game_data_path;
 };
 }

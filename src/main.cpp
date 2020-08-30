@@ -7,12 +7,15 @@
 #include <voxen/server/world.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/common/filemanager.hpp>
 
+#define CXXOPTS_NO_RTTI
 #include <cxxopts.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <string>
+#include <set>
 #include <algorithm>
 #include <variant>
 #include <thread>
@@ -60,12 +63,17 @@ cxxopts::Options initCli() {
 			(arg_name, entry.description, default_cli_value);
 	}
 	options.add_options()
-		("h,help", "Display help information");
+		("h,help", "Display help information")
+		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
 	return options;
 }
 
+static std::set<std::string> ignorable_keys = {"profile"};
 void patchConfig(cxxopts::ParseResult result, voxen::Config* config) {
 	for (auto& keyvalue : result.arguments()) {
+		if (ignorable_keys.count(keyvalue.key()))
+			continue;
+
 		int sep_idx = keyvalue.key().find(kCliSectionSeparator);
 		std::string section = keyvalue.key().substr(0, sep_idx);
 		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
@@ -107,19 +115,14 @@ int main(int argc, char *argv[])
 	Log::info("Starting Voxen {}", voxen::BuildConfig::kVersionString);
 
 	try {
-		// Voxen haven't positional arguments, so we need to check, that each argument starts with '-' prefix
-		for (int i = 1; i < argc; i++) {
-			auto view = std::string_view(argv[i]);
-			// Argument always have at least length >= 1, so don't check length
-			if (view[0] != '-')
-				throw voxen::FormattedMessageException("Using not existed argument {}", fmt::make_format_args(view));
-		}
 		cxxopts::Options options = initCli();
 		auto result = options.parse(argc, argv);
 		if (result.count("help")) {
 			std::cout << options.help() << std::endl;
 			exit(0);
 		}
+
+		voxen::FileManager::setProfileName(result["profile"].as<std::string>());
 
 		voxen::Config* main_voxen_config = voxen::Config::mainConfig();
 		patchConfig(result, main_voxen_config);
