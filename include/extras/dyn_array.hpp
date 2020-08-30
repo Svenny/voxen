@@ -94,7 +94,7 @@ public:
 	}
 
 	/// This constructor with owning changing from raw allocated memory.
-	constexpr explicit dyn_array(T* data, size_type count, const Allocator &alloc = Allocator()): m_size(count), m_data(data), m_alloc(alloc)
+	constexpr explicit dyn_array(T* data, size_type count, const Allocator &alloc): m_size(count), m_data(data), m_alloc(alloc)
 	{
 		// do nothing
 	}
