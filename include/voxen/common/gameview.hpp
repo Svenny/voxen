@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/client/window.hpp>
+#include <voxen/client/player_action_events.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -19,10 +20,8 @@ public:
 	void init(const Player& player) noexcept;
 	void update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
 
-	bool handleKey(int key, int scancode, int action, int mods) noexcept;
+	bool handleEvent(client::PlayerActionEvents, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
-	bool handleMouseKey(int button, int action, int mods) noexcept;
-	bool handleMouseScroll(double xoffset, double yoffset) noexcept;
 
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
@@ -32,17 +31,17 @@ public:
 	glm::mat4 cameraMatrix() const noexcept { return m_cam_matrix; }
 
 private:
-	enum Key : int {
-		KeyForward = 0,
-		KeyBack,
-		KeyLeft,
-		KeyRight,
-		KeyUp,
-		KeyDown,
-		KeyRollCW,
-		KeyRollCCW,
+	enum Direction : int {
+		Forward = 0,
+		Backward,
+		Left,
+		Right,
+		Up,
+		Down,
+		RollLeft,
+		RollRight,
 
-		KeyCount
+		Count
 	};
 
 	double m_width, m_height;
@@ -76,10 +75,10 @@ private:
 	client::Window& m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
-	bool m_is_got_left_mouse_click;
+	bool m_is_pause;
 	bool m_is_used_orientation_cursor;
 
-	bool m_keyPressed[Key::KeyCount];
+	bool m_state[Direction::Count];
 
 private:
 	void resetKeyState() noexcept;

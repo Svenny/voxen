@@ -32,9 +32,10 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/sync.hpp
 	include/voxen/client/vulkan/texture_manager.hpp
 	include/voxen/client/gui.hpp
-	include/voxen/client/input_manager.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/window.hpp
+	include/voxen/client/input_event_adapter.hpp
+	include/voxen/client/player_action_events.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
 	include/voxen/common/terrain/generator.hpp

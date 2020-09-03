@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <utility>
 
+#include "input_event_adapter.hpp"
+
 struct GLFWwindow;
 
 namespace voxen::client
