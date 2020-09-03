@@ -50,7 +50,7 @@ private:
 	static const std::array<std::pair<PlayerActionEvents, std::string>, 11> PLAYERACTIONS_2_STRINGS;
 
 	static void parseToken(std::string_view string, PlayerActionEvents event, std::string_view parameter_name, std::string_view default_value);
-	static void parseComplexToken(std::string_view string, int* key, int* mods, int* key_type, bool* fully_parsed);
+	static void parseComplexToken(std::string_view string, int& key, int& mods, int& key_type, bool& fully_parsed);
 
 	constexpr static const std::string_view KEYS_DELIMITER = "+";
 	constexpr static const std::string_view KEYS_SEQUENCE_DELIMITER = ", ";

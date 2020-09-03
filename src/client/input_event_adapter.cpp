@@ -215,12 +215,15 @@ void InputEventAdapter::init() {
 		PlayerActionEvents event = stringToAction(entry.parameter_name);
 
 		const std::string& default_value = std::get<std::string>(entry.default_value);
+		std::string_view parameter_name(entry.parameter_name);
 
 		if (event != PlayerActionEvents::None) {
 			if (value.find(KEYS_SEQUENCE_DELIMITER) == std::string::npos)
-				parseToken(value, event, entry.parameter_name, default_value);
+				parseToken(value, event, parameter_name, default_value);
 			else
-				string_split_apply(value, KEYS_SEQUENCE_DELIMITER, functor, event, std::string_view(entry.parameter_name), std::string_view(default_value));
+				string_split_apply(value, KEYS_SEQUENCE_DELIMITER, [event, &default_value, parameter_name](std::string_view string){
+					parseToken(string, event, parameter_name, default_value);
+				});
 		}
 		else
 			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value", entry.parameter_name, value_string);
@@ -392,8 +395,10 @@ std::uint32_t InputEventAdapter::stringToHash(std::string_view s) {
 		int key_type = 0; //0 - unknown, 1 - key button, 2 - mouse button
 		bool fully_parsed = true;
 
-		std::function<void(std::string_view, int*, int*, int*, bool*)> functor = InputEventAdapter::parseComplexToken;
-		string_split_apply(s, KEYS_DELIMITER, functor, &key, &mods, &key_type, &fully_parsed);
+		string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](std::string_view string){
+			parseComplexToken(string, key, mods, key_type, fully_parsed);
+		});
+
 		if (fully_parsed == false)
 			return INVALID_HASH;
 		else {
@@ -421,25 +426,25 @@ void InputEventAdapter::parseToken(std::string_view string, PlayerActionEvents e
 	}
 }
 
-void InputEventAdapter::parseComplexToken(std::string_view string, int* key, int* mods, int* key_type, bool* fully_parsed) {
-	if (*fully_parsed == false)
+void InputEventAdapter::parseComplexToken(std::string_view string, int& key, int& mods, int& key_type, bool& fully_parsed) {
+	if (fully_parsed == false)
 		return;
 
 	bool found = false;
 	for(const std::pair<int, std::string>& pair : KEYCODE_2_STRING)
 		if (pair.second == string) {
-			*key = pair.first;
+			key = pair.first;
 			found = true;
-			*key_type = 1;
+			key_type = 1;
 			break;
 	}
 
 	if (!found) {
 		for(const std::pair<int, std::string>& pair : MOUSEKEY_2_STRING)
 			if (pair.second == string) {
-				*key = pair.first;
+				key = pair.first;
 				found = true;
-				*key_type = 2;
+				key_type = 2;
 				break;
 			}
 	}
@@ -447,14 +452,14 @@ void InputEventAdapter::parseComplexToken(std::string_view string, int* key, int
 	if (!found) {
 		for(const std::pair<int, std::string>& pair : MODS_2_STRING)
 			if (pair.second == string) {
-				*mods |= pair.first;
+				mods |= pair.first;
 				found = true;
 				break;
 		}
 	}
 
 	if (!found) {
-		*fully_parsed = false;
+		fully_parsed = false;
 		return;
 	}
 }
