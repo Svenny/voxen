@@ -2,9 +2,9 @@
 
 #include <voxen/util/log.hpp>
 
-#include <GLFW/glfw3.h>
-
 #include <functional>
+
+#include <voxen/client/input_event_adapter.hpp>
 
 namespace voxen::client
 {
@@ -13,9 +13,17 @@ Gui::Gui(Window& window): m_gameview(window) {
 	window.attachGUI(*this);
 }
 
+Gui::~Gui() noexcept {
+	InputEventAdapter::release();
+}
+
 void Gui::handleKey(int key, int scancode, int action, int mods)
 {
-	m_gameview.handleKey(key, scancode, action, mods);
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwKeyboardToPlayerEvent(key, scancode, action, mods);
+	if (input.first == PlayerActionEvent::None)
+		return;
+
+	m_gameview.handleEvent(input.first, input.second);
 }
 
 void Gui::handleCursor(double xpos, double ypos)
@@ -25,12 +33,20 @@ void Gui::handleCursor(double xpos, double ypos)
 
 void Gui::handleMouseKey(int button, int action, int mods)
 {
-	m_gameview.handleMouseKey(button, action, mods);
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseKeyToPlayerEvent(button, action, mods);
+	if (input.first == PlayerActionEvent::None)
+		return;
+
+	m_gameview.handleEvent(input.first, input.second);
 }
 
 void Gui::handleMouseScroll(double xoffset, double yoffset)
 {
-	m_gameview.handleMouseScroll(xoffset, yoffset);
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseScrollToPlayerEvent(xoffset, yoffset);
+	if (input.first == PlayerActionEvent::None)
+		return;
+
+	m_gameview.handleEvent(input.first, input.second);
 }
 
 GameView& Gui::view()
@@ -41,6 +57,7 @@ GameView& Gui::view()
 void Gui::init(const WorldState& world_start_state)
 {
 	m_gameview.init(world_start_state.player());
+	InputEventAdapter::init();
 }
 
 void Gui::update(const WorldState& world, DebugQueueRtW& queue)

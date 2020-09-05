@@ -26,9 +26,9 @@ set(VOXEN_SOURCES
 	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
 	src/client/gui.cpp
-	src/client/input_manager.cpp
 	src/client/render.cpp
 	src/client/window.cpp
+	src/client/input_event_adapter.cpp
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
 	src/common/terrain/generator.cpp

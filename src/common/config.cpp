@@ -18,6 +18,7 @@ std::unique_ptr<Config> Config::g_instance = nullptr;
 Config::Config(path path, Config::Scheme scheme): m_path(path) {
 	m_ini.SetUnicode();
 	std::string filepath = path.string();
+	//NOTE(sirgienko) maybe we should check erros. Even if missing file is expected behaviour, other errors may happens
 	m_ini.LoadFile(filepath.c_str());
 
 	for (const SchemeEntry& entry : scheme) {
@@ -38,10 +39,10 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 		m_data[entry.section][entry.parameter_name] = value;
 	}
 }
-Config::~Config()
-{
+Config::~Config() noexcept {
 	// NOTE(sirgienko) Not sure, maybe we should move it in ::patch inside saveToConfigFile branch
 	FileManager::makeDirsForFile(m_path);
+	//TODO(sirgienko) checking save errors here from the method?
 	m_ini.SaveFile(m_path.string().c_str());
 }
 

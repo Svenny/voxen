@@ -16,7 +16,7 @@ using namespace voxen;
 
 GameView::GameView (client::Window& window):
 	m_previous_tick_id(-1), m_window(window),
-	m_is_got_left_mouse_click(false), m_is_used_orientation_cursor(false) {
+	m_is_pause(true), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
 	m_height = window.height();
 	std::pair<double, double> pos = window.cursorPos();
@@ -32,8 +32,7 @@ GameView::GameView (client::Window& window):
 	m_strafe_speed = main_config->optionDouble("controller", "strafe_speed");
 	m_roll_speed = main_config->optionDouble("controller", "roll_speed");
 
-	for (int i = 0; i < Key::KeyCount; i++)
-		m_keyPressed[i] = false;
+	resetKeyState();
 }
 
 void voxen::GameView::init(const voxen::Player& player) noexcept {
@@ -46,64 +45,64 @@ void voxen::GameView::init(const voxen::Player& player) noexcept {
 	m_cam_matrix = m_proj_matrix * m_view_matrix;
 	resetKeyState();
 }
-
-bool GameView::handleKey(int key, int scancode, int action, int mods) noexcept {
-	(void)scancode;
-	if (mods == 0) {
-		if (key == GLFW_KEY_W) {
-			m_keyPressed[GameView::KeyForward] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_D) {
-			m_keyPressed[Key::KeyRight] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_A) {
-			m_keyPressed[Key::KeyLeft] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_S) {
-			m_keyPressed[Key::KeyBack] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_C) {
-			m_keyPressed[Key::KeyDown] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_SPACE) {
-			m_keyPressed[Key::KeyUp] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_Q) {
-			m_keyPressed[Key::KeyRollCCW] = action != GLFW_RELEASE;
-			return true;
-		} else if (key == GLFW_KEY_E) {
-			m_keyPressed[Key::KeyRollCW] = action != GLFW_RELEASE;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool GameView::handleMouseScroll(double xoffset, double yoffset) noexcept
+bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) noexcept
 {
-	(void)xoffset;
-	if (yoffset > 0)
+	switch (event)
 	{
-		      m_strafe_speed = 1.1 * m_strafe_speed;
-		      m_forward_speed = 1.1 * m_forward_speed;
-	}
-	else
-	{
-		      m_strafe_speed = 0.9 * m_strafe_speed;
-		      m_forward_speed = 0.9 * m_forward_speed;
-	}
-	return true;
-}
-
-bool voxen::GameView::handleMouseKey(int button, int action, int mods) noexcept
-{
-	if (mods == 0) {
-		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-			m_is_got_left_mouse_click = true;
+		case client::PlayerActionEvent::MoveForward:
+			m_state[Direction::Forward] = is_activate;
 			return true;
-		}
+
+		case client::PlayerActionEvent::MoveBackward:
+			m_state[Direction::Backward] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::MoveRight:
+			m_state[Direction::Right] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::MoveLeft:
+			m_state[Direction::Left] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::MoveUp:
+			m_state[Direction::Up] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::MoveDown:
+			m_state[Direction::Down] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::RollRight:
+			m_state[Direction::RollRight] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::RollLeft:
+			m_state[Direction::RollLeft] = is_activate;
+			return true;
+
+		case client::PlayerActionEvent::PauseGame:
+			if (is_activate)
+				m_is_pause = !m_is_pause;
+			return true;
+
+		case client::PlayerActionEvent::IncreaseSpeed:
+			if (is_activate) {
+				m_strafe_speed = 1.1 * m_strafe_speed;
+				m_forward_speed = 1.1 * m_forward_speed;
+			}
+			return true;
+
+		case client::PlayerActionEvent::DecreaseSpeed:
+			if (is_activate) {
+				m_strafe_speed = 0.9 * m_strafe_speed;
+				m_forward_speed = 0.9 * m_forward_speed;
+			}
+			return true;
+
+		default:
+			return false;
 	}
-	return false;
 }
 
 static glm::dquat quatFromEulerAngles (double pitch, double yaw, double roll) noexcept {
@@ -127,23 +126,29 @@ bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 }
 
 void GameView::resetKeyState() noexcept {
-	for (size_t i = 0; i < Key::KeyCount; i++)
-		m_keyPressed[i] = false;
+	for (int i = 0; i < Direction::Count; i++)
+		m_state[i] = false;
 }
 
 void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept {
 	std::lock_guard<std::mutex> lock { queue.mutex };
 
-	if (m_is_used_orientation_cursor) {
-		if (m_is_got_left_mouse_click) {
+	if (m_is_pause) {
+		if (!m_is_used_orientation_cursor) {
 			m_window.useRegularCursor();
-			m_is_used_orientation_cursor = false;
-			m_is_got_left_mouse_click = false;
+			m_is_used_orientation_cursor = true;
+		}
 
-			// Reset user movement
-			queue.player_forward_movement_direction = glm::dvec3{0.0};
-			queue.player_strafe_movement_direction = glm::dvec3{0.0};
-			return;
+		std::pair<double, double> pos = m_window.cursorPos();
+		m_prev_xpos = pos.first;
+		m_prev_ypos = pos.second;
+
+		queue.player_forward_movement_direction = glm::dvec3{0.0};
+		queue.player_strafe_movement_direction = glm::dvec3{0.0};
+	} else {
+		if (m_is_used_orientation_cursor) {
+			m_window.useOrientationCursor();
+			m_is_used_orientation_cursor = false;
 		}
 
 		glm::dvec3 move_forward_direction{0.0};
@@ -157,19 +162,19 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		}
 
 		double dx = 0;
-		if (m_keyPressed[Key::KeyLeft]) dx -= 1;
-		if (m_keyPressed[Key::KeyRight]) dx += 1;
+		if (m_state[Direction::Left]) dx -= 1;
+		if (m_state[Direction::Right]) dx += 1;
 		move_strafe_direction += dx * m_player_right;
 
 		double dy = 0;
-		if (m_keyPressed[Key::KeyDown]) dy -= 1;
-		if (m_keyPressed[Key::KeyUp]) dy += 1;
+		if (m_state[Direction::Down]) dy -= 1;
+		if (m_state[Direction::Up]) dy += 1;
 		move_strafe_direction += dy * m_player_up;
 
-		double dz = 0;
-		if (m_keyPressed[Key::KeyBack]) dz -= 1;
-		if (m_keyPressed[Key::KeyForward]) dz += 1;
-		move_forward_direction += dz * m_player_dir;
+		double dl = 0;
+		if (m_state[Direction::Backward]) dl -= 1;
+		if (m_state[Direction::Forward]) dl += 1;
+		move_forward_direction += dl * m_player_dir;
 
 		dx = (m_prev_xpos - m_newest_xpos) * m_mouse_sensitivity;
 		m_prev_xpos = m_newest_xpos;
@@ -182,8 +187,8 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		double pitchAngle = atan (2 * dy * tan_half_fovy / m_height);
 
 		double rollAngle = 0;
-		if (m_keyPressed[Key::KeyRollCCW]) rollAngle -= m_roll_speed;
-		if (m_keyPressed[Key::KeyRollCW]) rollAngle += m_roll_speed;
+		if (m_state[Direction::RollLeft]) rollAngle -= m_roll_speed;
+		if (m_state[Direction::RollRight]) rollAngle += m_roll_speed;
 
 		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
 		m_orientation = glm::normalize(rotQuat * m_orientation);
@@ -203,16 +208,6 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		queue.forward_speed = m_forward_speed;
 		queue.strafe_speed = m_strafe_speed;
 		m_previous_tick_id = tick_id;
-	} else {
-		if (m_is_got_left_mouse_click) {
-			m_window.useOrientationCursor();
-			m_is_used_orientation_cursor = true;
-			m_is_got_left_mouse_click = false;
-
-			std::pair<double, double> pos = m_window.cursorPos();
-			m_prev_xpos = pos.first;
-			m_prev_ypos = pos.second;
-		}
 	}
 }
 

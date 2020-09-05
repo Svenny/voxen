@@ -25,7 +25,7 @@ public:
 	using Scheme = std::vector<SchemeEntry>;
 
 	Config(std::filesystem::path config_filepath, Scheme scheme);
-	~Config();
+	~Config() noexcept;
 
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
 	void patch(std::string_view section, std::string_view parameter_name, option_t value, bool saveToConfigFile = false);
