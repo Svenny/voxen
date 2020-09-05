@@ -20,7 +20,7 @@ public:
 	void init(const Player& player) noexcept;
 	void update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
 
-	bool handleEvent(client::PlayerActionEvents, bool is_activate) noexcept;
+	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
 
 	double fovX() const noexcept { return m_fov_x; }

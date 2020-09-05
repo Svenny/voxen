@@ -45,55 +45,55 @@ void voxen::GameView::init(const voxen::Player& player) noexcept {
 	m_cam_matrix = m_proj_matrix * m_view_matrix;
 	resetKeyState();
 }
-bool GameView::handleEvent(client::PlayerActionEvents event, bool is_activate) noexcept
+bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) noexcept
 {
 	switch (event)
 	{
-		case client::PlayerActionEvents::MoveForward:
+		case client::PlayerActionEvent::MoveForward:
 			m_state[Direction::Forward] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::MoveBackward:
+		case client::PlayerActionEvent::MoveBackward:
 			m_state[Direction::Backward] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::MoveRight:
+		case client::PlayerActionEvent::MoveRight:
 			m_state[Direction::Right] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::MoveLeft:
+		case client::PlayerActionEvent::MoveLeft:
 			m_state[Direction::Left] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::MoveUp:
+		case client::PlayerActionEvent::MoveUp:
 			m_state[Direction::Up] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::MoveDown:
+		case client::PlayerActionEvent::MoveDown:
 			m_state[Direction::Down] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::RollRight:
+		case client::PlayerActionEvent::RollRight:
 			m_state[Direction::RollRight] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::RollLeft:
+		case client::PlayerActionEvent::RollLeft:
 			m_state[Direction::RollLeft] = is_activate;
 			return true;
 
-		case client::PlayerActionEvents::PauseGame:
+		case client::PlayerActionEvent::PauseGame:
 			if (is_activate)
 				m_is_pause = !m_is_pause;
 			return true;
 
-		case client::PlayerActionEvents::IncreaseSpeed:
+		case client::PlayerActionEvent::IncreaseSpeed:
 			if (is_activate) {
 				m_strafe_speed = 1.1 * m_strafe_speed;
 				m_forward_speed = 1.1 * m_forward_speed;
 			}
 			return true;
 
-		case client::PlayerActionEvents::DecreaseSpeed:
+		case client::PlayerActionEvent::DecreaseSpeed:
 			if (is_activate) {
 				m_strafe_speed = 0.9 * m_strafe_speed;
 				m_forward_speed = 0.9 * m_forward_speed;

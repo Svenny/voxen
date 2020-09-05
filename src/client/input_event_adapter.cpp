@@ -7,13 +7,15 @@
 #include <GLFW/glfw3.h>
 #include <extras/string_utils.hpp>
 
-using std::uint32_t;
+using std::tuple;
 using std::make_pair;
+using std::string;
+using std::string_view;
 namespace fs = std::filesystem;
 
 namespace voxen::client {
 
-const std::array<std::pair<int, std::string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
+const std::array<std::pair<int, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
 	make_pair(GLFW_KEY_SPACE, "SPACE"),
 	make_pair(GLFW_KEY_APOSTROPHE, "APOSTROPHE"), /* ' */
 	make_pair(GLFW_KEY_COMMA, "COMMA"), /* , */
@@ -129,7 +131,7 @@ const std::array<std::pair<int, std::string>, 94> InputEventAdapter::KEYCODE_2_S
 	*/
 };
 
-const std::array<std::pair<int, std::string>, 6> InputEventAdapter::MODS_2_STRING = {
+const std::array<std::pair<int, string>, 6> InputEventAdapter::MODS_2_STRING = {
 	make_pair(GLFW_MOD_SHIFT, "Shift"),
 	make_pair(GLFW_MOD_CONTROL, "Control"),
 	make_pair(GLFW_MOD_ALT, "Alt"),
@@ -138,21 +140,21 @@ const std::array<std::pair<int, std::string>, 6> InputEventAdapter::MODS_2_STRIN
 	make_pair(GLFW_MOD_NUM_LOCK, "Numlock")
 };
 
-const std::array<std::pair<PlayerActionEvents, std::string>, 11> InputEventAdapter::PLAYERACTIONS_2_STRINGS= {
-    make_pair(PlayerActionEvents::MoveForward, "move forward"),
-    make_pair(PlayerActionEvents::MoveBackward, "move backward"),
-    make_pair(PlayerActionEvents::MoveUp, "move up"),
-    make_pair(PlayerActionEvents::MoveDown, "stop move down"),
-    make_pair(PlayerActionEvents::MoveLeft, "move left"),
-    make_pair(PlayerActionEvents::MoveRight, "move right"),
-    make_pair(PlayerActionEvents::RollLeft, "roll left"),
-    make_pair(PlayerActionEvents::RollRight, "roll right"),
-    make_pair(PlayerActionEvents::PauseGame, "pause game"),
-    make_pair(PlayerActionEvents::IncreaseSpeed, "increase speed"),
-    make_pair(PlayerActionEvents::DecreaseSpeed, "decrease speed")
+const std::array<std::pair<PlayerActionEvent, string>, 11> InputEventAdapter::PLAYERACTIONS_2_STRINGS= {
+    make_pair(PlayerActionEvent::MoveForward, "move forward"),
+    make_pair(PlayerActionEvent::MoveBackward, "move backward"),
+    make_pair(PlayerActionEvent::MoveUp, "move up"),
+    make_pair(PlayerActionEvent::MoveDown, "stop move down"),
+    make_pair(PlayerActionEvent::MoveLeft, "move left"),
+    make_pair(PlayerActionEvent::MoveRight, "move right"),
+    make_pair(PlayerActionEvent::RollLeft, "roll left"),
+    make_pair(PlayerActionEvent::RollRight, "roll right"),
+    make_pair(PlayerActionEvent::PauseGame, "pause game"),
+    make_pair(PlayerActionEvent::IncreaseSpeed, "increase speed"),
+    make_pair(PlayerActionEvent::DecreaseSpeed, "decrease speed")
 };
 
-const std::array<std::pair<int, std::string>, 8> InputEventAdapter::MOUSEKEY_2_STRING = {
+const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING = {
 	make_pair(GLFW_MOUSE_BUTTON_LEFT, "MOUSE_LEFT"),
 	make_pair(GLFW_MOUSE_BUTTON_RIGHT, "MOUSE_RIGHT"),
 	make_pair(GLFW_MOUSE_BUTTON_MIDDLE, "MOUSE_MIDDLE"),
@@ -163,66 +165,64 @@ const std::array<std::pair<int, std::string>, 8> InputEventAdapter::MOUSEKEY_2_S
 	make_pair(GLFW_MOUSE_BUTTON_8, "MOUSE_8")
 };
 
-std::map<uint32_t, PlayerActionEvents> InputEventAdapter::keyToActionMap;
-std::string InputEventAdapter::actionSettingsPath = "configs/action_settings.ini";
+std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToActionMap;
+std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::mouseKeyToActionMap;
+std::map<bool, PlayerActionEvent> InputEventAdapter::scrollToActionMap;
+string InputEventAdapter::actionSettingsPath = "configs/action_settings.ini";
 Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
 Config* InputEventAdapter::actionSettingsConfig = nullptr;
 
-std::pair<PlayerActionEvents, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(int key, int scancode, int action, int mods) {
-	(void)scancode;
-
-	uint32_t key_hash = hashGlfwKeyInput(key, mods);
-	auto search = keyToActionMap.find(key_hash);
-	if (search != keyToActionMap.end())
-		return make_pair(search->second, action != GLFW_RELEASE);
-	else
-		return make_pair(PlayerActionEvents::None, true);
-}
-
-std::pair<PlayerActionEvents, bool> InputEventAdapter::glfwMouseKeyToPlayerEvent(int button, int action, int mods) {
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(int key, int scancode, int action, int mods) {
 	// `action` have three state: press, release, repeat. We support for actions only press/release logic on this moment, so
 	// so pass only values with two state: press/repreate - true and release - false
 	// More info: https://www.glfw.org/docs/3.3.2/group__input.html#ga2485743d0b59df3791c45951c4195265
+	(void)scancode;
 
-	uint32_t key_hash = hashGlfwMouseKeyInput(button, mods);
-	auto search = keyToActionMap.find(key_hash);
-	if (search != keyToActionMap.end())
+	auto search = keyboardKeyToActionMap.find(tuple<int, int>(key, mods));
+	if (search != keyboardKeyToActionMap.end())
 		return make_pair(search->second, action != GLFW_RELEASE);
 	else
-		return make_pair(PlayerActionEvents::None, true);
+		return make_pair(PlayerActionEvent::None, true);
 }
 
-std::pair<PlayerActionEvents, bool> InputEventAdapter::glfwMouseScrollToPlayerEvent(double xoffset, double yoffset) {
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseKeyToPlayerEvent(int button, int action, int mods) {
+	auto search = mouseKeyToActionMap.find(tuple<int, int>(button, mods));
+	if (search != mouseKeyToActionMap.end())
+		return make_pair(search->second, action != GLFW_RELEASE);
+	else
+		return make_pair(PlayerActionEvent::None, true);
+}
+
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseScrollToPlayerEvent(double xoffset, double yoffset) {
 	(void)xoffset;
 
-	uint32_t key_hash = hashGlfwMouseScrollInput(yoffset);
-	auto search = keyToActionMap.find(key_hash);
-    if (search != keyToActionMap.end())
+	auto search = scrollToActionMap.find(yoffset >= 0);
+    if (search != scrollToActionMap.end())
 		return make_pair(search->second, true);
 	else
-		return make_pair(PlayerActionEvents::None, true);
+		return make_pair(PlayerActionEvent::None, true);
 }
 
 void InputEventAdapter::init() {
 	assert(actionSettingsConfig == nullptr);
 	actionSettingsConfig = new Config(FileManager::userDataPath() / actionSettingsPath, actionSettingConfigScheme);
 
-	std::function<void(std::string_view, voxen::client::PlayerActionEvents, std::string_view, std::string_view)> functor = InputEventAdapter::parseToken;
+	std::function<void(string_view, voxen::client::PlayerActionEvent, string_view, string_view)> functor = InputEventAdapter::parseToken;
 	for (const Config::SchemeEntry& entry : actionSettingConfigScheme) {
-		const std::string& value_string = actionSettingsConfig->optionString(entry.section, entry.parameter_name);
+		const string& value_string = actionSettingsConfig->optionString(entry.section, entry.parameter_name);
 
-		std::string_view value(value_string);
-		PlayerActionEvents event = stringToAction(entry.parameter_name);
+		string_view value(value_string);
+		PlayerActionEvent event = stringToAction(entry.parameter_name);
 
-		const std::string& default_value = std::get<std::string>(entry.default_value);
-		std::string_view parameter_name(entry.parameter_name);
+		const string& default_value = std::get<string>(entry.default_value);
+		string_view parameter_name(entry.parameter_name);
 
-		if (event != PlayerActionEvents::None) {
-			if (value.find(KEYS_SEQUENCE_DELIMITER) == std::string::npos)
+		if (event != PlayerActionEvent::None) {
+			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos)
 				parseToken(value, event, parameter_name, default_value);
 			else
-				string_split_apply(value, KEYS_SEQUENCE_DELIMITER, [event, &default_value, parameter_name](std::string_view string){
-					parseToken(string, event, parameter_name, default_value);
+				string_split_apply(value, KEYS_SEQUENCE_DELIMITER, [event, &default_value, parameter_name](string_view s){
+					parseToken(s, event, parameter_name, default_value);
 				});
 		}
 		else
@@ -230,7 +230,7 @@ void InputEventAdapter::init() {
 	}
 }
 
-void InputEventAdapter::release() {
+void InputEventAdapter::release() noexcept {
 	delete actionSettingsConfig;
 	actionSettingsConfig = nullptr;
 }
@@ -239,154 +239,101 @@ Config::Scheme InputEventAdapter::actionSettingsScheme() {
 	static const char* player_section = "player actions";
 	Config::Scheme s;
 
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveForward)), "Fly forward", hashToString(hashGlfwKeyInput(GLFW_KEY_W, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveRight)), "Fly right", hashToString(hashGlfwKeyInput(GLFW_KEY_D, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveLeft)), "Fly left", hashToString(hashGlfwKeyInput(GLFW_KEY_A, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveBackward)), "Fly backward", hashToString(hashGlfwKeyInput(GLFW_KEY_S, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveDown)), "Fly down", hashToString(hashGlfwKeyInput(GLFW_KEY_C, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::MoveUp)), "Fly up", hashToString(hashGlfwKeyInput(GLFW_KEY_SPACE, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::RollLeft)), "Roll counterclockwise", hashToString(hashGlfwKeyInput(GLFW_KEY_Q, 0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::RollRight)), "Rool clockwise", hashToString(hashGlfwKeyInput(GLFW_KEY_E, 0))});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveForward)), "Fly forward", keyboardKeyToString(GLFW_KEY_W, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveRight)), "Fly right", keyboardKeyToString(GLFW_KEY_D, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveLeft)), "Fly left", keyboardKeyToString(GLFW_KEY_A, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveBackward)), "Fly backward", keyboardKeyToString(GLFW_KEY_S, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveDown)), "Fly down", keyboardKeyToString(GLFW_KEY_C, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveUp)), "Fly up", keyboardKeyToString(GLFW_KEY_SPACE, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::RollLeft)), "Roll counterclockwise", keyboardKeyToString(GLFW_KEY_Q, 0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::RollRight)), "Rool clockwise", keyboardKeyToString(GLFW_KEY_E, 0)});
 	s.push_back({
-		player_section, std::string(actionToString(PlayerActionEvents::PauseGame)), "Pause movement and release cursor",
-			hashToString(hashGlfwMouseKeyInput(GLFW_MOUSE_BUTTON_LEFT, 0)) + std::string(KEYS_SEQUENCE_DELIMITER) + hashToString(hashGlfwKeyInput(GLFW_KEY_ESCAPE, 0))
+		player_section, string(actionToString(PlayerActionEvent::PauseGame)), "Pause movement and release cursor",
+			mouseButtonToString(GLFW_MOUSE_BUTTON_LEFT, 0) + string(KEYS_SEQUENCE_DELIMITER) + keyboardKeyToString(GLFW_KEY_ESCAPE, 0)
 	});
 
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::IncreaseSpeed)), "Incrase movement speed", hashToString(hashGlfwMouseScrollInput(1.0))});
-	s.push_back({player_section, std::string(actionToString(PlayerActionEvents::DecreaseSpeed)), "Decrease movement speed", hashToString(hashGlfwMouseScrollInput(-1.0))});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::IncreaseSpeed)), "Incrase movement speed", scrollToString(1.0)});
+	s.push_back({player_section, string(actionToString(PlayerActionEvent::DecreaseSpeed)), "Decrease movement speed", scrollToString(-1.0)});
 
 	return s;
 }
 
-uint32_t InputEventAdapter::hashGlfwKeyInput(int key, int mods) {
-	uint32_t hash = 0U;
-
-	// Get 9 bits, because this is actually a range of GLFW `key`
-	// More info: https://www.glfw.org/docs/3.3.2/group__keys.html
-	hash = key & 0x1FF;
-
-	// `mods` is flags and have wide in 2*4 = 8 bit
-	// More info: https://www.glfw.org/docs/3.3.2/group__mods.html
-	hash |= (mods & 0xFF ) << 9;
-
-	// And we have three type of input: from keyboard, mouse and scroll.
-	// So, use first two bytes for GLFW event type
-	// 00 - keyboard, 01 - mouse, 10 - scroll, 11 - invalid hash
-
-	// Summary: 9 + 8 + 2 = 19 bits
-	return hash;
-}
-
-uint32_t InputEventAdapter::hashGlfwMouseKeyInput(int button, int mods) {
-	// See hashGlfwKeyInput and GLFW event type explanation
-	uint32_t hash = 0x40000000; // This is 30^2
-
-	// `button` have only 3 significant bits, becuase GLFW have only 8 mouse group__keys
-	// More info: https://www.glfw.org/docs/3.3.2/group__buttons.html
-	hash |= button & 0x7;
-
-	// See explanation for `mods` in hashGlfwKeyInput
-	hash |= (mods & 0xFF) << 3;
-
-	// Summary: 3 + 8 + 2 = 13 bits
-	return hash;
-}
-
-uint32_t InputEventAdapter::hashGlfwMouseScrollInput(double yoffset) {
-	// See hashGlfwKeyInput and GLFW event type explanation
-	uint32_t hash = 0x80000000; // This is 31^2
-
-	// We support only simple logic with scrolling input
-	// Two states: yoffset >=0 and yoffset < 0
-	// So, we need only one bit
-
-	if (yoffset >= 0)
-		hash |= 0x1;
-
-	// Summary: 1 + 2 = 3 bits
-	return hash;
-}
-
-std::string InputEventAdapter::hashToString(uint32_t hash) {
-	unsigned int event_type = hash >> 30;
-	if (event_type == 0) { // keyboard input
-		int key = hash & 0x1FF;
-		int mods = (hash >> 9) & 0xFF;
-		std::string hash_string(keyToString(key));
-		for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
-			if (mods & it->first)
-				hash_string += std::string(KEYS_DELIMITER)+it->second;
-		return hash_string;
-	}
-	else if (event_type == 1) { // mouse key input
-		int button = hash & 0x7;
-		int mods = (hash >> 3) & 0xFF;
-		std::string hash_string(mousekeyToString(button));
-		for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
-			if (mods & it->first)
-				hash_string += std::string(KEYS_DELIMITER)+it->second;
-		return hash_string;
-	}
-	else if (event_type == 2) { // scroll input
-		if (hash & 0x1)
-			return std::string(SCROLL_UP_STRING);
-		else
-			return std::string(SCROLL_DOWN_STRING);
-	}
-	else
-		assert(false);
-	return "test-string";
-}
-
-std::string_view InputEventAdapter::actionToString(PlayerActionEvents event) {
+string_view InputEventAdapter::actionToString(PlayerActionEvent event) {
 	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
 		if (it->first == event)
-			return std::string_view(it->second);
+			return string_view(it->second);
 	}
-	return std::string_view();
+	return string_view();
 }
 
-PlayerActionEvents InputEventAdapter::stringToAction(std::string_view s) {
+PlayerActionEvent InputEventAdapter::stringToAction(string_view s) {
 for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
 		if (it->second == s)
 			return it->first;
 	}
-	return PlayerActionEvents::None;
+	return PlayerActionEvent::None;
 }
 
-std::string_view InputEventAdapter::keyToString(int key) {
+string InputEventAdapter::keyboardKeyToString(int key, int mods) {
+	string result;
+
 	for (auto it = KEYCODE_2_STRING.begin(); it != KEYCODE_2_STRING.end(); it++) {
 		if (it->first == key)
-			return std::string_view(it->second);
+			result = it->second;
 	}
-	return std::string_view();
+
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
+		if (mods & it->first)
+			result += string(KEYS_DELIMITER)+it->second;
+
+	return result;
 }
 
-std::string_view InputEventAdapter::mousekeyToString(int key) {
+std::string InputEventAdapter::scrollToString(double yoffset) {
+	if (yoffset >= 0)
+		return string(SCROLL_UP_STRING);
+	else
+		return string(SCROLL_DOWN_STRING);
+}
+
+string InputEventAdapter::mouseButtonToString(int button, int mods) {
+	string result;
+
 	for (auto it = MOUSEKEY_2_STRING.begin(); it != MOUSEKEY_2_STRING.end(); it++) {
-		if (it->first == key)
-			return std::string_view(it->second);
+		if (it->first == button)
+			result = it->second;
 	}
-	return std::string_view();
+
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
+		if (mods & it->first)
+			result += string(KEYS_DELIMITER)+it->second;
+
+	return result;
 }
 
-std::uint32_t InputEventAdapter::stringToHash(std::string_view s) {
-	size_t pos = 0;
-	(void)pos;
-	if (s.find(KEYS_DELIMITER) == std::string::npos) {
+int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int>* tuple_ptr, bool* scroll_ptr) {
+	if (s.find(KEYS_DELIMITER) == string::npos) {
 		// Simple form, just only key without any modifiers
-		for(const std::pair<int, std::string>& pair : KEYCODE_2_STRING)
-			if (pair.second == s)
-				return hashGlfwKeyInput(pair.first, 0);
-		for(const std::pair<int, std::string>& pair : MOUSEKEY_2_STRING)
-			if (pair.second == s)
-				return hashGlfwMouseKeyInput(pair.first, 0);
-		if (SCROLL_UP_STRING == s)
-			return hashGlfwMouseScrollInput(1.0);
-		else if (SCROLL_DOWN_STRING == s)
-			return hashGlfwMouseScrollInput(-1.0);
+		for(const std::pair<int, string>& pair : KEYCODE_2_STRING)
+			if (pair.second == s) {
+				*tuple_ptr = tuple<int, int>(pair.first, 0);
+				return 1;
+			}
+		for(const std::pair<int, string>& pair : MOUSEKEY_2_STRING)
+			if (pair.second == s) {
+				*tuple_ptr = tuple<int, int>(pair.first, 0);
+				return 2;
+			}
+		if (SCROLL_UP_STRING == s) {
+			*scroll_ptr = true;
+			return 3;
+		}
+		else if (SCROLL_DOWN_STRING == s) {
+			*scroll_ptr = false;
+			return 3;
+		}
 		else {
-			return INVALID_HASH;
+			return 0;
 		}
 	}
 	else {
@@ -395,44 +342,68 @@ std::uint32_t InputEventAdapter::stringToHash(std::string_view s) {
 		int key_type = 0; //0 - unknown, 1 - key button, 2 - mouse button
 		bool fully_parsed = true;
 
-		string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](std::string_view string){
-			parseComplexToken(string, key, mods, key_type, fully_parsed);
+		string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken){
+			parseComplexToken(subtoken, key, mods, key_type, fully_parsed);
 		});
 
 		if (fully_parsed == false)
-			return INVALID_HASH;
+			return 0;
 		else {
 			if (key_type == 0)
-				return INVALID_HASH;
-			else if (key_type == 1)
-				return hashGlfwKeyInput(key, mods);
-			else if (key_type == 2)
-				return hashGlfwMouseKeyInput(key, mods);
+				return 0;
+			else if (key_type == 1) {
+				*tuple_ptr = tuple<int, int>(key, mods);
+				return 1;
+			}
+			else if (key_type == 2) {
+				*tuple_ptr = tuple<int, int>(key, mods);
+				return 2;
+			}
 			else {
 				assert(false);
-				return INVALID_HASH;
+				return 0;
 			}
 		}
 	}
 }
 
-void InputEventAdapter::parseToken(std::string_view string, PlayerActionEvents event, std::string_view parameter_name, std::string_view default_value) {
-	uint32_t hash = stringToHash(string);
-	if (hash != INVALID_HASH)
-		keyToActionMap[hash] = event;
+void InputEventAdapter::parseToken(string_view s, PlayerActionEvent event, string_view parameter_name, string_view default_value) {
+	tuple<int, int> keys_with_mods;
+	bool scroll;
+
+	int type = stringToMapkey(s, &keys_with_mods, &scroll);
+	if (type != 0)
+		if (type == 1)
+			keyboardKeyToActionMap[keys_with_mods] = event;
+		else if (type == 2)
+			mouseKeyToActionMap[keys_with_mods] = event;
+		else if (type == 3)
+			scrollToActionMap[scroll] = event;
+		else
+			assert(false);
 	else {
-		Log::warn("Can't parse \"{}\" for \"{}\" action, use default value", string, parameter_name);
-		keyToActionMap[stringToHash(default_value)] = event;
+		Log::warn("Can't parse \"{}\" for \"{}\" action, use default value", s, parameter_name);
+
+		type = stringToMapkey(default_value, &keys_with_mods, &scroll);
+		assert(type != 0); // Because default value must be always valid
+		if (type == 1)
+			keyboardKeyToActionMap[keys_with_mods] = event;
+		else if (type == 2)
+			mouseKeyToActionMap[keys_with_mods] = event;
+		else if (type == 3)
+			scrollToActionMap[scroll] = event;
+		else
+			assert(false);
 	}
 }
 
-void InputEventAdapter::parseComplexToken(std::string_view string, int& key, int& mods, int& key_type, bool& fully_parsed) {
+void InputEventAdapter::parseComplexToken(string_view s, int& key, int& mods, int& key_type, bool& fully_parsed) {
 	if (fully_parsed == false)
 		return;
 
 	bool found = false;
-	for(const std::pair<int, std::string>& pair : KEYCODE_2_STRING)
-		if (pair.second == string) {
+	for(const std::pair<int, string>& pair : KEYCODE_2_STRING)
+		if (pair.second == s) {
 			key = pair.first;
 			found = true;
 			key_type = 1;
@@ -440,8 +411,8 @@ void InputEventAdapter::parseComplexToken(std::string_view string, int& key, int
 	}
 
 	if (!found) {
-		for(const std::pair<int, std::string>& pair : MOUSEKEY_2_STRING)
-			if (pair.second == string) {
+		for(const std::pair<int, string>& pair : MOUSEKEY_2_STRING)
+			if (pair.second == s) {
 				key = pair.first;
 				found = true;
 				key_type = 2;
@@ -450,8 +421,8 @@ void InputEventAdapter::parseComplexToken(std::string_view string, int& key, int
 	}
 
 	if (!found) {
-		for(const std::pair<int, std::string>& pair : MODS_2_STRING)
-			if (pair.second == string) {
+		for(const std::pair<int, string>& pair : MODS_2_STRING)
+			if (pair.second == s) {
 				mods |= pair.first;
 				found = true;
 				break;

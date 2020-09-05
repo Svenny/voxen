@@ -13,14 +13,14 @@ Gui::Gui(Window& window): m_gameview(window) {
 	window.attachGUI(*this);
 }
 
-Gui::~Gui() {
+Gui::~Gui() noexcept {
 	InputEventAdapter::release();
 }
 
 void Gui::handleKey(int key, int scancode, int action, int mods)
 {
-	std::pair<PlayerActionEvents, bool> input = InputEventAdapter::glfwKeyboardToPlayerEvent(key, scancode, action, mods);
-	if (input.first == PlayerActionEvents::None)
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwKeyboardToPlayerEvent(key, scancode, action, mods);
+	if (input.first == PlayerActionEvent::None)
 		return;
 
 	m_gameview.handleEvent(input.first, input.second);
@@ -33,8 +33,8 @@ void Gui::handleCursor(double xpos, double ypos)
 
 void Gui::handleMouseKey(int button, int action, int mods)
 {
-	std::pair<PlayerActionEvents, bool> input = InputEventAdapter::glfwMouseKeyToPlayerEvent(button, action, mods);
-	if (input.first == PlayerActionEvents::None)
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseKeyToPlayerEvent(button, action, mods);
+	if (input.first == PlayerActionEvent::None)
 		return;
 
 	m_gameview.handleEvent(input.first, input.second);
@@ -42,8 +42,8 @@ void Gui::handleMouseKey(int button, int action, int mods)
 
 void Gui::handleMouseScroll(double xoffset, double yoffset)
 {
-	std::pair<PlayerActionEvents, bool> input = InputEventAdapter::glfwMouseScrollToPlayerEvent(xoffset, yoffset);
-	if (input.first == PlayerActionEvents::None)
+	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseScrollToPlayerEvent(xoffset, yoffset);
+	if (input.first == PlayerActionEvent::None)
 		return;
 
 	m_gameview.handleEvent(input.first, input.second);

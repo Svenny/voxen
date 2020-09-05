@@ -3,7 +3,7 @@
 namespace voxen::client
 {
 
-enum class PlayerActionEvents {
+enum class PlayerActionEvent {
 	None,
 	MoveForward,
 	MoveBackward,
