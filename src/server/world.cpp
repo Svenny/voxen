@@ -21,8 +21,9 @@ World::~World() noexcept
 	Log::debug("Destroying server World");
 }
 
-std::shared_ptr<const WorldState> World::getLastState() const noexcept
+std::shared_ptr<const WorldState> World::getLastState() const
 {
+	std::lock_guard lock(m_last_state_ptr_lock);
 	return std::shared_ptr<const WorldState> { m_last_state_ptr };
 }
 
@@ -48,6 +49,7 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	// Update chunks
 	next_state.terrain().updateChunks(pos.x, pos.y, pos.z, m_loader);
 
+	std::lock_guard lock(m_last_state_ptr_lock);
 	m_last_state_ptr = std::move(m_next_state_ptr);
 }
 
