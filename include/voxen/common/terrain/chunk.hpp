@@ -5,12 +5,15 @@
 namespace voxen
 {
 
-struct TerrainChunkCreateInfo {
+struct TerrainChunkHeader {
 	int64_t base_x;
 	int64_t base_y;
 	int64_t base_z;
 	uint32_t scale;
+	bool operator == (const TerrainChunkHeader &other) const noexcept;
 };
+
+using TerrainChunkCreateInfo = TerrainChunkHeader;
 
 class TerrainChunk {
 public:
@@ -27,10 +30,9 @@ public:
 	TerrainChunk &operator = (const TerrainChunk &);
 	~TerrainChunk() noexcept;
 
-	int64_t baseX() const noexcept { return m_base_x; }
-	int64_t baseY() const noexcept { return m_base_y; }
-	int64_t baseZ() const noexcept { return m_base_z; }
-	uint32_t scale() const noexcept { return m_scale; }
+	const TerrainChunkHeader& header() const noexcept;
+	uint16_t version() const noexcept;
+	void increaseVersion() noexcept;
 
 	Data &data() noexcept { return m_data; }
 	const Data &data() const noexcept { return m_data; }
@@ -39,11 +41,10 @@ public:
 
 	bool operator == (const TerrainChunk &other) const noexcept;
 private:
-	const int64_t m_base_x;
-	const int64_t m_base_y;
-	const int64_t m_base_z;
-	const uint32_t m_scale;
+	const TerrainChunkHeader m_header;
+	uint32_t m_version;
 	Data m_data;
 };
+
 
 }
