@@ -18,7 +18,7 @@ public:
 	World &operator = (const World &) = delete;
 	~World() noexcept;
 
-	std::shared_ptr<const WorldState> getLastState() const noexcept;
+	std::shared_ptr<const WorldState> getLastState() const;
 
 	double secondsPerTick() const noexcept { return 1.0 / 100.0; } // 100 UPS
 

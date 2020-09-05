@@ -21,7 +21,7 @@ World::~World() noexcept
 	Log::debug("Destroying server World");
 }
 
-std::shared_ptr<const WorldState> World::getLastState() const noexcept
+std::shared_ptr<const WorldState> World::getLastState() const
 {
 	std::lock_guard lock(m_last_state_ptr_lock);
 	return std::shared_ptr<const WorldState> { m_last_state_ptr };
