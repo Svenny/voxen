@@ -16,6 +16,7 @@ public:
 
 	enum GraphicsPipelineId : uint32_t {
 		DEBUG_OCTREE_PIPELINE,
+		TERRAIN_SIMPLE_PIPELINE,
 
 		NUM_GRAPHICS_PIPELINES
 	};
