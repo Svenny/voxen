@@ -64,10 +64,10 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &
 	auto view_proj_mat = view.cameraMatrix();
 
 	state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
-		float base_x = float(chunk.baseX());
-		float base_y = float(chunk.baseY());
-		float base_z = float(chunk.baseZ());
-		float size = float(TerrainChunk::SIZE * chunk.scale());
+		float base_x = float(chunk.header().base_x);
+		float base_y = float(chunk.header().base_y);
+		float base_z = float(chunk.header().base_z);
+		float size = float(TerrainChunk::SIZE * chunk.header().scale);
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 
