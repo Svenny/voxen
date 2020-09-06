@@ -44,7 +44,7 @@ TerrainChunk::TerrainChunk(const TerrainChunkCreateInfo &info)
 }
 
 TerrainChunk::TerrainChunk(TerrainChunk &&other) noexcept
-	: m_header(other.m_header), m_version(other.m_version), m_data(other.m_data)
+	: m_header(other.m_header), m_version(other.m_version), m_data(std::move(other.m_data))
 {
 }
 
@@ -55,12 +55,14 @@ TerrainChunk::TerrainChunk(const TerrainChunk &other)
 
 TerrainChunk &TerrainChunk::operator = (TerrainChunk &&other) noexcept
 {
-	m_data = other.m_data;
+	assert(m_header == other.m_header);
+	m_data = std::move(other.m_data);
 	return *this;
 }
 
 TerrainChunk &TerrainChunk::operator = (const TerrainChunk &other)
 {
+	assert(m_header == other.m_header);
 	m_data = other.m_data;
 	return *this;
 }
@@ -69,21 +71,10 @@ TerrainChunk::~TerrainChunk() noexcept
 {
 }
 
-bool TerrainChunk::operator == (const TerrainChunk &other) const noexcept
+void TerrainChunk::increaseVersion() noexcept
 {
-	return m_header == other.m_header;
-}
-
-const TerrainChunkHeader& TerrainChunk::header() const noexcept {
-	return m_header;
-}
-
-uint32_t TerrainChunk::version() const noexcept {
-	return m_version;
-}
-void TerrainChunk::increaseVersion() noexcept {
-	m_version++;
 	assert(m_version != std::numeric_limits<uint32_t>::max());
+	m_version++;
 }
 
 }

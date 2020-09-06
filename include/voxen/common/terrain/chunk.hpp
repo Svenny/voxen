@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/common/terrain/surface.hpp>
+
 #include <cstdint>
 
 namespace voxen
@@ -21,7 +23,8 @@ public:
 	static constexpr inline uint32_t SIZE = 32;
 
 	struct Data {
-		uint8_t voxel_id[SIZE + 1][SIZE + 1][SIZE + 1];
+		uint8_t voxel_id[SIZE][SIZE][SIZE];
+		TerrainSurface surface;
 	};
 
 	explicit TerrainChunk(const TerrainChunkCreateInfo &info);
@@ -31,14 +34,12 @@ public:
 	TerrainChunk &operator = (const TerrainChunk &);
 	~TerrainChunk() noexcept;
 
-	const TerrainChunkHeader& header() const noexcept;
-	uint32_t version() const noexcept;
+	const TerrainChunkHeader& header() const noexcept { return m_header; }
+	uint32_t version() const noexcept { return m_version; }
 	void increaseVersion() noexcept;
 
 	Data &data() noexcept { return m_data; }
 	const Data &data() const noexcept { return m_data; }
-
-	bool operator == (const TerrainChunk &other) const noexcept;
 private:
 	const TerrainChunkHeader m_header;
 	uint32_t m_version;
