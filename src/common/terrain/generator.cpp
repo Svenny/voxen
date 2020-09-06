@@ -17,11 +17,11 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 	const uint32_t step = header.scale;
 
 	// TODO: this is a temporary stub, add real land generator
-	for (uint32_t i = 0; i <= TerrainChunk::SIZE; i++) {
+	for (uint32_t i = 0; i < TerrainChunk::SIZE; i++) {
 		int64_t y = header.base_y + i * step;
-		for (uint32_t j = 0; j <= TerrainChunk::SIZE; j++) {
+		for (uint32_t j = 0; j < TerrainChunk::SIZE; j++) {
 			int64_t x = header.base_x + j * step;
-			for (uint32_t k = 0; k <= TerrainChunk::SIZE; k++) {
+			for (uint32_t k = 0; k < TerrainChunk::SIZE; k++) {
 				int64_t z = header.base_z + k * step;
 
 				uint8_t voxel = 0;

@@ -42,7 +42,7 @@ void TerrainChunkCache::insert(const TerrainChunk &chunk)
 			empty_pos_in_set = i;
 			continue;
 		}
-		if (*entry.chunk == chunk) {
+		if (entry.chunk->header() == chunk.header()) {
 			assert(entry.chunk->version() <= chunk.version());
 			// This chunk is already in the cache, but the content can be different
 			if (entry.chunk->version() < chunk.version())
@@ -79,7 +79,7 @@ std::pair<size_t, size_t> TerrainChunkCache::findSetAndIndex(const TerrainChunk 
 		const auto &entry = set[i];
 		if (!entry.chunk)
 			continue;
-		if (*entry.chunk == chunk)
+		if (entry.chunk->header() == chunk.header())
 			return { set_id, i };
 	}
 	// Not found
