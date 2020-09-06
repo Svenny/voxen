@@ -33,6 +33,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/chunk.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/loader.cpp
+	src/common/terrain/surface.cpp
 	src/common/player.cpp
 	src/common/terrain.cpp
 	src/common/world_state.cpp
@@ -53,6 +54,8 @@ find_program(GLSL_COMPILER glslc)
 set(VOXEN_SHADERS
 	debug/octree.vert
 	debug/octree.frag
+	terrain/simple.vert
+	terrain/simple.frag
 )
 
 set(VOXEN_SHADER_BINARIES)
