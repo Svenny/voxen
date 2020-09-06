@@ -11,6 +11,7 @@ struct TerrainChunkHeader {
 	int64_t base_z;
 	uint32_t scale;
 	bool operator == (const TerrainChunkHeader &other) const noexcept;
+	uint64_t hash() const noexcept;
 };
 
 using TerrainChunkCreateInfo = TerrainChunkHeader;
@@ -31,13 +32,11 @@ public:
 	~TerrainChunk() noexcept;
 
 	const TerrainChunkHeader& header() const noexcept;
-	uint16_t version() const noexcept;
+	uint32_t version() const noexcept;
 	void increaseVersion() noexcept;
 
 	Data &data() noexcept { return m_data; }
 	const Data &data() const noexcept { return m_data; }
-
-	uint64_t headerHash() const noexcept;
 
 	bool operator == (const TerrainChunk &other) const noexcept;
 private:

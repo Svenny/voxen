@@ -32,7 +32,7 @@ bool TerrainChunkCache::tryFill(TerrainChunk &chunk)
 
 void TerrainChunkCache::insert(const TerrainChunk &chunk)
 {
-	const size_t set_id = chunk.headerHash() % m_sets.size();
+	const size_t set_id = chunk.header().hash() % m_sets.size();
 	Set &set = m_sets[set_id];
 
 	size_t empty_pos_in_set = SET_SIZE;
@@ -72,7 +72,7 @@ void TerrainChunkCache::invalidate(const TerrainChunk &chunk) noexcept
 
 std::pair<size_t, size_t> TerrainChunkCache::findSetAndIndex(const TerrainChunk &chunk) const noexcept
 {
-	const size_t set_id = chunk.headerHash() % m_sets.size();
+	const size_t set_id = chunk.header().hash() % m_sets.size();
 	const Set &set = m_sets[set_id];
 
 	for (size_t i = 0; i < SET_SIZE; i++) {
