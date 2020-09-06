@@ -14,7 +14,8 @@ namespace voxen::client::vulkan
 {
 
 struct VertexFormatPositionOnly {
-	VertexFormatPositionOnly() noexcept {
+	VertexFormatPositionOnly() noexcept
+	{
 		vertex_input_binding.binding = 0;
 		vertex_input_binding.stride = sizeof(float) * 3;
 		vertex_input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -34,6 +35,46 @@ struct VertexFormatPositionOnly {
 	VkVertexInputBindingDescription vertex_input_binding = {};
 	VkVertexInputAttributeDescription vertex_input_attrib = {};
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+};
+
+struct VertexFormatPositionAndNormal {
+	VertexFormatPositionAndNormal() noexcept
+	{
+		vertex_input_binding.binding = 0;
+		vertex_input_binding.stride = sizeof(float) * 6;
+		vertex_input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		vertex_input_attrib[0].binding = 0;
+		vertex_input_attrib[0].location = 0;
+		vertex_input_attrib[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		vertex_input_attrib[0].offset = 0;
+
+		vertex_input_attrib[1].binding = 0;
+		vertex_input_attrib[1].location = 1;
+		vertex_input_attrib[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		vertex_input_attrib[1].offset = sizeof(float) * 3;
+
+		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertex_input_info.vertexBindingDescriptionCount = 1;
+		vertex_input_info.pVertexBindingDescriptions = &vertex_input_binding;
+		vertex_input_info.vertexAttributeDescriptionCount = 2;
+		vertex_input_info.pVertexAttributeDescriptions = vertex_input_attrib;
+	}
+
+	VkVertexInputBindingDescription vertex_input_binding = {};
+	VkVertexInputAttributeDescription vertex_input_attrib[2] = {};
+	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+};
+
+struct DefaultInputAssemblyState {
+	DefaultInputAssemblyState() noexcept
+	{
+		input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		input_assembly_info.primitiveRestartEnable = VK_FALSE;
+	}
+
+	VkPipelineInputAssemblyStateCreateInfo input_assembly_info = {};
 };
 
 struct DefaultViewportState {
@@ -120,9 +161,15 @@ struct DisabledBlendState {
 		color_blend_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		color_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
 		color_blend_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+
+		color_blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		color_blend_info.logicOpEnable = VK_FALSE;
+		color_blend_info.attachmentCount = 1;
+		color_blend_info.pAttachments = &color_blend_state;
 	}
 
 	VkPipelineColorBlendAttachmentState color_blend_state = {};
+	VkPipelineColorBlendStateCreateInfo color_blend_info = {};
 };
 
 struct GraphicsPipelineParts {
@@ -140,6 +187,8 @@ struct GraphicsPipelineParts {
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
 
 	const VertexFormatPositionOnly vert_fmt_pos_only;
+	const VertexFormatPositionAndNormal vert_fmt_pos_and_normal;
+	const DefaultInputAssemblyState default_input_assembly_state;
 	const DefaultViewportState default_viewport_state;
 	const DefaultRasterizationState default_rasterization_state;
 	const DisabledMsaaState disabled_msaa_state;
@@ -150,15 +199,19 @@ struct GraphicsPipelineParts {
 		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
 		VkPipelineInputAssemblyStateCreateInfo input_assembly_info = {};
 		VkPipelineRasterizationStateCreateInfo rasterization_info = {};
-		VkPipelineColorBlendStateCreateInfo color_blend_info = {};
 	} debug_octree_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+	} terrain_simple_parts;
 };
 
 template<uint32_t ID>
 void addParts(GraphicsPipelineParts &parts, Backend &backend);
 
 template<>
-void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend) {
+void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
 	auto &my_parts = parts.debug_octree_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_OCTREE_PIPELINE];
 	auto &module_collection = *backend.shaderModuleCollection();
@@ -184,12 +237,6 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	rasterization_info = parts.default_rasterization_state.rasterization_info;
 	rasterization_info.polygonMode = VK_POLYGON_MODE_LINE;
 
-	auto &color_blend_info = my_parts.color_blend_info;
-	color_blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	color_blend_info.logicOpEnable = VK_FALSE;
-	color_blend_info.attachmentCount = 1;
-	color_blend_info.pAttachments = &parts.disabled_blend_state.color_blend_state;
-
 	my_create_info.stageCount = 2;
 	my_create_info.pStages = my_parts.stages;
 	my_create_info.pVertexInputState = &parts.vert_fmt_pos_only.vertex_input_info;
@@ -198,7 +245,40 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pRasterizationState = &rasterization_info;
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
-	my_create_info.pColorBlendState = &color_blend_info;
+	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.layout = backend.pipelineLayoutCollection()->descriptorlessLayout();
+	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
+	my_create_info.subpass = 0;
+}
+
+template<>
+void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.terrain_simple_parts;
+	auto &my_create_info = parts.create_infos[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
+	auto &module_collection = *backend.shaderModuleCollection();
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::TERRAIN_SIMPLE_VERTEX];
+	vert_stage_info.pName = "main";
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::TERRAIN_SIMPLE_FRAGMENT];
+	frag_stage_info.pName = "main";
+
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_pos_and_normal.vertex_input_info;
+	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
+	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.layout = backend.pipelineLayoutCollection()->descriptorlessLayout();
 	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
 	my_create_info.subpass = 0;
