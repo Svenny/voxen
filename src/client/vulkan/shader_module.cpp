@@ -64,6 +64,8 @@ extern const char *SHADER_MODULE_PATH;
 
 ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "assets/shaders/debug/octree.vert.spv")
 ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
+ADD_SHADER_PATH(TERRAIN_SIMPLE_VERTEX, "assets/shaders/terrain/simple.vert.spv")
+ADD_SHADER_PATH(TERRAIN_SIMPLE_FRAGMENT, "assets/shaders/terrain/simple.frag.spv")
 
 template<uint32_t ID = 0, typename T>
 static void loadShaderModules(T &array)
