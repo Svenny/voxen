@@ -26,7 +26,7 @@ bool TerrainChunkCache::tryFill(TerrainChunk &chunk)
 	auto iter = set.begin() + chunk_pos_in_set;
 	std::rotate(iter, iter + 1, set.end());
 	// Fill the chunk from the found entry
-	chunk = *(iter->chunk);
+	chunk = *(set.back().chunk);
 	return true;
 }
 
