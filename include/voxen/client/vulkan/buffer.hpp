@@ -15,18 +15,20 @@ public:
 	};
 
 	Buffer(const VkBufferCreateInfo &info, Usage usage);
-	Buffer(Buffer &&) = delete;
+	Buffer(Buffer &&) noexcept;
 	Buffer(const Buffer &) = delete;
-	Buffer &operator = (Buffer &&) = delete;
+	Buffer &operator = (Buffer &&) noexcept;
 	Buffer &operator = (const Buffer &) = delete;
 	~Buffer() noexcept;
 
 	DeviceAllocation &allocation() { return *m_memory; }
+	VkDeviceSize size() const noexcept { return m_size; }
 
 	operator VkBuffer() const noexcept { return m_buffer; }
 private:
 	VkBuffer m_buffer = VK_NULL_HANDLE;
 	std::shared_ptr<DeviceAllocation> m_memory;
+	VkDeviceSize m_size = 0;
 };
 
 }

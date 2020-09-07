@@ -9,6 +9,7 @@ namespace voxen::client::vulkan
 {
 
 Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
+	: m_size(info.size)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
@@ -46,6 +47,22 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 	result = backend.vkBindBufferMemory(device, m_buffer, m_memory->handle(), m_memory->offset());
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkBindBufferMemory");
+}
+
+Buffer::Buffer(Buffer &&other) noexcept
+	: m_buffer(other.m_buffer), m_memory(other.m_memory), m_size(other.m_size)
+{
+	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
+	m_memory = std::exchange(other.m_memory, {});
+	m_size = std::exchange(other.m_size, 0);
+}
+
+Buffer &Buffer::operator = (Buffer &&other) noexcept
+{
+	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
+	m_memory = std::exchange(other.m_memory, {});
+	m_size = std::exchange(other.m_size, 0);
+	return *this;
 }
 
 Buffer::~Buffer() noexcept
