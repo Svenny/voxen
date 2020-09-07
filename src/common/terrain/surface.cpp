@@ -15,9 +15,8 @@ TerrainSurface::TerrainSurface(size_t reserve_vertices, size_t reserve_indices)
 uint32_t TerrainSurface::addVertex(const TerrainSurfaceVertex &vertex)
 {
 	assert(m_vertices.size() <= std::numeric_limits<uint32_t>::max());
-	uint32_t idx = static_cast<uint32_t>(m_vertices.size() - 1);
 	m_vertices.emplace_back(vertex);
-	return idx;
+	return static_cast<uint32_t>(m_vertices.size() - 1);
 }
 
 void TerrainSurface::addTriangle(uint32_t a, uint32_t b, uint32_t c)
