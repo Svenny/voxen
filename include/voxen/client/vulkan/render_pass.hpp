@@ -7,7 +7,9 @@ namespace voxen::client::vulkan
 
 // TODO: check for physical device support (tiling/usage bits)
 // TODO: factor it out to attachments collection?
-inline constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D24_UNORM_S8_UINT;
+// TODO: use extended depth range? (currently it's 0..1, effectively losing
+// advantage of 32-bit buffer) or use D24 when supported?
+inline constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D32_SFLOAT;
 
 class RenderPass {
 public:
