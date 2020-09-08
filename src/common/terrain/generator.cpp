@@ -20,14 +20,15 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 
 	// TODO: this is a temporary stub, add real land generator
 	for (uint32_t i = 0; i < SIZE; i++) {
-		int64_t y = header.base_y + i * step;
+		double y = double(header.base_y + i * step) + 0.5;
 		for (uint32_t j = 0; j < SIZE; j++) {
-			int64_t x = header.base_x + j * step;
+			double x = double(header.base_x + j * step) + 0.5;
 			for (uint32_t k = 0; k < SIZE; k++) {
-				int64_t z = header.base_z + k * step;
+				double z = double(header.base_z + k * step) + 0.5;
 
 				uint8_t voxel = 0;
-				double value = double(y) + 5.0 * std::sin(0.05 * double(x + z));
+				double value = y + 5.0 * (std::sin(0.05 * x) + std::cos(0.05 * z));
+				//double value = (x * x + y * y + z * z) - 45000.0;
 				if (value <= 0.0)
 					voxel = 1;
 
@@ -46,56 +47,56 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 				if (is_cur_zero) {
 					if (k + 1 < SIZE && output[i][j][k + 1] != 0) {
 						// Z face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 0, j + 0, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 1), glm::vec3(0, 0, -1) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 0, k + 1), glm::vec3(0, 0, -1) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(0, 0, -1) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 0, -1) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 0, -1) });
 						surface.addTriangle(i0, i2, i1);
 						surface.addTriangle(i0, i3, i2);
 					}
 					if (j + 1 < SIZE && output[i][j + 1][k] != 0) {
 						// X face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 0), glm::vec3(-1, 0, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 0), glm::vec3(-1, 0, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(-1, 0, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 1), glm::vec3(-1, 0, 0) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 0), glm::vec3(-1, 0, 0) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(-1, 0, 0) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(-1, 0, 0) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(-1, 0, 0) });
 						surface.addTriangle(i0, i2, i1);
 						surface.addTriangle(i0, i3, i2);
 					}
 					if (i + 1 < SIZE && output[i + 1][j][k] != 0) {
 						// Y face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 0), glm::vec3(0, -1, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 1), glm::vec3(0, -1, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(0, -1, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 0), glm::vec3(0, -1, 0) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 0), glm::vec3(0, -1, 0) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, -1, 0) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, -1, 0) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(0, -1, 0) });
 						surface.addTriangle(i0, i2, i1);
 						surface.addTriangle(i0, i3, i2);
 					}
 				} else {
 					if (k + 1 < SIZE && output[i][j][k + 1] == 0) {
 						// Z face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 0, j + 0, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 1), glm::vec3(0, 0, 1) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 0, k + 1), glm::vec3(0, 0, 1) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(0, 0, 1) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 0, 1) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 0, 1) });
 						surface.addTriangle(i0, i1, i2);
 						surface.addTriangle(i0, i2, i3);
 					}
 					if (j + 1 < SIZE && output[i][j + 1][k] == 0) {
 						// X face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 0), glm::vec3(1, 0, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 0), glm::vec3(1, 0, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(1, 0, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 0, j + 1, k + 1), glm::vec3(1, 0, 0) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 0), glm::vec3(1, 0, 0) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(1, 0, 0) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(1, 0, 0) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(1, 0, 0) });
 						surface.addTriangle(i0, i1, i2);
 						surface.addTriangle(i0, i2, i3);
 					}
 					if (i + 1 < SIZE && output[i + 1][j][k] == 0) {
 						// Y face
-						uint32_t i0 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 0), glm::vec3(0, 1, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(i + 1, j + 0, k + 1), glm::vec3(0, 1, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 1), glm::vec3(0, 1, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(i + 1, j + 1, k + 0), glm::vec3(0, 1, 0) });
+						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 0), glm::vec3(0, 1, 0) });
+						uint32_t i1 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 1, 0) });
+						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 1, 0) });
+						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(0, 1, 0) });
 						surface.addTriangle(i0, i1, i2);
 						surface.addTriangle(i0, i2, i3);
 					}
