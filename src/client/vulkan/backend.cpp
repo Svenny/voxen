@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
@@ -16,6 +17,7 @@
 #include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
+#include <voxen/client/vulkan/algo/terrain_simple.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -173,8 +175,11 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 			m_framebuffer_collection = new FramebufferCollection;
 			m_pipeline_collection = new PipelineCollection;
 
+			m_terrain_synchronizer = new TerrainSynchronizer;
+
 			m_main_loop = new MainLoop;
 			m_algo_debug_octree = new AlgoDebugOctree;
+			m_algo_terrain_simple = new AlgoTerrainSimple;
 		}
 
 		return true;
@@ -214,10 +219,15 @@ void Backend::doStop(StartStopMode mode) noexcept
 	const bool stop_swapchain_dep = (stop_surface_dep || mode == StartStopMode::SwapchainDependentOnly);
 
 	if (stop_swapchain_dep) {
+		delete m_algo_terrain_simple;
+		m_algo_terrain_simple = nullptr;
 		delete m_algo_debug_octree;
 		m_algo_debug_octree = nullptr;
 		delete m_main_loop;
 		m_main_loop = nullptr;
+
+		delete m_terrain_synchronizer;
+		m_terrain_synchronizer = nullptr;
 
 		delete m_pipeline_collection;
 		m_pipeline_collection = nullptr;

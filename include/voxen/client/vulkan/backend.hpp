@@ -11,6 +11,7 @@ namespace voxen::client::vulkan
 {
 
 class AlgoDebugOctree;
+class AlgoTerrainSimple;
 class Device;
 class DeviceAllocator;
 class FramebufferCollection;
@@ -24,6 +25,7 @@ class RenderPassCollection;
 class ShaderModuleCollection;
 class Surface;
 class Swapchain;
+class TerrainSynchronizer;
 class TransferManager;
 
 class Backend {
@@ -60,8 +62,11 @@ public:
 	FramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
 	PipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
 
+	TerrainSynchronizer *terrainSynchronizer() const noexcept { return m_terrain_synchronizer; }
+
 	MainLoop *mainLoop() const noexcept { return m_main_loop; }
 	AlgoDebugOctree *algoDebugOctree() const noexcept { return m_algo_debug_octree; }
+	AlgoTerrainSimple *algoTerrainSimple() const noexcept { return m_algo_terrain_simple; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -96,8 +101,11 @@ private:
 	FramebufferCollection *m_framebuffer_collection = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
 
+	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
+
 	MainLoop *m_main_loop = nullptr;
 	AlgoDebugOctree *m_algo_debug_octree = nullptr;
+	AlgoTerrainSimple *m_algo_terrain_simple = nullptr;
 
 	static Backend s_instance;
 
