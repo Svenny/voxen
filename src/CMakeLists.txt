@@ -1,7 +1,9 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/debug_octree.cpp
+	src/client/vulkan/algo/terrain_simple.cpp
 	src/client/vulkan/high/main_loop.cpp
 	src/client/vulkan/high/mesh.cpp
+	src/client/vulkan/high/terrain_synchronizer.cpp
 	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
