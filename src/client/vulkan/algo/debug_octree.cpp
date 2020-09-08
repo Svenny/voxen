@@ -64,6 +64,11 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &
 	auto view_proj_mat = view.cameraMatrix();
 
 	state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
+		if (chunk.data().surface.numIndices() == 0) {
+			// Don't draw junk lines for empty chunks
+			return;
+		}
+
 		float base_x = float(chunk.header().base_x);
 		float base_y = float(chunk.header().base_y);
 		float base_z = float(chunk.header().base_z);
