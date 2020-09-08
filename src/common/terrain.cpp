@@ -199,17 +199,27 @@ void TerrainOctree::updateChunks(double x, double y, double z, TerrainLoader &lo
 }
 
 void TerrainOctree::walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const {
-	std::queue<const TerrainOctreeNode *> q;
-	q.emplace(m_tree);
-	while (!q.empty ()) {
-		const TerrainOctreeNode *node = q.front();
-		q.pop();
-		TerrainChunk *chunk = node->m_chunk;
-		if(chunk)
-			visitor(*chunk);
-		for (size_t i = 0; i < 8; i++)
-			if(node->m_children[i])
-				q.push(node->m_children[i]);
+	if (!m_tree)
+		return;
+
+	std::vector<const TerrainOctreeNode *> stack;
+	stack.emplace_back(m_tree);
+
+	while (!stack.empty ()) {
+		const TerrainOctreeNode *node = stack.back();
+		stack.pop_back();
+
+		if (node->is_collapsed) {
+			TerrainChunk *chunk = node->m_chunk;
+			if (chunk)
+				visitor(*chunk);
+			continue;
+		}
+
+		for (size_t i = 0; i < 8; i++) {
+			if (node->m_children[i])
+				stack.emplace_back(node->m_children[i]);
+		}
 	}
 }
 
