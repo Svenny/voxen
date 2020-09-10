@@ -20,10 +20,12 @@ using TerrainChunkCreateInfo = TerrainChunkHeader;
 
 class TerrainChunk {
 public:
-	static constexpr inline uint32_t SIZE = 32;
+	static constexpr inline uint32_t SIZE = 33;
+	static constexpr inline uint32_t CELL_COUNT = SIZE-1;
 
+	using VoxelData = uint8_t[SIZE][SIZE][SIZE];
 	struct Data {
-		uint8_t voxel_id[SIZE][SIZE][SIZE];
+		VoxelData voxel_id;
 		TerrainSurface surface;
 	};
 

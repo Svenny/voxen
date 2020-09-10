@@ -43,6 +43,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/generator.hpp
 	include/voxen/common/terrain/loader.hpp
 	include/voxen/common/terrain/surface.hpp
+	include/voxen/common/terrain/surface_builder.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
 	include/voxen/common/world_state.hpp
