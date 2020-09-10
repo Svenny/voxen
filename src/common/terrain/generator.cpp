@@ -1,4 +1,5 @@
 #include <voxen/common/terrain/generator.hpp>
+#include <voxen/common/terrain/surface_builder.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -28,6 +29,7 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 
 				uint8_t voxel = 0;
 				double value = y + 5.0 * (std::sin(0.05 * x) + std::cos(0.05 * z));
+
 				//double value = (x * x + y * y + z * z) - 45000.0;
 				if (value <= 0.0)
 					voxel = 1;
@@ -37,73 +39,7 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 		}
 	}
 
-	// TODO: this is a temporary cuberille surface generator, implement
-	// proper isosurface extraction algorithm and factor it out
-	auto &surface = chunk.data().surface;
-	for (uint32_t i = 0; i < SIZE; i++) {
-		for (uint32_t j = 0; j < SIZE; j++) {
-			for (uint32_t k = 0; k < SIZE; k++) {
-				bool is_cur_zero = (output[i][j][k] == 0);
-				if (is_cur_zero) {
-					if (k + 1 < SIZE && output[i][j][k + 1] != 0) {
-						// Z face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 0, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 0, -1) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 0, -1) });
-						surface.addTriangle(i0, i2, i1);
-						surface.addTriangle(i0, i3, i2);
-					}
-					if (j + 1 < SIZE && output[i][j + 1][k] != 0) {
-						// X face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 0), glm::vec3(-1, 0, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(-1, 0, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(-1, 0, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(-1, 0, 0) });
-						surface.addTriangle(i0, i2, i1);
-						surface.addTriangle(i0, i3, i2);
-					}
-					if (i + 1 < SIZE && output[i + 1][j][k] != 0) {
-						// Y face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 0), glm::vec3(0, -1, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, -1, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, -1, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(0, -1, 0) });
-						surface.addTriangle(i0, i2, i1);
-						surface.addTriangle(i0, i3, i2);
-					}
-				} else {
-					if (k + 1 < SIZE && output[i][j][k + 1] == 0) {
-						// Z face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 0, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 0, 1) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 0, 1) });
-						surface.addTriangle(i0, i1, i2);
-						surface.addTriangle(i0, i2, i3);
-					}
-					if (j + 1 < SIZE && output[i][j + 1][k] == 0) {
-						// X face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 0), glm::vec3(1, 0, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(1, 0, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(1, 0, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 0, k + 1), glm::vec3(1, 0, 0) });
-						surface.addTriangle(i0, i1, i2);
-						surface.addTriangle(i0, i2, i3);
-					}
-					if (i + 1 < SIZE && output[i + 1][j][k] == 0) {
-						// Y face
-						uint32_t i0 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 0), glm::vec3(0, 1, 0) });
-						uint32_t i1 = surface.addVertex({ glm::vec3(j + 0, i + 1, k + 1), glm::vec3(0, 1, 0) });
-						uint32_t i2 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 1), glm::vec3(0, 1, 0) });
-						uint32_t i3 = surface.addVertex({ glm::vec3(j + 1, i + 1, k + 0), glm::vec3(0, 1, 0) });
-						surface.addTriangle(i0, i1, i2);
-						surface.addTriangle(i0, i2, i3);
-					}
-				}
-			}
-		}
-	}
+	TerrainSurfaceBuilder::calcSurface(output, chunk.data().surface);
 }
 
 }

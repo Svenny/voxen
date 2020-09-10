@@ -36,6 +36,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/generator.cpp
 	src/common/terrain/loader.cpp
 	src/common/terrain/surface.cpp
+	src/common/terrain/surface_builder.cpp
 	src/common/player.cpp
 	src/common/terrain.cpp
 	src/common/world_state.cpp
