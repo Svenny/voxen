@@ -35,6 +35,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/chunk.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/loader.cpp
+	src/common/terrain/seam.cpp
 	src/common/terrain/surface.cpp
 	src/common/terrain/surface_builder.cpp
 	src/common/player.cpp
@@ -46,6 +47,7 @@ set(VOXEN_SOURCES
 	src/server/world.cpp
 	src/util/elapsed_timer.cpp
 	src/util/exception.cpp
+	src/util/hash.cpp
 	src/util/log.cpp
 	src/main.cpp
 )
