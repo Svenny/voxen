@@ -42,6 +42,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/chunk.hpp
 	include/voxen/common/terrain/generator.hpp
 	include/voxen/common/terrain/loader.hpp
+	include/voxen/common/terrain/seam.hpp
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
 	include/voxen/common/player.hpp
@@ -52,6 +53,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/filemanager.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/exception.hpp
+	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
 )
 
