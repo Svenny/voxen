@@ -9,10 +9,12 @@ layout(push_constant) uniform PushConstants {
 
 layout(location = 0) out vec4 out_color;
 
+const vec3 ambient = vec3(0.005);
+const vec3 objectColor = vec3(0.64, 0.64, 0.64);
+
 void main()
 {
 	vec3 n = normalize(in_normal);
-	float d = max(dot(n, in_sun_direction), 0.0);
-	vec3 rgb = 0.3 * abs(n) + 0.7 * d * vec3(1.0);
-	out_color = vec4(rgb, 1.0);
+	vec3 diffuse = vec3(max(dot(n, in_sun_direction), 0.0));
+	out_color = vec4((ambient + diffuse) * objectColor, 1.0);
 }
