@@ -7,11 +7,9 @@ namespace voxen
 
 class TerrainSurfaceBuilder {
 public:
-	static void calcSurface(const TerrainChunk::VoxelData& voxels, TerrainSurface& surface);
+	static void calcSurface(const TerrainChunk::Data& chunk_data, TerrainSurface& surface);
 private:
-	static double edgeOffsetX(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k);
-	static double edgeOffsetY(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k);
-	static double edgeOffsetZ(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k);
+	static double edgeOffset(double d1, double d2);
 };
 
 }
