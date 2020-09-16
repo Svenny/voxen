@@ -43,7 +43,7 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 
 	backend.vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, -1.0f, 0.3f));
+	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 
 	auto view_proj_mat = view.cameraMatrix();
 
