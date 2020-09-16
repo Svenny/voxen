@@ -24,8 +24,12 @@ public:
 	static constexpr inline uint32_t CELL_COUNT = SIZE-1;
 
 	using VoxelData = uint8_t[SIZE][SIZE][SIZE];
+	using VoxelSurfaceData = double[SIZE][SIZE][SIZE];
+	using VoxelGradientData = glm::vec3[SIZE][SIZE][SIZE];
 	struct Data {
 		VoxelData voxel_id;
+		VoxelSurfaceData value_id;
+		VoxelGradientData gradient_id;
 		TerrainSurface surface;
 	};
 

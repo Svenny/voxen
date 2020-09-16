@@ -1219,8 +1219,12 @@ bool DC_Octree::checkTopoSafety (const CubeMaterials &mats) noexcept {
 
 namespace voxen {
 
-void TerrainSurfaceBuilder::calcSurface(const TerrainChunk::VoxelData& voxels, TerrainSurface& surface) {
+void TerrainSurfaceBuilder::calcSurface(const TerrainChunk::Data& chunk_data, TerrainSurface& surface) {
 	// Simple DC algorith for onematerial voxel data
+
+	auto& voxels = chunk_data.voxel_id;
+	auto& values = chunk_data.value_id;
+	auto& grads = chunk_data.gradient_id;
 
 	UniformGridAdapter storage(voxels);
 	for (uint32_t i = 0; i < TerrainChunk::SIZE; i++) {
@@ -1231,36 +1235,17 @@ void TerrainSurfaceBuilder::calcSurface(const TerrainChunk::VoxelData& voxels, T
 				int32_t z = k;
 
 				bool is_cur_solid = (voxels[i][j][k] != 0);
-				glm::vec3 average_isopoint(0);
-				double x_offset = 0.0;
-				double y_offset = 0.0;
-				double z_offset = 0.0;
 
 				if (k + 1 < TerrainChunk::SIZE && voxels[i][j][k + 1] != voxels[i][j][k]) {
-					z_offset = edgeOffsetZ(voxels, i, j, k);
-					average_isopoint += glm::vec3(0, 0, z_offset);
+					storage.edgesZ.addEdge(x, y, z, grads[i][j][k], edgeOffset(values[i][j][k], values[i][j][k+1]), 2, is_cur_solid);
 				}
 
 				if (j + 1 < TerrainChunk::SIZE && voxels[i][j + 1][k] != voxels[i][j][k]) {
-					x_offset = edgeOffsetX(voxels, i, j, k);
-					average_isopoint += glm::vec3(x_offset, 0, 0);
+					storage.edgesX.addEdge(x, y, z, grads[i][j][k], edgeOffset(values[i][j][k], values[i][j+1][k+1]), 0, is_cur_solid);
 				}
 
 				if (i + 1 < TerrainChunk::SIZE && voxels[i + 1][j][k] != voxels[i][j][k]) {
-					y_offset = edgeOffsetY(voxels, i, j, k);
-					average_isopoint += glm::vec3(0, y_offset, 0);
-				}
-
-				if (x_offset + y_offset + z_offset != 0.0) {
-					//TODO(sirgienko) This logic works bad and should be change to correct solution for calculation edge interception and gradient in this points
-					const glm::vec3& grad = glm::normalize(average_isopoint);
-
-					if (x_offset != 0.0)
-						storage.edgesX.addEdge(x, y, z, grad, x_offset, 0, is_cur_solid);
-					if (y_offset != 0.0)
-						storage.edgesY.addEdge(x, y, z, grad, y_offset, 1, is_cur_solid);
-					if (z_offset != 0.0)
-						storage.edgesZ.addEdge(x, y, z, grad, z_offset, 0, is_cur_solid);
+					storage.edgesY.addEdge(x, y, z, grads[i][j][k], edgeOffset(values[i][j][k], values[i+1][j][k+1]), 1, is_cur_solid);
 				}
 			}
 		}
@@ -1274,106 +1259,9 @@ void TerrainSurfaceBuilder::calcSurface(const TerrainChunk::VoxelData& voxels, T
 	octree.contour (surface);
 }
 
-double TerrainSurfaceBuilder::edgeOffsetX(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k) {
-	uint8_t mat1 = voxels[i][j][k];
-	uint8_t mat2 = voxels[i][j+1][k];
-
-	int8_t sum1 = 1;
-	int8_t sum2 = 1;
-	if (i+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i+1][j][k])
-			sum1++;
-		if (mat2 == voxels[i+1][j+1][k])
-			sum2++;
-	}
-	if (i >= 1) {
-		if (mat1 == voxels[i-1][j][k])
-			sum1++;
-		if (mat2 == voxels[i-1][j+1][k])
-			sum2++;
-	}
-	if (k+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i][j][k+1])
-			sum1++;
-		if (mat2 == voxels[i][j+1][k+1])
-			sum2++;
-	}
-	if (k >= 1) {
-		if (mat1 == voxels[i][j][k-1])
-			sum1++;
-		if (mat2 == voxels[i][j+1][k-1])
-			sum2++;
-	}
-
-	return (1.0 * sum1) / (sum1 + sum2);
-}
-
-double TerrainSurfaceBuilder::edgeOffsetY(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k) {
-	uint8_t mat1 = voxels[i][j][k];
-	uint8_t mat2 = voxels[i+1][j][k];
-
-	int8_t sum1 = 1;
-	int8_t sum2 = 1;
-	if (j+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i][j+1][k])
-			sum1++;
-		if (mat2 == voxels[i+1][j+1][k])
-			sum2++;
-	}
-	if (j >= 1) {
-		if (mat1 == voxels[i][j-1][k])
-			sum1++;
-		if (mat2 == voxels[i+1][j-1][k])
-			sum2++;
-	}
-	if (k+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i][j][k+1])
-			sum1++;
-		if (mat2 == voxels[i+1][j][k+1])
-			sum2++;
-	}
-	if (k >= 1) {
-		if (mat1 == voxels[i][j][k-1])
-			sum1++;
-		if (mat2 == voxels[i+1][j][k-1])
-			sum2++;
-	}
-
-	return (1.0 * sum1) / (sum1 + sum2);
-}
-
-double TerrainSurfaceBuilder::edgeOffsetZ(const TerrainChunk::VoxelData& voxels, uint32_t i, uint32_t j, uint32_t k) {
-	uint8_t mat1 = voxels[i][j][k];
-	uint8_t mat2 = voxels[i][j][k+1];
-
-	int8_t sum1 = 1;
-	int8_t sum2 = 1;
-	if (i+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i+1][j][k])
-			sum1++;
-		if (mat2 == voxels[i+1][j][k+1])
-			sum2++;
-	}
-	if (i >= 1) {
-		if (mat1 == voxels[i-1][j][k])
-			sum1++;
-		if (mat2 == voxels[i-1][j][k+1])
-			sum2++;
-	}
-	if (j+1 < TerrainChunk::SIZE) {
-		if (mat1 == voxels[i][j+1][k])
-			sum1++;
-		if (mat2 == voxels[i][j+1][k+1])
-			sum2++;
-	}
-	if (j >= 1) {
-		if (mat1 == voxels[i][j-1][k])
-			sum1++;
-		if (mat2 == voxels[i][j-1][k+1])
-			sum2++;
-	}
-
-	return (1.0 * sum1) / (sum1 + sum2);
+double TerrainSurfaceBuilder::edgeOffset(double d1, double d2) {
+	double k = std::abs(d1/d2);
+	return k / (k+1);
 }
 
 }
