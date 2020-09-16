@@ -15,7 +15,9 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 	const TerrainChunkHeader& header = chunk.header();
 
 	Log::trace("Generating chunk at ({}, {}, {})(x{})", header.base_x, header.base_y, header.base_z, header.scale);
-	auto &output = chunk.data().voxel_id;
+	auto &out_voxels = chunk.data().voxel_id;
+	auto &out_values = chunk.data().value_id;
+	auto &out_grads = chunk.data().gradient_id;
 
 	const uint32_t step = header.scale;
 
@@ -34,12 +36,18 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 				if (value <= 0.0)
 					voxel = 1;
 
-				output[i][j][k] = voxel;
+				double dx = 0.05 * 5.0 * std::cos(0.05 * x);
+				double dy = 1;
+				double dz = - 0.05 * std::sin(0.05 * z);
+
+				out_voxels[i][j][k] = voxel;
+				out_values[i][j][k] = value;
+				out_grads[i][j][k] = glm::dvec3(dx, dy, dz);
 			}
 		}
 	}
 
-	TerrainSurfaceBuilder::calcSurface(output, chunk.data().surface);
+	TerrainSurfaceBuilder::calcSurface(chunk.data(), chunk.data().surface);
 }
 
 }
