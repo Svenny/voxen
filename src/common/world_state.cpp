@@ -25,4 +25,14 @@ void WorldState::walkActiveChunks(std::function<void(const TerrainChunk &)> visi
 	m_terrain->walkActiveChunks(visitor);
 }
 
+void WorldState::updateDataFrom(const WorldState& other) {
+	m_player = other.m_player;
+	m_tick_id = other.m_tick_id;
+
+	if (m_terrain)
+		m_terrain->updateChunkDataFrom(*other.m_terrain);
+	else
+		m_terrain = std::make_unique<TerrainOctree>(*other.m_terrain);
+}
+
 }

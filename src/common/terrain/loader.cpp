@@ -44,11 +44,11 @@ void TerrainLoader::unload(TerrainChunk &chunk)
 	m_loaded_chunks.erase(search);
 #endif /* VOXEN_DEBUG_BUILD */
 
-	// TODO: support saving to disk
 	// insert will update chunk data, if the chunk still in cache
 	// or insert again, if the cache already flush the chunk
 	m_cache.insert(chunk);
-	(void) chunk;
+
+	// TODO: support saving to disk
 }
 
 }

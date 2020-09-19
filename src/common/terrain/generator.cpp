@@ -48,6 +48,11 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 	}
 
 	TerrainSurfaceBuilder::calcSurface(chunk.data(), chunk.data().surface);
+
+	// We change chunk content, so increase version
+	// Without this, empty chunk with no data, which we got in argument (`chunk`)
+	// will consider equal to current filled chunk
+	chunk.increaseVersion();
 }
 
 }

@@ -58,6 +58,59 @@ struct TerrainOctreeNode {
 		delete m_chunk;
 	}
 
+	void unload(TerrainOctreeNode* node, TerrainLoader &loader) {
+		if (node->is_collapsed) {
+			assert(node->m_chunk);
+			loader.unload(*node->m_chunk);
+		}
+		else {
+			assert(!node->m_chunk);
+			for (int i = 0; i < 8; i++) {
+				assert(node->m_children[i]);
+				unload(node->m_children[i], loader);
+			}
+		}
+	}
+
+	void updateChunkDataFrom(const TerrainOctreeNode* other) {
+		assert(m_base_x == other->m_base_x);
+		assert(m_base_y == other->m_base_y);
+		assert(m_base_z == other->m_base_z);
+		assert(m_size == other->m_size);
+
+		// We don't use here load/unload operations from TerrainLoader
+		// because this is just the tree data update - and proper load/unload
+		// have been already maded in `other`
+		for (int i = 0; i < 8; i++) {
+			if (other->m_children[i]) {
+				if (m_children[i])
+					m_children[i]->updateChunkDataFrom(other->m_children[i]);
+				else
+					m_children[i] = new TerrainOctreeNode(*other->m_children[i]);
+			}
+			else {
+				if (m_children[i]) {
+					delete m_children[i];
+					m_children[i] = nullptr;
+				}
+			}
+		}
+		is_collapsed = other->is_collapsed;
+
+		if (other->m_chunk) {
+			if (m_chunk)
+				*m_chunk = *other->m_chunk;
+			else
+				m_chunk = new TerrainChunk(*other->m_chunk);
+		}
+		else {
+			if (m_chunk) {
+				delete m_chunk;
+				m_chunk = nullptr;
+			}
+		}
+	}
+
 	void updateChunks(double x, double y, double z, TerrainLoader &loader) {
 		if (m_size == TerrainChunk::SIZE)
 			return;
@@ -86,8 +139,11 @@ struct TerrainOctreeNode {
 	void split(TerrainLoader &loader) {
 		if (!is_collapsed)
 			return;
+
+		loader.unload(*m_chunk);
 		delete m_chunk;
 		m_chunk = nullptr;
+
 		int64_t child_size = m_size / 2;
 		for (int i = 0; i < 8; i++) {
 			if (!m_children[i]) {
@@ -104,6 +160,7 @@ struct TerrainOctreeNode {
 		if (is_collapsed)
 			return;
 		for (int i = 0; i < 8; i++) {
+			unload(m_children[i], loader);
 			delete m_children[i];
 			m_children[i] = nullptr;
 		}
@@ -221,6 +278,21 @@ void TerrainOctree::walkActiveChunks(std::function<void(const TerrainChunk &)> v
 				stack.emplace_back(node->m_children[i]);
 		}
 	}
+}
+
+void TerrainOctree::updateChunkDataFrom(const TerrainOctree& other) {
+	// NOTE(sirgienko) How it works:
+	// Two TerrainOctree must have some equal data (asserts below)
+	// But tree content can differe, and this method will update `this` octree from `other` octree
+	// This is not operator= due the asserts limitation
+
+	assert(m_xz_chunks == other.m_xz_chunks);
+	assert(m_y_chunks == other.m_y_chunks);
+
+	assert(m_tree);
+	assert(other.m_tree);
+
+	m_tree->updateChunkDataFrom(other.m_tree);
 }
 
 }

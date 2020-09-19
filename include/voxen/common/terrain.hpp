@@ -21,6 +21,8 @@ public:
 	void updateChunks(double x, double y, double z, TerrainLoader &loader);
 
 	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
+
+	void updateChunkDataFrom(const TerrainOctree& other);
 private:
 	uint32_t m_xz_chunks, m_y_chunks;
 	//TerrainQuadtreeNode *m_tree = nullptr;

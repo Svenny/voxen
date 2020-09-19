@@ -9,9 +9,10 @@ World::World()
 {
 	Log::debug("Creating server World");
 
+	// State initialization
+	m_currect_state.setTerrain(std::make_unique<TerrainOctree>(m_loader, /*1<<21*/16, /*1 << 12*/4));
 	m_last_state_ptr = std::make_shared<WorldState>();
-	WorldState &initial_state = *m_last_state_ptr;
-	initial_state.setTerrain(std::make_unique<TerrainOctree>(m_loader, /*1<<21*/16, /*1 << 12*/4));
+	m_last_state_ptr->updateDataFrom(m_currect_state);
 
 	Log::debug("Server World created successfully");
 }
@@ -29,15 +30,18 @@ std::shared_ptr<const WorldState> World::getLastState() const
 
 void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval)
 {
-	const WorldState &last_state = *m_last_state_ptr;
-	m_next_state_ptr = std::make_shared<WorldState>(last_state);
-	WorldState &next_state = *m_next_state_ptr;
+	{
+		// NOTE(sirgienko) Move data from currect state to previous
+		// because we will update currect state right now
+		std::lock_guard lock(m_last_state_ptr_lock);
+		m_last_state_ptr->updateDataFrom(m_currect_state);
+	}
 
-	next_state.setTickId(last_state.tickId() + 1);
+	m_currect_state.setTickId(m_currect_state.tickId() + 1);
 
 	// Update user position
 	double dt = std::chrono::duration_cast<std::chrono::duration<double>>(tick_inverval).count();
-	auto &player = next_state.player();
+	auto &player = m_currect_state.player();
 	glm::dvec3 pos = player.position();
 	{
 		std::lock_guard<std::mutex> lock { queue.mutex };
@@ -47,10 +51,7 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	}
 
 	// Update chunks
-	next_state.terrain().updateChunks(pos.x, pos.y, pos.z, m_loader);
-
-	std::lock_guard lock(m_last_state_ptr_lock);
-	m_last_state_ptr = std::move(m_next_state_ptr);
+	m_currect_state.terrain().updateChunks(pos.x, pos.y, pos.z, m_loader);
 }
 
 }

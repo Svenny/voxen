@@ -32,7 +32,7 @@ private:
 	// operations (copying/changing owned object) on `m_last_state_ptr`.
 	// TODO: replace with std::atomic<std::shared_ptr> when it's supported
 	mutable std::mutex m_last_state_ptr_lock;
-	std::shared_ptr<WorldState> m_next_state_ptr;
+	WorldState m_currect_state;
 	std::shared_ptr<WorldState> m_last_state_ptr;
 };
 

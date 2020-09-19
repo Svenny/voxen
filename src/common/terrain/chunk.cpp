@@ -1,6 +1,7 @@
 #include <voxen/common/terrain/chunk.hpp>
 
 #include <voxen/util/hash.hpp>
+#include <voxen/util/log.hpp>
 
 #include <algorithm>
 #include <array>
@@ -57,7 +58,11 @@ TerrainChunk &TerrainChunk::operator = (TerrainChunk &&other) noexcept
 TerrainChunk &TerrainChunk::operator = (const TerrainChunk &other)
 {
 	assert(m_header == other.m_header);
-	m_data = other.m_data;
+	assert(m_version <= other.m_version);
+	if (m_version != other.m_version) {
+		m_data = other.m_data;
+		m_version = other.m_version;
+	}
 	return *this;
 }
 

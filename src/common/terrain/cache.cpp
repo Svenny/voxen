@@ -43,11 +43,8 @@ void TerrainChunkCache::insert(const TerrainChunk &chunk)
 			continue;
 		}
 		if (entry.chunk->header() == chunk.header()) {
-			assert(entry.chunk->version() <= chunk.version());
-			// This chunk is already in the cache, but the content can be different
-			if (entry.chunk->version() < chunk.version())
-				// Update voxel data in cache
-				*entry.chunk = chunk;
+			// Update voxel data in cache
+			*entry.chunk = chunk;
 			return;
 		}
 	}
