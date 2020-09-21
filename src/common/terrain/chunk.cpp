@@ -1,6 +1,7 @@
 #include <voxen/common/terrain/chunk.hpp>
 
 #include <voxen/util/hash.hpp>
+#include <voxen/util/log.hpp>
 
 #include <algorithm>
 #include <array>
@@ -33,7 +34,7 @@ uint64_t TerrainChunkHeader::hash() const noexcept
 }
 
 TerrainChunk::TerrainChunk(const TerrainChunkCreateInfo &info)
-	: m_header(info), m_version(0U)
+	: m_header(info), m_version(0U), m_data(new Data())
 {
 }
 
@@ -50,23 +51,51 @@ TerrainChunk::TerrainChunk(const TerrainChunk &other)
 TerrainChunk &TerrainChunk::operator = (TerrainChunk &&other) noexcept
 {
 	assert(m_header == other.m_header);
+	assert(m_version <= other.m_version);
+	if (m_version == other.m_version)
+		assert(m_data == other.m_data);
 	m_data = std::move(other.m_data);
+	m_version = other.m_version;
 	return *this;
 }
 
 TerrainChunk &TerrainChunk::operator = (const TerrainChunk &other)
 {
 	assert(m_header == other.m_header);
+	assert(m_version <= other.m_version);
+	if (m_version == other.m_version)
+		assert(m_data == other.m_data);
 	m_data = other.m_data;
+	m_version = other.m_version;
 	return *this;
 }
 
-TerrainChunk::~TerrainChunk() noexcept
-{
+TerrainChunk::~TerrainChunk() noexcept {
 }
 
-void TerrainChunk::increaseVersion() noexcept
-{
+void TerrainChunk::copyVoxelData() {
+	// Don't copy, if only this chunk uses this voxel data
+	assert(m_data.use_count() != 0);
+	if (m_data.use_count() != 1)
+		m_data = std::shared_ptr<Data>(new Data(*m_data));
+}
+
+bool TerrainChunk::beginEdit() noexcept {
+	try {
+		copyVoxelData();
+	}
+	catch(std::bad_alloc& e) {
+		Log::error("Fail to copy chunk data due out of memory problem: {}", e.what());
+		return false;
+	}
+	return true;
+}
+
+void TerrainChunk::endEdit() noexcept {
+	increaseVersion();
+}
+
+void TerrainChunk::increaseVersion() noexcept {
 	assert(m_version != std::numeric_limits<uint32_t>::max());
 	m_version++;
 }
