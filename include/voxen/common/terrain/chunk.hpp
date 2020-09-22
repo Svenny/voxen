@@ -2,6 +2,7 @@
 
 #include <voxen/common/terrain/surface.hpp>
 
+#include <memory>
 #include <cstdint>
 
 namespace voxen
@@ -42,15 +43,37 @@ public:
 
 	const TerrainChunkHeader& header() const noexcept { return m_header; }
 	uint32_t version() const noexcept { return m_version; }
-	void increaseVersion() noexcept;
 
-	Data &data() noexcept { return m_data; }
-	const Data &data() const noexcept { return m_data; }
+	// This methods must used before and after editing voxel data
+	void beginEdit();
+	void endEdit() noexcept;
+
+	Data &data() noexcept { return *m_data; };
+	const Data &data() const noexcept { return *m_data; }
+
+private:
+	void increaseVersion() noexcept;
+	void copyVoxelData();
+
 private:
 	const TerrainChunkHeader m_header;
 	uint32_t m_version;
-	Data m_data;
+	std::shared_ptr<Data> m_data;
 };
 
+struct TerrainChunkEditBlock {
+	TerrainChunkEditBlock(const TerrainChunkEditBlock&) = delete;
+	TerrainChunkEditBlock(TerrainChunkEditBlock&&) = delete;
+
+	TerrainChunkEditBlock(TerrainChunk& edited_chunk): chunk(edited_chunk) {
+		chunk.beginEdit();
+	}
+
+	~TerrainChunkEditBlock() noexcept {
+		chunk.endEdit();
+	}
+
+	TerrainChunk& chunk;
+};
 
 }

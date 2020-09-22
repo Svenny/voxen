@@ -21,6 +21,9 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 
 	const uint32_t step = header.scale;
 
+	{
+	TerrainChunkEditBlock edit_block(chunk);
+
 	// TODO: this is a temporary stub, add real land generator
 	for (uint32_t i = 0; i < SIZE; i++) {
 		double y = double(header.base_y + i * step) + 0.5;
@@ -48,6 +51,7 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 	}
 
 	TerrainSurfaceBuilder::calcSurface(chunk.data(), chunk.data().surface);
+	}
 }
 
 }
