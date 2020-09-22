@@ -58,6 +58,20 @@ struct TerrainOctreeNode {
 		delete m_chunk;
 	}
 
+	void unload(TerrainOctreeNode* node, TerrainLoader &loader) {
+		if (node->is_collapsed) {
+			assert(node->m_chunk);
+			loader.unload(*node->m_chunk);
+		}
+		else {
+			assert(!node->m_chunk);
+			for (int i = 0; i < 8; i++) {
+				assert(node->m_children[i]);
+				unload(node->m_children[i], loader);
+			}
+		}
+	}
+
 	void updateChunks(double x, double y, double z, TerrainLoader &loader) {
 		if (m_size == TerrainChunk::SIZE)
 			return;
@@ -86,6 +100,7 @@ struct TerrainOctreeNode {
 	void split(TerrainLoader &loader) {
 		if (!is_collapsed)
 			return;
+		loader.unload(*m_chunk);
 		delete m_chunk;
 		m_chunk = nullptr;
 		int64_t child_size = m_size / 2;
@@ -104,6 +119,7 @@ struct TerrainOctreeNode {
 		if (is_collapsed)
 			return;
 		for (int i = 0; i < 8; i++) {
+			unload(m_children[i], loader);
 			delete m_children[i];
 			m_children[i] = nullptr;
 		}
