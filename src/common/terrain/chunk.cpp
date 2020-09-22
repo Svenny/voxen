@@ -80,15 +80,8 @@ void TerrainChunk::copyVoxelData() {
 		m_data = std::shared_ptr<Data>(new Data(*m_data));
 }
 
-bool TerrainChunk::beginEdit() noexcept {
-	try {
-		copyVoxelData();
-	}
-	catch(std::bad_alloc& e) {
-		Log::error("Fail to copy chunk data due out of memory problem: {}", e.what());
-		return false;
-	}
-	return true;
+void TerrainChunk::beginEdit() {
+	copyVoxelData();
 }
 
 void TerrainChunk::endEdit() noexcept {

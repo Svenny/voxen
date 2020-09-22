@@ -45,7 +45,7 @@ public:
 	uint32_t version() const noexcept { return m_version; }
 
 	// This methods must used before and after editing voxel data
-	bool beginEdit() noexcept;
+	void beginEdit();
 	void endEdit() noexcept;
 
 	Data &data() noexcept { return *m_data; };
@@ -61,5 +61,16 @@ private:
 	std::shared_ptr<Data> m_data;
 };
 
+struct TerrainChunkEditBlock {
+	TerrainChunkEditBlock(TerrainChunk& edited_chunk): chunk(edited_chunk) {
+		chunk.beginEdit();
+	}
+
+	~TerrainChunkEditBlock() {
+		chunk.endEdit();
+	}
+
+	TerrainChunk& chunk;
+};
 
 }
