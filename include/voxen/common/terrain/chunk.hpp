@@ -62,11 +62,14 @@ private:
 };
 
 struct TerrainChunkEditBlock {
+	TerrainChunkEditBlock(const TerrainChunkEditBlock&) = delete;
+	TerrainChunkEditBlock(TerrainChunkEditBlock&&) = delete;
+
 	TerrainChunkEditBlock(TerrainChunk& edited_chunk): chunk(edited_chunk) {
 		chunk.beginEdit();
 	}
 
-	~TerrainChunkEditBlock() {
+	~TerrainChunkEditBlock() noexcept {
 		chunk.endEdit();
 	}
 

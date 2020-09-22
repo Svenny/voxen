@@ -52,8 +52,6 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 
 	TerrainSurfaceBuilder::calcSurface(chunk.data(), chunk.data().surface);
 	}
-
-	chunk.endEdit();
 }
 
 }
