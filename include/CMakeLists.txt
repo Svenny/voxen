@@ -41,10 +41,13 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
 	include/voxen/common/terrain/generator.hpp
+	include/voxen/common/terrain/hermite_data.hpp
 	include/voxen/common/terrain/loader.hpp
+	include/voxen/common/terrain/qef_solver.hpp
 	include/voxen/common/terrain/seam.hpp
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
+	include/voxen/common/terrain/types.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
 	include/voxen/common/world_state.hpp
