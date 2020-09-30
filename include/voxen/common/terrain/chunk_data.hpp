@@ -25,6 +25,8 @@ public:
 	TerrainChunkPrimaryData &operator = (const TerrainChunkPrimaryData &) = default;
 	~TerrainChunkPrimaryData() = default;
 
+	std::array<voxel_t, 8> materialsOfCell(glm::uvec3 cell) const noexcept;
+
 	voxel_t voxels[GRID_VERTEX_COUNT][GRID_VERTEX_COUNT][GRID_VERTEX_COUNT];
 	HermiteDataStorage hermite_data_x, hermite_data_y, hermite_data_z;
 };
@@ -38,8 +40,7 @@ public:
 	TerrainChunkSecondaryData &operator = (const TerrainChunkSecondaryData &) = default;
 	~TerrainChunkSecondaryData() = default;
 
-	std::vector<TerrainChunkOctreeNode> octree_nodes;
-	std::vector<TerrainChunkOctreeLeaf> octree_leaves;
+	TerrainChunkOctree octree;
 	TerrainSurface surface;
 };
 
