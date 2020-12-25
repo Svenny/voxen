@@ -1,15 +1,13 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk.hpp>
+#include <voxen/common/terrain/chunk_data.hpp>
 
 namespace voxen
 {
 
 class TerrainSurfaceBuilder {
 public:
-	static void calcSurface(const TerrainChunk::Data& chunk_data, TerrainSurface& surface);
-private:
-	static double edgeOffset(double d1, double d2);
+	static void calcSurface(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output);
 };
 
 }

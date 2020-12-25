@@ -58,6 +58,17 @@ glm::ivec3 HermiteDataEntry::biggerEndpoint() const noexcept
 	return point;
 }
 
+bool HermiteDataEntry::operator == (const HermiteDataEntry &other) const noexcept
+{
+	return m_normal_x == other.m_normal_x && m_normal_z == other.m_normal_z &&
+		m_offset == other.m_offset &&
+		m_normal_y_sign == other.m_normal_y_sign &&
+		m_solid_endpoint == other.m_solid_endpoint &&
+		m_axis == other.m_axis &&
+		m_solid_voxel == other.m_solid_voxel &&
+		m_lesser_x == other.m_lesser_x && m_lesser_y == other.m_lesser_y && m_lesser_z == other.m_lesser_z;
+}
+
 // --- HermiteDataStorage ---
 
 bool HermiteDataStorage::entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept

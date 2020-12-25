@@ -46,6 +46,8 @@ public:
 	/// Returns true if the lesser endpoint is solid, false otherwise
 	bool isLesserEndpointSolid() const noexcept { return m_solid_endpoint == 0; }
 
+	bool operator == (const HermiteDataEntry &other) const noexcept;
+
 private:
 	/** \brief Surface normal in zero-crossing point
 
@@ -73,6 +75,7 @@ static_assert(sizeof(HermiteDataEntry) == 16, "16-byte Hermite data packing is b
 /** \brief Compressed storage of `HermiteDataEntry`s for a single axis
 */
 class HermiteDataStorage {
+public:
 	using iterator = std::vector<HermiteDataEntry>::iterator;
 	using const_iterator = std::vector<HermiteDataEntry>::const_iterator;
 	using size_type = std::vector<HermiteDataEntry>::size_type;
@@ -104,6 +107,10 @@ class HermiteDataStorage {
 	const_iterator end() const noexcept { return m_storage.end(); }
 	const_iterator cbegin() const noexcept { return m_storage.cbegin(); }
 	const_iterator cend() const noexcept { return m_storage.cend(); }
+
+	// Compare two Hermite data storages for contents equality.
+	// NOTE: VERY SLOW, use only when really needed (preferably for debug only).
+	bool operator == (const HermiteDataStorage &other) const noexcept { return m_storage == other.m_storage; }
 
 private:
 	/// Wrapped container

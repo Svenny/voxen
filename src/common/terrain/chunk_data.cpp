@@ -3,6 +3,14 @@
 namespace voxen
 {
 
+bool TerrainChunkPrimaryData::operator == (const TerrainChunkPrimaryData &other) const noexcept
+{
+	return voxels == other.voxels &&
+		hermite_data_x == other.hermite_data_x &&
+		hermite_data_y == other.hermite_data_y &&
+		hermite_data_z == other.hermite_data_z;
+}
+
 std::array<voxel_t, 8> TerrainChunkPrimaryData::materialsOfCell(glm::uvec3 cell) const noexcept
 {
 	// Voxels data - YXZ storage

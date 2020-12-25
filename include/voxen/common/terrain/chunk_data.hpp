@@ -18,6 +18,9 @@ public:
 	static constexpr inline uint32_t GRID_CELL_COUNT = 32;
 	static constexpr inline uint32_t GRID_VERTEX_COUNT = GRID_CELL_COUNT + 1;
 
+	using VoxelsArray = // 3D array with YXZ layout
+		std::array<std::array<std::array<voxel_t, GRID_VERTEX_COUNT>, GRID_VERTEX_COUNT>, GRID_VERTEX_COUNT>;
+
 	TerrainChunkPrimaryData() = default;
 	TerrainChunkPrimaryData(TerrainChunkPrimaryData &&) = default;
 	TerrainChunkPrimaryData(const TerrainChunkPrimaryData &) = default;
@@ -25,9 +28,13 @@ public:
 	TerrainChunkPrimaryData &operator = (const TerrainChunkPrimaryData &) = default;
 	~TerrainChunkPrimaryData() = default;
 
+	// Compare two primary data storages for contents equality.
+	// NOTE: VERY SLOW, use only when really needed (preferably for debug only).
+	bool operator == (const TerrainChunkPrimaryData &other) const noexcept;
+
 	std::array<voxel_t, 8> materialsOfCell(glm::uvec3 cell) const noexcept;
 
-	voxel_t voxels[GRID_VERTEX_COUNT][GRID_VERTEX_COUNT][GRID_VERTEX_COUNT];
+	VoxelsArray voxels;
 	HermiteDataStorage hermite_data_x, hermite_data_y, hermite_data_z;
 };
 
@@ -40,7 +47,9 @@ public:
 	TerrainChunkSecondaryData &operator = (const TerrainChunkSecondaryData &) = default;
 	~TerrainChunkSecondaryData() = default;
 
-	TerrainChunkOctree octree;
+	bool operator == (const TerrainChunkSecondaryData &other) const noexcept;
+
+	ChunkOctree octree;
 	TerrainSurface surface;
 };
 

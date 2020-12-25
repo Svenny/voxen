@@ -14,7 +14,7 @@ void TerrainSynchronizer::beginSyncSession()
 void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 {
 	const auto &header = chunk.header();
-	const auto &surface = chunk.data().surface;
+	const auto &surface = chunk.secondaryData().surface;
 	auto iter = m_chunk_gpu_data.find(header);
 
 	VkDeviceSize needed_vtx_size = surface.numVertices() * sizeof(TerrainSurfaceVertex);
