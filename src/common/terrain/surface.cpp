@@ -12,6 +12,12 @@ TerrainSurface::TerrainSurface(size_t reserve_vertices, size_t reserve_indices)
 	m_indices.reserve(reserve_indices);
 }
 
+void TerrainSurface::clear() noexcept
+{
+	m_vertices.clear();
+	m_indices.clear();
+}
+
 uint32_t TerrainSurface::addVertex(const TerrainSurfaceVertex &vertex)
 {
 	assert(m_vertices.size() <= std::numeric_limits<uint32_t>::max());

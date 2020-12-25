@@ -9,12 +9,6 @@
 namespace voxen
 {
 
-enum class Axis {
-	X,
-	Y,
-	Z
-};
-
 class TerrainSeam {
 public:
 	struct ChunkPair {

@@ -4,75 +4,86 @@
 #include <voxen/common/terrain/types.hpp>
 
 #include <array>
+#include <cassert>
 #include <vector>
 
 namespace voxen
 {
 
-struct TerrainChunkOctreeLeaf {
+struct ChunkOctreeLeaf;
+struct ChunkOctreeCell;
+
+struct ChunkOctreeNodeBase {
 	bool is_leaf;
 	uint8_t depth;
 
+	ChunkOctreeCell *castToCell() noexcept { assert(!is_leaf); return reinterpret_cast<ChunkOctreeCell *>(this); }
+	const ChunkOctreeCell *castToCell() const noexcept { assert(!is_leaf); return reinterpret_cast<const ChunkOctreeCell *>(this); }
+	ChunkOctreeLeaf *castToLeaf() noexcept { assert(is_leaf); return reinterpret_cast<ChunkOctreeLeaf *>(this); }
+	const ChunkOctreeLeaf *castToLeaf() const noexcept { assert(is_leaf); return reinterpret_cast<const ChunkOctreeLeaf *>(this); }
+};
+
+struct ChunkOctreeCell : public ChunkOctreeNodeBase {
+	uint32_t children_ids[8];
+};
+static_assert(sizeof(ChunkOctreeCell) == 36, "36-byte ChunkOctreeCell packing is broken");
+
+struct ChunkOctreeLeaf : public ChunkOctreeNodeBase {
 	glm::vec3 surface_vertex;
 	glm::vec3 surface_normal;
 	uint32_t surface_vertex_id;
 	std::array<voxel_t, 8> corners;
 	QefSolver3D::State qef_state;
 };
-static_assert(sizeof(TerrainChunkOctreeLeaf) == 96, "96-byte TerrainChunkOctreeLeaf packing is broken");
+static_assert(sizeof(ChunkOctreeLeaf) == 96, "96-byte ChunkOctreeLeaf packing is broken");
 
-struct TerrainChunkOctreeNode {
-	bool is_leaf;
-	uint8_t depth;
+// TODO (Svenny): remove diagnostics disabling
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+static_assert(offsetof(ChunkOctreeCell, is_leaf) == offsetof(ChunkOctreeLeaf, is_leaf),
+              "Dynamic ChunkOctree[Cell|Leaf] typing is broken");
+#pragma GCC diagnostic pop
 
-	uint8_t children_leafmask;
-	uint32_t children_ids[8];
-
-	bool isChildLeaf(int num) const noexcept { return (children_leafmask & (1 << num)) != 0; }
-};
-static_assert(sizeof(TerrainChunkOctreeNode) == 36, "36-byte TerrainChunkOctreeNode packing is broken");
-
-static_assert(offsetof(TerrainChunkOctreeLeaf, is_leaf) == offsetof(TerrainChunkOctreeNode, is_leaf),
-              "Dynamic TerrainChunkOctree[Leaf|Node] typing is broken");
-
-class TerrainChunkOctree {
+class ChunkOctree {
 public:
-	TerrainChunkOctree();
-	TerrainChunkOctree(TerrainChunkOctree &&) = default;
-	TerrainChunkOctree(const TerrainChunkOctree &) = default;
-	TerrainChunkOctree &operator = (TerrainChunkOctree &&) = default;
-	TerrainChunkOctree &operator = (const TerrainChunkOctree &) = default;
-	~TerrainChunkOctree() = default;
+	static constexpr uint32_t INVALID_NODE_ID = UINT32_MAX;
+	static constexpr uint32_t LEAF_ID_BIT = uint32_t(1) << uint32_t(31);
 
-	void generateFullTree(uint8_t depth);
+	ChunkOctree() = default;
+	ChunkOctree(ChunkOctree &&) = default;
+	ChunkOctree(const ChunkOctree &) = default;
+	ChunkOctree &operator = (ChunkOctree &&) = default;
+	ChunkOctree &operator = (const ChunkOctree &) = default;
+	~ChunkOctree() = default;
+
+	[[nodiscard]] std::pair<uint32_t, ChunkOctreeCell *> allocCell(uint8_t depth);
+	[[nodiscard]] std::pair<uint32_t, ChunkOctreeLeaf *> allocLeaf(uint8_t depth);
+	void freeNode(uint32_t idx);
 	void clear() noexcept;
 
-	TerrainChunkOctreeNode *subdivideLeaf(TerrainChunkOctreeLeaf *leaf);
+	ChunkOctreeNodeBase *idToPointer(uint32_t id) noexcept;
+	const ChunkOctreeNodeBase *idToPointer(uint32_t id) const noexcept;
 
-	bool isRootLeaf() const noexcept;
-	void *rootPointer() noexcept { return m_root_ptr; }
-	const void *rootPointer() const noexcept { return m_root_ptr; }
+	ChunkOctreeNodeBase *root() noexcept { return m_root_ptr; }
+	const ChunkOctreeNodeBase *root() const noexcept { return m_root_ptr; }
+	void setRoot(ChunkOctreeNodeBase *node) noexcept { m_root_ptr = node; }
+
+	static bool isCellId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) == 0; }
+	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
 
 private:
-	std::vector<TerrainChunkOctreeNode> m_nodes;
-	std::vector<TerrainChunkOctreeLeaf> m_leaves;
+	std::vector<ChunkOctreeCell> m_cells;
+	std::vector<ChunkOctreeLeaf> m_leaves;
 
-	std::vector<uint32_t> m_free_nodes;
+	std::vector<uint32_t> m_free_cells;
 	std::vector<uint32_t> m_free_leaves;
 
-	// Using `void *` because it may be either node or leaf
-	void *m_root_ptr = nullptr;
+	// May be either a cell or a leaf
+	ChunkOctreeNodeBase *m_root_ptr = nullptr;
 
-	std::pair<uint32_t, TerrainChunkOctreeNode *> allocNode(uint8_t depth);
-	void freeNode(uint32_t idx);
-	std::pair<uint32_t, TerrainChunkOctreeLeaf *> allocLeaf(uint8_t depth);
-	void freeLeaf(uint32_t idx);
-
-	void generateFullSubtree(TerrainChunkOctreeNode *node, uint8_t remaining_depth);
-
-	void assertIsNode(const TerrainChunkOctreeNode *ptr) const noexcept;
-	void assertIsLeaf(const TerrainChunkOctreeLeaf *ptr) const noexcept;
-	void assertIsNodeOrLeaf(const void *ptr) const noexcept;
+	void assertIsCell(const ChunkOctreeCell *ptr) const noexcept;
+	void assertIsLeaf(const ChunkOctreeLeaf *ptr) const noexcept;
+	void assertIsCellOrLeaf(const ChunkOctreeNodeBase *ptr) const noexcept;
 };
 
 }

@@ -24,6 +24,8 @@ public:
 	TerrainSurface &operator = (const TerrainSurface &) = default;
 	~TerrainSurface() = default;
 
+	void clear() noexcept;
+
 	// Add an entry to the end of vertex array and return its index
 	uint32_t addVertex(const TerrainSurfaceVertex &vertex);
 	// Add three indices making a triangle to the end of index array

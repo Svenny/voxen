@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/terrain/surface.hpp>
+#include <voxen/common/terrain/chunk_data.hpp>
 
 #include <memory>
 #include <cstdint>
@@ -21,18 +21,7 @@ using TerrainChunkCreateInfo = TerrainChunkHeader;
 
 class TerrainChunk {
 public:
-	static constexpr inline uint32_t SIZE = 33;
-	static constexpr inline uint32_t CELL_COUNT = SIZE-1;
-
-	using VoxelData = uint8_t[SIZE][SIZE][SIZE];
-	using VoxelSurfaceData = double[SIZE][SIZE][SIZE];
-	using VoxelGradientData = glm::vec3[SIZE][SIZE][SIZE];
-	struct Data {
-		VoxelData voxel_id;
-		VoxelSurfaceData value_id;
-		VoxelGradientData gradient_id;
-		TerrainSurface surface;
-	};
+	static constexpr inline uint32_t SIZE = TerrainChunkPrimaryData::GRID_CELL_COUNT;
 
 	explicit TerrainChunk(const TerrainChunkCreateInfo &info);
 	TerrainChunk(TerrainChunk &&) noexcept;
@@ -48,17 +37,27 @@ public:
 	void beginEdit();
 	void endEdit() noexcept;
 
-	Data &data() noexcept { return *m_data; };
-	const Data &data() const noexcept { return *m_data; }
-
-private:
 	void increaseVersion() noexcept;
 	void copyVoxelData();
 
+	glm::dvec3 worldToLocal(double x, double y, double z) const noexcept;
+	glm::dvec3 localToWorld(double x, double y, double z) const noexcept;
+
+	TerrainChunkPrimaryData &primaryData() noexcept { return *m_primary_data; }
+	const TerrainChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
+
+	TerrainChunkSecondaryData &secondaryData() noexcept { return *m_secondary_data; }
+	const TerrainChunkSecondaryData &secondaryData() const noexcept { return *m_secondary_data; }
+
 private:
 	const TerrainChunkHeader m_header;
+	// Assumed to be strictly increased after each change to chunk contents.
+	// Yes, this means all logic will break completely when it gets past UINT32_MAX
+	// (thus wrapping to zero), but we don't expect any real-world runtime to ever
+	// reach values that large (it's more than 4 billion edits of a single chunk after all).
 	uint32_t m_version;
-	std::shared_ptr<Data> m_data;
+	std::shared_ptr<TerrainChunkPrimaryData> m_primary_data;
+	std::shared_ptr<TerrainChunkSecondaryData> m_secondary_data;
 };
 
 struct TerrainChunkEditBlock {
