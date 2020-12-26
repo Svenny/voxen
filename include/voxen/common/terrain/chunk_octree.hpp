@@ -80,10 +80,6 @@ private:
 
 	// May be either a cell or a leaf
 	ChunkOctreeNodeBase *m_root_ptr = nullptr;
-
-	void assertIsCell(const ChunkOctreeCell *ptr) const noexcept;
-	void assertIsLeaf(const ChunkOctreeLeaf *ptr) const noexcept;
-	void assertIsCellOrLeaf(const ChunkOctreeNodeBase *ptr) const noexcept;
 };
 
 }

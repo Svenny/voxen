@@ -50,7 +50,10 @@ std::pair<uint32_t, ChunkOctreeLeaf *> ChunkOctree::allocLeaf(uint8_t depth)
 
 void ChunkOctree::freeNode(uint32_t id)
 {
-	assert(id != INVALID_NODE_ID);
+	if (id == INVALID_NODE_ID) {
+		return;
+	}
+
 	if (isCellId(id)) {
 		assert(id < m_cells.size());
 		m_free_cells.emplace_back(id);
@@ -92,25 +95,6 @@ const ChunkOctreeNodeBase *ChunkOctree::idToPointer(uint32_t id) const noexcept
 	} else {
 		return &m_leaves[id ^ LEAF_ID_BIT];
 	}
-}
-
-void ChunkOctree::assertIsCell(const ChunkOctreeCell *ptr) const noexcept
-{
-	(void)ptr; // For builds with disabled asserts
-	assert(ptr >= m_cells.data() && ptr < m_cells.data() + m_cells.size() && !ptr->is_leaf);
-}
-
-void ChunkOctree::assertIsLeaf(const ChunkOctreeLeaf *ptr) const noexcept
-{
-	(void)ptr; // For builds with disabled asserts
-	assert(ptr >= m_leaves.data() && ptr < m_leaves.data() + m_leaves.size() && ptr->is_leaf);
-}
-
-void ChunkOctree::assertIsCellOrLeaf(const ChunkOctreeNodeBase *ptr) const noexcept
-{
-	(void)ptr; // For builds with disabled asserts
-	assert((ptr >= m_cells.data() && ptr < m_cells.data() + m_cells.size()) ||
-	       (ptr >= m_leaves.data() && ptr < m_leaves.data() + m_leaves.size()));
 }
 
 }
