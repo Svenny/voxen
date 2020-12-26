@@ -85,15 +85,15 @@ void TerrainGenerator::generate(TerrainChunk &chunk)
 	const TerrainChunkHeader &header = chunk.header();
 	Log::trace("Generating chunk at ({}, {}, {})(x{})", header.base_x, header.base_y, header.base_z, header.scale);
 
-	TerrainChunkPrimaryData &primary_data = chunk.primaryData();
-	auto &voxels = primary_data.voxels;
-	// Temporary storage for SDF values, we will need it to find zero crossings
-	auto p_values = std::make_unique<ValuesArray>();
-	ValuesArray &values = *p_values;
-
 	// This block marks code covered by `TerrainChunkEditBlock`
 	{
 		TerrainChunkEditBlock edit_block(chunk);
+
+		TerrainChunkPrimaryData &primary_data = *edit_block.primary_data;
+		auto &voxels = primary_data.voxels;
+		// Temporary storage for SDF values, we will need it to find zero crossings
+		auto p_values = std::make_unique<ValuesArray>();
+		ValuesArray &values = *p_values;
 
 		auto f = [](double x, double y, double z) {
 			return y + 5.0 * (std::sin(0.05 * x) + std::cos(0.05 * z));

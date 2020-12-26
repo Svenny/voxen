@@ -34,7 +34,7 @@ public:
 	uint32_t version() const noexcept { return m_version; }
 
 	// This methods must used before and after editing voxel data
-	void beginEdit();
+	std::pair<TerrainChunkPrimaryData &, TerrainChunkSecondaryData &> beginEdit();
 	void endEdit() noexcept;
 
 	void increaseVersion() noexcept;
@@ -43,10 +43,8 @@ public:
 	glm::dvec3 worldToLocal(double x, double y, double z) const noexcept;
 	glm::dvec3 localToWorld(double x, double y, double z) const noexcept;
 
-	TerrainChunkPrimaryData &primaryData() noexcept { return *m_primary_data; }
+	// Only `const` getters. Use `beginEdit()`/`endEdit()` to obtain non-const references.
 	const TerrainChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
-
-	TerrainChunkSecondaryData &secondaryData() noexcept { return *m_secondary_data; }
 	const TerrainChunkSecondaryData &secondaryData() const noexcept { return *m_secondary_data; }
 
 private:
@@ -61,18 +59,26 @@ private:
 };
 
 struct TerrainChunkEditBlock {
-	TerrainChunkEditBlock(const TerrainChunkEditBlock&) = delete;
-	TerrainChunkEditBlock(TerrainChunkEditBlock&&) = delete;
+	TerrainChunkEditBlock(TerrainChunkEditBlock &&) = delete;
+	TerrainChunkEditBlock(const TerrainChunkEditBlock &) = delete;
+	TerrainChunkEditBlock &operator = (TerrainChunkEditBlock &&) = delete;
+	TerrainChunkEditBlock &operator = (const TerrainChunkEditBlock &) = delete;
 
-	TerrainChunkEditBlock(TerrainChunk& edited_chunk): chunk(edited_chunk) {
-		chunk.beginEdit();
+	explicit TerrainChunkEditBlock(TerrainChunk &edited_chunk) : chunk(edited_chunk)
+	{
+		auto[primary, secondary] = chunk.beginEdit();
+		primary_data = &primary;
+		secondary_data = &secondary;
 	}
 
-	~TerrainChunkEditBlock() noexcept {
+	~TerrainChunkEditBlock() noexcept
+	{
 		chunk.endEdit();
 	}
 
-	TerrainChunk& chunk;
+	TerrainChunk &chunk;
+	TerrainChunkPrimaryData *primary_data = nullptr;
+	TerrainChunkSecondaryData *secondary_data = nullptr;
 };
 
 }
