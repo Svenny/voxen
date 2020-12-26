@@ -1,41 +1,13 @@
 #include <voxen/common/terrain/chunk.hpp>
 
-#include <voxen/common/terrain/surface_builder.hpp>
-#include <voxen/util/hash.hpp>
-#include <voxen/util/log.hpp>
-
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <limits>
 #include <cassert>
+#include <limits>
 
 namespace voxen
 {
 
-bool TerrainChunkHeader::operator== (const TerrainChunkHeader &other) const noexcept {
-	return base_x == other.base_x && base_y == other.base_y && base_z == other.base_z && scale == other.scale;
-}
-
-uint64_t TerrainChunkHeader::hash() const noexcept
-{
-#pragma pack(push, 1)
-	struct {
-		uint64_t u64[3];
-		uint32_t u32;
-	} data;
-#pragma pack(pop)
-
-	data.u64[0] = static_cast<uint64_t>(base_x);
-	data.u64[1] = static_cast<uint64_t>(base_y);
-	data.u64[2] = static_cast<uint64_t>(base_z);
-	data.u32 = (scale);
-
-	return hashFnv1a(&data, sizeof(data));
-}
-
-TerrainChunk::TerrainChunk(const TerrainChunkCreateInfo &info)
-	: m_header(info), m_version(0U),
+TerrainChunk::TerrainChunk(const TerrainChunkHeader &header)
+	: m_header(header), m_version(0U),
 	m_primary_data(new TerrainChunkPrimaryData), m_secondary_data(new TerrainChunkSecondaryData)
 {
 }
@@ -84,10 +56,6 @@ TerrainChunk &TerrainChunk::operator = (const TerrainChunk &other)
 	return *this;
 }
 
-TerrainChunk::~TerrainChunk() noexcept
-{
-}
-
 std::pair<TerrainChunkPrimaryData &, TerrainChunkSecondaryData &> TerrainChunk::beginEdit()
 {
 	copyVoxelData();
@@ -97,10 +65,6 @@ std::pair<TerrainChunkPrimaryData &, TerrainChunkSecondaryData &> TerrainChunk::
 void TerrainChunk::endEdit() noexcept
 {
 	increaseVersion();
-	// HACK: remove this
-	// TODO: World should do this
-	// This also violates `noexcept` guarantee
-	TerrainSurfaceBuilder::calcSurface(*m_primary_data, *m_secondary_data);
 }
 
 void TerrainChunk::increaseVersion() noexcept
@@ -120,22 +84,6 @@ void TerrainChunk::copyVoxelData()
 	if (m_secondary_data.use_count() != 1) {
 		m_secondary_data = std::shared_ptr<TerrainChunkSecondaryData>(new TerrainChunkSecondaryData(*m_secondary_data));
 	}
-}
-
-glm::dvec3 TerrainChunk::worldToLocal(double x, double y, double z) const noexcept
-{
-	glm::dvec3 p(x, y, z);
-	p -= glm::dvec3(m_header.base_x, m_header.base_y, m_header.base_z);
-	p /= double(m_header.scale);
-	return p;
-}
-
-glm::dvec3 TerrainChunk::localToWorld(double x, double y, double z) const noexcept
-{
-	glm::dvec3 p(x, y, z);
-	p *= double(m_header.scale);
-	p += glm::dvec3(m_header.base_x, m_header.base_y, m_header.base_z);
-	return p;
 }
 
 }

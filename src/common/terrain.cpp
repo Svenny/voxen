@@ -1,6 +1,7 @@
 #include <voxen/common/terrain.hpp>
 
 #include <voxen/common/terrain/cache.hpp>
+#include <voxen/common/terrain/surface_builder.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -29,13 +30,17 @@ struct TerrainOctreeNode {
 		for (int i = 0; i < 8; i++)
 			m_children[i] = nullptr;
 
-		TerrainChunkCreateInfo info;
-		info.scale = m_size / TerrainChunk::SIZE;
-		info.base_x = m_base_x;
-		info.base_y = m_base_y;
-		info.base_z = m_base_z;
-		m_chunk = new TerrainChunk(info);
-		loader.load(*m_chunk);
+		TerrainChunkHeader header;
+		header.scale = m_size / TerrainChunk::SIZE;
+		header.base_x = m_base_x;
+		header.base_y = m_base_y;
+		header.base_z = m_base_z;
+		m_chunk = new TerrainChunk(header);
+
+		auto[primary, secondary] = m_chunk->beginEdit();
+		loader.load(header, primary);
+		TerrainSurfaceBuilder::calcSurface(primary, secondary);
+		m_chunk->endEdit();
 	}
 
 	TerrainOctreeNode(TerrainOctreeNode &&) = delete;
@@ -124,13 +129,17 @@ struct TerrainOctreeNode {
 			m_children[i] = nullptr;
 		}
 		if (!m_chunk) {
-			TerrainChunkCreateInfo info;
-			info.scale = m_size / TerrainChunk::SIZE;
-			info.base_x = m_base_x;
-			info.base_y = m_base_y;
-			info.base_z = m_base_z;
-			m_chunk = new TerrainChunk(info);
-			loader.load(*m_chunk);
+			TerrainChunkHeader header;
+			header.scale = m_size / TerrainChunk::SIZE;
+			header.base_x = m_base_x;
+			header.base_y = m_base_y;
+			header.base_z = m_base_z;
+			m_chunk = new TerrainChunk(header);
+
+			auto[primary, secondary] = m_chunk->beginEdit();
+			loader.load(header, primary);
+			TerrainSurfaceBuilder::calcSurface(primary, secondary);
+			m_chunk->endEdit();
 		}
 		is_collapsed = true;
 	}

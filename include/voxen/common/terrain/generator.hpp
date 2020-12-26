@@ -1,6 +1,7 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk.hpp>
+#include <voxen/common/terrain/chunk_data.hpp>
+#include <voxen/common/terrain/chunk_header.hpp>
 
 namespace voxen
 {
@@ -8,7 +9,7 @@ namespace voxen
 class TerrainGenerator {
 public:
 
-	void generate(TerrainChunk &chunk);
+	void generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output);
 private:
 
 };

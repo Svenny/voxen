@@ -34,6 +34,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
 	src/common/terrain/chunk_data.cpp
+	src/common/terrain/chunk_header.cpp
 	src/common/terrain/chunk_octree.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/hermite_data.cpp

@@ -14,9 +14,9 @@ TerrainChunkCache::TerrainChunkCache(size_t max_chunks)
 	Log::debug("Creating terrain chunk cache for {} max chunks - using {} sets", max_chunks, m_sets.size());
 }
 
-bool TerrainChunkCache::tryFill(TerrainChunk &chunk)
+bool TerrainChunkCache::tryFill(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output)
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(chunk);
+	auto[set_id, chunk_pos_in_set] = findSetAndIndex(header);
 	if (chunk_pos_in_set == SET_SIZE) {
 		// Not found
 		return false;
@@ -25,8 +25,8 @@ bool TerrainChunkCache::tryFill(TerrainChunk &chunk)
 	Set &set = m_sets[set_id];
 	auto iter = set.begin() + chunk_pos_in_set;
 	std::rotate(iter, iter + 1, set.end());
-	// Fill the chunk from the found entry
-	chunk = *(set.back().chunk);
+	// Fill the data from the found entry
+	output = set.back().chunk->primaryData();
 	return true;
 }
 
@@ -62,24 +62,16 @@ void TerrainChunkCache::insert(const TerrainChunk &chunk)
 	std::rotate(set.begin(), set.begin() + 1, set.end());
 }
 
-void TerrainChunkCache::invalidate(const TerrainChunk &chunk) noexcept
+std::pair<size_t, size_t> TerrainChunkCache::findSetAndIndex(const TerrainChunkHeader &header) const noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(chunk);
-
-	if (chunk_pos_in_set != SET_SIZE)
-		m_sets[set_id][chunk_pos_in_set].clear();
-}
-
-std::pair<size_t, size_t> TerrainChunkCache::findSetAndIndex(const TerrainChunk &chunk) const noexcept
-{
-	const size_t set_id = chunk.header().hash() % m_sets.size();
+	const size_t set_id = header.hash() % m_sets.size();
 	const Set &set = m_sets[set_id];
 
 	for (size_t i = 0; i < SET_SIZE; i++) {
 		const auto &entry = set[i];
 		if (!entry.chunk)
 			continue;
-		if (entry.chunk->header() == chunk.header())
+		if (entry.chunk->header() == header)
 			return { set_id, i };
 	}
 	// Not found

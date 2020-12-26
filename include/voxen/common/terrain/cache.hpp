@@ -18,9 +18,9 @@ public:
 	TerrainChunkCache &operator = (const TerrainChunkCache &) = delete;
 	~TerrainChunkCache() = default;
 
-	bool tryFill(TerrainChunk &chunk);
+	bool tryFill(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output);
 	void insert(const TerrainChunk &chunk);
-	void invalidate(const TerrainChunk &chunk) noexcept;
+
 private:
 	struct Entry {
 		TerrainChunk *chunk = nullptr;
@@ -40,7 +40,7 @@ private:
 
 	extras::dyn_array<Set> m_sets;
 
-	std::pair<size_t, size_t> findSetAndIndex(const TerrainChunk &chunk) const noexcept;
+	std::pair<size_t, size_t> findSetAndIndex(const TerrainChunkHeader &header) const noexcept;
 };
 
 }
