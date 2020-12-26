@@ -31,7 +31,6 @@ void TerrainLoader::load(TerrainChunk &chunk)
 	// TODO: support loading from disk
 	m_generator.generate(chunk);
 	m_cache.insert(chunk);
-
 }
 
 void TerrainLoader::unload(TerrainChunk &chunk)

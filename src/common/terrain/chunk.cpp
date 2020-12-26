@@ -88,9 +88,10 @@ TerrainChunk::~TerrainChunk() noexcept
 {
 }
 
-void TerrainChunk::beginEdit()
+std::pair<TerrainChunkPrimaryData &, TerrainChunkSecondaryData &> TerrainChunk::beginEdit()
 {
 	copyVoxelData();
+	return { *m_primary_data, *m_secondary_data };
 }
 
 void TerrainChunk::endEdit() noexcept
@@ -99,7 +100,7 @@ void TerrainChunk::endEdit() noexcept
 	// HACK: remove this
 	// TODO: World should do this
 	// This also violates `noexcept` guarantee
-	TerrainSurfaceBuilder::calcSurface(primaryData(), secondaryData());
+	TerrainSurfaceBuilder::calcSurface(*m_primary_data, *m_secondary_data);
 }
 
 void TerrainChunk::increaseVersion() noexcept
