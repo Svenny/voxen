@@ -220,7 +220,6 @@ static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, Terrain
 		const glm::vec3 &vertex = leaf->surface_vertex;
 		const glm::vec3 &normal = leaf->surface_normal;
 		// TODO (Svenny): add material selection
-		// TODO (Svenny): skip homogenous (all-solid or all-air) leaves
 		leaf->surface_vertex_id = surface.addVertex({ vertex, normal });
 	} else {
 		ChunkOctreeCell *cell = node->castToCell();
@@ -529,8 +528,13 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	}
 
 	// All collapse safety checks passed, this node is now definitely leaf
-	auto[id, leaf] = args.octree.allocLeaf(depth);
 
+	// Free children which are not needed anymore
+	for (int i = 0; i < 8; i++) {
+		args.octree.freeNode(children_ids[i]);
+	}
+
+	auto[id, leaf] = args.octree.allocLeaf(depth);
 	leaf->surface_vertex = surface_vertex;
 	leaf->surface_normal = glm::normalize(avg_normal);
 	leaf->corners = corners;
