@@ -1,5 +1,6 @@
 #include <voxen/common/terrain/surface_builder.hpp>
 
+#include <voxen/common/terrain/octree_tables.hpp>
 #include <voxen/util/log.hpp>
 
 #include <algorithm>
@@ -9,37 +10,10 @@
 namespace voxen
 {
 
-static const glm::ivec3 kCellCornerOffset[8] = {
-	{ 0, 0, 0 }, { 0, 0, 1 }, { 1, 0, 0 }, { 1, 0, 1 },
-	{ 0, 1, 0 }, { 0, 1, 1 }, { 1, 1, 0 }, { 1, 1, 1 }
-};
-
-/* Quadruples of node children sharing an edge along some axis. First dimension - axis,
- second dimension - quadruple number, third dimension - children ID's list. */
-constexpr static int SUBEDGE_SHARING_TABLE[3][2][4] = {
-	{ { 0, 4, 5, 1 }, { 2, 6, 7, 3 } }, // X
-	{ { 0, 1, 3, 2 }, { 4, 5, 7, 6 } }, // Y
-	{ { 0, 2, 6, 4 }, { 1, 3, 7, 5 } }  // Z
-};
-
 template<int D>
 static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, TerrainSurface &surface)
 {
-	/* For a quadruple of nodes sharing an edge along some axis there are two quadruples
-	 of their children nodes sharing the same edge. This table maps node to its child. First
-	 dimension - axis, second dimension - position of child. Two values - parent number (in
-	 edgeProc's numbering) and its child number (in octree numbering). Is it better understandable
-	 by looking at the code? */
-	constexpr int subTable[3][8][2] = {
-		{ { 0, 5 }, { 3, 4 }, { 0, 7 }, { 3, 6 },
-		  { 1, 1 }, { 2, 0 }, { 1, 3 }, { 2, 2 } }, // X
-		{ { 0, 3 }, { 1, 2 }, { 3, 1 }, { 2, 0 },
-		  { 0, 7 }, { 1, 6 }, { 3, 5 }, { 2, 4 } }, // Y
-		{ { 0, 6 }, { 0, 7 }, { 1, 4 }, { 1, 5 },
-		  { 3, 2 }, { 3, 3 }, { 2, 0 }, { 2, 1 } }  // Z
-	};
-	// Almost the same as above
-	constexpr int cornersTable[3][4][2] = {
+	constexpr int CORNERS_TABLE[3][4][2] = {
 		{ { 5, 7 }, { 1, 3 }, { 0, 2 }, { 4, 6 } }, // X
 		{ { 3, 7 }, { 2, 6 }, { 0, 4 }, { 1, 5 } }, // Y
 		{ { 6, 7 }, { 4, 5 }, { 0, 1 }, { 2, 3 } }  // Z
@@ -54,10 +28,10 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 	const ChunkOctreeNodeBase *sub[8];
 	bool all_leaves = true;
 	for (int i = 0; i < 8; i++) {
-		const ChunkOctreeNodeBase *n = nodes[subTable[D][i][0]];
+		const ChunkOctreeNodeBase *n = nodes[EDGE_PROC_RECURSION_TABLE[D][i][0]];
 		if (!n->is_leaf) {
 			const ChunkOctreeCell *cell = n->castToCell();
-			sub[i] = octree.idToPointer(cell->children_ids[subTable[D][i][1]]);
+			sub[i] = octree.idToPointer(cell->children_ids[EDGE_PROC_RECURSION_TABLE[D][i][1]]);
 			all_leaves = false;
 		}
 		else sub[i] = n;
@@ -87,8 +61,8 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 	for (int i = 0; i < 4; i++) {
 		if (leaves[i]->depth > max_depth) {
 			max_depth = leaves[i]->depth;
-			mat1 = leaves[i]->corners[cornersTable[D][i][0]];
-			mat2 = leaves[i]->corners[cornersTable[D][i][1]];
+			mat1 = leaves[i]->corners[CORNERS_TABLE[D][i][0]];
+			mat2 = leaves[i]->corners[CORNERS_TABLE[D][i][1]];
 		}
 	}
 	if (mat1 == mat2 || (mat1 != 0 && mat2 != 0)) {
@@ -111,26 +85,9 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 	}
 }
 
-/* Pairs of node children sharing a face along some axis. First dimension - axis,
- second dimension - pair number, third dimension - children ID's list. */
-constexpr static int SUBFACE_SHARING_TABLE[3][4][2] = {
-	{ { 0, 2 }, { 4, 6 }, { 5, 7 }, { 1, 3 } }, // X
-	{ { 0, 4 }, { 1, 5 }, { 3, 7 }, { 2, 6 } }, // Y
-	{ { 0, 1 }, { 2, 3 }, { 6, 7 }, { 4, 5 } }  // Z
-};
-
 template<int D>
 static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, TerrainSurface &surface)
 {
-	constexpr int subTable[3][8][2] = {
-		{ { 0, 2 }, { 0, 3 }, { 1, 0 }, { 1, 1 },
-		  { 0, 6 }, { 0, 7 }, { 1, 4 }, { 1, 5 } }, // X
-		{ { 0, 4 }, { 0, 5 }, { 0, 6 }, { 0, 7 },
-		  { 1, 0 }, { 1, 1 }, { 1, 2 }, { 1, 3 } }, // Y
-		{ { 0, 1 }, { 1, 0 }, { 0, 3 }, { 1, 2 },
-		  { 0, 5 }, { 1, 4 }, { 0, 7 }, { 1, 6 } }  // Z
-	};
-
 	if (!nodes[0] || !nodes[1]) {
 		// No valid lowest quadruples can be generated
 		// from this pair if at least one node doesn't exist
@@ -140,10 +97,10 @@ static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const Chu
 	const ChunkOctreeNodeBase *sub[8];
 	bool has_cells = false;
 	for (int i = 0; i < 8; i++) {
-		const ChunkOctreeNodeBase *n = nodes[subTable[D][i][0]];
+		const ChunkOctreeNodeBase *n = nodes[FACE_PROC_RECURSION_TABLE[D][i][0]];
 		if (!n->is_leaf) {
 			const ChunkOctreeCell *cell = n->castToCell();
-			sub[i] = octree.idToPointer(cell->children_ids[subTable[D][i][1]]);
+			sub[i] = octree.idToPointer(cell->children_ids[FACE_PROC_RECURSION_TABLE[D][i][1]]);
 			has_cells = true;
 		}
 		else sub[i] = n;
@@ -281,7 +238,7 @@ static std::pair<uint32_t, ChunkOctreeLeaf *>
 				continue;
 
 			has_edges = true;
-			auto edge_pos = min_corner + kCellCornerOffset[edge_table[dim][i][0]];
+			auto edge_pos = min_corner + CELL_CORNER_OFFSET_TABLE[edge_table[dim][i][0]];
 			auto iter = storage.find(edge_pos.x, edge_pos.y, edge_pos.z);
 			assert(iter != storage.end());
 
@@ -341,7 +298,7 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 	// Construct corners sign mask in MC vertex ordering
 	uint32_t mask = 0;
 	for (int i = 0; i < 8; i++) {
-		auto pos = 2 * kCellCornerOffset[i];
+		auto pos = 2 * CELL_CORNER_OFFSET_TABLE[i];
 		voxel_t mat = mats[pos.y][pos.x][pos.z];
 		if (mat != 0)
 			mask |= uint32_t(1 << DC_TO_MC[i]);
@@ -356,7 +313,7 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 		uint32_t submask = 0;
 		// Same as with corners check above
 		for (int j = 0; j < 8; j++) {
-			auto pos = kCellCornerOffset[i] + kCellCornerOffset[j];
+			auto pos = CELL_CORNER_OFFSET_TABLE[i] + CELL_CORNER_OFFSET_TABLE[j];
 			voxel_t mat = mats[pos.y][pos.x][pos.z];
 			if (mat != 0)
 				submask |= uint32_t(1 << DC_TO_MC[j]);
@@ -396,7 +353,7 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 	// Check cube midpoint sign (it must be equal to either cube corner)
 	voxel_t mat = mats[1][1][1];
 	for (int i = 0; i < 8; i++) {
-		auto pos = 2 * kCellCornerOffset[i];
+		auto pos = 2 * CELL_CORNER_OFFSET_TABLE[i];
 		if (mat == mats[pos.y][pos.x][pos.z]) {
 			// All checks passed, this topology is safe to collapse
 			return true;
@@ -421,7 +378,7 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 
 	const int32_t child_size = size / 2;
 	for (int i = 0; i < 8; i++) {
-		glm::ivec3 child_min_corner = min_corner + child_size * kCellCornerOffset[i];
+		glm::ivec3 child_min_corner = min_corner + child_size * CELL_CORNER_OFFSET_TABLE[i];
 		auto[child_id, child_ptr] = buildNode(child_min_corner, child_size, depth + 1, args);
 
 		children_ids[i] = child_id;
@@ -486,7 +443,7 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 		}
 		ChunkOctreeLeaf *leaf = children_ptrs[i]->castToLeaf();
 		for (int j = 0; j < 8; j++) {
-			auto offset = kCellCornerOffset[i] + kCellCornerOffset[j];
+			auto offset = CELL_CORNER_OFFSET_TABLE[i] + CELL_CORNER_OFFSET_TABLE[j];
 			mats[offset.y][offset.x][offset.z] = leaf->corners[j];
 		}
 	}
@@ -499,7 +456,7 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	// be needed if we finally decide to collapse children.
 	std::array<voxel_t, 8> corners;
 	for (int i = 0; i < 8; i++) {
-		auto offset = 2 * kCellCornerOffset[i];
+		auto offset = 2 * CELL_CORNER_OFFSET_TABLE[i];
 		corners[i] = mats[offset.y][offset.x][offset.z];
 	}
 

@@ -45,6 +45,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/generator.hpp
 	include/voxen/common/terrain/hermite_data.hpp
 	include/voxen/common/terrain/loader.hpp
+	include/voxen/common/terrain/octree_tables.hpp
 	include/voxen/common/terrain/qef_solver.hpp
 	include/voxen/common/terrain/seam.hpp
 	include/voxen/common/terrain/surface.hpp
