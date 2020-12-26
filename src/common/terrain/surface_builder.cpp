@@ -372,7 +372,6 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	}
 
 	uint32_t children_ids[8];
-	ChunkOctreeNodeBase *children_ptrs[8];
 	bool has_children = false;
 	bool has_child_cell = false;
 
@@ -382,7 +381,6 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 		auto[child_id, child_ptr] = buildNode(child_min_corner, child_size, depth + 1, args);
 
 		children_ids[i] = child_id;
-		children_ptrs[i] = child_ptr;
 
 		if (child_ptr) {
 			has_children = true;
@@ -409,6 +407,13 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	if (has_child_cell) {
 		// We can't do any simplification if there is a least one non-leaf child
 		return makeCell();
+	}
+
+	// We cannot obtain pointers in the above loop as we're calling
+	// `buildNode` at the same time which can invalidate pointers
+	ChunkOctreeNodeBase *children_ptrs[8];
+	for (int i = 0; i < 8; i++) {
+		children_ptrs[i] = args.octree.idToPointer(children_ids[i]);
 	}
 
 	// All children which are present are guaranteed to be leaves.
@@ -516,13 +521,13 @@ void TerrainSurfaceBuilder::calcSurface(const TerrainChunkPrimaryData &input, Te
 		.epsilon = 0.01f
 	};
 
-	auto[_, root] = buildNode(glm::ivec3(0), TerrainChunkPrimaryData::GRID_CELL_COUNT, 0, args);
+	auto[root_id, root] = buildNode(glm::ivec3(0), TerrainChunkPrimaryData::GRID_CELL_COUNT, 0, args);
 	if (!root) {
 		// Simplified to nothing?
 		return;
 	}
 
-	octree.setRoot(root);
+	octree.setRoot(root_id);
 	makeVertices(root, octree, surface);
 	cellProc(root, octree, surface);
 }

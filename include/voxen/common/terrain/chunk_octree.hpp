@@ -61,12 +61,12 @@ public:
 	void freeNode(uint32_t idx);
 	void clear() noexcept;
 
+	// WARNING: all node pointers are invalidated after calling `allocCell` or `allocLeaf`
 	ChunkOctreeNodeBase *idToPointer(uint32_t id) noexcept;
 	const ChunkOctreeNodeBase *idToPointer(uint32_t id) const noexcept;
 
-	ChunkOctreeNodeBase *root() noexcept { return m_root_ptr; }
-	const ChunkOctreeNodeBase *root() const noexcept { return m_root_ptr; }
-	void setRoot(ChunkOctreeNodeBase *node) noexcept { m_root_ptr = node; }
+	uint32_t root() const noexcept { return m_root_id; }
+	void setRoot(uint32_t id) noexcept { m_root_id = id; }
 
 	static bool isCellId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) == 0; }
 	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
@@ -78,8 +78,7 @@ private:
 	std::vector<uint32_t> m_free_cells;
 	std::vector<uint32_t> m_free_leaves;
 
-	// May be either a cell or a leaf
-	ChunkOctreeNodeBase *m_root_ptr = nullptr;
+	uint32_t m_root_id = INVALID_NODE_ID;
 };
 
 }

@@ -70,7 +70,7 @@ void ChunkOctree::clear() noexcept
 	m_leaves.clear();
 	m_free_cells.clear();
 	m_free_leaves.clear();
-	m_root_ptr = nullptr;
+	m_root_id = INVALID_NODE_ID;
 }
 
 ChunkOctreeNodeBase *ChunkOctree::idToPointer(uint32_t id) noexcept
