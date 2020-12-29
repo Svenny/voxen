@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/util/log.hpp>
 
+#include <cstddef>
 #include <malloc.h>
 
 namespace voxen::client
@@ -21,8 +22,8 @@ VulkanException::VulkanException(VkResult result, const char *api, const std::ex
 }
 
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,
-                                    VkSystemAllocationScope scope) noexcept {
-	(void)scope;
+                                    VkSystemAllocationScope /*scope*/) noexcept
+{
 	void *ptr = aligned_alloc(align, size);
 	if (!ptr) {
 		Log::warn("Vulkan code has ran out of memory!");
@@ -36,7 +37,8 @@ static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,
 	return ptr;
 }
 
-static void VKAPI_PTR vulkanFree(void *user_data, void *ptr) noexcept {
+static void VKAPI_PTR vulkanFree(void *user_data, void *ptr) noexcept
+{
 	if (user_data) {
 		size_t sz = malloc_usable_size(ptr);
 		std::atomic_size_t *allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
@@ -46,34 +48,45 @@ static void VKAPI_PTR vulkanFree(void *user_data, void *ptr) noexcept {
 }
 
 static void *VKAPI_PTR vulkanRealloc(void *user_data, void *original, size_t size, size_t align,
-                                     VkSystemAllocationScope scope) noexcept {
-	(void)scope;
+                                     VkSystemAllocationScope /*scope*/) noexcept
+{
 	if (size == 0) {
 		vulkanFree(user_data, original);
 		return nullptr;
 	}
-	// `realloc` does not guarantee preserving alignment from `aligned_alloc`.
-	// We need to either implement some kind of `aligned_realloc` or to just resort
-	// to `aligned_alloc + memcpy + free` scheme.
-	void *ptr = aligned_alloc(align, size);
-	if (!ptr) {
+
+	size_t old_sz = malloc_usable_size(original);
+	void *new_ptr;
+
+	if (align <= alignof(std::max_align_t)) {
+		// We can rely on basic alignment guarantee of `realloc`
+		new_ptr = realloc(original, size);
+	} else {
+		// We have to resort to `aligned_alloc+memcpy+free` scheme
+		new_ptr = aligned_alloc(align, size);
+		if (new_ptr) {
+			memcpy(new_ptr, original, std::min(old_sz, size));
+			free(original);
+		}
+	}
+
+	if (!new_ptr) {
 		Log::warn("Vulkan code has ran out of memory!");
 		return nullptr;
 	}
-	size_t old_sz = malloc_usable_size(original);
-	size_t new_sz = malloc_usable_size(ptr);
-	if (original)
-		memcpy(ptr, original, std::min(old_sz, new_sz));
+
+	size_t new_sz = malloc_usable_size(new_ptr);
 	if (user_data) {
 		std::atomic_size_t *allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
 		allocated->fetch_add(new_sz - old_sz);
 	}
-	return ptr;
+	return new_ptr;
 }
 
 VulkanHostAllocator VulkanHostAllocator::g_instance;
 
-VulkanHostAllocator::VulkanHostAllocator() : m_allocated(0) {
+VulkanHostAllocator::VulkanHostAllocator() noexcept : m_allocated(0)
+{
 	m_callbacks.pUserData = &m_allocated;
 	m_callbacks.pfnAllocation = vulkanMalloc;
 	m_callbacks.pfnReallocation = vulkanRealloc;
@@ -82,7 +95,8 @@ VulkanHostAllocator::VulkanHostAllocator() : m_allocated(0) {
 	m_callbacks.pfnInternalFree = nullptr;
 }
 
-VulkanHostAllocator::~VulkanHostAllocator() {
+VulkanHostAllocator::~VulkanHostAllocator() noexcept
+{
 	size_t leftover = m_allocated.load();
 	if (leftover != 0)
 		Log::warn("Vulkan code has memory leak! Approx. {} bytes left over", leftover);

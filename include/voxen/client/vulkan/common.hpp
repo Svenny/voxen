@@ -29,12 +29,17 @@ protected:
 
 class VulkanHostAllocator {
 public:
-	VulkanHostAllocator();
-	~VulkanHostAllocator();
+	VulkanHostAllocator() noexcept;
+	VulkanHostAllocator(VulkanHostAllocator &&) = delete;
+	VulkanHostAllocator(const VulkanHostAllocator &) = delete;
+	VulkanHostAllocator &operator = (VulkanHostAllocator &&) = delete;
+	VulkanHostAllocator &operator = (const VulkanHostAllocator &) = delete;
+	~VulkanHostAllocator() noexcept;
 
 	static VulkanHostAllocator &instance() noexcept { return g_instance; }
 	static const VkAllocationCallbacks *callbacks() noexcept { return &g_instance.m_callbacks; }
 	static size_t allocated() noexcept { return g_instance.m_allocated.load(); }
+
 private:
 	static VulkanHostAllocator g_instance;
 
