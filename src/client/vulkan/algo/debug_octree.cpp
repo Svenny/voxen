@@ -1,5 +1,6 @@
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
 
+#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -41,7 +42,7 @@ AlgoDebugOctree::AlgoDebugOctree() :
 	Log::debug("AlgoDebugOctree created successfully");
 }
 
-void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
+void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &view)
 {
 	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = *backend.pipelineLayoutCollection();
@@ -63,16 +64,18 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &
 
 	auto view_proj_mat = view.cameraMatrix();
 
-	state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
-		if (chunk.secondaryData().surface.numIndices() == 0) {
+	auto *terrain = backend.terrainSynchronizer();
+	terrain->walkActiveChunks(
+	[&](const TerrainChunkGpuData &data) {
+		if (data.index_count == 0) {
 			// Don't draw junk lines for empty chunks
 			return;
 		}
 
-		float base_x = float(chunk.header().base_x);
-		float base_y = float(chunk.header().base_y);
-		float base_z = float(chunk.header().base_z);
-		float size = float(TerrainChunk::SIZE * chunk.header().scale);
+		float base_x = float(data.header.base_x);
+		float base_y = float(data.header.base_y);
+		float base_z = float(data.header.base_z);
+		float size = float(TerrainChunk::SIZE * data.header.scale);
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 
@@ -88,6 +91,9 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const WorldState &
 		                           0, sizeof(block), &block);
 		// TODO: Mesh must support drawing itself
 		backend.vkCmdDrawIndexed(cmd_buffer, std::size(INDEX_BUFFER_DATA), 1, 0, 0, 0);
+	},
+	[&](VkBuffer /*vtx_buf*/, VkBuffer /*idx_buf*/) {
+		// Do nothing - we use our own set of buffers
 	});
 }
 

@@ -13,7 +13,9 @@ public:
 	AlgoTerrainSimple();
 
 	void executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view);
+
 private:
+	bool isChunkVisible(const TerrainChunk &chunk, const GameView &view) const noexcept;
 };
 
 }
