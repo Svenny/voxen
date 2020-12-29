@@ -92,7 +92,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	backend.vkCmdBeginRenderPass(cmd_buf, &render_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
 	backend.algoTerrainSimple()->executePass(cmd_buf, state, view);
-	backend.algoDebugOctree()->executePass(cmd_buf, state, view);
+	backend.algoDebugOctree()->executePass(cmd_buf, view);
 
 	backend.vkCmdEndRenderPass(cmd_buf);
 

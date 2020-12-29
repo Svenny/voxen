@@ -39,9 +39,20 @@ public:
 	// Index array size is guaranteed to never exceed UINT32_MAX
 	uint32_t numIndices() const noexcept { return static_cast<uint32_t>(m_indices.size()); }
 	const uint32_t *indices() const noexcept { return m_indices.data(); }
+
+	// NOTE: AABB is calculated in mesh-local coordinates and is calculated
+	// by vertices, not triangles (so unused vertices contribute to AABB)
+
+	// Minimal (X,Y,Z) local-space coordinates of AABB
+	const glm::vec3 &aabbMin() const noexcept { return m_aabb_min; }
+	// Maximal (X,Y,Z) local-space coordinates of AABB
+	const glm::vec3 &aabbMax() const noexcept { return m_aabb_max; }
+
 private:
 	std::vector<TerrainSurfaceVertex> m_vertices;
 	std::vector<uint32_t> m_indices;
+	glm::vec3 m_aabb_min { FLT_MAX, FLT_MAX, FLT_MAX };
+	glm::vec3 m_aabb_max { FLT_MIN, FLT_MIN, FLT_MIN };
 };
 
 }

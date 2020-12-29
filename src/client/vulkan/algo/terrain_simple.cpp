@@ -35,8 +35,10 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	auto *terrain = backend.terrainSynchronizer();
 	{
 		terrain->beginSyncSession();
-		state.walkActiveChunks([terrain](const voxen::TerrainChunk &chunk) {
-			terrain->syncChunk(chunk);
+		state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
+			if (isChunkVisible(chunk, view)) {
+				terrain->syncChunk(chunk);
+			}
 		});
 		terrain->endSyncSession();
 	}
@@ -70,6 +72,47 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 		backend.vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vtx_buf, &offset);
 		backend.vkCmdBindIndexBuffer(cmd_buffer, idx_buf, 0, VK_INDEX_TYPE_UINT32);
 	});
+}
+
+bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView &view) const noexcept
+{
+	const auto &header = chunk.header();
+	const auto &surface = chunk.secondaryData().surface;
+
+	if (surface.numIndices() == 0) {
+		return false;
+	}
+
+	float base_x = float(header.base_x);
+	float base_y = float(header.base_y);
+	float base_z = float(header.base_z);
+	float scale = float(header.scale);
+	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
+
+	const glm::vec3 &aabb_min = surface.aabbMin();
+	const glm::vec3 &aabb_max = surface.aabbMax();
+
+	for (int i = 0; i < 8; i++) {
+		glm::vec4 point;
+		point.x = (i & 1) ? aabb_min.x : aabb_max.x;
+		point.y = (i & 2) ? aabb_min.y : aabb_max.y;
+		point.z = (i & 4) ? aabb_min.z : aabb_max.z;
+		point.w = 1.0f;
+
+		glm::vec4 ndc = mat * point;
+		ndc /= ndc.w;
+		if (ndc.x >= -1.0f && ndc.x <= 1.0f) {
+			return true;
+		}
+		if (ndc.y >= -1.0f && ndc.y <= 1.0f) {
+			return true;
+		}
+		if (ndc.z >= 0.0f && ndc.z <= 1.0f) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 }
