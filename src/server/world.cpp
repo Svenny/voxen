@@ -11,7 +11,7 @@ World::World()
 
 	m_last_state_ptr = std::make_shared<WorldState>();
 	WorldState &initial_state = *m_last_state_ptr;
-	initial_state.setTerrain(std::make_unique<TerrainOctree>(m_loader, /*1<<21*/16, /*1 << 12*/4));
+	initial_state.setTerrain(std::make_unique<TerrainOctree>(m_loader, /*1<<21*/1 << 12, 1 << 12));
 
 	Log::debug("Server World created successfully");
 }

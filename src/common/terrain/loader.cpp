@@ -1,5 +1,7 @@
 #include <voxen/common/terrain/loader.hpp>
 
+#include <voxen/common/terrain/surface_builder.hpp>
+
 #if VOXEN_DEBUG_BUILD == 1
 #include <cassert>
 #endif /* VOXEN_DEBUG_BUILD */
@@ -16,8 +18,9 @@ TerrainLoader::TerrainLoader() : m_cache(CACHE_SIZE)
 {
 }
 
-void TerrainLoader::load(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output)
+void TerrainLoader::load(TerrainChunk &chunk)
 {
+	const auto &header = chunk.header();
 #if VOXEN_DEBUG_BUILD == 1
 	auto search = m_loaded_chunks.find(header);
 	// We mustn't load already loaded chunk
@@ -25,10 +28,13 @@ void TerrainLoader::load(const TerrainChunkHeader &header, TerrainChunkPrimaryDa
 	m_loaded_chunks.insert(header);
 #endif /* VOXEN_DEBUG_BUILD */
 
-	if (m_cache.tryFill(header, output))
+	if (m_cache.tryFill(chunk))
 		return;
 	// TODO: support loading from disk
-	m_generator.generate(header, output);
+	auto[primary, secondary] = chunk.beginEdit();
+	m_generator.generate(header, primary);
+	TerrainSurfaceBuilder::buildBasicOctree(primary, secondary);
+	chunk.endEdit();
 }
 
 void TerrainLoader::unload(const TerrainChunk &chunk)
