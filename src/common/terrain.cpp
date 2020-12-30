@@ -210,7 +210,7 @@ static void seamEdgeProc(std::array<TerrainOctreeNode *, 4> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set_new.addEdgeRef(nodes[2]->m_chunk, D);
+		nodes[0]->m_seam_set_new.addEdgeRef<D>(nodes[2]->m_chunk);
 		return;
 	}
 
@@ -244,7 +244,7 @@ static void seamFaceProc(std::array<TerrainOctreeNode *, 2> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set_new.addFaceRef(nodes[1]->m_chunk, D);
+		nodes[0]->m_seam_set_new.addFaceRef<D>(nodes[1]->m_chunk);
 		return;
 	}
 
