@@ -18,8 +18,9 @@ public:
 	TerrainChunkCache &operator = (const TerrainChunkCache &) = delete;
 	~TerrainChunkCache() = default;
 
-	bool tryFill(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output);
+	bool tryFill(TerrainChunk &chunk);
 	void insert(const TerrainChunk &chunk);
+	void invalidate(const TerrainChunkHeader &header);
 
 private:
 	struct Entry {

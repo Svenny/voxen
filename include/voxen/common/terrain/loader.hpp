@@ -16,7 +16,7 @@ class TerrainLoader {
 public:
 	TerrainLoader();
 
-	void load(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output);
+	void load(TerrainChunk &chunk);
 	void unload(const TerrainChunk &chunk);
 private:
 	TerrainChunkCache m_cache;

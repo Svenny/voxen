@@ -57,7 +57,7 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 	/* Find the minimal node, i.e. the node with the maximal depth. By looking at its
 	 materials on endpoints of this edge we may know whether the edge is surface-crossing
 	 and if we need to flip the triangles winding order. */
-	uint8_t max_depth = 0;
+	int8_t max_depth = 0;
 	for (int i = 0; i < 4; i++) {
 		if (leaves[i]->depth > max_depth) {
 			max_depth = leaves[i]->depth;
@@ -209,7 +209,7 @@ static const HermiteDataStorage &selectHermiteStorage(const TerrainChunkPrimaryD
 }
 
 static std::pair<uint32_t, ChunkOctreeLeaf *>
-	buildLeaf(glm::ivec3 min_corner, int32_t size, uint8_t depth, DcBuildArgs &args)
+	buildLeaf(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
 {
 	QefSolver3D &solver = args.solver;
 	const auto &grid = args.primary_data;
@@ -364,7 +364,7 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 }
 
 static std::pair<uint32_t, ChunkOctreeNodeBase *>
-	buildNode(glm::ivec3 min_corner, int32_t size, uint8_t depth, DcBuildArgs &args)
+	buildNode(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
 {
 	assert(size > 0);
 	if (size == 1) {
@@ -505,29 +505,30 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	return { id, leaf };
 }
 
-void TerrainSurfaceBuilder::calcSurface(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output)
+void TerrainSurfaceBuilder::buildBasicOctree(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output)
 {
 	auto &octree = output.octree;
-	auto &surface = output.surface;
-
 	octree.clear();
-	surface.clear();
 
 	QefSolver3D qef_solver;
 	DcBuildArgs args {
 		.octree = octree,
 		.primary_data = input,
 		.solver = qef_solver,
-		.epsilon = 0.01f
+		.epsilon = 0.12f
 	};
 
 	auto[root_id, root] = buildNode(glm::ivec3(0), TerrainChunkPrimaryData::GRID_CELL_COUNT, 0, args);
-	if (!root) {
-		// Simplified to nothing?
-		return;
-	}
+	octree.setBaseRoot(root_id);
+}
 
-	octree.setRoot(root_id);
+void TerrainSurfaceBuilder::buildSurface(TerrainChunkSecondaryData &output)
+{
+	auto &octree = output.octree;
+	auto &surface = output.surface;
+	surface.clear();
+
+	auto root = octree.idToPointer(octree.extendedRoot());
 	makeVertices(root, octree, surface);
 	cellProc(root, octree, surface);
 }

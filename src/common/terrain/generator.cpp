@@ -76,6 +76,28 @@ static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, Herm
 	                normal, offset, Axis(D), lesser_endpoint_solid, solid_voxel);
 }
 
+static double fbase(double x, double z) noexcept
+{
+	const double hypot = std::hypot(x, z);
+	const double amp = std::max(15.0, 0.05 * hypot);
+	const double freq = 0.1 / std::sqrt(1.0 + hypot);
+	return amp * (std::sin(freq * x) + std::cos(freq * z));
+}
+
+static double f(double x, double y, double z) noexcept
+{
+	const double base = -0.000001 * (x * x + z * z);
+	return y + base + fbase(x, z) + (std::sin(0.075 * x) + std::cos(0.075 * z));
+}
+
+static glm::dvec3 df(double x, double /*y*/, double z) noexcept
+{
+	const double eps = 1e-6;
+	double dx = (fbase(x + eps, z) - fbase(x - eps, z)) / (eps + eps) - 0.000002 * x + 0.075 * std::cos(0.075 * x);
+	double dz = (fbase(x, z + eps) - fbase(x, z - eps)) / (eps + eps) - 0.000002 * z - 0.075 * std::sin(0.075 * z);
+	return glm::dvec3(dx, 1.0, dz);
+}
+
 void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output)
 {
 	constexpr uint32_t SIZE = TerrainChunkPrimaryData::GRID_VERTEX_COUNT;
@@ -87,17 +109,6 @@ void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPr
 	// Temporary storage for SDF values, we will need it to find zero crossings
 	auto p_values = std::make_unique<ValuesArray>();
 	ValuesArray &values = *p_values;
-
-	auto f = [](double x, double y, double z) {
-		return y + 5.0 * (std::sin(0.05 * x) + std::cos(0.05 * z));
-	};
-
-	auto df = [](double x, double /*y*/, double z) {
-		double dx = 0.05 * 5.0 * std::cos(0.05 * x);
-		double dy = 1;
-		double dz = - 0.05 * std::sin(0.05 * z);
-		return glm::dvec3(dx, dy, dz);
-	};
 
 	// TODO: this is a temporary stub, add real land generator
 	const uint32_t step = header.scale;

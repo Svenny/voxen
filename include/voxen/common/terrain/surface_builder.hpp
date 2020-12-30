@@ -7,7 +7,8 @@ namespace voxen
 
 class TerrainSurfaceBuilder {
 public:
-	static void calcSurface(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output);
+	static void buildBasicOctree(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output);
+	static void buildSurface(TerrainChunkSecondaryData &output);
 };
 
 }

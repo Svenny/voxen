@@ -7,9 +7,9 @@ namespace voxen
 {
 
 // Depth of 11 would require at worst (2^11)^3 = 8'589'934'592 leaves, which overflows uint32_t
-static constexpr uint8_t MAX_ALLOWED_DEPTH = 10;
+static constexpr int8_t MAX_ALLOWED_DEPTH = 10;
 
-std::pair<uint32_t, ChunkOctreeCell *> ChunkOctree::allocCell(uint8_t depth)
+std::pair<uint32_t, ChunkOctreeCell *> ChunkOctree::allocCell(int8_t depth)
 {
 	assert(depth <= MAX_ALLOWED_DEPTH);
 
@@ -29,7 +29,7 @@ std::pair<uint32_t, ChunkOctreeCell *> ChunkOctree::allocCell(uint8_t depth)
 	return { idx, cell };
 }
 
-std::pair<uint32_t, ChunkOctreeLeaf *> ChunkOctree::allocLeaf(uint8_t depth)
+std::pair<uint32_t, ChunkOctreeLeaf *> ChunkOctree::allocLeaf(int8_t depth)
 {
 	assert(depth <= MAX_ALLOWED_DEPTH);
 
@@ -70,7 +70,8 @@ void ChunkOctree::clear() noexcept
 	m_leaves.clear();
 	m_free_cells.clear();
 	m_free_leaves.clear();
-	m_root_id = INVALID_NODE_ID;
+	m_base_root_id = INVALID_NODE_ID;
+	m_ext_root_id = INVALID_NODE_ID;
 }
 
 ChunkOctreeNodeBase *ChunkOctree::idToPointer(uint32_t id) noexcept

@@ -15,7 +15,7 @@ struct ChunkOctreeCell;
 
 struct ChunkOctreeNodeBase {
 	bool is_leaf;
-	uint8_t depth;
+	int8_t depth;
 
 	ChunkOctreeCell *castToCell() noexcept { assert(!is_leaf); return reinterpret_cast<ChunkOctreeCell *>(this); }
 	const ChunkOctreeCell *castToCell() const noexcept { assert(!is_leaf); return reinterpret_cast<const ChunkOctreeCell *>(this); }
@@ -56,8 +56,8 @@ public:
 	ChunkOctree &operator = (const ChunkOctree &) = default;
 	~ChunkOctree() = default;
 
-	[[nodiscard]] std::pair<uint32_t, ChunkOctreeCell *> allocCell(uint8_t depth);
-	[[nodiscard]] std::pair<uint32_t, ChunkOctreeLeaf *> allocLeaf(uint8_t depth);
+	[[nodiscard]] std::pair<uint32_t, ChunkOctreeCell *> allocCell(int8_t depth);
+	[[nodiscard]] std::pair<uint32_t, ChunkOctreeLeaf *> allocLeaf(int8_t depth);
 	void freeNode(uint32_t idx);
 	void clear() noexcept;
 
@@ -65,8 +65,10 @@ public:
 	ChunkOctreeNodeBase *idToPointer(uint32_t id) noexcept;
 	const ChunkOctreeNodeBase *idToPointer(uint32_t id) const noexcept;
 
-	uint32_t root() const noexcept { return m_root_id; }
-	void setRoot(uint32_t id) noexcept { m_root_id = id; }
+	uint32_t baseRoot() const noexcept { return m_base_root_id; }
+	void setBaseRoot(uint32_t id) noexcept { m_base_root_id = id; }
+	uint32_t extendedRoot() const noexcept { return m_ext_root_id; }
+	void setExtendedRoot(uint32_t id) noexcept { m_ext_root_id = id; }
 
 	static bool isCellId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) == 0; }
 	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
@@ -78,7 +80,8 @@ private:
 	std::vector<uint32_t> m_free_cells;
 	std::vector<uint32_t> m_free_leaves;
 
-	uint32_t m_root_id = INVALID_NODE_ID;
+	uint32_t m_base_root_id = INVALID_NODE_ID;
+	uint32_t m_ext_root_id = INVALID_NODE_ID;
 };
 
 }

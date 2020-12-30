@@ -1,46 +1,47 @@
 #pragma once
 
 #include <voxen/common/terrain/chunk.hpp>
-#include <voxen/common/terrain/surface.hpp>
+#include <voxen/common/terrain/types.hpp>
 
-#include <array>
-#include <variant>
+#include <vector>
 
 namespace voxen
 {
 
-class TerrainSeam {
+class TerrainChunkSeamSet {
 public:
-	struct ChunkPair {
-		std::array<const TerrainChunk *, 2> chunks;
-		Axis axis;
-	};
+	TerrainChunkSeamSet() = default;
+	TerrainChunkSeamSet(TerrainChunkSeamSet &&) = default;
+	TerrainChunkSeamSet(const TerrainChunkSeamSet &) = default;
+	TerrainChunkSeamSet &operator = (TerrainChunkSeamSet &&) = default;
+	TerrainChunkSeamSet &operator = (const TerrainChunkSeamSet &) = default;
+	~TerrainChunkSeamSet() = default;
 
-	struct ChunkQuad {
-		std::array<const TerrainChunk *, 4> chunks;
-		Axis axis;
-	};
+	void addEdgeRef(const TerrainChunk *ptr, int dim) noexcept
+	{
+		assert(ptr);
+		m_edge_refs[dim].emplace_back(ptr, ptr->version());
+	}
 
-	struct ChunkOcto {
-		std::array<const TerrainChunk *, 8> chunks;
-	};
+	void addFaceRef(const TerrainChunk *ptr, int dim) noexcept
+	{
+		assert(ptr);
+		m_face_refs[dim].emplace_back(ptr, ptr->version());
+	}
 
-	explicit TerrainSeam(const ChunkPair &pair);
-	explicit TerrainSeam(const ChunkQuad &quad);
-	explicit TerrainSeam(const ChunkOcto &octo);
-	TerrainSeam(TerrainSeam &&) noexcept;
-	TerrainSeam(const TerrainSeam &);
-	TerrainSeam &operator = (TerrainSeam &&) noexcept;
-	TerrainSeam &operator = (const TerrainSeam &);
-	~TerrainSeam() = default;
+	void clear() noexcept;
 
-	uint64_t chunkPointersHash() const noexcept;
+	void extendOctree(TerrainChunkHeader header, ChunkOctree &output);
 
-	TerrainSurface &surface() noexcept { return m_surface; }
-	const TerrainSurface &surface() const noexcept { return m_surface; }
+	bool operator == (const TerrainChunkSeamSet &other) const noexcept;
+
 private:
-	std::variant<ChunkPair, ChunkQuad, ChunkOcto> m_chunks;
-	TerrainSurface m_surface;
+	using ChunkRef = std::pair<const TerrainChunk *, uint32_t>;
+
+	std::vector<ChunkRef> m_edge_refs[3];
+	std::vector<ChunkRef> m_face_refs[3];
+
+	std::tuple<uint32_t, int64_t, int64_t, int64_t> selectExtendedRootDimensions(const TerrainChunkHeader &header) const;
 };
 
 }
