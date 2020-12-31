@@ -40,6 +40,7 @@ set(VOXEN_SOURCES
 	src/common/config.cpp
 	src/common/filemanager.cpp
 	src/server/world.cpp
+	src/util/elapsed_timer.cpp
 	src/util/exception.cpp
 	src/util/log.cpp
 	src/main.cpp
