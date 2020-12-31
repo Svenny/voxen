@@ -102,6 +102,9 @@ void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_wo
 			world.update(render_to_world_queue, tick_inverval);
 			next_tick_time += tick_inverval;
 			g_ups_counter.fetch_add(1, std::memory_order_relaxed);
+			if (g_stop.load()) {
+				break;
+			}
 		}
 		std::this_thread::sleep_until(next_tick_time - milliseconds(1));
 	}
