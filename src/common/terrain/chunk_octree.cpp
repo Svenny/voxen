@@ -6,8 +6,10 @@
 namespace voxen
 {
 
+#if VOXEN_DEBUG_BUILD == 1
 // Depth of 11 would require at worst (2^11)^3 = 8'589'934'592 leaves, which overflows uint32_t
 static constexpr int8_t MAX_ALLOWED_DEPTH = 10;
+#endif
 
 std::pair<uint32_t, ChunkOctreeCell *> ChunkOctree::allocCell(int8_t depth)
 {

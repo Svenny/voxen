@@ -5,7 +5,8 @@
 namespace voxen
 {
 
-bool TerrainChunkHeader::operator== (const TerrainChunkHeader &other) const noexcept {
+bool TerrainChunkHeader::operator == (const TerrainChunkHeader &other) const noexcept
+{
 	return base_x == other.base_x && base_y == other.base_y && base_z == other.base_z && scale == other.scale;
 }
 
