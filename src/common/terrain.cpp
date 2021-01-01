@@ -30,7 +30,7 @@ struct TerrainOctreeNode {
 
 	TerrainOctreeNode(const TerrainOctreeNode &other) :
 		m_base_x(other.m_base_x), m_base_y(other.m_base_y), m_base_z(other.m_base_z), m_size(other.m_size),
-		m_is_collapsed(other.m_is_collapsed), m_seam_set_old(other.m_seam_set_old), m_seam_set_new(other.m_seam_set_new)
+		m_is_collapsed(other.m_is_collapsed)
 	{
 		for (int i = 0; i < 8; i++) {
 			if (other.m_children[i])
@@ -40,11 +40,6 @@ struct TerrainOctreeNode {
 		}
 		if (other.m_chunk) {
 			m_chunk = new TerrainChunk(*other.m_chunk);
-		}
-		if (other.m_is_editing) {
-			auto[_, secondary] = m_chunk->beginEdit();
-			m_is_editing = true;
-			m_mutable_secondary = &secondary;
 		}
 	}
 
@@ -150,14 +145,8 @@ struct TerrainOctreeNode {
 	void finalizeEditing()
 	{
 		if (m_chunk) {
-			/*if (!m_is_editing && m_seam_set_new != m_seam_set_old) {
-				auto[primary, secondary] = m_chunk->beginEdit();
-				m_is_editing = true;
-				m_mutable_secondary = &secondary;
-			}*/
-
 			if (m_is_editing) {
-				m_seam_set_new.extendOctree(m_chunk->header(), m_mutable_secondary->octree);
+				m_seam_set.extendOctree(m_chunk->header(), m_mutable_secondary->octree);
 				TerrainSurfaceBuilder::buildSurface(*m_mutable_secondary);
 
 				m_mutable_secondary = nullptr;
@@ -165,8 +154,7 @@ struct TerrainOctreeNode {
 				m_chunk->endEdit();
 			}
 
-			std::swap(m_seam_set_new, m_seam_set_old);
-			m_seam_set_new.clear();
+			m_seam_set.clear();
 		}
 
 		for (int i = 0; i < 8; i++) {
@@ -181,7 +169,7 @@ struct TerrainOctreeNode {
 	TerrainChunk *m_chunk = nullptr;
 	bool m_is_collapsed = true;
 
-	TerrainChunkSeamSet m_seam_set_old, m_seam_set_new;
+	TerrainChunkSeamSet m_seam_set;
 
 	bool m_is_editing = false;
 	TerrainChunkSecondaryData *m_mutable_secondary = nullptr;
@@ -210,7 +198,7 @@ static void seamEdgeProc(std::array<TerrainOctreeNode *, 4> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set_new.addEdgeRef<D>(nodes[2]->m_chunk);
+		nodes[0]->m_seam_set.addEdgeRef<D>(nodes[2]->m_chunk);
 		return;
 	}
 
@@ -244,7 +232,7 @@ static void seamFaceProc(std::array<TerrainOctreeNode *, 2> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set_new.addFaceRef<D>(nodes[1]->m_chunk);
+		nodes[0]->m_seam_set.addFaceRef<D>(nodes[1]->m_chunk);
 		return;
 	}
 

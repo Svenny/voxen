@@ -1,5 +1,7 @@
 #include <voxen/common/terrain/chunk_data.hpp>
 
+#include <cassert>
+
 namespace voxen
 {
 
