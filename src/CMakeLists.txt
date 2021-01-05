@@ -45,6 +45,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/surface_builder.cpp
 	src/common/player.cpp
 	src/common/terrain.cpp
+	src/common/threadpool.cpp
 	src/common/world_state.cpp
 	src/common/gameview.cpp
 	src/common/config.cpp

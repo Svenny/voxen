@@ -8,6 +8,7 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/common/filemanager.hpp>
+#include <voxen/common/threadpool.hpp>
 
 #define CXXOPTS_NO_RTTI
 #include <cxxopts.hpp>
@@ -125,6 +126,9 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 
+		//TODO(sirgienko) add profile option for threads count in profile scheme?
+		voxen::ThreadPool::initGlobalVoxenPool();
+
 		voxen::FileManager::setProfileName(result["profile"].as<std::string>());
 
 		voxen::Config* main_voxen_config = voxen::Config::mainConfig();
@@ -181,6 +185,7 @@ int main(int argc, char *argv[])
 		render.reset();
 		gui.reset();
 		wnd.stop();
+		voxen::ThreadPool::releaseGlobalVoxenPool();
 	}
 	catch (const voxen::Exception &e) {
 		Log::fatal("Unchaught voxen::Exception instance");
