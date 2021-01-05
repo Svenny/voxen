@@ -98,7 +98,7 @@ static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 	return glm::dvec3(dx, 1.0, dz);
 }
 
-void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output)
+void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output) const
 {
 	constexpr uint32_t SIZE = TerrainChunkPrimaryData::GRID_VERTEX_COUNT;
 	using ValuesArray = std::array<std::array<std::array<double, SIZE>, SIZE>, SIZE>;

@@ -54,6 +54,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/types.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
+	include/voxen/common/threadpool.hpp
 	include/voxen/common/world_state.hpp
 	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp

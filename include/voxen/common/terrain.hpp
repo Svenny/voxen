@@ -2,16 +2,49 @@
 
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/loader.hpp>
+#include <voxen/common/threadpool.hpp>
 
 #include <cstdint>
 #include <functional>
+#include <unordered_map>
+
+namespace voxen
+{
+struct TerrainOctreeNode;
+struct TerrainOctreeNodeHeader {
+	int64_t base_x;
+	int64_t base_y;
+	int64_t base_z;
+	int64_t size;
+
+	bool operator == (const TerrainOctreeNodeHeader &other) const noexcept;
+	uint64_t hash() const noexcept;
+};
+}
+
+namespace impl
+{
+	struct WorkResult {
+		voxen::TerrainOctreeNodeHeader requestHeader;
+		voxen::TerrainOctreeNode* subnode;
+	};
+}
 
 namespace voxen
 {
 
-struct TerrainOctreeNode;
-
 class TerrainOctree {
+public:
+	struct SplitRequest {
+		SplitRequest(const TerrainOctreeNodeHeader& header);
+		SplitRequest(const SplitRequest& other) = default;
+		SplitRequest(SplitRequest&& other) = default;
+
+		TerrainOctreeNodeHeader subnodes_headers[8];
+		TerrainOctreeNode* subnodes[8];
+		bool canceled = false;
+	};
+
 public:
 	explicit TerrainOctree(TerrainLoader &loader, uint32_t num_xz_chunks, uint32_t num_y_chunks);
 	TerrainOctree(TerrainOctree &&other) noexcept;
@@ -25,9 +58,19 @@ public:
 
 	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
 
+	void asyncSplitNodeCreation(TerrainOctreeNodeHeader header, TerrainLoader &loader);
+
+private:
+	void loadPoolResults();
+	void runDelaydedSplit(TerrainLoader &loader);
+
 private:
 	const uint32_t m_xz_chunks, m_y_chunks;
 	TerrainOctreeNode *m_tree = nullptr;
+	std::shared_ptr<ThreadPoolResultsQueue<impl::WorkResult>> m_created_pool_nodes;
+	std::unordered_map<TerrainOctreeNodeHeader, SplitRequest, std::function<uint64_t(const TerrainOctreeNodeHeader&)>> m_loaded_nodes;
 };
+
+
 
 }

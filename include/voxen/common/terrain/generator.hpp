@@ -9,7 +9,7 @@ namespace voxen
 class TerrainGenerator {
 public:
 
-	void generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output);
+	void generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output) const;
 private:
 
 };
