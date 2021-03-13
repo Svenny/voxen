@@ -2,19 +2,9 @@
 // File: vk_platform.h
 //
 /*
-** Copyright (c) 2014-2020 The Khronos Group Inc.
+** Copyright 2014-2021 The Khronos Group Inc.
 **
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
+** SPDX-License-Identifier: Apache-2.0
 */
 
 
@@ -42,9 +32,11 @@ extern "C"
  * VKAPI_CALL - Placed after the return type in function declarations.
  *              Useful for MSVC-style calling convention syntax.
  * VKAPI_PTR  - Placed between the '(' and '*' in function pointer types.
+ * VKAPI_NOEXCEPT - Svenny's addition to make compiler treat all Vulkan API entry
+ *              points as noexcept (it's C API so they are indeed noexcept).
  *
- * Function declaration:  VKAPI_ATTR void VKAPI_CALL vkCommand(void);
- * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void) noexcept;
+ * Function declaration:  VKAPI_ATTR void VKAPI_CALL vkCommand(void) VKAPI_NOEXCEPT;
+ * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void) VKAPI_NOEXCEPT;
  */
 #if defined(_WIN32)
     // On Windows, Vulkan commands use the stdcall convention
@@ -68,7 +60,15 @@ extern "C"
     #define VKAPI_PTR
 #endif
 
-#include <stddef.h>
+#ifdef __cplusplus
+    #define VKAPI_NOEXCEPT noexcept
+#else
+    #define VKAPI_NOEXCEPT
+#endif
+
+#if !defined(VK_NO_STDDEF_H)
+    #include <stddef.h>
+#endif // !defined(VK_NO_STDDEF_H)
 
 #if !defined(VK_NO_STDINT_H)
     #if defined(_MSC_VER) && (_MSC_VER < 1600)

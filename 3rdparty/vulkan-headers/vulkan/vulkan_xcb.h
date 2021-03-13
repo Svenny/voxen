@@ -2,19 +2,9 @@
 #define VULKAN_XCB_H_ 1
 
 /*
-** Copyright (c) 2015-2020 The Khronos Group Inc.
+** Copyright 2015-2021 The Khronos Group Inc.
 **
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
+** SPDX-License-Identifier: Apache-2.0
 */
 
 /*
@@ -41,21 +31,21 @@ typedef struct VkXcbSurfaceCreateInfoKHR {
     xcb_window_t                  window;
 } VkXcbSurfaceCreateInfoKHR;
 
-typedef VkResult (VKAPI_PTR *PFN_vkCreateXcbSurfaceKHR)(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) noexcept;
-typedef VkBool32 (VKAPI_PTR *PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id) noexcept;
+typedef VkResult (VKAPI_PTR *PFN_vkCreateXcbSurfaceKHR)(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) VKAPI_NOEXCEPT;
+typedef VkBool32 (VKAPI_PTR *PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id) VKAPI_NOEXCEPT;
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
+    VkSurfaceKHR*                               pSurface) VKAPI_NOEXCEPT;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id);
+    xcb_visualid_t                              visual_id) VKAPI_NOEXCEPT;
 #endif
 
 #ifdef __cplusplus
