@@ -65,5 +65,5 @@ target_link_libraries(voxen PUBLIC glfw fmt::fmt stdc++fs cxxopts SimpleIni Thre
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
 
-# Enable precompiled headers only in Release builds
-target_precompile_headers(voxen PRIVATE $<$<CONFIG:Release>:<voxen/pch.hpp$<ANGLE-R>>)
+# Enable precompiled headers in all but Debug builds
+target_precompile_headers(voxen PRIVATE $<$<NOT:$<CONFIG:Debug>>:<voxen/pch.hpp$<ANGLE-R>>)
