@@ -17,6 +17,13 @@ string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 # RTTI is only useful for dynamic_cast, which means a design flaw in 99,9% cases
 string(APPEND CMAKE_CXX_FLAGS " -fno-rtti")
 
+# Clang's IPO uses ThinLTO which does not slow down build times as severely as usual -flto
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
+endif()
+
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
    (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0))
 	# Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
@@ -49,12 +56,11 @@ add_subdirectory(3rdparty)
 add_executable(voxen "")
 
 target_include_directories(voxen PUBLIC 3rdparty/glm 3rdparty/vulkan-headers)
-target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>)
+target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
-find_package(Vulkan REQUIRED)
 find_package(Threads REQUIRED)
-target_link_libraries(voxen PUBLIC glfw fmt::fmt Vulkan::Vulkan stdc++fs cxxopts SimpleIni Threads::Threads PlatformFolders)
+target_link_libraries(voxen PUBLIC glfw fmt::fmt stdc++fs cxxopts SimpleIni Threads::Threads PlatformFolders)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
