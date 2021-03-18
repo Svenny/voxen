@@ -33,7 +33,9 @@ using extras::dyn_array;
 
 using namespace std::chrono_literals;
 
-namespace impl {
+namespace
+{
+
 static void printErrno(const char *message, const string& path) noexcept {
 	int code = errno;
 	char buf[1024];
@@ -134,23 +136,24 @@ static bool writeAbsPathFile(const string& path, const void *data, size_t size) 
 	return true;
 }
 
-struct ReportableWorkerState {
-	std::mutex semaphore_mutex;
-	std::condition_variable semaphore;
-	atomic_bool is_exit = false;
-
-	std::mutex state_mutex;
-	bool has_task;
-	bool live_forever;
-	std::queue<packaged_task<void()>> tasks_queue;
-};
-
-struct ReportableWorker {
-	thread worker;
-	ReportableWorkerState state;
-};
-
 class FileIoThreadPool {
+private:
+	struct ReportableWorkerState {
+		std::mutex semaphore_mutex;
+		std::condition_variable semaphore;
+		atomic_bool is_exit = false;
+
+		std::mutex state_mutex;
+		bool has_task;
+		bool live_forever;
+		std::queue<packaged_task<void()>> tasks_queue;
+	};
+
+	struct ReportableWorker {
+		thread worker;
+		ReportableWorkerState state;
+	};
+
 public:
 	FileIoThreadPool()
 	{
@@ -289,9 +292,10 @@ private:
 
 }
 
-static impl::FileIoThreadPool file_manager_threadpool;
+static FileIoThreadPool file_manager_threadpool;
 
-namespace voxen {
+namespace voxen
+{
 
 path FileManager::user_data_path;
 path FileManager::game_data_path;
@@ -313,8 +317,8 @@ optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_pa
 	if (relative_path.empty())
 		return std::nullopt;
 
-	impl::RawBytesStorage storage;
-	bool success = impl::readAbsPath(FileManager::userDataPath() / relative_path, storage);
+	RawBytesStorage storage;
+	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
 	return success ? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>())) : std::nullopt;
 }
 
@@ -327,7 +331,7 @@ bool FileManager::writeUserFile(const path& relative_path, const void *data, siz
 			return false;
 	}
 
-	return impl::writeAbsPathFile(filepath, data, size);
+	return writeAbsPathFile(filepath, data, size);
 }
 
 optional<string> FileManager::readUserTextFile(const path& relative_path) noexcept
@@ -335,8 +339,8 @@ optional<string> FileManager::readUserTextFile(const path& relative_path) noexce
 	if (relative_path.empty())
 		return std::nullopt;
 
-	impl::StringStorage storage;
-	bool success = impl::readAbsPath(FileManager::userDataPath() / relative_path, storage);
+	StringStorage storage;
+	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
 	return success ? optional(storage.m_string) : std::nullopt;
 }
 
@@ -349,7 +353,7 @@ bool FileManager::writeUserTextFile(const path& relative_path, const string& tex
 			return false;
 	}
 
-	return impl::writeAbsPathFile(filepath, text.data(), text.size());
+	return writeAbsPathFile(filepath, text.data(), text.size());
 }
 
 optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path) noexcept
@@ -357,8 +361,8 @@ optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path) 
 	if (relative_path.empty())
 		return std::nullopt;
 
-	impl::RawBytesStorage storage;
-	bool success = impl::readAbsPath(FileManager::gameDataPath() / relative_path, storage);
+	RawBytesStorage storage;
+	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
 	return success ? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>())) : std::nullopt;
 }
 
@@ -367,8 +371,8 @@ optional<string> FileManager::readTextFile(const path& relative_path) noexcept
 	if (relative_path.empty())
 		return std::nullopt;
 
-	impl::StringStorage storage;
-	bool success = impl::readAbsPath(FileManager::gameDataPath() / relative_path, storage);
+	StringStorage storage;
+	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
 	return success ? optional(storage.m_string) : std::nullopt;
 }
 

@@ -5,12 +5,6 @@
 #include <memory>
 #include <functional>
 
-namespace impl
-{
-	struct ReportableWorkerState;
-	struct ReportableWorker;
-}
-
 namespace voxen
 {
 
@@ -80,14 +74,17 @@ public:
 	static ThreadPool& globalVoxenPool();
 
 private:
-	static void workerFunction(impl::ReportableWorkerState* state);
-	static size_t task_queue_size(impl::ReportableWorkerState* state);
-	impl::ReportableWorker* make_worker();
-	void run_worker(impl::ReportableWorker* worker);
+	struct ReportableWorkerState;
+	struct ReportableWorker;
+
+	static void workerFunction(ReportableWorkerState* state);
+	static size_t task_queue_size(ReportableWorkerState* state);
+	ReportableWorker* make_worker();
+	void run_worker(ReportableWorker* worker);
 	void cleanup_finished_workers();
 
 private:
-	std::vector<impl::ReportableWorker*> m_workers;
+	std::vector<ReportableWorker*> m_workers;
 	static ThreadPool* global_voxen_pool;
 
 	constexpr static int DEFAULT_START_THREAD_COUNT = 6;
