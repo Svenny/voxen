@@ -8,10 +8,10 @@
 
 #include <voxen/util/log.hpp>
 
-namespace impl
+namespace voxen
 {
 
-struct ReportableWorkerState
+struct ThreadPool::ReportableWorkerState
 {
 	std::mutex semaphore_mutex;
 	std::condition_variable semaphore;
@@ -21,16 +21,11 @@ struct ReportableWorkerState
 	std::queue<std::packaged_task<void()>> tasks_queue;
 };
 
-struct ReportableWorker
+struct ThreadPool::ReportableWorker
 {
 	std::thread worker;
 	ReportableWorkerState state;
 };
-
-}
-
-namespace voxen
-{
 
 ThreadPool* ThreadPool::global_voxen_pool = nullptr;
 
@@ -50,13 +45,13 @@ ThreadPool::ThreadPool(int start_thread_count)
 
 ThreadPool::~ThreadPool() noexcept
 {
-	for (impl::ReportableWorker* worker : m_workers)
+	for (ReportableWorker* worker : m_workers)
 	{
 		worker->state.is_exit.store(true);
 		worker->state.semaphore.notify_one();
 	}
 
-	for (impl::ReportableWorker* worker : m_workers)
+	for (ReportableWorker* worker : m_workers)
 		if (worker->worker.joinable())
 			worker->worker.join();
 
@@ -67,7 +62,7 @@ ThreadPool::~ThreadPool() noexcept
 	}
 }
 
-void ThreadPool::workerFunction(impl::ReportableWorkerState* state)
+void ThreadPool::workerFunction(ReportableWorkerState* state)
 {
 	while(!state->is_exit.load())
 	{
@@ -91,15 +86,15 @@ void ThreadPool::workerFunction(impl::ReportableWorkerState* state)
 	}
 }
 
-impl::ReportableWorker* ThreadPool::make_worker()
+ThreadPool::ReportableWorker* ThreadPool::make_worker()
 {
-	impl::ReportableWorker* new_worker = new impl::ReportableWorker();
+	ReportableWorker* new_worker = new ReportableWorker();
 	new_worker->state.is_exit.store(false);
 	m_workers.push_back(new_worker);
 	return new_worker;
 }
 
-void ThreadPool::run_worker(impl::ReportableWorker* worker)
+void ThreadPool::run_worker(ReportableWorker* worker)
 {
 	worker->worker = std::thread(&ThreadPool::workerFunction, &worker->state);
 }
@@ -123,18 +118,18 @@ void ThreadPool::enqueueTask(std::function<void()>&& task_function, Priority pri
 	//TODO(sirgienko) add support for prioritization
 	(void)priority;
 
-	std::packaged_task<void()> task(task_function);
+	std::packaged_task<void()> task(std::move(task_function));
 
 	std::vector<int> jobs_count(m_workers.size());
 	for (size_t i = 0; i < m_workers.size(); i++)
 	{
-		impl::ReportableWorker* worker = m_workers[i];
+		ReportableWorker* worker = m_workers[i];
 		std::unique_lock<std::mutex> lock(worker->state.state_mutex);
 		jobs_count[i] = worker->state.tasks_queue.size();
 	}
 	auto iter = std::min_element(jobs_count.begin(), jobs_count.end());
 	int worker_idx = iter - jobs_count.begin();
-	impl::ReportableWorker* worker = m_workers[worker_idx];
+	ReportableWorker* worker = m_workers[worker_idx];
 	{
 	std::unique_lock<std::mutex> lock(worker->state.state_mutex);
 	worker->state.tasks_queue.push(std::move(task));
@@ -147,7 +142,7 @@ size_t ThreadPool::threads_count() const
 	return m_workers.size();
 }
 
-size_t ThreadPool::task_queue_size(impl::ReportableWorkerState* state)
+size_t ThreadPool::task_queue_size(ReportableWorkerState* state)
 {
 	std::unique_lock<std::mutex> lock(state->state_mutex);
 	return state->tasks_queue.size();
