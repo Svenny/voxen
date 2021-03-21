@@ -72,37 +72,43 @@ public:
 #define LOG_MAKE_FUNCTIONS(name, level) \
 	template<typename T1> \
 	constexpr static void name(T1 &&arg1, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1)); \
-   } \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1)); \
+	} \
 	template<typename T1, typename T2> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2)); \
-   } \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2)); \
+	} \
 	template<typename T1, typename T2, typename T3> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3)); \
-   } \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3)); \
+	} \
 	template<typename T1, typename T2, typename T3, typename T4> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-	      std::forward<T4>(arg4)); \
-   } \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+				std::forward<T4>(arg4)); \
+	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-	      std::forward<T4>(arg4), std::forward<T5>(arg5)); \
-   } \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+				std::forward<T4>(arg4), std::forward<T5>(arg5)); \
+	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, \
-	      std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-	   log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-	      std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6)); \
-   }
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+				std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6)); \
+	} \
+	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> \
+	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, \
+		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
+			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+				std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7)); \
+	}
 
 	LOG_MAKE_FUNCTIONS(trace, Level::Trace)
 	LOG_MAKE_FUNCTIONS(debug, Level::Debug)
