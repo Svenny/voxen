@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [ self-hosted, Linux ]
+    steps:
+      - name: Checkout the branch
+        # See workaround for pull requests below
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          git fetch --no-tags --prune
+          git checkout --force $GITHUB_SHA
+          git submodule update --init --recursive --jobs 8
+
+      - name: Checkout pull request head
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          # In case of pull requests $GITHUB_SHA contains random value
+          # not existing in repository so use this hack to get true SHA
+          GITHUB_TRUE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags --prune
+          git checkout --force $GITHUB_TRUE_SHA
+          git submodule update --init --recursive --jobs 8
+
+      - name: Build Voxen
+        run: |
+          source ~/vulkan-sdk/setup-env.sh
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DDEPLOY_BUILD=ON ..
+          make -j24
