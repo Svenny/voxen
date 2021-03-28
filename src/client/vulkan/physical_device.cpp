@@ -87,7 +87,8 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 	                                           Instance::kMinVulkanVersionMinor);
 	if (api_version < required_api_version) {
 		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}",
-		           api_version.first, api_version.second, required_api_version.first, required_api_version.second);
+		           props.deviceName, api_version.first, api_version.second,
+		           required_api_version.first, required_api_version.second);
 		return false;
 	}
 

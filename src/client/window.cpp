@@ -3,9 +3,7 @@
 #include <voxen/util/log.hpp>
 #include <voxen/common/config.hpp>
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
 
 namespace voxen::client
 {
@@ -129,14 +127,14 @@ void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffse
 int Window::width() const noexcept
 {
 	int width;
-	glfwGetWindowSize(mWindow, &width, NULL);
+	glfwGetWindowSize(mWindow, &width, nullptr);
 	return width;
 }
 
 int Window::height() const noexcept
 {
 	int height;
-	glfwGetWindowSize(mWindow, NULL, &height);
+	glfwGetWindowSize(mWindow, nullptr, &height);
 	return height;
 }
 

@@ -51,10 +51,6 @@ std::vector<const char *> Device::getRequiredDeviceExtensions()
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		// It's dependency `VK_KHR_get_physical_device_properties2` is promoted to Vulkan 1.1
 		VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-		// It's promoted to Vulkan 1.2, but we need to support 1.1
-		VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
-		// It's promoted to Vulkan 1.2, but we need to support 1.1
-		VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME
 	};
 
 	// TODO: warn about unsupported extensions?
