@@ -13,6 +13,7 @@ namespace voxen::client
 
 const char *getVkResultString(VkResult result) noexcept;
 const char *getVkResultDescription(VkResult result) noexcept;
+const char *getVkFormatString(VkFormat format) noexcept;
 
 class VulkanException : public Exception {
 public:
