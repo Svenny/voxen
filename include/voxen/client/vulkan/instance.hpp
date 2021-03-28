@@ -9,7 +9,7 @@ class Instance {
 public:
 	// Minimal supported Vulkan version
 	constexpr static uint32_t kMinVulkanVersionMajor = 1;
-	constexpr static uint32_t kMinVulkanVersionMinor = 1;
+	constexpr static uint32_t kMinVulkanVersionMinor = 2;
 
 	explicit Instance();
 	Instance(Instance &&) = delete;

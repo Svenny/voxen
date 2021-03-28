@@ -235,7 +235,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 
 	auto &rasterization_info = my_parts.rasterization_info;
 	rasterization_info = parts.default_rasterization_state.rasterization_info;
-	rasterization_info.polygonMode = VK_POLYGON_MODE_LINE;
+	rasterization_info.polygonMode = VK_POLYGON_MODE_FILL;
 
 	my_create_info.stageCount = 2;
 	my_create_info.pStages = my_parts.stages;
