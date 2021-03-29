@@ -7,6 +7,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
+	src/client/vulkan/capabilities.cpp
 	src/client/vulkan/command_buffer.cpp
 	src/client/vulkan/command_pool.cpp
 	src/client/vulkan/common.cpp

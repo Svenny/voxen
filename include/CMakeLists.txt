@@ -13,6 +13,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/high/transfer_manager.hpp
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer.hpp
+	include/voxen/client/vulkan/capabilities.hpp
 	include/voxen/client/vulkan/command_buffer.hpp
 	include/voxen/client/vulkan/command_pool.hpp
 	include/voxen/client/vulkan/common.hpp
