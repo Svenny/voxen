@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/physical_device.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/instance.hpp>
 
 #include <voxen/util/exception.hpp>
@@ -81,14 +82,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 {
 	Log::debug("Trying GPU '{}'", props.deviceName);
 
-	auto api_version = std::make_pair(VK_VERSION_MAJOR(props.apiVersion),
-	                                  VK_VERSION_MINOR(props.apiVersion));
-	auto required_api_version = std::make_pair(Instance::kMinVulkanVersionMajor,
-	                                           Instance::kMinVulkanVersionMinor);
-	if (api_version < required_api_version) {
+	uint32_t req_version = Capabilities::MIN_VULKAN_VERSION;
+	if (props.apiVersion < req_version) {
 		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}",
-		           props.deviceName, api_version.first, api_version.second,
-		           required_api_version.first, required_api_version.second);
+		           props.deviceName, VK_VERSION_MAJOR(props.apiVersion), VK_VERSION_MINOR(props.apiVersion),
+		           VK_VERSION_MAJOR(req_version), VK_VERSION_MINOR(req_version));
 		return false;
 	}
 
