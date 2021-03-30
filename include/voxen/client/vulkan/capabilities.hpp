@@ -29,8 +29,7 @@ public:
 		bool relaxed_raster_order_available = false;
 	};
 
-	constexpr static uint32_t MIN_VULKAN_MAJOR = 1;
-	constexpr static uint32_t MIN_VULKAN_MINOR = 2;
+	constexpr static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;
 
 	Capabilities() = default;
 	Capabilities(Capabilities &&) = delete;

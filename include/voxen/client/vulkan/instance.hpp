@@ -7,11 +7,7 @@ namespace voxen::client::vulkan
 
 class Instance {
 public:
-	// Minimal supported Vulkan version
-	constexpr static uint32_t kMinVulkanVersionMajor = 1;
-	constexpr static uint32_t kMinVulkanVersionMinor = 2;
-
-	explicit Instance();
+	Instance();
 	Instance(Instance &&) = delete;
 	Instance(const Instance &) = delete;
 	Instance &operator = (Instance &&) = delete;

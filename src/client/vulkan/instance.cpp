@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/instance.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/capabilities.hpp>
 
 #include <voxen/config.hpp>
 #include <voxen/util/exception.hpp>
@@ -15,8 +16,10 @@ Instance::Instance()
 {
 	Log::debug("Creating Instance");
 
-	if (!checkVulkanSupport())
+	if (!checkVulkanSupport()) {
 		throw MessageException("unsupported or missing Vulkan driver");
+	}
+
 	createInstance();
 
 	auto &backend = Backend::backend();
@@ -33,6 +36,7 @@ Instance::~Instance() noexcept
 {
 	Log::debug("Destroying Instance");
 	destroyInstance();
+	Log::debug("Intance destroyed");
 }
 
 bool Instance::checkVulkanSupport() const
@@ -54,11 +58,14 @@ bool Instance::checkVulkanSupport() const
 	uint32_t minor = VK_VERSION_MINOR(version);
 	uint32_t patch = VK_VERSION_PATCH(version);
 	Log::info("Vulkan instance version is {}.{}.{}", major, minor, patch);
-	if (std::make_pair(major, minor) < std::make_pair(kMinVulkanVersionMajor, kMinVulkanVersionMinor)) {
-		Log::error("Vulkan instance version is lower than minimal supported {}.{}",
-		           kMinVulkanVersionMajor, kMinVulkanVersionMinor);
+
+	if (version < Capabilities::MIN_VULKAN_VERSION) {
+		uint32_t req_major = VK_VERSION_MAJOR(Capabilities::MIN_VULKAN_VERSION);
+		uint32_t req_minor = VK_VERSION_MINOR(Capabilities::MIN_VULKAN_VERSION);
+		Log::error("Vulkan instance version is lower than minimal supported ({}.{})", req_major, req_minor);
 		return false;
 	}
+
 	return true;
 }
 
@@ -150,7 +157,7 @@ void Instance::createInstance()
 	app_info.applicationVersion = version;
 	app_info.pEngineName = "Voxen";
 	app_info.engineVersion = version;
-	app_info.apiVersion = VK_MAKE_VERSION(kMinVulkanVersionMajor, kMinVulkanVersionMinor, 0);
+	app_info.apiVersion = Capabilities::MIN_VULKAN_VERSION;
 
 	// Fill VkInstanceCreateInfo
 	auto ext_list = getRequiredInstanceExtensions();
