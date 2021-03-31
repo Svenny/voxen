@@ -1,8 +1,6 @@
 #include <voxen/client/vulkan/backend.hpp>
 
-#include <voxen/client/vulkan/high/main_loop.hpp>
-#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
+#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/instance.hpp>
@@ -19,14 +17,71 @@
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
 #include <voxen/client/vulkan/algo/terrain_simple.hpp>
 
+#include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
+#include <voxen/client/vulkan/high/transfer_manager.hpp>
+
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
 
+#include <cassert>
+#include <new>
+#include <tuple>
+
 namespace voxen::client::vulkan
 {
 
-Backend Backend::s_instance;
+struct Backend::Impl {
+	template<typename T>
+	struct Storage { std::aligned_storage_t<sizeof(T), alignof(T)> storage; };
+
+	std::tuple<
+		Storage<Capabilities>,
+		Storage<Instance>,
+		Storage<PhysicalDevice>,
+		Storage<Device>,
+
+		Storage<DeviceAllocator>,
+		Storage<TransferManager>,
+
+		Storage<ShaderModuleCollection>,
+		Storage<PipelineCache>,
+		Storage<PipelineLayoutCollection>,
+
+		Storage<Surface>,
+		Storage<RenderPassCollection>,
+		Storage<Swapchain>,
+		Storage<FramebufferCollection>,
+		Storage<PipelineCollection>,
+
+		Storage<TerrainSynchronizer>,
+
+		Storage<MainLoop>,
+		Storage<AlgoDebugOctree>,
+		Storage<AlgoTerrainSimple>
+	> storage;
+
+	template<typename T, typename... Args> void constructModule(T *&ptr, Args&&... args)
+	{
+		assert(!ptr);
+		using S = Storage<std::remove_cvref_t<T>>;
+		ptr = new (&std::get<S>(storage)) T(std::forward<Args>(args)...);
+	}
+
+	template<typename T> void destructModule(T *&ptr) noexcept
+	{
+		if (ptr) {
+			ptr->~T();
+			ptr = nullptr;
+		}
+	}
+};
+
+constexpr Backend::Backend(Impl &impl) noexcept : m_impl(impl) {}
+
+static constinit Backend::Impl g_backend_impl;
+constinit Backend Backend::s_instance(g_backend_impl);
 
 Backend::~Backend() noexcept
 {
@@ -155,31 +210,34 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 
 	try {
 		if (start_all) {
-			m_instance = new Instance;
-			m_physical_device = new PhysicalDevice;
-			m_device = new Device;
-			m_device_allocator = new DeviceAllocator;
-			m_transfer_manager = new TransferManager;
-			m_shader_module_collection = new ShaderModuleCollection;
-			m_pipeline_cache = new PipelineCache("pipeline.cache");
-			m_pipeline_layout_collection = new PipelineLayoutCollection;
+			m_impl.constructModule(m_capabilities);
+			m_impl.constructModule(m_instance);
+			m_impl.constructModule(m_physical_device);
+			m_impl.constructModule(m_device);
+
+			m_impl.constructModule(m_device_allocator);
+			m_impl.constructModule(m_transfer_manager);
+
+			m_impl.constructModule(m_shader_module_collection);
+			m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
+			m_impl.constructModule(m_pipeline_layout_collection);
 		}
 
 		if (start_surface_dep) {
-			m_surface = new Surface(window);
-			m_render_pass_collection = new RenderPassCollection;
+			m_impl.constructModule(m_surface, window);
+			m_impl.constructModule(m_render_pass_collection);
 		}
 
 		if (start_swapchain_dep) {
-			m_swapchain = new Swapchain;
-			m_framebuffer_collection = new FramebufferCollection;
-			m_pipeline_collection = new PipelineCollection;
+			m_impl.constructModule(m_swapchain);
+			m_impl.constructModule(m_framebuffer_collection);
+			m_impl.constructModule(m_pipeline_collection);
 
-			m_terrain_synchronizer = new TerrainSynchronizer;
+			m_impl.constructModule(m_terrain_synchronizer);
 
-			m_main_loop = new MainLoop;
-			m_algo_debug_octree = new AlgoDebugOctree;
-			m_algo_terrain_simple = new AlgoTerrainSimple;
+			m_impl.constructModule(m_main_loop);
+			m_impl.constructModule(m_algo_debug_octree);
+			m_impl.constructModule(m_algo_terrain_simple);
 		}
 
 		return true;
@@ -219,48 +277,34 @@ void Backend::doStop(StartStopMode mode) noexcept
 	const bool stop_swapchain_dep = (stop_surface_dep || mode == StartStopMode::SwapchainDependentOnly);
 
 	if (stop_swapchain_dep) {
-		delete m_algo_terrain_simple;
-		m_algo_terrain_simple = nullptr;
-		delete m_algo_debug_octree;
-		m_algo_debug_octree = nullptr;
-		delete m_main_loop;
-		m_main_loop = nullptr;
+		m_impl.destructModule(m_algo_terrain_simple);
+		m_impl.destructModule(m_algo_debug_octree);
+		m_impl.destructModule(m_main_loop);
 
-		delete m_terrain_synchronizer;
-		m_terrain_synchronizer = nullptr;
+		m_impl.destructModule(m_terrain_synchronizer);
 
-		delete m_pipeline_collection;
-		m_pipeline_collection = nullptr;
-		delete m_framebuffer_collection;
-		m_framebuffer_collection = nullptr;
-		delete m_swapchain;
-		m_swapchain = nullptr;
+		m_impl.destructModule(m_pipeline_collection);
+		m_impl.destructModule(m_framebuffer_collection);
+		m_impl.destructModule(m_swapchain);
 	}
 
 	if (stop_surface_dep) {
-		delete m_render_pass_collection;
-		m_render_pass_collection = nullptr;
-		delete m_surface;
-		m_surface = nullptr;
+		m_impl.destructModule(m_render_pass_collection);
+		m_impl.destructModule(m_surface);
 	}
 
 	if (stop_all) {
-		delete m_pipeline_layout_collection;
-		m_pipeline_layout_collection = nullptr;
-		delete m_pipeline_cache;
-		m_pipeline_cache = nullptr;
-		delete m_shader_module_collection;
-		m_shader_module_collection = nullptr;
-		delete m_transfer_manager;
-		m_transfer_manager = nullptr;
-		delete m_device_allocator;
-		m_device_allocator = nullptr;
-		delete m_device;
-		m_device = nullptr;
-		delete m_physical_device;
-		m_physical_device = nullptr;
-		delete m_instance;
-		m_instance = nullptr;
+		m_impl.destructModule(m_pipeline_layout_collection);
+		m_impl.destructModule(m_pipeline_cache);
+		m_impl.destructModule(m_shader_module_collection);
+
+		m_impl.destructModule(m_transfer_manager);
+		m_impl.destructModule(m_device_allocator);
+
+		m_impl.destructModule(m_device);
+		m_impl.destructModule(m_physical_device);
+		m_impl.destructModule(m_instance);
+		m_impl.destructModule(m_capabilities);
 	}
 }
 
