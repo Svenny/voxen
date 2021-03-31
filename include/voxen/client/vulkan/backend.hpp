@@ -12,6 +12,7 @@ namespace voxen::client::vulkan
 
 class AlgoDebugOctree;
 class AlgoTerrainSimple;
+class Capabilities;
 class Device;
 class DeviceAllocator;
 class FramebufferCollection;
@@ -30,6 +31,8 @@ class TransferManager;
 
 class Backend {
 public:
+	struct Impl;
+
 	enum class State {
 		NotStarted,
 		Started,
@@ -48,14 +51,20 @@ public:
 
 	State state() const noexcept { return m_state; }
 
+	Capabilities &capabilities() noexcept { return *m_capabilities; }
+	const Capabilities &capabilities() const noexcept { return *m_capabilities; }
+
 	Instance *instance() const noexcept { return m_instance; }
 	PhysicalDevice *physicalDevice() const noexcept { return m_physical_device; }
 	Device *device() const noexcept { return m_device; }
+
 	DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	TransferManager *transferManager() const noexcept { return m_transfer_manager; }
+
 	ShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
 	PipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
 	PipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
+
 	Surface *surface() const noexcept { return m_surface; }
 	RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
 	Swapchain *swapchain() const noexcept { return m_swapchain; }
@@ -84,17 +93,24 @@ public:
 	//    to its backend, needlessly (because of p.1) increasing objects' and code size
 	// 3. There is a lot of downstream entities (which strengthens p.2)
 	static Backend &backend() noexcept { return s_instance; }
+	static const Backend &cbackend() noexcept { return s_instance; }
 private:
 	State m_state = State::NotStarted;
 
+	Impl &m_impl;
+
+	Capabilities *m_capabilities = nullptr;
 	Instance *m_instance = nullptr;
 	PhysicalDevice *m_physical_device = nullptr;
 	Device *m_device = nullptr;
+
 	DeviceAllocator *m_device_allocator = nullptr;
 	TransferManager *m_transfer_manager = nullptr;
+
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
 	PipelineCache *m_pipeline_cache = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
+
 	Surface *m_surface = nullptr;
 	RenderPassCollection *m_render_pass_collection = nullptr;
 	Swapchain *m_swapchain = nullptr;
@@ -107,7 +123,7 @@ private:
 	AlgoDebugOctree *m_algo_debug_octree = nullptr;
 	AlgoTerrainSimple *m_algo_terrain_simple = nullptr;
 
-	static Backend s_instance;
+	static constinit Backend s_instance;
 
 	static std::string_view stateToString(State state) noexcept;
 
@@ -122,7 +138,7 @@ private:
 	bool doStart(Window &window, StartStopMode mode) noexcept;
 	void doStop(StartStopMode mode) noexcept;
 
-	Backend() = default;
+	constexpr Backend(Impl &impl) noexcept;
 	Backend(Backend &&) = delete;
 	Backend(const Backend &) = delete;
 	Backend &operator = (Backend &&) = delete;
