@@ -173,10 +173,8 @@ struct DisabledBlendState {
 };
 
 struct GraphicsPipelineParts {
-	GraphicsPipelineParts() noexcept {
-		assert(Backend::backend().shaderModuleCollection() != nullptr &&
-		       Backend::backend().pipelineLayoutCollection() != nullptr);
-
+	GraphicsPipelineParts() noexcept
+	{
 		for (auto &info : create_infos) {
 			info = {};
 			info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -214,7 +212,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 {
 	auto &my_parts = parts.debug_octree_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_OCTREE_PIPELINE];
-	auto &module_collection = *backend.shaderModuleCollection();
+	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -246,7 +244,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
-	my_create_info.layout = backend.pipelineLayoutCollection()->descriptorlessLayout();
+	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
 	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
 	my_create_info.subpass = 0;
 }
@@ -256,7 +254,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 {
 	auto &my_parts = parts.terrain_simple_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
-	auto &module_collection = *backend.shaderModuleCollection();
+	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -279,7 +277,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
-	my_create_info.layout = backend.pipelineLayoutCollection()->descriptorlessLayout();
+	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
 	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
 	my_create_info.subpass = 0;
 }
@@ -298,7 +296,7 @@ PipelineCollection::PipelineCollection() {
 	auto &backend = Backend::backend();
 	assert(backend.pipelineCache() != nullptr);
 	VkDevice device = *backend.device();
-	VkPipelineCache cache = *backend.pipelineCache();
+	VkPipelineCache cache = backend.pipelineCache();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();

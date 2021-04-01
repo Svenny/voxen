@@ -45,7 +45,7 @@ AlgoDebugOctree::AlgoDebugOctree() :
 void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &view)
 {
 	auto &backend = Backend::backend();
-	auto &pipeline_layout_collection = *backend.pipelineLayoutCollection();
+	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = *backend.pipelineCollection();
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_OCTREE_PIPELINE];
 	VkPipelineLayout pipeline_layout = pipeline_layout_collection.descriptorlessLayout();
