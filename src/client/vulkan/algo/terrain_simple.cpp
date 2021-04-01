@@ -27,7 +27,7 @@ AlgoTerrainSimple::AlgoTerrainSimple()
 void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
-	auto &pipeline_layout_collection = *backend.pipelineLayoutCollection();
+	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = *backend.pipelineCollection();
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
 	VkPipelineLayout pipeline_layout = pipeline_layout_collection.descriptorlessLayout();

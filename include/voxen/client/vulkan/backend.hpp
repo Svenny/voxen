@@ -62,9 +62,12 @@ public:
 	DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
 	TransferManager *transferManager() const noexcept { return m_transfer_manager; }
 
-	ShaderModuleCollection *shaderModuleCollection() const noexcept { return m_shader_module_collection; }
-	PipelineCache *pipelineCache() const noexcept { return m_pipeline_cache; }
-	PipelineLayoutCollection *pipelineLayoutCollection() const noexcept { return m_pipeline_layout_collection; }
+	ShaderModuleCollection &shaderModuleCollection() noexcept { return *m_shader_module_collection; }
+	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }
+	PipelineCache &pipelineCache() noexcept { return *m_pipeline_cache; }
+	const PipelineCache &pipelineCache() const noexcept { return *m_pipeline_cache; }
+	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
+	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
 	Surface *surface() const noexcept { return m_surface; }
 	RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
