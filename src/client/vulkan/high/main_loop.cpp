@@ -18,7 +18,7 @@ MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
 MainLoop::MainLoop()
 	: m_image_guard_fences(Backend::backend().swapchain()->numImages(), VK_NULL_HANDLE),
-	m_graphics_command_pool(Backend::backend().physicalDevice()->graphicsQueueFamily()),
+	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
 {
 	Log::debug("MainLoop created successfully");

@@ -19,7 +19,7 @@ Surface::Surface(Window &window)
 {
 	Log::debug("Creating Surface");
 	auto &backend = Backend::backend();
-	VkInstance instance = *backend.instance();
+	VkInstance instance = backend.instance();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkResult result = glfwCreateWindowSurface(instance, window.glfwHandle(), allocator, &m_surface);
@@ -37,7 +37,7 @@ Surface::~Surface() noexcept
 {
 	Log::debug("Destroying Surface");
 	auto &backend = Backend::backend();
-	VkInstance instance = *backend.instance();
+	VkInstance instance = backend.instance();
 	backend.vkDestroySurfaceKHR(instance, m_surface, VulkanHostAllocator::callbacks());
 }
 
@@ -46,8 +46,8 @@ void Surface::checkPresentSupport()
 	auto &backend = Backend::backend();
 	// Present support should've been checked in VulkanQueueManager when
 	// looking for a present queue family, so it's maybe a double check
-	VkPhysicalDevice device = *backend.physicalDevice();
-	uint32_t family = backend.physicalDevice()->presentQueueFamily();
+	VkPhysicalDevice device = backend.physicalDevice();
+	uint32_t family = backend.physicalDevice().presentQueueFamily();
 	VkBool32 supported;
 	VkResult result = backend.vkGetPhysicalDeviceSurfaceSupportKHR(device, family, m_surface, &supported);
 	if (result != VK_SUCCESS)
@@ -63,7 +63,7 @@ void Surface::checkPresentSupport()
 void Surface::pickSurfaceFormat()
 {
 	auto &backend = Backend::backend();
-	VkPhysicalDevice device = *backend.physicalDevice();
+	VkPhysicalDevice device = backend.physicalDevice();
 
 	uint32_t num_formats;
 	std::vector<VkSurfaceFormatKHR> formats;
@@ -90,7 +90,7 @@ void Surface::pickSurfaceFormat()
 void Surface::pickPresentMode()
 {
 	auto &backend = Backend::backend();
-	VkPhysicalDevice device = *backend.physicalDevice();
+	VkPhysicalDevice device = backend.physicalDevice();
 
 	uint32_t num_modes;
 	std::vector<VkPresentModeKHR> modes;

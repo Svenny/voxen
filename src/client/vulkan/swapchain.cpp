@@ -30,7 +30,7 @@ void Swapchain::recreateSwapchain()
 {
 	auto &backend = Backend::backend();
 	assert(backend.surface() != nullptr);
-	VkPhysicalDevice phys_device = *backend.physicalDevice();
+	VkPhysicalDevice phys_device = backend.physicalDevice();
 	VkDevice device = *backend.device();
 	VkSurfaceKHR surface = *backend.surface();
 	auto allocator = VulkanHostAllocator::callbacks();
