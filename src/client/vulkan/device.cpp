@@ -77,7 +77,7 @@ void Device::createDevice()
 	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
 
 	auto &backend = Backend::backend();
-	auto &phys_device = *backend.physicalDevice();
+	auto &phys_device = backend.physicalDevice();
 
 	// Fill VkDeviceQueueCreateInfo's
 	std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -125,7 +125,7 @@ void Device::createDevice()
 void Device::obtainQueueHandles() noexcept
 {
 	auto &backend = Backend::backend();
-	auto &phys_device = *backend.physicalDevice();
+	const auto &phys_device = backend.physicalDevice();
 	backend.vkGetDeviceQueue(m_device, phys_device.graphicsQueueFamily(), 0, &m_graphics_queue);
 	backend.vkGetDeviceQueue(m_device, phys_device.computeQueueFamily(), 0, &m_compute_queue);
 	backend.vkGetDeviceQueue(m_device, phys_device.transferQueueFamily(), 0, &m_transfer_queue);

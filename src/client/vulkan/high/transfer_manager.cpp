@@ -10,7 +10,7 @@ namespace voxen::client::vulkan
 {
 
 TransferManager::TransferManager()
-	: m_command_pool(Backend::backend().physicalDevice()->transferQueueFamily()),
+	: m_command_pool(Backend::backend().physicalDevice().transferQueueFamily()),
 	m_command_buffers(m_command_pool.allocateCommandBuffers(1)),
 	m_staging_buffer(createStagingBuffer())
 {

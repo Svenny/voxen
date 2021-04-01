@@ -83,7 +83,7 @@ std::shared_ptr<DeviceAllocation> DeviceAllocator::allocate(const AllocationRequ
 	           mem_reqs.size, mem_reqs.alignment, mem_reqs.memoryTypeBits);
 	// TODO: implement actual allocation stategy, this is a temporary stub
 	auto &backend = Backend::backend();
-	VkPhysicalDevice device = *backend.physicalDevice();
+	VkPhysicalDevice device = backend.physicalDevice();
 
 	VkPhysicalDeviceMemoryProperties mem_props;
 	backend.vkGetPhysicalDeviceMemoryProperties(device, &mem_props);
