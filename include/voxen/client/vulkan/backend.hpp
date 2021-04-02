@@ -83,9 +83,12 @@ public:
 	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
 	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
-	MainLoop *mainLoop() const noexcept { return m_main_loop; }
-	AlgoDebugOctree *algoDebugOctree() const noexcept { return m_algo_debug_octree; }
-	AlgoTerrainSimple *algoTerrainSimple() const noexcept { return m_algo_terrain_simple; }
+	MainLoop &mainLoop() noexcept { return *m_main_loop; }
+	const MainLoop &mainLoop() const noexcept { return *m_main_loop; }
+	AlgoDebugOctree &algoDebugOctree() noexcept { return *m_algo_debug_octree; }
+	const AlgoDebugOctree &algoDebugOctree() const noexcept { return *m_algo_debug_octree; }
+	AlgoTerrainSimple &algoTerrainSimple() noexcept { return *m_algo_terrain_simple; }
+	const AlgoTerrainSimple &algoTerrainSimple() const noexcept { return *m_algo_terrain_simple; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
