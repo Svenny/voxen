@@ -82,7 +82,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		}
 	}
 
-	TransferManager *transfer = Backend::backend().transferManager();
+	TransferManager &transfer = Backend::backend().transferManager();
 
 	if (m_vertex_format != VertexFormat::Nothing) {
 		VkDeviceSize vertex_buffer_size = getVertexElementSize(m_vertex_format) * create_info.num_vertices;
@@ -93,7 +93,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		m_vertex_buffer.emplace(info, Buffer::Usage::DeviceLocal);
 
-		transfer->uploadToBuffer(m_vertex_buffer.value(), create_info.vertex_data, vertex_buffer_size);
+		transfer.uploadToBuffer(m_vertex_buffer.value(), create_info.vertex_data, vertex_buffer_size);
 	}
 
 	if (m_index_format != IndexFormat::Nothing) {
@@ -105,11 +105,11 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		m_index_buffer.emplace(info, Buffer::Usage::DeviceLocal);
 
-		transfer->uploadToBuffer(m_index_buffer.value(), create_info.index_data, index_buffer_size);
+		transfer.uploadToBuffer(m_index_buffer.value(), create_info.index_data, index_buffer_size);
 	}
 
 	// TODO: do this after all meshes are loaded
-	transfer->ensureUploadsDone();
+	transfer.ensureUploadsDone();
 }
 
 void Mesh::bindBuffers(VkCommandBuffer cmd_buffer)
