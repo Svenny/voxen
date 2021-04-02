@@ -11,7 +11,7 @@ namespace voxen::client::vulkan
 
 RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_render_pass);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateRenderPass");
@@ -19,7 +19,7 @@ RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
 
 RenderPass::~RenderPass() noexcept {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyRenderPass(device, m_render_pass, VulkanHostAllocator::callbacks());
 }
 

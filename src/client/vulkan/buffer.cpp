@@ -12,7 +12,7 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 	: m_size(info.size)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkResult result = backend.vkCreateBuffer(device, &info, allocator, &m_buffer);
@@ -68,7 +68,7 @@ Buffer &Buffer::operator = (Buffer &&other) noexcept
 Buffer::~Buffer() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyBuffer(device, m_buffer, VulkanHostAllocator::callbacks());
 }
 

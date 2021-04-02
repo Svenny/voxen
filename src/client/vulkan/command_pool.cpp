@@ -15,7 +15,7 @@ CommandPool::CommandPool(uint32_t queue_family) {
 	info.queueFamilyIndex = queue_family;
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateCommandPool(device, &info, VulkanHostAllocator::callbacks(), &m_cmd_pool);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateCommandPool");
@@ -31,7 +31,7 @@ extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t co
 	info.commandBufferCount = count;
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkAllocateCommandBuffers(device, &info, handles.data());
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkAllocateCommandBuffers");
@@ -48,7 +48,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) 
 		handles[i] = buffers[i];
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkFreeCommandBuffers(device, m_cmd_pool, uint32_t(buffers.size()), handles.data());
 	for (auto &buf : buffers)
 		buf = CommandBuffer();
@@ -56,7 +56,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) 
 
 void CommandPool::trim() noexcept {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkTrimCommandPool(device, m_cmd_pool, 0);
 }
 
@@ -66,7 +66,7 @@ void CommandPool::reset(bool release_resources) {
 		flags = VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT;
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkResetCommandPool(device, m_cmd_pool, flags);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkResetCommandPool");
@@ -74,7 +74,7 @@ void CommandPool::reset(bool release_resources) {
 
 CommandPool::~CommandPool() noexcept {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyCommandPool(device, m_cmd_pool, VulkanHostAllocator::callbacks());
 }
 

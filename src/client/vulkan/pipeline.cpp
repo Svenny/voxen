@@ -294,7 +294,7 @@ PipelineCollection::PipelineCollection() {
 
 	auto &backend = Backend::backend();
 	assert(backend.pipelineCache() != nullptr);
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkPipelineCache cache = backend.pipelineCache();
 	auto allocator = VulkanHostAllocator::callbacks();
 
@@ -318,7 +318,7 @@ PipelineCollection::~PipelineCollection() noexcept {
 	Log::debug("Destroying PipelineCollection");
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	for (VkPipeline pipe : m_graphics_pipelines)

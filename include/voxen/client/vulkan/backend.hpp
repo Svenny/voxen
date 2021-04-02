@@ -57,7 +57,8 @@ public:
 	const Instance &instance() const noexcept { return *m_instance; }
 	PhysicalDevice &physicalDevice() noexcept { return *m_physical_device; }
 	const PhysicalDevice &physicalDevice() const noexcept { return *m_physical_device; }
-	Device *device() const noexcept { return m_device; }
+	Device &device() noexcept { return *m_device; }
+	const Device &device() const noexcept { return *m_device; }
 
 	DeviceAllocator &deviceAllocator() noexcept { return *m_device_allocator; }
 	const DeviceAllocator &deviceAllocator() const noexcept { return *m_device_allocator; }

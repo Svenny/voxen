@@ -11,7 +11,7 @@ namespace voxen::client::vulkan
 Image::Image(const VkImageCreateInfo &info)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkResult result = backend.vkCreateImage(device, &info, allocator, &m_image);
@@ -35,7 +35,7 @@ Image::Image(const VkImageCreateInfo &info)
 Image::~Image() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyImage(device, m_image, VulkanHostAllocator::callbacks());
 }
 

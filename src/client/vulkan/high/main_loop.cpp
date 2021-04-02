@@ -32,7 +32,7 @@ MainLoop::~MainLoop() noexcept
 void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	auto &swapchain = backend.swapchain();
 
 	size_t pending_frame_id = m_frame_id % MAX_PENDING_FRAMES;
@@ -111,7 +111,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	submit_info.signalSemaphoreCount = 1;
 	submit_info.pSignalSemaphores = &render_done_semaphore;
 
-	VkQueue queue = backend.device()->graphicsQueue();
+	VkQueue queue = backend.device().graphicsQueue();
 	result = backend.vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkQueueSubmit");
