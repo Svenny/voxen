@@ -41,7 +41,7 @@ Image FramebufferCollection::createSceneDepthStencilBuffer()
 
 	auto &backend = Backend::backend();
 	assert(backend.swapchain() != nullptr);
-	VkExtent2D extent = backend.swapchain()->imageExtent();
+	VkExtent2D extent = backend.swapchain().imageExtent();
 
 	VkImageCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -84,13 +84,11 @@ Framebuffer FramebufferCollection::createSceneFramebuffer()
 	Log::debug("Creating scene framebuffer");
 
 	auto &backend = Backend::backend();
-	auto *surface = backend.surface();
-	auto *swapchain = backend.swapchain();
-	assert(surface != nullptr && swapchain != nullptr);
-	assert(backend.renderPassCollection() != nullptr);
+	auto &surface = backend.surface();
+	auto &swapchain = backend.swapchain();
 
-	VkExtent2D frame_size = swapchain->imageExtent();
-	VkFormat color_buffer_format = surface->format().format;
+	VkExtent2D frame_size = swapchain.imageExtent();
+	VkFormat color_buffer_format = surface.format().format;
 
 	VkFramebufferAttachmentImageInfo attachment_infos[2] = { {}, {} };
 
@@ -121,7 +119,7 @@ Framebuffer FramebufferCollection::createSceneFramebuffer()
 	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	info.pNext = &attachments_info;
 	info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-	info.renderPass = backend.renderPassCollection()->mainRenderPass();
+	info.renderPass = backend.renderPassCollection().mainRenderPass();
 	info.attachmentCount = 2;
 	info.width = frame_size.width;
 	info.height = frame_size.height;
