@@ -25,7 +25,7 @@ Image::Image(const VkImageCreateInfo &info)
 	reqs.need_host_visibility = false;
 	reqs.prefer_host_coherence = false;
 	reqs.prefer_host_caching = false;
-	m_memory = backend.deviceAllocator()->allocate(reqs);
+	m_memory = backend.deviceAllocator().allocate(reqs);
 
 	result = backend.vkBindImageMemory(device, m_image, m_memory->handle(), m_memory->offset());
 	if (result != VK_SUCCESS)

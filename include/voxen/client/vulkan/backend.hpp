@@ -59,8 +59,10 @@ public:
 	const PhysicalDevice &physicalDevice() const noexcept { return *m_physical_device; }
 	Device *device() const noexcept { return m_device; }
 
-	DeviceAllocator *deviceAllocator() const noexcept { return m_device_allocator; }
-	TransferManager *transferManager() const noexcept { return m_transfer_manager; }
+	DeviceAllocator &deviceAllocator() noexcept { return *m_device_allocator; }
+	const DeviceAllocator &deviceAllocator() const noexcept { return *m_device_allocator; }
+	TransferManager &transferManager() noexcept { return *m_transfer_manager; }
+	const TransferManager &transferManager() const noexcept { return *m_transfer_manager; }
 
 	ShaderModuleCollection &shaderModuleCollection() noexcept { return *m_shader_module_collection; }
 	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }

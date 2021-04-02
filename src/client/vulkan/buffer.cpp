@@ -42,7 +42,7 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 		reqs.prefer_host_caching = true;
 		break;
 	}
-	m_memory = backend.deviceAllocator()->allocate(reqs);
+	m_memory = backend.deviceAllocator().allocate(reqs);
 
 	result = backend.vkBindBufferMemory(device, m_buffer, m_memory->handle(), m_memory->offset());
 	if (result != VK_SUCCESS)

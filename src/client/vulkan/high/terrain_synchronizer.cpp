@@ -74,7 +74,7 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 
 void TerrainSynchronizer::endSyncSession()
 {
-	Backend::backend().transferManager()->ensureUploadsDone();
+	Backend::backend().transferManager().ensureUploadsDone();
 }
 
 void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunkGpuData &)> chunk_callback,
@@ -105,9 +105,9 @@ void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunk
 
 void TerrainSynchronizer::enqueueSurfaceTransfer(const TerrainSurface &surface, ChunkGpuData &data)
 {
-	auto *transfer = Backend::backend().transferManager();
-	transfer->uploadToBuffer(data.vtx_buffer, surface.vertices(), surface.numVertices() * sizeof(TerrainSurfaceVertex));
-	transfer->uploadToBuffer(data.idx_buffer, surface.indices(), surface.numIndices() * sizeof(uint32_t));
+	auto &transfer = Backend::backend().transferManager();
+	transfer.uploadToBuffer(data.vtx_buffer, surface.vertices(), surface.numVertices() * sizeof(TerrainSurfaceVertex));
+	transfer.uploadToBuffer(data.idx_buffer, surface.indices(), surface.numIndices() * sizeof(uint32_t));
 }
 
 }
