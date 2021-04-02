@@ -80,7 +80,8 @@ public:
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
-	TerrainSynchronizer *terrainSynchronizer() const noexcept { return m_terrain_synchronizer; }
+	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
+	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
 	MainLoop *mainLoop() const noexcept { return m_main_loop; }
 	AlgoDebugOctree *algoDebugOctree() const noexcept { return m_algo_debug_octree; }

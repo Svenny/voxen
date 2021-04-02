@@ -64,8 +64,8 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 
 	auto view_proj_mat = view.cameraMatrix();
 
-	auto *terrain = backend.terrainSynchronizer();
-	terrain->walkActiveChunks(
+	auto &terrain = backend.terrainSynchronizer();
+	terrain.walkActiveChunks(
 	[&](const TerrainChunkGpuData &data) {
 		if (data.index_count == 0) {
 			// Don't draw junk lines for empty chunks

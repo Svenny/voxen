@@ -32,15 +32,15 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
 	VkPipelineLayout pipeline_layout = pipeline_layout_collection.descriptorlessLayout();
 
-	auto *terrain = backend.terrainSynchronizer();
+	auto &terrain = backend.terrainSynchronizer();
 	{
-		terrain->beginSyncSession();
+		terrain.beginSyncSession();
 		state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
 			if (isChunkVisible(chunk, view)) {
-				terrain->syncChunk(chunk);
+				terrain.syncChunk(chunk);
 			}
 		});
-		terrain->endSyncSession();
+		terrain.endSyncSession();
 	}
 
 	backend.vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -49,7 +49,7 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 
 	auto view_proj_mat = view.cameraMatrix();
 
-	terrain->walkActiveChunks(
+	terrain.walkActiveChunks(
 	[&](const TerrainChunkGpuData &data) {
 		const auto &header = data.header;
 		float base_x = float(header.base_x);
