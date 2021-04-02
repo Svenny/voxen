@@ -14,7 +14,7 @@ namespace voxen::client::vulkan
 Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateFramebuffer(device, &info, VulkanHostAllocator::callbacks(), &m_framebuffer);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateFramebuffer");
@@ -23,7 +23,7 @@ Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info)
 Framebuffer::~Framebuffer() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyFramebuffer(device, m_framebuffer, VulkanHostAllocator::callbacks());
 }
 

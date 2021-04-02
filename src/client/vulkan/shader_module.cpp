@@ -33,7 +33,7 @@ void ShaderModule::load(const char *relative_path)
 	info.pCode = reinterpret_cast<const uint32_t *>(code_bytes.data());
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateShaderModule(device, &info, VulkanHostAllocator::callbacks(), &m_shader_module);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateShaderModule");
@@ -45,7 +45,7 @@ void ShaderModule::unload() noexcept
 		return;
 
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	backend.vkDestroyShaderModule(device, m_shader_module, VulkanHostAllocator::callbacks());
 	m_shader_module = VK_NULL_HANDLE;
 }

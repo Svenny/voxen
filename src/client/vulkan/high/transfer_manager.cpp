@@ -15,7 +15,7 @@ TransferManager::TransferManager()
 	m_staging_buffer(createStagingBuffer())
 {
 	auto &backend = Backend::backend();
-	VkDevice device = *backend.device();
+	VkDevice device = backend.device();
 	VkDeviceMemory memory = m_staging_buffer.allocation().handle();
 	VkResult result = backend.vkMapMemory(device, memory, 0, VK_WHOLE_SIZE, 0, &m_staging_mapped_data);
 	if (result != VK_SUCCESS)
@@ -80,7 +80,7 @@ void TransferManager::ensureUploadsDone()
 	m_staging_written = 0;
 
 	auto &backend = Backend::backend();
-	auto &device = *backend.device();
+	auto &device = backend.device();
 
 	VkSubmitInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
