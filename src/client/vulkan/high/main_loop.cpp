@@ -17,7 +17,7 @@ namespace voxen::client::vulkan
 MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
 MainLoop::MainLoop()
-	: m_image_guard_fences(Backend::backend().swapchain()->numImages(), VK_NULL_HANDLE),
+	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE),
 	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
 {
@@ -33,7 +33,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = *backend.device();
-	auto *swapchain = backend.swapchain();
+	auto &swapchain = backend.swapchain();
 
 	size_t pending_frame_id = m_frame_id % MAX_PENDING_FRAMES;
 	VkSemaphore frame_acquired_semaphore = m_pending_frame_syncs[pending_frame_id].frame_acquired_semaphore;
@@ -44,7 +44,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkWaitForFences");
 
-	uint32_t swapchain_image_id = swapchain->acquireImage(frame_acquired_semaphore);
+	uint32_t swapchain_image_id = swapchain.acquireImage(frame_acquired_semaphore);
 
 	{
 		VkFence image_guard_fence = m_image_guard_fences[swapchain_image_id];
@@ -71,8 +71,8 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	VkRenderPassAttachmentBeginInfo attachment_info = {};
 	attachment_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
 	VkImageView attachments[2] = {
-		swapchain->imageView(swapchain_image_id),
-		backend.framebufferCollection()->sceneDepthStencilBufferView()
+		swapchain.imageView(swapchain_image_id),
+		backend.framebufferCollection().sceneDepthStencilBufferView()
 	};
 	attachment_info.attachmentCount = std::size(attachments);
 	attachment_info.pAttachments = attachments;
@@ -80,10 +80,10 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	VkRenderPassBeginInfo render_begin_info = {};
 	render_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_begin_info.pNext = &attachment_info;
-	render_begin_info.renderPass = backend.renderPassCollection()->mainRenderPass();
-	render_begin_info.framebuffer = backend.framebufferCollection()->sceneFramebuffer();
+	render_begin_info.renderPass = backend.renderPassCollection().mainRenderPass();
+	render_begin_info.framebuffer = backend.framebufferCollection().sceneFramebuffer();
 	render_begin_info.renderArea.offset = { 0, 0 };
-	render_begin_info.renderArea.extent = swapchain->imageExtent();
+	render_begin_info.renderArea.extent = swapchain.imageExtent();
 	render_begin_info.clearValueCount = 2;
 	VkClearValue clear_values[2];
 	clear_values[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -116,7 +116,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkQueueSubmit");
 
-	swapchain->presentImage(swapchain_image_id, render_done_semaphore);
+	swapchain.presentImage(swapchain_image_id, render_done_semaphore);
 
 	m_frame_id++;
 }

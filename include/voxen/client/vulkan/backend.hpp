@@ -69,11 +69,16 @@ public:
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
-	Surface *surface() const noexcept { return m_surface; }
-	RenderPassCollection *renderPassCollection() const noexcept { return m_render_pass_collection; }
-	Swapchain *swapchain() const noexcept { return m_swapchain; }
-	FramebufferCollection *framebufferCollection() const noexcept { return m_framebuffer_collection; }
-	PipelineCollection *pipelineCollection() const noexcept { return m_pipeline_collection; }
+	Surface &surface() noexcept { return *m_surface; }
+	const Surface &surface() const noexcept { return *m_surface; }
+	RenderPassCollection &renderPassCollection() noexcept { return *m_render_pass_collection; }
+	const RenderPassCollection &renderPassCollection() const noexcept { return *m_render_pass_collection; }
+	Swapchain &swapchain() noexcept { return *m_swapchain; }
+	const Swapchain &swapchain() const noexcept { return *m_swapchain; }
+	FramebufferCollection &framebufferCollection() noexcept { return *m_framebuffer_collection; }
+	const FramebufferCollection &framebufferCollection() const noexcept { return *m_framebuffer_collection; }
+	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
+	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
 	TerrainSynchronizer *terrainSynchronizer() const noexcept { return m_terrain_synchronizer; }
 

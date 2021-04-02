@@ -32,7 +32,7 @@ void Swapchain::recreateSwapchain()
 	assert(backend.surface() != nullptr);
 	VkPhysicalDevice phys_device = backend.physicalDevice();
 	VkDevice device = *backend.device();
-	VkSurfaceKHR surface = *backend.surface();
+	VkSurfaceKHR surface = backend.surface();
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkSwapchainCreateInfoKHR info = {};
@@ -49,10 +49,10 @@ void Swapchain::recreateSwapchain()
 	info.oldSwapchain = m_swapchain;
 
 	{
-		VkSurfaceFormatKHR surface_format = backend.surface()->format();
+		VkSurfaceFormatKHR surface_format = backend.surface().format();
 		info.imageFormat = surface_format.format;
 		info.imageColorSpace = surface_format.colorSpace;
-		info.presentMode = backend.surface()->presentMode();
+		info.presentMode = backend.surface().presentMode();
 	}
 
 	{
@@ -151,7 +151,7 @@ VkExtent2D Swapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
 		throw MessageException("can't create swapchain now");
 	} else if (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
-		auto[width, height] = Backend::backend().surface()->window().framebufferSize();
+		auto[width, height] = Backend::backend().surface().window().framebufferSize();
 		result.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
 		result.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
 	} else {
@@ -206,7 +206,7 @@ void Swapchain::createImageViews()
 	VkImageViewCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	info.format = backend.surface()->format().format;
+	info.format = backend.surface().format().format;
 	info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 	info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;

@@ -80,10 +80,9 @@ struct DefaultInputAssemblyState {
 struct DefaultViewportState {
 	DefaultViewportState() noexcept {
 		auto &backend = Backend::backend();
-		auto *swapchain = backend.swapchain();
-		assert(swapchain != nullptr);
+		auto &swapchain = backend.swapchain();
 
-		VkExtent2D frame_size = swapchain->imageExtent();
+		VkExtent2D frame_size = swapchain.imageExtent();
 
 		scissor.offset = { 0, 0 };
 		scissor.extent = frame_size;
@@ -245,7 +244,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
-	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
+	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;
 }
 
@@ -278,7 +277,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
-	my_create_info.renderPass = backend.renderPassCollection()->mainRenderPass();
+	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;
 }
 

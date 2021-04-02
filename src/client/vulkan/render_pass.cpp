@@ -35,7 +35,7 @@ VkAttachmentDescription RenderPassCollection::describeSwapchainColorBuffer() {
 	assert(Backend::backend().surface() != nullptr);
 
 	VkAttachmentDescription desc = {};
-	desc.format = Backend::backend().surface()->format().format;
+	desc.format = Backend::backend().surface().format().format;
 	desc.samples = VK_SAMPLE_COUNT_1_BIT;
 	desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
