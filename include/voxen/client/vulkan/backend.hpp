@@ -64,6 +64,8 @@ public:
 	const DeviceAllocator &deviceAllocator() const noexcept { return *m_device_allocator; }
 	TransferManager &transferManager() noexcept { return *m_transfer_manager; }
 	const TransferManager &transferManager() const noexcept { return *m_transfer_manager; }
+	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
+	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
 	ShaderModuleCollection &shaderModuleCollection() noexcept { return *m_shader_module_collection; }
 	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }
@@ -76,15 +78,13 @@ public:
 	const Surface &surface() const noexcept { return *m_surface; }
 	RenderPassCollection &renderPassCollection() noexcept { return *m_render_pass_collection; }
 	const RenderPassCollection &renderPassCollection() const noexcept { return *m_render_pass_collection; }
+	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
+	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
+
 	Swapchain &swapchain() noexcept { return *m_swapchain; }
 	const Swapchain &swapchain() const noexcept { return *m_swapchain; }
 	FramebufferCollection &framebufferCollection() noexcept { return *m_framebuffer_collection; }
 	const FramebufferCollection &framebufferCollection() const noexcept { return *m_framebuffer_collection; }
-	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
-	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
-
-	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
-	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
 	MainLoop &mainLoop() noexcept { return *m_main_loop; }
 	const MainLoop &mainLoop() const noexcept { return *m_main_loop; }
@@ -122,6 +122,7 @@ private:
 
 	DeviceAllocator *m_device_allocator = nullptr;
 	TransferManager *m_transfer_manager = nullptr;
+	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
 
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
 	PipelineCache *m_pipeline_cache = nullptr;
@@ -129,11 +130,10 @@ private:
 
 	Surface *m_surface = nullptr;
 	RenderPassCollection *m_render_pass_collection = nullptr;
-	Swapchain *m_swapchain = nullptr;
-	FramebufferCollection *m_framebuffer_collection = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
 
-	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
+	Swapchain *m_swapchain = nullptr;
+	FramebufferCollection *m_framebuffer_collection = nullptr;
 
 	MainLoop *m_main_loop = nullptr;
 	AlgoDebugOctree *m_algo_debug_octree = nullptr;

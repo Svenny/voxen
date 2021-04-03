@@ -217,6 +217,7 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 
 			m_impl.constructModule(m_device_allocator);
 			m_impl.constructModule(m_transfer_manager);
+			m_impl.constructModule(m_terrain_synchronizer);
 
 			m_impl.constructModule(m_shader_module_collection);
 			m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
@@ -226,14 +227,12 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 		if (start_surface_dep) {
 			m_impl.constructModule(m_surface, window);
 			m_impl.constructModule(m_render_pass_collection);
+			m_impl.constructModule(m_pipeline_collection);
 		}
 
 		if (start_swapchain_dep) {
 			m_impl.constructModule(m_swapchain);
 			m_impl.constructModule(m_framebuffer_collection);
-			m_impl.constructModule(m_pipeline_collection);
-
-			m_impl.constructModule(m_terrain_synchronizer);
 
 			m_impl.constructModule(m_main_loop);
 			m_impl.constructModule(m_algo_debug_octree);
@@ -281,14 +280,12 @@ void Backend::doStop(StartStopMode mode) noexcept
 		m_impl.destructModule(m_algo_debug_octree);
 		m_impl.destructModule(m_main_loop);
 
-		m_impl.destructModule(m_terrain_synchronizer);
-
-		m_impl.destructModule(m_pipeline_collection);
 		m_impl.destructModule(m_framebuffer_collection);
 		m_impl.destructModule(m_swapchain);
 	}
 
 	if (stop_surface_dep) {
+		m_impl.destructModule(m_pipeline_collection);
 		m_impl.destructModule(m_render_pass_collection);
 		m_impl.destructModule(m_surface);
 	}
@@ -298,6 +295,7 @@ void Backend::doStop(StartStopMode mode) noexcept
 		m_impl.destructModule(m_pipeline_cache);
 		m_impl.destructModule(m_shader_module_collection);
 
+		m_impl.destructModule(m_terrain_synchronizer);
 		m_impl.destructModule(m_transfer_manager);
 		m_impl.destructModule(m_device_allocator);
 

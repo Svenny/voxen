@@ -32,8 +32,6 @@ RenderPassCollection::RenderPassCollection() :
 }
 
 VkAttachmentDescription RenderPassCollection::describeSwapchainColorBuffer() {
-	assert(Backend::backend().surface() != nullptr);
-
 	VkAttachmentDescription desc = {};
 	desc.format = Backend::backend().surface().format().format;
 	desc.samples = VK_SAMPLE_COUNT_1_BIT;
