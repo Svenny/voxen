@@ -9,18 +9,42 @@
 namespace voxen::client::vulkan
 {
 
-RenderPass::RenderPass(const VkRenderPassCreateInfo &info) {
+RenderPass::RenderPass(const VkRenderPassCreateInfo &info)
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_render_pass);
-	if (result != VK_SUCCESS)
+	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateRenderPass");
+	}
 }
 
-RenderPass::~RenderPass() noexcept {
+RenderPass::RenderPass(const VkRenderPassCreateInfo2 &info)
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyRenderPass(device, m_render_pass, VulkanHostAllocator::callbacks());
+	VkResult result = backend.vkCreateRenderPass2(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	if (result != VK_SUCCESS) {
+		throw VulkanException(result, "vkCreateRenderPass2");
+	}
+}
+
+RenderPass::RenderPass(RenderPass &&other) noexcept :
+	m_handle(std::exchange(other.m_handle, static_cast<VkRenderPass>(VK_NULL_HANDLE)))
+{
+}
+
+RenderPass &RenderPass::operator = (RenderPass &&other) noexcept
+{
+	m_handle = std::exchange(other.m_handle, static_cast<VkRenderPass>(VK_NULL_HANDLE));
+	return *this;
+}
+
+RenderPass::~RenderPass() noexcept
+{
+	auto &backend = Backend::backend();
+	VkDevice device = backend.device();
+	backend.vkDestroyRenderPass(device, m_handle, VulkanHostAllocator::callbacks());
 }
 
 RenderPassCollection::RenderPassCollection() :
