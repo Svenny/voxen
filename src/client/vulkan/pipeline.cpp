@@ -6,7 +6,6 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
-#include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -78,32 +77,28 @@ struct DefaultInputAssemblyState {
 };
 
 struct DefaultViewportState {
-	DefaultViewportState() noexcept {
-		auto &backend = Backend::backend();
-		auto &swapchain = backend.swapchain();
-
-		VkExtent2D frame_size = swapchain.imageExtent();
-
+	DefaultViewportState() noexcept
+	{
+		// Effectively disable scissoring at all, we rely on setting the viewport correctly
 		scissor.offset = { 0, 0 };
-		scissor.extent = frame_size;
-
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = float(frame_size.width);
-		viewport.height = float(frame_size.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
+		scissor.extent = { INT32_MAX, INT32_MAX };
 
 		viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewport_info.scissorCount = 1;
 		viewport_info.pScissors = &scissor;
 		viewport_info.viewportCount = 1;
-		viewport_info.pViewports = &viewport;
+		viewport_info.pViewports = nullptr;
+
+		dynamic_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamic_state_info.dynamicStateCount = 1;
+		dynamic_state_info.pDynamicStates = &viewport_dynamic_state;
 	}
 
 	VkRect2D scissor;
-	VkViewport viewport;
 	VkPipelineViewportStateCreateInfo viewport_info = {};
+
+	const VkDynamicState viewport_dynamic_state = VK_DYNAMIC_STATE_VIEWPORT;
+	VkPipelineDynamicStateCreateInfo dynamic_state_info = {};
 };
 
 struct DefaultRasterizationState {
@@ -243,6 +238,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
 	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;
@@ -276,6 +272,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
 	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;

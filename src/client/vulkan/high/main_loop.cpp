@@ -77,19 +77,31 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	attachment_info.attachmentCount = std::size(attachments);
 	attachment_info.pAttachments = attachments;
 
+	const VkExtent2D frame_size = swapchain.imageExtent();
+
 	VkRenderPassBeginInfo render_begin_info = {};
 	render_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	render_begin_info.pNext = &attachment_info;
 	render_begin_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	render_begin_info.framebuffer = backend.framebufferCollection().sceneFramebuffer();
 	render_begin_info.renderArea.offset = { 0, 0 };
-	render_begin_info.renderArea.extent = swapchain.imageExtent();
+	render_begin_info.renderArea.extent = frame_size;
 	render_begin_info.clearValueCount = 2;
 	VkClearValue clear_values[2];
 	clear_values[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 	clear_values[1].depthStencil = { 0.0f, 0 };
 	render_begin_info.pClearValues = clear_values;
 	backend.vkCmdBeginRenderPass(cmd_buf, &render_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+	const VkViewport viewport {
+		.x = 0.0f,
+		.y = 0.0f,
+		.width = float(frame_size.width),
+		.height = float(frame_size.height),
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f
+	};
+	backend.vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
 
 	backend.algoTerrainSimple().executePass(cmd_buf, state, view);
 	backend.algoDebugOctree().executePass(cmd_buf, view);
