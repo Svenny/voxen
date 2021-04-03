@@ -8,6 +8,8 @@
 
 #include <extras/defer.hpp>
 
+#include <chrono>
+
 namespace voxen::client::vulkan
 {
 
@@ -36,10 +38,24 @@ Device::~Device() noexcept
 
 void Device::waitIdle()
 {
-	auto &backend = Backend::backend();
-	VkResult result = backend.vkDeviceWaitIdle(m_device);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result, "vkDeviceWaitIdle");
+	auto wait = [&]() {
+		auto &backend = Backend::backend();
+		VkResult result = backend.vkDeviceWaitIdle(m_device);
+		if (result != VK_SUCCESS) {
+			throw VulkanException(result, "vkDeviceWaitIdle");
+		}
+	};
+
+	if (BuildConfig::kUseVulkanDebugging && Log::willBeLogged(Log::Level::Debug)) {
+		auto t1 = std::chrono::steady_clock::now();
+		wait();
+		auto t2 = std::chrono::steady_clock::now();
+
+		double ms = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+		Log::debug("Spent {:.2f} ms in `vkDeviceWaitIdle`", ms);
+	} else {
+		wait();
+	}
 }
 
 std::vector<const char *> Device::getRequiredDeviceExtensions()
