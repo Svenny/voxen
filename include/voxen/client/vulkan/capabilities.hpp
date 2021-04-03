@@ -22,6 +22,12 @@ public:
 		// Maximal number of views the device can render to.
 		// Value of 1 indicates there is no multiview support.
 		uint32_t max_views = 1;
+		// Maximal number of samples per pixel the device can render.
+		// Value of 1 indicates multisampling is not supported.
+		uint32_t max_samples = 1;
+		// Maximal number of samples with configurable sample locations.
+		// Value of 0 indicates there is no sample locations support.
+		uint32_t max_samples_locations = 0;
 
 		// Set to `true` when VK_EXT_depth_range_unrestricted is supported
 		bool unrestricted_depth_range_available = false;
@@ -29,7 +35,7 @@ public:
 		bool relaxed_raster_order_available = false;
 	};
 
-	constexpr static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;
+	constexpr inline static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;
 
 	Capabilities() = default;
 	Capabilities(Capabilities &&) = delete;
@@ -60,6 +66,7 @@ private:
 		VkPhysicalDeviceProperties2 props10;
 		VkPhysicalDeviceVulkan11Properties props11;
 		VkPhysicalDeviceVulkan12Properties props12;
+		VkPhysicalDeviceSampleLocationsPropertiesEXT props_sample_locations;
 
 		std::vector<VkExtensionProperties> extensions;
 	} m_phys_dev_caps;
@@ -82,6 +89,7 @@ private:
 	void prepareDeviceCreationRequest() noexcept;
 
 	bool isExtensionSupported(const char *name) const noexcept;
+	static uint32_t maxSamplesCount(VkSampleCountFlags flags) noexcept;
 };
 
 }

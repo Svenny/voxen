@@ -106,6 +106,19 @@ void Capabilities::checkOptionalProperties()
 	m_optional_caps.max_frame_size.height = caps.props10.properties.limits.maxFramebufferHeight;
 	m_optional_caps.max_anisotropy = caps.props10.properties.limits.maxSamplerAnisotropy;
 	m_optional_caps.max_views = caps.props11.maxMultiviewViewCount;
+
+	// Take the minimal of all possible values to be conservative.
+	// Don't check storage images as they are limited to 1 sample at least on UHD 630.
+	m_optional_caps.max_samples = std::min({
+		maxSamplesCount(caps.props10.properties.limits.framebufferColorSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.framebufferDepthSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.framebufferStencilSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.sampledImageColorSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.sampledImageIntegerSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.sampledImageDepthSampleCounts),
+		maxSamplesCount(caps.props10.properties.limits.sampledImageStencilSampleCounts),
+		maxSamplesCount(caps.props12.framebufferIntegerColorSampleCounts)
+	});
 }
 
 bool Capabilities::checkMandatoryExtensions()
@@ -143,6 +156,10 @@ void Capabilities::checkOptionalExtensions()
 	// May be used as optimization on AMD cards
 	CHECK_OPTIONAL_EXTENSION(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME,
 		m_optional_caps.relaxed_raster_order_available = true);
+	// Needed for temporal anti-aliasing
+	CHECK_OPTIONAL_EXTENSION(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
+		m_optional_caps.max_samples_locations = std::min(m_optional_caps.max_samples,
+			maxSamplesCount(m_phys_dev_caps.props_sample_locations.sampleLocationSampleCounts)));
 
 #undef CHECK_OPTIONAL_EXTENSION
 }
@@ -214,8 +231,12 @@ void Capabilities::fillPhysicalDeviceCaps(VkPhysicalDevice device)
 	c.features10.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	c.features10.pNext = &c.features11;
 
+	c.props_sample_locations = {};
+	c.props_sample_locations.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT;
+
 	c.props12 = {};
 	c.props12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+	c.props12.pNext = &c.props_sample_locations;
 
 	c.props11 = {};
 	c.props11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
@@ -279,6 +300,31 @@ bool Capabilities::isExtensionSupported(const char *name) const noexcept
 	[](const auto &a, const auto &b){
 		return strncmp(a.extensionName, b.extensionName, VK_MAX_EXTENSION_NAME_SIZE) < 0;
 	});
+}
+
+uint32_t Capabilities::maxSamplesCount(VkSampleCountFlags flags) noexcept
+{
+	if (!(flags & VK_SAMPLE_COUNT_1_BIT)) {
+		return 0;
+	}
+
+	constexpr VkSampleCountFlagBits bits[] = {
+		VK_SAMPLE_COUNT_2_BIT,
+		VK_SAMPLE_COUNT_4_BIT,
+		VK_SAMPLE_COUNT_8_BIT,
+		VK_SAMPLE_COUNT_16_BIT,
+		VK_SAMPLE_COUNT_32_BIT,
+		VK_SAMPLE_COUNT_64_BIT
+	};
+
+	uint32_t result = 1;
+	for (size_t i = 0; i < std::size(bits); i++) {
+		if (!(flags & bits[i])) {
+			break;
+		}
+		result <<= 1;
+	}
+	return result;
 }
 
 }
