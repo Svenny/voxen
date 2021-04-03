@@ -13,16 +13,18 @@ inline constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D32_SFLO
 
 class RenderPass {
 public:
+	RenderPass() = default;
 	explicit RenderPass(const VkRenderPassCreateInfo &info);
-	RenderPass(RenderPass &&) = delete;
+	explicit RenderPass(const VkRenderPassCreateInfo2 &info);
+	RenderPass(RenderPass &&) noexcept;
 	RenderPass(const RenderPass &) = delete;
-	RenderPass &operator = (RenderPass &&) = delete;
+	RenderPass &operator = (RenderPass &&) noexcept;
 	RenderPass &operator = (const RenderPass &) = delete;
 	~RenderPass() noexcept;
 
-	operator VkRenderPass() const noexcept { return m_render_pass; }
+	operator VkRenderPass() const noexcept { return m_handle; }
 private:
-	VkRenderPass m_render_pass = VK_NULL_HANDLE;
+	VkRenderPass m_handle = VK_NULL_HANDLE;
 };
 
 class RenderPassCollection {
