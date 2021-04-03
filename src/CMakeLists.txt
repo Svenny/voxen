@@ -73,13 +73,19 @@ set(VOXEN_SHADERS
 
 set(VOXEN_SHADER_BINARIES)
 
+set(VOXEN_SHADER_COMPILER_OPTIONS -O --target-env=vulkan1.2 -Werror)
+if (USE_VULKAN_DEBUGGING)
+	# Enable debug information generation
+	set(VOXEN_SHADER_COMPILER_OPTIONS ${VOXEN_SHADER_COMPILER_OPTIONS} -g)
+endif()
+
 foreach(SHADER ${VOXEN_SHADERS})
 	set(SHADER_SOURCE ${CMAKE_SOURCE_DIR}/src/shaders/${SHADER})
 	set(SHADER_BIN ${CMAKE_BINARY_DIR}/data/game/assets/shaders/${SHADER}.spv)
 	get_filename_component(SHADER_DIR ${SHADER_BIN} DIRECTORY)
 	file(MAKE_DIRECTORY ${SHADER_DIR})
 	add_custom_command(OUTPUT ${SHADER_BIN} DEPENDS ${SHADER_SOURCE} COMMENT "Building SPIR-V for shader ${SHADER}"
-		COMMAND ${GLSL_COMPILER} -O --target-env=vulkan1.2 -Werror ${SHADER_SOURCE} -o ${SHADER_BIN})
+		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS} ${SHADER_SOURCE} -o ${SHADER_BIN})
 	list(APPEND VOXEN_SHADER_BINARIES ${SHADER_BIN})
 	message(STATUS "Compiling shader ${SHADER}, source ${SHADER_SOURCE}, binary ${SHADER_BIN}")
 endforeach()
