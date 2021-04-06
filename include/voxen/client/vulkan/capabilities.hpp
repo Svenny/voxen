@@ -33,6 +33,9 @@ public:
 		bool unrestricted_depth_range_available = false;
 		// Set to `true` when VK_AMD_rasterization_order is supported
 		bool relaxed_raster_order_available = false;
+		// Set to `true` when advanced depth-stencil resolve
+		// modes are supported (MIN/MAX + independent resolve)
+		bool advanced_zs_resolve_modes_available = false;
 	};
 
 	constexpr inline static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;

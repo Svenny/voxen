@@ -119,6 +119,13 @@ void Capabilities::checkOptionalProperties()
 		maxSamplesCount(caps.props10.properties.limits.sampledImageStencilSampleCounts),
 		maxSamplesCount(caps.props12.framebufferIntegerColorSampleCounts)
 	});
+
+	constexpr VkResolveModeFlags resolve_bits = VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT;
+	if (caps.props12.independentResolve == VK_TRUE &&
+		(caps.props12.supportedDepthResolveModes & resolve_bits) == resolve_bits &&
+		(caps.props12.supportedStencilResolveModes & resolve_bits) == resolve_bits) {
+		m_optional_caps.advanced_zs_resolve_modes_available = true;
+	}
 }
 
 bool Capabilities::checkMandatoryExtensions()
