@@ -160,9 +160,6 @@ void Capabilities::checkOptionalExtensions()
 	// Needed for extended depth range, not implemented on Intel UHD 630
 	CHECK_OPTIONAL_EXTENSION(VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
 		m_optional_caps.unrestricted_depth_range_available = true);
-	// May be used as optimization on AMD cards
-	CHECK_OPTIONAL_EXTENSION(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME,
-		m_optional_caps.relaxed_raster_order_available = true);
 	// Needed for temporal anti-aliasing
 	CHECK_OPTIONAL_EXTENSION(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
 		m_optional_caps.max_samples_locations = std::min(m_optional_caps.max_samples,
