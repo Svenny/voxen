@@ -20,48 +20,41 @@ Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
 		throw VulkanException(result, "vkCreateBuffer");
 	defer_fail { backend.vkDestroyBuffer(device, m_buffer, allocator); };
 
-	DeviceAllocationRequirements reqs = {};
-	backend.vkGetBufferMemoryRequirements(device, m_buffer, &reqs.memory_reqs);
+	DeviceAllocator::ResourceAllocationInfo reqs {
+		.dedicated_if_preferred = false,
+		.force_dedicated = false
+	};
+	// TODO: get rid of this enum in favor of `DeviceMemoryUseCase`
 	switch (usage) {
 	case Usage::DeviceLocal:
-		// Don't need any host-side properties
-		reqs.need_host_visibility = false;
+		reqs.use_case = DeviceMemoryUseCase::GpuOnly;
 		break;
 	case Usage::Staging:
-		// Don't need host caching (write combiner is enough for this usage),
-		// but having coherence is preferred as it allows to avoid
-		reqs.need_host_visibility = true;
-		reqs.prefer_host_coherence = true;
-		reqs.prefer_host_caching = false;
+		reqs.use_case = DeviceMemoryUseCase::Upload;
 		break;
 	case Usage::Readback:
-		// Don't need host coherence (we may afford a heavy flush/invalidate for
-		// readback), but caching is preferred (because of cache prefetcher?)
-		reqs.need_host_visibility = true;
-		reqs.prefer_host_coherence = false;
-		reqs.prefer_host_caching = true;
+		reqs.use_case = DeviceMemoryUseCase::Readback;
 		break;
 	}
-	m_memory = backend.deviceAllocator().allocate(reqs);
+	m_memory = backend.deviceAllocator().allocate(m_buffer, reqs);
 
-	result = backend.vkBindBufferMemory(device, m_buffer, m_memory->handle(), m_memory->offset());
+	result = backend.vkBindBufferMemory(device, m_buffer, m_memory.handle(), m_memory.offset());
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkBindBufferMemory");
 }
 
 Buffer::Buffer(Buffer &&other) noexcept
-	: m_buffer(other.m_buffer), m_memory(other.m_memory), m_size(other.m_size)
 {
 	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
-	m_memory = std::exchange(other.m_memory, {});
-	m_size = std::exchange(other.m_size, 0);
+	m_memory = std::move(other.m_memory);
+	m_size = std::move(other.m_size);
 }
 
 Buffer &Buffer::operator = (Buffer &&other) noexcept
 {
 	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
-	m_memory = std::exchange(other.m_memory, {});
-	m_size = std::exchange(other.m_size, 0);
+	m_memory = std::move(other.m_memory);
+	m_size = std::move(other.m_size);
 	return *this;
 }
 

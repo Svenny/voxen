@@ -15,12 +15,16 @@ public:
 	Image &operator = (const Image &) = delete;
 	~Image() noexcept;
 
-	DeviceAllocation &allocation() { return *m_memory; }
+	DeviceAllocation &allocation() noexcept { return m_memory; }
+
+	VkImage handle() const noexcept { return m_image; }
+	const DeviceAllocation &allocation() const noexcept { return m_memory; }
 
 	operator VkImage() const noexcept { return m_image; }
+
 private:
 	VkImage m_image = VK_NULL_HANDLE;
-	std::shared_ptr<DeviceAllocation> m_memory;
+	DeviceAllocation m_memory;
 };
 
 }
