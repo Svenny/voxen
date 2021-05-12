@@ -6,6 +6,11 @@ set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
 	src/client/vulkan/high/main_loop.cpp
 	src/client/vulkan/high/mesh.cpp
+	src/client/vulkan/high/per_frame_resources.cpp
+	src/client/vulkan/high/render_graph.cpp
+	src/client/vulkan/high/render_graph_builder.cpp
+	src/client/vulkan/high/render_graph_compiler.cpp
+	src/client/vulkan/high/render_pass_builder.cpp
 	src/client/vulkan/high/terrain_synchronizer.cpp
 	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
@@ -33,6 +38,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/swapchain.cpp
 	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
+	src/client/graphics_options.cpp
 	src/client/gui.cpp
 	src/client/render.cpp
 	src/client/window.cpp
