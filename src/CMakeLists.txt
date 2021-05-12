@@ -63,6 +63,9 @@ target_sources(voxen PRIVATE ${VOXEN_SOURCES})
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})
 
 find_program(GLSL_COMPILER glslc)
+if(${GLSL_COMPILER} STREQUAL "GLSL_COMPILER-NOTFOUND")
+	message(FATAL_ERROR "GLSL compiler not found!")
+endif()
 
 set(VOXEN_SHADERS
 	debug/octree.vert
