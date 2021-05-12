@@ -18,6 +18,11 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/algo/terrain_simple.hpp
 	include/voxen/client/vulkan/high/main_loop.hpp
 	include/voxen/client/vulkan/high/mesh.hpp
+	include/voxen/client/vulkan/high/per_frame_resources.hpp
+	include/voxen/client/vulkan/high/render_graph.hpp
+	include/voxen/client/vulkan/high/render_graph_builder.hpp
+	include/voxen/client/vulkan/high/render_graph_compiler.hpp
+	include/voxen/client/vulkan/high/render_pass_builder.hpp
 	include/voxen/client/vulkan/high/terrain_synchronizer.hpp
 	include/voxen/client/vulkan/high/transfer_manager.hpp
 	include/voxen/client/vulkan/backend.hpp
@@ -43,6 +48,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/swapchain.hpp
 	include/voxen/client/vulkan/sync.hpp
 	include/voxen/client/vulkan/texture_manager.hpp
+	include/voxen/client/graphics_options.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/window.hpp

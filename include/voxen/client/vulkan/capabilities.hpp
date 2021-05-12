@@ -48,6 +48,8 @@ public:
 	// - No optional paths for later API versions are allowed
 	// - Using an extension is allowed only if it's not deprecated/obsolete in this version
 	constexpr inline static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;
+	// Maximal number of color attachments which are ever used in a single subpass
+	constexpr inline static uint32_t NUM_REQUIRED_COLOR_ATTACHMENTS = 2;
 
 	Capabilities() = default;
 	Capabilities(Capabilities &&) = delete;

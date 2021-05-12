@@ -18,6 +18,7 @@
 #include <voxen/client/vulkan/algo/terrain_simple.hpp>
 
 #include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/render_graph.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 
@@ -240,6 +241,9 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 			m_impl.constructModule(m_algo_terrain_simple);
 		}
 
+		m_capabilities->selectPhysicalDevice(physicalDevice());
+		RenderGraph rg;
+		rg.rebuild(GraphicsOptions{});
 		return true;
 	}
 	catch (const Exception &e) {

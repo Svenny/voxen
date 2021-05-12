@@ -85,6 +85,12 @@ bool Capabilities::checkMandatoryProperties()
 	CHECK_MANDATORY_FEATURE(features12, timelineSemaphore);
 
 #undef CHECK_MANDATORY_FEATURE
+
+	if (auto num = caps.props10.properties.limits.maxColorAttachments; num < NUM_REQUIRED_COLOR_ATTACHMENTS) {
+		Log::info("Limit 'maxColorAttachments' = {} is less than required {}", num, NUM_REQUIRED_COLOR_ATTACHMENTS);
+		return false;
+	}
+
 	return true;
 }
 
