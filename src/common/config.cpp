@@ -24,7 +24,7 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 	for (const SchemeEntry& entry : scheme) {
 		option_t value;
 		const char* value_ptr = m_ini.GetValue(entry.section.c_str(), entry.parameter_name.c_str());
-		if (value_ptr == NULL) {
+		if (!value_ptr) {
 			const std::string& value_str = optionToString(entry.default_value);
 			// This logic work only for one-line description. For multiline, each new line should starts with '; '
 			const std::string& comment = "; " + entry.description;
@@ -34,8 +34,10 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 			int type = entry.default_value.index();
 			value = Config::optionFromString(string_view(value_ptr), type);
 		}
-		if (m_data.count(entry.section) == 0)
+
+		if (m_data.count(entry.section) == 0) {
 			m_data[entry.section] = std::map<std::string, option_t, std::less<>>();
+		}
 		m_data[entry.section][entry.parameter_name] = value;
 	}
 }
@@ -75,8 +77,9 @@ bool Config::optionBool(string_view section, string_view parameter_name) const
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
 		auto it_inter = it_ext->second.find(parameter_name);
-		if (it_inter != it_ext->second.end())
+		if (it_inter != it_ext->second.end()) {
 			return std::get<bool>(it_inter->second);
+		}
 	}
 
 	throw FormattedMessageException("Bool option {}/{} not found", fmt::make_format_args(section, parameter_name));
@@ -88,8 +91,9 @@ double Config::optionDouble(string_view section, string_view parameter_name) con
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
 		auto it_inter = it_ext->second.find(parameter_name);
-		if (it_inter != it_ext->second.end())
+		if (it_inter != it_ext->second.end()) {
 			return std::get<double>(it_inter->second);
+		}
 	}
 
 	throw FormattedMessageException("Double option {}/{} not found", fmt::make_format_args(section, parameter_name));

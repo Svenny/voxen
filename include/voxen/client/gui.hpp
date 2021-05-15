@@ -11,7 +11,7 @@ namespace voxen::client
 
 class Gui {
 public:
-	Gui(Window& wnd);
+	Gui(Window& window);
 	~Gui() noexcept;
 
 	void handleKey(int key, int scancode, int action, int mods);

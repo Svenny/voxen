@@ -74,7 +74,7 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	});
 }
 
-bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView &view) const noexcept
+bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView &view) noexcept
 {
 	const auto &header = chunk.header();
 	const auto &surface = chunk.secondaryData().surface;

@@ -11,7 +11,6 @@ using std::tuple;
 using std::make_pair;
 using std::string;
 using std::string_view;
-namespace fs = std::filesystem;
 
 namespace voxen::client {
 

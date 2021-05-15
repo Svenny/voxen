@@ -16,13 +16,9 @@ WorldState::WorldState(const WorldState &other)
 {
 }
 
-WorldState::~WorldState() noexcept
-{
-}
-
 void WorldState::walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const
 {
-	m_terrain->walkActiveChunks(visitor);
+	m_terrain->walkActiveChunks(std::move(visitor));
 }
 
 }

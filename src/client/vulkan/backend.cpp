@@ -117,8 +117,9 @@ bool Backend::start(Window &window) noexcept
 
 void Backend::stop() noexcept
 {
-	if (m_state == State::NotStarted)
+	if (m_state == State::NotStarted) {
 		return;
+	}
 
 	Log::info("Stopping Vulkan backend");
 	doStop(StartStopMode::Everything);

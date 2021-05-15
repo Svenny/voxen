@@ -31,7 +31,7 @@ static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,
 	}
 	if (user_data) {
 		size_t sz = malloc_usable_size(ptr);
-		std::atomic_size_t *allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
+		auto allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
 		allocated->fetch_add(sz);
 	}
 	return ptr;
@@ -41,7 +41,7 @@ static void VKAPI_PTR vulkanFree(void *user_data, void *ptr) noexcept
 {
 	if (user_data) {
 		size_t sz = malloc_usable_size(ptr);
-		std::atomic_size_t *allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
+		auto allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
 		allocated->fetch_sub(sz);
 	}
 	free(ptr);
@@ -77,7 +77,7 @@ static void *VKAPI_PTR vulkanRealloc(void *user_data, void *original, size_t siz
 
 	size_t new_sz = malloc_usable_size(new_ptr);
 	if (user_data) {
-		std::atomic_size_t *allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
+		auto allocated = reinterpret_cast<std::atomic_size_t *>(user_data);
 		allocated->fetch_add(new_sz - old_sz);
 	}
 	return new_ptr;
@@ -98,8 +98,9 @@ VulkanHostAllocator::VulkanHostAllocator() noexcept : m_allocated(0)
 VulkanHostAllocator::~VulkanHostAllocator() noexcept
 {
 	size_t leftover = m_allocated.load();
-	if (leftover != 0)
+	if (leftover != 0) {
 		Log::warn("Vulkan code has memory leak! Approx. {} bytes left over", leftover);
+	}
 }
 
 const char *getVkResultString(VkResult result) noexcept

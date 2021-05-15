@@ -13,8 +13,9 @@ Semaphore::Semaphore() {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateSemaphore(device, &info, VulkanHostAllocator::callbacks(), &m_semaphore);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateSemaphore");
+	}
 }
 
 Semaphore::~Semaphore() noexcept {
@@ -26,14 +27,16 @@ Semaphore::~Semaphore() noexcept {
 Fence::Fence(bool create_signaled) {
 	VkFenceCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	if (create_signaled)
+	if (create_signaled) {
 		info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	}
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateFence(device, &info, VulkanHostAllocator::callbacks(), &m_fence);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateFence");
+	}
 }
 
 Fence::~Fence() noexcept {

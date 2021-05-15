@@ -10,9 +10,11 @@ namespace voxen::client
 
 Window Window::gInstance;
 
-void Window::start (int width, int height) {
-	if (mIsStarted)
+void Window::start(int width, int height)
+{
+	if (mIsStarted) {
 		return;
+	}
 	Log::info("Starting window and GLFW library");
 	logGlfwVersion ();
 	glfwSetErrorCallback (&Window::glfwErrorCallback);
@@ -27,24 +29,29 @@ void Window::start (int width, int height) {
 	mIsStarted = true;
 }
 
-void Window::stop () {
-	if (!mIsStarted)
+void Window::stop()
+{
+	if (!mIsStarted) {
 		return;
+	}
 	Log::info("Destroying window and stopping GLFW");
 	glfwDestroyWindow (mWindow);
 	glfwTerminate ();
 	mIsStarted = false;
 }
 
-bool Window::shouldClose () const {
+bool Window::shouldClose() const
+{
 	return glfwWindowShouldClose (mWindow) != 0;
 }
 
-void Window::pollEvents () {
+void Window::pollEvents()
+{
 	glfwPollEvents ();
 }
 
-void Window::logGlfwVersion () const {
+void Window::logGlfwVersion() const
+{
 	Log::debug("Voxen is compiled against GLFW {}.{}.{} ({})",
 		GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION, glfwGetVersionString ());
 	int major, minor, revision;
@@ -52,7 +59,8 @@ void Window::logGlfwVersion () const {
 	Log::debug("Voxen is running against GLFW {}.{}.{}", major, minor, revision);
 }
 
-void Window::createWindow (int width, int height) {
+void Window::createWindow(int width, int height)
+{
 	using namespace std::literals;
 
 	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
@@ -76,14 +84,16 @@ void Window::createWindow (int width, int height) {
 	}
 }
 
-void Window::glfwErrorCallback (int code, const char *message) noexcept {
+void Window::glfwErrorCallback(int code, const char *message) noexcept
+{
 	Log::error("GLFW error {}:\n{}", code, message);
 }
 
 bool Window::attachGUI(Gui& gui)
 {
-	if (m_attached_gui != nullptr)
+	if (m_attached_gui != nullptr) {
 		throw std::runtime_error ("try to attach gui to window, which already have another attached gui");
+	}
 	m_attached_gui = &gui;
 	glfwSetKeyCallback(mWindow, Window::globalKeyCallback);
 	glfwSetCursorPosCallback(mWindow, Window::globalMouseMovement);
@@ -92,36 +102,40 @@ bool Window::attachGUI(Gui& gui)
 	return true;
 }
 
-void Window::globalMouseMovement (GLFWwindow* window, double xpos, double ypos) noexcept
+void Window::globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
 	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
-	if (gui)
+	if (gui) {
 		gui->handleCursor(xpos, ypos);
+	}
 }
 
 void Window::globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
 	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
-	if (gui)
+	if (gui) {
 		gui->handleKey(key, scancode, action, mods);
+	}
 }
 
 void Window::globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
 	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
-	if (gui)
+	if (gui) {
 		gui->handleMouseKey(button, action, mods);
+	}
 }
 
 void Window::globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept
 {
 	void* ptr = glfwGetWindowUserPointer(window);
 	Gui* gui = static_cast<Window*>(ptr)->m_attached_gui;
-	if (gui)
+	if (gui) {
 		gui->handleMouseScroll(xoffset, yoffset);
+	}
 }
 
 int Window::width() const noexcept
@@ -155,15 +169,17 @@ std::pair<double, double> Window::cursorPos() const noexcept
 void Window::useRegularCursor()
 {
 	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	if (glfwRawMouseMotionSupported())
+	if (glfwRawMouseMotionSupported()) {
 		glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+	}
 }
 
-void Window::useOrientationCursor() {
+void Window::useOrientationCursor()
+{
 	glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	if (glfwRawMouseMotionSupported())
+	if (glfwRawMouseMotionSupported()) {
 		glfwSetInputMode(mWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
 }
-
 
 }

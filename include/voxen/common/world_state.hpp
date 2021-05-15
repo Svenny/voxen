@@ -24,7 +24,7 @@ public:
 	WorldState() = default;
 	WorldState(WorldState &&other) noexcept;
 	WorldState(const WorldState &other);
-	~WorldState() noexcept;
+	~WorldState() = default;
 
 	Player &player() noexcept { return m_player; }
 	const Player &player() const noexcept { return m_player; }

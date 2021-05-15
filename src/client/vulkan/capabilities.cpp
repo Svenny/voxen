@@ -179,7 +179,7 @@ void Capabilities::checkOptionalExtensions()
 bool Capabilities::checkMandatoryFormats(VkPhysicalDevice device)
 {
 	struct FormatRequirement {
-		VkFormat format;
+		VkFormat format = VK_FORMAT_UNDEFINED;
 		VkFormatFeatureFlags linear = 0;
 		VkFormatFeatureFlags optimal = 0;
 		VkFormatFeatureFlags buffer = 0;

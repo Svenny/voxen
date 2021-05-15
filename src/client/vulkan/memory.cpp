@@ -226,7 +226,7 @@ uint32_t DeviceAllocator::selectMemoryType(const AllocationInfo &info) const
 	int32_t best_score = -1000;
 
 	for (uint32_t i = 0; i < m_mem_props.memoryTypeCount; i++) {
-		if (!(info.acceptable_memory_types & (1 << i))) {
+		if (!(info.acceptable_memory_types & (1u << i))) {
 			continue;
 		}
 
@@ -255,7 +255,7 @@ void DeviceAllocator::readMemoryProperties()
 	if constexpr (BuildConfig::kUseVulkanDebugging) {
 		Log::debug("Device has the following memory heaps:");
 		for (uint32_t i = 0; i < m_mem_props.memoryHeapCount; i++) {
-			constexpr double mult = 1.0 / double(1 << 20); // Bytes to megabytes
+			constexpr double mult = 1.0 / double(1u << 20u); // Bytes to megabytes
 
 			const auto &heap = m_mem_props.memoryHeaps[i];
 			Log::debug("#{} -> {:.1f} MB{}", i, double(heap.size) * mult,

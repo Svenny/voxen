@@ -31,7 +31,8 @@ private:
 	VkQueue m_transfer_queue = VK_NULL_HANDLE;
 	VkQueue m_present_queue = VK_NULL_HANDLE;
 
-	std::vector<const char *> getRequiredDeviceExtensions();
+	static std::vector<const char *> getRequiredDeviceExtensions();
+
 	void createDevice();
 	void obtainQueueHandles() noexcept;
 	void destroyDevice() noexcept;

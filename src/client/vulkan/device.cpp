@@ -70,10 +70,12 @@ std::vector<const char *> Device::getRequiredDeviceExtensions()
 	};
 
 	// TODO: warn about unsupported extensions?
-	if (!ext_list.empty())
+	if (!ext_list.empty()) {
 		Log::info("Requesting the following Vulkan device extensions:");
-	for (const char *name : ext_list)
-		Log::info("{}", name);
+		for (const char *name : ext_list) {
+			Log::info("{}", name);
+		}
+	}
 	return ext_list;
 }
 
@@ -111,9 +113,11 @@ void Device::createDevice()
 		// to `idx` and preventing possible duplicates
 		auto addItem = [&queue_create_infos, &info](uint32_t idx) {
 			info.queueFamilyIndex = idx;
-			for (const auto &item : queue_create_infos)
-				if (item.queueFamilyIndex == info.queueFamilyIndex)
+			for (const auto &item : queue_create_infos) {
+				if (item.queueFamilyIndex == info.queueFamilyIndex) {
 					return;
+				}
+			}
 			queue_create_infos.push_back(info);
 		};
 
@@ -134,8 +138,9 @@ void Device::createDevice()
 	create_info.ppEnabledExtensionNames = ext_list.data();
 
 	VkResult result = backend.vkCreateDevice(phys_device, &create_info, VulkanHostAllocator::callbacks(), &m_device);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateDevice");
+	}
 }
 
 void Device::obtainQueueHandles() noexcept
