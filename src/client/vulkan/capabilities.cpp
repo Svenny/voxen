@@ -4,12 +4,17 @@
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/util/log.hpp>
 
+#include <bit>
+#include <string_view>
+
 namespace voxen::client::vulkan
 {
 
 // Policy of software/hardware platform support:
-// - Only the latest stable Linux drivers are considered
-// - Work is tested on the following GPUs:
+// - The latest "stable" Linux Vulkan drivers are considered target software:
+//   - Mesa 3D for Intel (`anv`) and AMD (`radv`)
+//   - Proprietary drivers for NVIDIA
+// - The following GPUs are considered target hardware:
 //   - Intel UHD Graphics 630
 //   - AMD Radeon RX Vega 5
 //   - AMD Radeon RX 5700
@@ -17,8 +22,10 @@ namespace voxen::client::vulkan
 //   - NVIDIA GeForce 1650 GTX
 
 // Policy for classifying extensions and features to 'wanted' or 'mandatory':
-// - An extension/feature is marked as mandatory if it is available on all tested GPUs
+// - An extension/feature is marked as mandatory if it is available on all target GPUs
 // - Otherwise an extension/feature is marked as wanted and engine parts depending on it must be optional
+// - We try to minimize the number of optional code paths, so generally an optional extension
+//   is added only if it's either easy to integrate or provides noticeable benefit when enabled
 
 constexpr static const char *MANDATORY_DEVICE_EXTENSIONS[] = {
 	// Needed to actually be able to present something.
@@ -36,7 +43,7 @@ bool Capabilities::selectPhysicalDevice(VkPhysicalDevice device)
 	fillPhysicalDeviceCaps(device);
 	prepareDeviceCreationRequest();
 
-	const char *device_name = m_phys_dev_caps.props10.properties.deviceName;
+	const std::string_view device_name(m_phys_dev_caps.props10.properties.deviceName);
 	Log::info("Analyzing capabilities of '{}'", device_name);
 
 	if (!checkMandatoryProperties() || !checkMandatoryExtensions() || !checkMandatoryFormats(device)) {
@@ -48,7 +55,6 @@ bool Capabilities::selectPhysicalDevice(VkPhysicalDevice device)
 	checkOptionalExtensions();
 
 	Log::info("'{}' passes minimal system requirements", device_name);
-
 	return true;
 }
 
@@ -119,6 +125,8 @@ void Capabilities::checkOptionalProperties()
 		maxSamplesCount(caps.props10.properties.limits.sampledImageStencilSampleCounts),
 		maxSamplesCount(caps.props12.framebufferIntegerColorSampleCounts)
 	});
+
+	// TODO (Svenny): check `max_samples_locations`
 
 	constexpr VkResolveModeFlags resolve_bits = VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT;
 	if (caps.props12.independentResolve == VK_TRUE &&
@@ -296,7 +304,7 @@ bool Capabilities::isExtensionSupported(const char *name) const noexcept
 {
 	// Needed to make comparator lambda template be valid for both
 	// "extension < name" and "name < extensions" comparisons
-	struct {
+	const struct {
 		const char *extensionName;
 	} wrapper { name };
 
@@ -308,27 +316,9 @@ bool Capabilities::isExtensionSupported(const char *name) const noexcept
 
 uint32_t Capabilities::maxSamplesCount(VkSampleCountFlags flags) noexcept
 {
-	if (!(flags & VK_SAMPLE_COUNT_1_BIT)) {
-		return 0;
-	}
-
-	constexpr VkSampleCountFlagBits bits[] = {
-		VK_SAMPLE_COUNT_2_BIT,
-		VK_SAMPLE_COUNT_4_BIT,
-		VK_SAMPLE_COUNT_8_BIT,
-		VK_SAMPLE_COUNT_16_BIT,
-		VK_SAMPLE_COUNT_32_BIT,
-		VK_SAMPLE_COUNT_64_BIT
-	};
-
-	uint32_t result = 1;
-	for (size_t i = 0; i < std::size(bits); i++) {
-		if (!(flags & bits[i])) {
-			break;
-		}
-		result <<= 1;
-	}
-	return result;
+	// As defined by Vulkan header, `VK_SAMPLE_COUNT_X_BIT` is equal to X,
+	// so we can simply count the number of contiguous ones in the bitmask
+	return 1u << std::countr_one(flags);
 }
 
 }
