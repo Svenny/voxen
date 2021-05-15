@@ -15,7 +15,7 @@ public:
 private:
 	Mesh m_cell_mesh;
 
-	Mesh createCellMesh();
+	static Mesh createCellMesh();
 };
 
 }

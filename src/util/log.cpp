@@ -20,8 +20,10 @@ void Log::doLog (Level level, std::experimental::source_location where,
 		fprintf (stdout, "[%s:%u][%s] ", where.file_name(), where.line (), kLogLevelString[int(level)]);
 		fwrite(t_message_buffer.data(), t_message_buffer.size(), sizeof(fmt::memory_buffer::value_type), stdout);
 		fputc ('\n', stdout);
-		if (level >= Level::Warn)
+		if (level >= Level::Warn) {
+			// It's probably desired to see warnings as early as possible, so flush the output buffer
 			fflush(stdout);
+		}
 	}
 	catch (const fmt::format_error &err) {
 		fprintf(stderr, "[%s:%u][%s] Caught fmt::format_error when trying to log: %s\n",

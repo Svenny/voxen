@@ -17,8 +17,9 @@ CommandPool::CommandPool(uint32_t queue_family) {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateCommandPool(device, &info, VulkanHostAllocator::callbacks(), &m_cmd_pool);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateCommandPool");
+	}
 }
 
 extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t count, bool secondary) {
@@ -33,25 +34,29 @@ extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t co
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkAllocateCommandBuffers(device, &info, handles.data());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkAllocateCommandBuffers");
+	}
 
 	extras::dyn_array<CommandBuffer> buffers(count);
-	for (uint32_t i = 0; i < count; i++)
+	for (uint32_t i = 0; i < count; i++) {
 		buffers[i] = CommandBuffer(handles[i], CommandBuffer::State::Initial);
+	}
 	return buffers;
 }
 
 void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) {
 	extras::dyn_array<VkCommandBuffer> handles(buffers.size());
-	for (size_t i = 0; i < buffers.size(); i++)
+	for (size_t i = 0; i < buffers.size(); i++) {
 		handles[i] = buffers[i];
+	}
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkFreeCommandBuffers(device, m_cmd_pool, uint32_t(buffers.size()), handles.data());
-	for (auto &buf : buffers)
+	for (auto &buf : buffers) {
 		buf = CommandBuffer();
+	}
 }
 
 void CommandPool::trim() noexcept {
@@ -62,14 +67,16 @@ void CommandPool::trim() noexcept {
 
 void CommandPool::reset(bool release_resources) {
 	VkCommandPoolResetFlags flags = 0;
-	if (release_resources)
+	if (release_resources) {
 		flags = VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT;
+	}
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkResetCommandPool(device, m_cmd_pool, flags);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkResetCommandPool");
+	}
 }
 
 CommandPool::~CommandPool() noexcept {

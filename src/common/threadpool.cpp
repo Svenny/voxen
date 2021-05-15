@@ -33,14 +33,16 @@ ThreadPool::ThreadPool(int start_thread_count)
 {
 	if (start_thread_count == -1) {
 		size_t std_hint = std::thread::hardware_concurrency();
-		if (std_hint == (size_t)0)
+		if (std_hint == 0) {
 			start_thread_count = DEFAULT_START_THREAD_COUNT;
-		else
+		} else {
 			start_thread_count = ((int)std_hint - 2); //2 already used by voxen: World thread and GUI thread
+		}
 	}
 
-	for (int i = 0; i < start_thread_count; i++)
+	for (int i = 0; i < start_thread_count; i++) {
 		run_worker(make_worker());
+	}
 }
 
 ThreadPool::~ThreadPool() noexcept
@@ -51,11 +53,13 @@ ThreadPool::~ThreadPool() noexcept
 		worker->state.semaphore.notify_one();
 	}
 
-	for (ReportableWorker* worker : m_workers)
-		if (worker->worker.joinable())
+	for (ReportableWorker* worker : m_workers) {
+		if (worker->worker.joinable()) {
 			worker->worker.join();
+		}
+	}
 
-	while (m_workers.size() > 0)
+	while (!m_workers.empty())
 	{
 		delete m_workers.back();
 		m_workers.pop_back();
@@ -88,7 +92,7 @@ void ThreadPool::workerFunction(ReportableWorkerState* state)
 
 ThreadPool::ReportableWorker* ThreadPool::make_worker()
 {
-	ReportableWorker* new_worker = new ReportableWorker();
+	auto new_worker = new ReportableWorker();
 	new_worker->state.is_exit.store(false);
 	m_workers.push_back(new_worker);
 	return new_worker;
@@ -101,15 +105,13 @@ void ThreadPool::run_worker(ReportableWorker* worker)
 
 void ThreadPool::cleanup_finished_workers()
 {
-	for (auto iter = m_workers.begin(); iter != m_workers.end(); /* no iteration here */)
-	{
-		if ((*iter)->state.is_exit.load())
-		{
+	for (auto iter = m_workers.begin(); iter != m_workers.end(); /* no iteration here */) {
+		if ((*iter)->state.is_exit.load()) {
 			delete *iter;
 			iter = m_workers.erase(iter);
-		}
-		else
+		} else {
 			iter++;
+		}
 	}
 }
 

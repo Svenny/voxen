@@ -16,8 +16,9 @@ Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info)
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateFramebuffer(device, &info, VulkanHostAllocator::callbacks(), &m_framebuffer);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateFramebuffer");
+	}
 }
 
 Framebuffer::~Framebuffer() noexcept

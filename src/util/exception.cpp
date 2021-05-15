@@ -17,7 +17,7 @@ Exception::Exception(const std::experimental::source_location &loc) : m_where(lo
 }
 
 ErrnoException::ErrnoException(int code, const char *api, const std::experimental::source_location &loc)
-   : Exception(loc) {
+   : Exception(loc), m_code(code) {
 	// TODO: not exception-safe
 	char buf[1024];
 	const char *description = strerror_r(code, buf, 1024);
@@ -43,10 +43,11 @@ FormattedMessageException::FormattedMessageException(
 
 const char * FormattedMessageException::what() const noexcept
 {
-	if (m_exception_occured)
+	if (m_exception_occured) {
 		return kExceptionOccuredMsg;
-	else
+	} else {
 		return m_what.c_str();
+	}
 }
 
 }

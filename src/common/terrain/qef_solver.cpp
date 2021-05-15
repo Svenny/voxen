@@ -13,9 +13,9 @@ namespace jacobi_detail
 template<typename T>
 static std::pair<T, T> calcSinCosFast(T tan_twophi)
 {
-	T inv = T(0.5) / hypot(T(1), tan_twophi);
-	T c = sqrt(T(0.5) + inv);
-	T s = copysign(sqrt(T(0.5) - inv), tan_twophi);
+	T inv = T(0.5) / std::hypot(T(1), tan_twophi);
+	T c = std::sqrt(T(0.5) + inv);
+	T s = std::copysign(std::sqrt(T(0.5) - inv), tan_twophi);
 	return { s, c };
 }
 
@@ -23,8 +23,8 @@ static std::pair<T, T> calcSinCosFast(T tan_twophi)
 template<typename T>
 static std::pair<T, T> calcSinCosAccurate(T tan_twophi)
 {
-	T phi = T(0.5) * atan(tan_twophi);
-	return { sin(phi), cos(phi) };
+	T phi = T(0.5) * std::atan(tan_twophi);
+	return { std::sin(phi), std::cos(phi) };
 }
 
 template<typename T>
@@ -123,21 +123,27 @@ static std::pair<glm::vec<D, T>, glm::mat<D, D, T> > jacobi(glm::mat<D, D, T> A,
 				}
 			}
 		}
-		if (max_el <= tolerance)
+		if (max_el <= tolerance) {
 			break;
+		}
+
 		int i = max_i;
 		int j = max_j;
 		T tan_twophi = (A[i][j] + A[i][j]) / (A[i][i] - A[j][j]);
+
 		T s, c;
-		if (use_fast_sincos)
+		if (use_fast_sincos) {
 			std::tie(s, c) = calcSinCosFast(tan_twophi);
-		else
+		} else {
 			std::tie(s, c) = calcSinCosAccurate(tan_twophi);
+		}
 		rotate<T>(A, E, c, s, i, j);
 	}
+
 	glm::vec<D, T> e;
-	for (int i = 0; i < D; i++)
+	for (int i = 0; i < D; i++) {
 		e[i] = A[i][i];
+	}
 	return { e, E };
 }
 
@@ -155,8 +161,9 @@ static void householder(T A[N][M], int used_rows)
 	for (int i = 0; i < N; i++) {
 		// Sum of squares of i-th subcolumn
 		T norm { 0 };
-		for (int j = i; j < used_rows; j++)
+		for (int j = i; j < used_rows; j++) {
 			norm += A[i][j] * A[i][j];
+		}
 		// Make v - reflection vector
 		memset(v, 0, sizeof(v));
 		T invgamma { 0 };
@@ -166,21 +173,27 @@ static void householder(T A[N][M], int used_rows)
 		}
 		else {
 			T mult = T(1) / glm::sqrt(norm);
-			for (int j = i; j < used_rows; j++)
+			for (int j = i; j < used_rows; j++) {
 				v[j] = A[i][j] * mult;
-			if (v[i] >= T(0))
+			}
+			if (v[i] >= T(0)) {
 				v[i] += T(1);
-			else v[i] -= T(1);
+			} else {
+				v[i] -= T(1);
+			}
 			invgamma = T(1) / glm::abs(v[i]);
 		}
 		// For each column do A[j] -= v * dot (A[j], v) / gamma
 		for (int j = i; j < N; j++) {
 			T mult { 0 };
-			for (int k = i; k < used_rows; k++)
+			for (int k = i; k < used_rows; k++) {
 				mult += A[j][k] * v[k];
+			}
 			mult *= invgamma;
-			for (int k = i; k < used_rows; k++)
+
+			for (int k = i; k < used_rows; k++) {
 				A[j][k] -= mult * v[k];
+			}
 		}
 	}
 }
@@ -199,29 +212,31 @@ QefSolver3D::QefSolver3D(const State &data) noexcept
 void QefSolver3D::reset() noexcept
 {
 	memset(A, 0, sizeof(A));
+	m_usedRows = 0;
 	m_pointsSum = glm::vec3 { 0 };
 	m_pointsCount = 0;
-	m_usedRows = 0;
 	m_featureDim = 0;
 }
 
 void QefSolver3D::merge(const State &data) noexcept
 {
-	// Mergee is of higher dimension, our mass point may be dismissed
 	if (data.dim > m_featureDim) {
+		// Mergee is of higher dimension, our mass point may be dismissed
 		m_featureDim = data.dim;
 		m_pointsSum = glm::vec3(data.mpx, data.mpy, data.mpz);
 		m_pointsCount = data.mp_cnt;
-	}
-	// Mergee is of the same dimension, add mass points together
-	else if (data.dim == m_featureDim) {
+	} else if (data.dim == m_featureDim) {
+		// Mergee is of the same dimension, add mass points together
 		m_pointsSum += glm::vec3(data.mpx, data.mpy, data.mpz);
 		m_pointsCount += data.mp_cnt;
-	}
+	} // else { /*do nothing*/ }
 	// When mergee is of lesser dimension its mass point may be dismissed
+
 	// We need four free rows
-	if (m_usedRows > kMaxRows - 4)
+	if (m_usedRows > kMaxRows - 4) {
 		compressMatrix();
+	}
+
 	int id = m_usedRows;
 	A[0][id] = data.a_11; A[1][id] = data.a_12; A[2][id] = data.a_13; A[3][id] = data.b_1;
 	id++;
@@ -236,30 +251,35 @@ void QefSolver3D::merge(const State &data) noexcept
 QefSolver3D::State QefSolver3D::state() noexcept
 {
 	compressMatrix();
-	State data;
-	data.a_11 = A[0][0]; data.a_12 = A[1][0]; data.a_13 = A[2][0]; data.b_1 = A[3][0];
-	                     data.a_22 = A[1][1]; data.a_23 = A[2][1]; data.b_2 = A[3][1];
-	                                          data.a_33 = A[2][2]; data.b_3 = A[3][2];
-	                                                               data.r2  = A[3][3];
-	data.mpx = m_pointsSum.x;
-	data.mpy = m_pointsSum.y;
-	data.mpz = m_pointsSum.z;
+
 	// Is it really safe to assume nobody will ever add 2^30 points? :P
-	assert (m_pointsCount < (1 << 30));
-	data.mp_cnt = m_pointsCount;
-	data.dim = m_featureDim;
-	return data;
+	assert (m_pointsCount < (1u << 30u));
+
+	return State {
+		.a_11 = A[0][0], .a_12 = A[1][0], .a_13 = A[2][0], .b_1 = A[3][0],
+		                 .a_22 = A[1][1], .a_23 = A[2][1], .b_2 = A[3][1],
+		                                  .a_33 = A[2][2], .b_3 = A[3][2],
+		                                                   .r2  = A[3][3],
+		.mpx = m_pointsSum.x,
+		.mpy = m_pointsSum.y,
+		.mpz = m_pointsSum.z,
+		.mp_cnt = m_pointsCount,
+		.dim = m_featureDim
+	};
 }
 
 void QefSolver3D::addPlane(glm::vec3 point, glm::vec3 normal) noexcept
 {
-	if (m_usedRows == kMaxRows)
+	if (m_usedRows == kMaxRows) {
 		compressMatrix();
+	}
+
 	int id = m_usedRows;
 	A[0][id] = normal.x;
 	A[1][id] = normal.y;
 	A[2][id] = normal.z;
 	A[3][id] = glm::dot(normal, point);
+
 	m_usedRows++;
 	m_pointsSum += point;
 	m_pointsCount++;

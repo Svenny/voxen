@@ -23,8 +23,9 @@ Surface::Surface(Window &window)
 	auto allocator = VulkanHostAllocator::callbacks();
 
 	VkResult result = glfwCreateWindowSurface(instance, window.glfwHandle(), allocator, &m_surface);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "glfwCreateWindowSurface");
+	}
 	defer_fail { backend.vkDestroySurfaceKHR(instance, m_surface, allocator); };
 
 	checkPresentSupport();
@@ -50,8 +51,9 @@ void Surface::checkPresentSupport()
 	uint32_t family = backend.physicalDevice().presentQueueFamily();
 	VkBool32 supported;
 	VkResult result = backend.vkGetPhysicalDeviceSurfaceSupportKHR(device, family, m_surface, &supported);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetPhysicalDeviceSurfaceSupportKHR");
+	}
 
 	if (!supported) {
 		Log::error("Selected GPU can't present to this window surface");
@@ -69,13 +71,15 @@ void Surface::pickSurfaceFormat()
 	std::vector<VkSurfaceFormatKHR> formats;
 	// Get number of surface formats
 	VkResult result = backend.vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &num_formats, nullptr);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+	}
 	// Get descriptions of surface formats
 	formats.resize(num_formats);
 	result = backend.vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &num_formats, formats.data());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+	}
 
 	for (auto format : formats) {
 		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -96,13 +100,15 @@ void Surface::pickPresentMode()
 	std::vector<VkPresentModeKHR> modes;
 	// Get number of present modes
 	VkResult result = backend.vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &num_modes, nullptr);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+	}
 	// Get descriptions of present modes
 	modes.resize(num_modes);
 	result = backend.vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &num_modes, modes.data());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+	}
 
 	// TODO: support configurable/runtime-changeable present modes?
 	for (auto mode : modes) {

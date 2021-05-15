@@ -70,10 +70,11 @@ cxxopts::Options initCli() {
 }
 
 static std::set<std::string> ignorable_keys = {"profile"};
-void patchConfig(cxxopts::ParseResult result, voxen::Config* config) {
-	for (auto& keyvalue : result.arguments()) {
-		if (ignorable_keys.count(keyvalue.key()))
+void patchConfig(const cxxopts::ParseResult &result, voxen::Config* config) {
+	for (const auto& keyvalue : result.arguments()) {
+		if (ignorable_keys.count(keyvalue.key())) {
 			continue;
+		}
 
 		int sep_idx = keyvalue.key().find(kCliSectionSeparator);
 		std::string section = keyvalue.key().substr(0, sep_idx);

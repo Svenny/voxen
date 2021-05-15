@@ -10,12 +10,14 @@ void CommandBuffer::reset(bool release_resources)
 	assert(m_state != State::Pending);
 
 	VkCommandBufferResetFlags flags = 0;
-	if (release_resources)
+	if (release_resources) {
 		flags = VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT;
+	}
 
 	VkResult result = Backend::backend().vkResetCommandBuffer(m_cmd_buffer, flags);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkResetCommandBuffer");
+	}
 	m_state = State::Initial;
 }
 
@@ -24,8 +26,9 @@ void CommandBuffer::begin(const VkCommandBufferBeginInfo &info)
 	assert(m_state != State::Recording && m_state != State::Pending);
 
 	VkResult result = Backend::backend().vkBeginCommandBuffer(m_cmd_buffer, &info);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBeginCommandBuffer");
+	}
 	m_state = State::Recording;
 }
 

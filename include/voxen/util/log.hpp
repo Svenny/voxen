@@ -51,7 +51,7 @@ public:
 	// Returns the current logging level
 	static Level level() noexcept { return m_current_level; }
 	// Changes the current logging level
-	static void setLevel(Level value) noexcept;
+	static void setLevel(Level level) noexcept;
 	// Returns whether logging with the given level will ultimately output something
 	static bool willBeLogged(Level level) noexcept { return level >= m_current_level; }
 private:

@@ -20,8 +20,9 @@ Gui::~Gui() noexcept {
 void Gui::handleKey(int key, int scancode, int action, int mods)
 {
 	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwKeyboardToPlayerEvent(key, scancode, action, mods);
-	if (input.first == PlayerActionEvent::None)
+	if (input.first == PlayerActionEvent::None) {
 		return;
+	}
 
 	m_gameview.handleEvent(input.first, input.second);
 }
@@ -34,8 +35,9 @@ void Gui::handleCursor(double xpos, double ypos)
 void Gui::handleMouseKey(int button, int action, int mods)
 {
 	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseKeyToPlayerEvent(button, action, mods);
-	if (input.first == PlayerActionEvent::None)
+	if (input.first == PlayerActionEvent::None) {
 		return;
+	}
 
 	m_gameview.handleEvent(input.first, input.second);
 }
@@ -43,8 +45,9 @@ void Gui::handleMouseKey(int button, int action, int mods)
 void Gui::handleMouseScroll(double xoffset, double yoffset)
 {
 	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseScrollToPlayerEvent(xoffset, yoffset);
-	if (input.first == PlayerActionEvent::None)
+	if (input.first == PlayerActionEvent::None) {
 		return;
+	}
 
 	m_gameview.handleEvent(input.first, input.second);
 }
@@ -60,9 +63,9 @@ void Gui::init(const WorldState& world_start_state)
 	InputEventAdapter::init();
 }
 
-void Gui::update(const WorldState& world, DebugQueueRtW& queue)
+void Gui::update(const WorldState& lastState, DebugQueueRtW& queue)
 {
-	m_gameview.update(world.player(), queue, world.tickId());
+	m_gameview.update(lastState.player(), queue, lastState.tickId());
 }
 
 }

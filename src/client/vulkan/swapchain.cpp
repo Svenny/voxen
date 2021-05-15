@@ -185,14 +185,16 @@ void Swapchain::obtainImages()
 
 	uint32_t num_images;
 	VkResult result = backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, nullptr);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetSwapchainImagesKHR");
+	}
 
 	Log::info("Swapchain has {} images", num_images);
 	m_images.resize(num_images);
 	result = backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, m_images.data());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkGetSwapchainImagesKHR");
+	}
 }
 
 void Swapchain::createImageViews()
@@ -231,11 +233,13 @@ void Swapchain::createImageViews()
 		}
 	}
 
-	if (error_code == VK_SUCCESS)
+	if (error_code == VK_SUCCESS) {
 		return;
+	}
 	// Destroy successfully created images
-	for (size_t i = 0; i < failed_index; i++)
+	for (size_t i = 0; i < failed_index; i++) {
 		backend.vkDestroyImageView(device, m_image_views[i], allocator);
+	}
 	throw VulkanException(error_code, "vkCreateImageView");
 }
 
