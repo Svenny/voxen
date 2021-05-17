@@ -3,6 +3,7 @@ set(EXTRAS_HEADERS
 	include/extras/dyn_array.hpp
 	include/extras/enum_utils.hpp
 	include/extras/math.hpp
+	include/extras/spinlock.hpp
 	include/extras/string_utils.hpp
 )
 
