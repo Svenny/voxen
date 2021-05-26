@@ -67,3 +67,9 @@ include(src/CMakeLists.txt)
 
 # Enable precompiled headers in all but Debug builds
 target_precompile_headers(voxen PRIVATE $<$<NOT:$<CONFIG:Debug>>:<voxen/pch.hpp$<ANGLE-R>>)
+
+option(VOXEN_BUILD_TESTS "Build tests for some small parts of codebase" OFF)
+if(VOXEN_BUILD_TESTS)
+	enable_testing()
+	add_subdirectory(tests)
+endif()
