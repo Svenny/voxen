@@ -1,4 +1,5 @@
 set(EXTRAS_HEADERS
+	include/extras/bitset.hpp
 	include/extras/defer.hpp
 	include/extras/dyn_array.hpp
 	include/extras/enum_utils.hpp
