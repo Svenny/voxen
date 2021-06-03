@@ -2,6 +2,7 @@ add_executable(test-extras
 	extras/bitset.cpp
 	extras/defer.cpp
 	extras/main.cpp
+	extras/source_location.cpp
 )
 
 target_include_directories(test-extras PUBLIC

@@ -11,6 +11,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <fmt/compile.h>
 #include <fmt/format.h>
 
 #include <algorithm>

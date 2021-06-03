@@ -349,7 +349,9 @@ std::string_view enum_name(DeviceMemoryUseCase value) noexcept
 		case DeviceMemoryUseCase::FastUpload: return "FastUpload"sv;
 		case DeviceMemoryUseCase::Readback: return "Readback"sv;
 		case DeviceMemoryUseCase::CpuSwap: return "CpuSwap"sv;
-		default: assert(false); return "[UNKNOWN]"sv;
+		default:
+			assert(false);
+			return "[UNKNOWN]"sv;
 	}
 }
 
