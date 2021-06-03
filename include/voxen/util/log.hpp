@@ -2,9 +2,10 @@
 
 #include <voxen/config.hpp>
 
-#include <fmt/format.h>
+#include <extras/enum_utils.hpp>
+#include <extras/source_location.hpp>
 
-#include <experimental/source_location>
+#include <fmt/core.h>
 
 namespace voxen
 {
@@ -41,10 +42,12 @@ public:
 	};
 
 	template<typename... Args>
-	static void log (Level level, std::experimental::source_location where,
-	                 std::string_view format_str, Args&&... args) noexcept {
-		if (!willBeLogged (level))
+	static void log(Level level, extras::source_location where,
+	                std::string_view format_str, Args&&... args) noexcept
+	{
+		if (!willBeLogged(level)) {
 			return;
+		}
 		doLog(level, where, format_str, fmt::make_format_args(std::forward<Args>(args)...));
 	}
 
@@ -54,60 +57,63 @@ public:
 	static void setLevel(Level level) noexcept;
 	// Returns whether logging with the given level will ultimately output something
 	static bool willBeLogged(Level level) noexcept { return level >= m_current_level; }
+
 private:
-	Log() = default;
-	~Log() = default;
-	Log(const Log &) = delete;
-	Log &operator = (const Log &) = delete;
-	Log(Log &&) = delete;
-	Log &operator = (Log &&) = delete;
+	Log() = delete;
 
 	static Level m_current_level;
 
-	static void doLog (Level level, std::experimental::source_location where,
-	                   std::string_view format_str, fmt::format_args format_args) noexcept;
+	static void doLog(Level level, extras::source_location where,
+	                  std::string_view format_str, fmt::format_args format_args) noexcept;
 public:
 
 	// Yes, a code generation macro
 #define LOG_MAKE_FUNCTIONS(name, level) \
 	template<typename T1> \
 	constexpr static void name(T1 &&arg1, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1)); \
 	} \
 	template<typename T1, typename T2> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2)); \
 	} \
 	template<typename T1, typename T2, typename T3> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-				std::forward<T4>(arg4)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+			std::forward<T4>(arg4)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-				std::forward<T4>(arg4), std::forward<T5>(arg5)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+			std::forward<T4>(arg4), std::forward<T5>(arg5)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-				std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, \
-		std::experimental::source_location where = std::experimental::source_location::current()) noexcept { \
-			log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
-				std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7)); \
+		extras::source_location where = extras::source_location::current()) noexcept \
+	{ \
+		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
+			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7)); \
 	}
 
 	LOG_MAKE_FUNCTIONS(trace, Level::Trace)
@@ -119,5 +125,13 @@ public:
 
 #undef LOG_MAKE_FUNCTIONS
 };
+
+}
+
+namespace extras
+{
+
+template<>
+std::string_view enum_name(voxen::Log::Level value) noexcept;
 
 }

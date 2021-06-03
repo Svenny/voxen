@@ -1,4 +1,5 @@
 #include <voxen/client/vulkan/common.hpp>
+
 #include <voxen/util/log.hpp>
 
 #include <cstddef>
@@ -7,18 +8,34 @@
 namespace voxen::client
 {
 
-VulkanException::VulkanException(VkResult result, const char *api, const std::experimental::source_location &loc)
-   : Exception(loc), m_result(result) {
-	// TODO: not exception-safe
-	const char *err = getVkResultString(result);
-	const char *desc = getVkResultDescription(result);
-	if (api) {
-		Log::error("{} failed with error code {}", api, err, loc);
-		m_message = fmt::format("{} failed: {} ({})", api, err, desc);
-	} else {
-		Log::error("Vulkan API call failed with error code {}", err, loc);
-		m_message = fmt::format("Vulkan error: {} ({})", err, desc);
+VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc) noexcept
+	: Exception(loc), m_result(result)
+{
+	try {
+		const char *err = getVkResultString(result);
+		const char *desc = getVkResultDescription(result);
+		if (api) {
+			Log::error("{} failed with error code {}", api, err, loc);
+			m_message = fmt::format("{} failed: {} ({})", api, err, desc);
+		} else {
+			Log::error("Vulkan API call failed with error code {}", err, loc);
+			m_message = fmt::format("Vulkan error: {} ({})", err, desc);
+		}
+	} catch (...) {
+		m_exception_occured = true;
 	}
+}
+
+const char *VulkanException::what() const noexcept
+{
+	constexpr static char EXCEPTION_OCCURED_MSG[] =
+		"Exception occured during creating VulkanException, message is lost";
+
+	if (m_exception_occured) {
+		return EXCEPTION_OCCURED_MSG;
+	}
+
+	return m_message.c_str();
 }
 
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,

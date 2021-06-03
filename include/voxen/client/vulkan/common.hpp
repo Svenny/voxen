@@ -17,15 +17,17 @@ const char *getVkFormatString(VkFormat format) noexcept;
 
 class VulkanException : public Exception {
 public:
-	explicit VulkanException(VkResult result, const char *api = nullptr, const std::experimental::source_location &loc =
-	      std::experimental::source_location::current());
-	virtual ~VulkanException() override = default;
+	explicit VulkanException(VkResult result, const char *api = nullptr, extras::source_location loc =
+		extras::source_location::current()) noexcept;
+	virtual ~VulkanException() = default;
 
-	virtual const char *what() const noexcept override { return m_message.c_str(); }
+	virtual const char *what() const noexcept override;
 	VkResult result() const noexcept { return m_result; }
+
 protected:
-	VkResult m_result;
 	std::string m_message;
+	VkResult m_result;
+	bool m_exception_occured = false;
 };
 
 class VulkanHostAllocator {
