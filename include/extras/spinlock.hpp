@@ -21,7 +21,7 @@ public:
 	void unlock() noexcept;
 
 private:
-	std::atomic_bool m_payload;
+	std::atomic_bool m_payload = false;
 };
 
 }
