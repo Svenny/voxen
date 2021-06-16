@@ -6,6 +6,25 @@
 namespace extras
 {
 
+namespace detail
+{
+
+// Not using a static method of `function_ref` because of bug in
+// in Clang (checked on 12.0.0) which always discards `noexcept`
+template<typename T, typename R, bool NX, typename... Args>
+inline R fnref_do_call(Args... args, void *object) noexcept(NX)
+{
+	if constexpr (std::is_function_v<T>) {
+		T *fn = reinterpret_cast<T *>(object);
+		return fn(std::forward<Args>(args)...);
+	} else {
+		T *obj = reinterpret_cast<T *>(object);
+		return obj->operator ()(std::forward<Args>(args)...);
+	}
+}
+
+}
+
 template<typename R>
 class function_ref;
 
@@ -16,7 +35,7 @@ class function_ref<R(Args...) noexcept(NX)> final {
 public:
 	template<typename T>
 	constexpr explicit function_ref(T &object) noexcept
-		: m_object(reinterpret_cast<void *>(std::addressof(object))), m_caller(do_call<T>)
+		: m_object(reinterpret_cast<void *>(std::addressof(object))), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
 	{}
 
 	// Conversion casting away noexcept specifier
@@ -41,18 +60,6 @@ public:
 	R operator()(Args... args) const noexcept(NX) { return m_caller(std::forward<Args>(args)..., m_object); }
 
 private:
-	template<typename T>
-	static R do_call(Args... args, void *object) noexcept(NX)
-	{
-		if constexpr (std::is_function_v<T>) {
-			T *fn = reinterpret_cast<T *>(object);
-			return fn(std::forward<Args>(args)...);
-		} else {
-			T *obj = reinterpret_cast<T *>(object);
-			return obj->operator ()(std::forward<Args>(args)...);
-		}
-	}
-
 	void *m_object = nullptr;
 	R (&m_caller)(Args..., void *) noexcept(NX);
 
