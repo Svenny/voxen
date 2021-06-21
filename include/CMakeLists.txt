@@ -6,6 +6,7 @@ set(EXTRAS_HEADERS
 	include/extras/fixed_pool.hpp
 	include/extras/function_ref.hpp
 	include/extras/math.hpp
+	include/extras/pimpl.hpp
 	include/extras/spinlock.hpp
 	include/extras/string_utils.hpp
 )
