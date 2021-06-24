@@ -23,19 +23,27 @@ inline R fnref_do_call(Args... args, void *object) noexcept(NX)
 	}
 }
 
+// This tag is used to disallow creating `function_ref` managing
+// another `function_ref` which leads to unwanted recursion
+struct function_ref_tag {};
+
 }
 
 template<typename R>
 class function_ref;
 
 // A lightweight but non-owning alternative to `std::function`.
-// "Reference" semantics - it can't be empty (unlike `std::function`).
 template<typename R, bool NX, typename... Args>
-class function_ref<R(Args...) noexcept(NX)> final {
+class function_ref<R(Args...) noexcept(NX)> final : public detail::function_ref_tag {
 public:
 	template<typename T>
-	constexpr explicit function_ref(T &object) noexcept
+	constexpr explicit function_ref(T &object) noexcept requires(!std::is_base_of_v<detail::function_ref_tag, T>)
 		: m_object(reinterpret_cast<void *>(std::addressof(object))), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
+	{}
+
+	template<typename T>
+	constexpr explicit function_ref(T *object) noexcept requires(!std::is_base_of_v<detail::function_ref_tag, T>)
+		: m_object(reinterpret_cast<void *>(object)), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
 	{}
 
 	// Conversion casting away noexcept specifier
@@ -50,18 +58,19 @@ public:
 		: m_object(other.m_object), m_caller(other.m_caller)
 	{}
 
-	function_ref() = delete;
-	function_ref(function_ref &&) = default;
-	function_ref(const function_ref &) = default;
-	function_ref &operator = (function_ref &&) = default;
-	function_ref &operator = (const function_ref &) = default;
-	~function_ref() = default;
+	constexpr function_ref() = default;
+	constexpr function_ref(function_ref &&) = default;
+	constexpr function_ref(const function_ref &) = default;
+	constexpr function_ref &operator = (function_ref &&) = default;
+	constexpr function_ref &operator = (const function_ref &) = default;
+	constexpr ~function_ref() = default;
 
-	R operator()(Args... args) const noexcept(NX) { return m_caller(std::forward<Args>(args)..., m_object); }
+	constexpr explicit operator bool () const noexcept { return m_object != nullptr; }
+	constexpr R operator()(Args... args) const noexcept(NX) { return m_caller(std::forward<Args>(args)..., m_object); }
 
 private:
 	void *m_object = nullptr;
-	R (&m_caller)(Args..., void *) noexcept(NX);
+	R (*m_caller)(Args..., void *) noexcept(NX) = nullptr;
 
 	// Enable converting copy ctor (noexcept -> !noexcept cast)
 	friend class function_ref<R(Args...) noexcept(false)>;

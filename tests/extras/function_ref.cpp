@@ -26,6 +26,11 @@ TEST_CASE("'function_ref' can be created from various objects", "[extras::functi
 	REQUIRE(fn3(3) == 5);
 	REQUIRE(fn4(1) == 4);
 	REQUIRE(fn3(3) == 5);
+
+	// Check `operator bool`
+	extras::function_ref<void()> empty_ref;
+	REQUIRE(!empty_ref);
+	REQUIRE(fn4);
 }
 
 static void dummy() noexcept
