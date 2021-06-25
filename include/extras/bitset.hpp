@@ -15,6 +15,8 @@ namespace extras
 template<size_t N>
 class bitset final {
 public:
+	static_assert(N > 0);
+
 	// Default contructor sets all bits to zero
 	bitset() noexcept { clear(); }
 	// Set all bits to `value`
@@ -50,15 +52,14 @@ public:
 	// Set all bits to ones
 	void set() noexcept
 	{
-		constexpr size_t K = N % 64;
-		if constexpr (K == 0) {
+		if constexpr (ALL_BITS_USED) {
 			// No padding bits, just fill everything with ones
 			std::fill_n(m_data, NUM_INTS, UINT64_MAX);
 		} else {
 			// Padding bits must not be filled with ones to avoid breaking `popcount()`
 			std::fill_n(m_data, NUM_INTS - 1, UINT64_MAX);
 			// First K bits will be ones, the rest is zero
-			m_data[NUM_INTS - 1] = (uint64_t(1) << K) - 1;
+			m_data[NUM_INTS - 1] = (uint64_t(1) << LAST_USED_BITS) - 1;
 		}
 	}
 
@@ -88,12 +89,21 @@ public:
 	// Return index of the first zero bit or `SIZE_MAX` if all bits are ones
 	size_t first_zero() const noexcept
 	{
-		for (size_t i = 0; i < NUM_INTS; i++) {
+		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
+		for (size_t i = 0; i < limit; i++) {
 			size_t cnt = std::countr_one(m_data[i]);
 			if (cnt < 64) {
 				return i * 64 + cnt;
 			}
 		}
+
+		if constexpr (!ALL_BITS_USED) {
+			size_t cnt = std::countr_one(m_data[NUM_INTS - 1]);
+			if (cnt < LAST_USED_BITS) {
+				return (NUM_INTS - 1) * 64 + cnt;
+			}
+		}
+
 		return SIZE_MAX;
 	}
 
@@ -101,18 +111,30 @@ public:
 	// Does nothing and returns `SIZE_MAX` if all bits are ones.
 	size_t occupy_zero() noexcept
 	{
-		for (size_t i = 0; i < NUM_INTS; i++) {
+		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
+		for (size_t i = 0; i < limit; i++) {
 			size_t cnt = std::countr_one(m_data[i]);
 			if (cnt < 64) {
 				m_data[i] |= (uint64_t(1) << cnt);
 				return i * 64 + cnt;
 			}
 		}
+
+		if constexpr (!ALL_BITS_USED) {
+			size_t cnt = std::countr_one(m_data[NUM_INTS - 1]);
+			if (cnt < LAST_USED_BITS) {
+				m_data[NUM_INTS - 1] |= (uint64_t(1) << cnt);
+				return (NUM_INTS - 1) * 64 + cnt;
+			}
+		}
+
 		return SIZE_MAX;
 	}
 
 private:
 	constexpr static size_t NUM_INTS = (N + 63) / 64;
+	constexpr static bool ALL_BITS_USED = (N % 64 == 0);
+	constexpr static size_t LAST_USED_BITS = N % 64;
 	uint64_t m_data[NUM_INTS];
 };
 

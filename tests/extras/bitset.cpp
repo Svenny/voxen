@@ -33,6 +33,22 @@ TEST_CASE("'bitset' free-list features work properly", "[extras::bitset]")
 	REQUIRE(set.occupy_zero() == SIZE_MAX);
 }
 
+TEST_CASE("'bitset' free-list features when set size is not divisible by 64", "[extras::bitset]")
+{
+	extras::bitset<3> set;
+
+	REQUIRE(set.occupy_zero() == 0);
+	REQUIRE(set.occupy_zero() == 1);
+	REQUIRE(set.occupy_zero() == 2);
+	REQUIRE(set.occupy_zero() == SIZE_MAX);
+	REQUIRE(set.first_zero() == SIZE_MAX);
+
+	set.clear(1);
+	REQUIRE(set.first_zero() == 1);
+	REQUIRE(set.occupy_zero() == 1);
+	REQUIRE(set.occupy_zero() == SIZE_MAX);
+}
+
 TEST_CASE("'bitset' basic functions work properly", "[extras::bitset]")
 {
 	SECTION("1-bit set")
