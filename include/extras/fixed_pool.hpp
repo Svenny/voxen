@@ -15,13 +15,33 @@
 namespace extras
 {
 
+namespace detail
+{
+
+template<typename T, uint32_t N, bool R>
+struct fixed_pool_storage;
+
+template<typename T, uint32_t N>
+struct fixed_pool_storage<T, N, false> {
+	using type = std::array<std::aligned_storage_t<sizeof(T), alignof(T)>, N>;
+};
+
+template<typename T, uint32_t N>
+struct fixed_pool_storage<T, N, true> {
+	static_assert(std::is_nothrow_default_constructible_v<T>,
+		"Managed object in reusable pool must be nothrow default constructible");
+	using type = std::array<T, N>;
+};
+
+}
+
 // A thread-safe pool holding up to `N` objects of type `T`. It returns
 // reference-counted pointers which will automatically recycle the object.
 // WARNING: do not introduce cyclic pointer dependencies. This is not
 // manageable by reference counting and will lead to memory leak.
 // WARNING: only 255 pointers to the same object are allowed to exist
 // simultaneously. Exceeding this limit leads to undefined behavior.
-template<typename T, uint32_t N>
+template<typename T, uint32_t N, bool R = false>
 class fixed_pool final {
 public:
 	static_assert(std::is_nothrow_destructible_v<T>, "Managed object must be nothrow destructible");
@@ -29,7 +49,16 @@ public:
 
 	using pointer = refcnt_ptr<T>;
 
-	fixed_pool() = default;
+	fixed_pool() noexcept
+	{
+		if constexpr (R) {
+			// Default-construct all objects for reusable pool
+			for (size_t i = 0; i < N; i++) {
+				new (&m_objects[i]) T();
+			}
+		}
+	}
+
 	fixed_pool(fixed_pool &&) = delete;
 	fixed_pool(const fixed_pool &) = delete;
 	fixed_pool &operator = (fixed_pool &&) = delete;
@@ -45,9 +74,10 @@ public:
 	// Tries to allocate an object from the pool, constructing it with provided
 	// arguments. Returns null pointer when no space is left in this pool.
 	// If a constructor throws exception, pool's state does not change.
+	// This variant of method is applicable to non-reusable pools only.
 	// NOTE: this method is thread-safe but is not atomic: allocation may fail even
 	// if there is free space (when some other thread has just freed an object).
-	template<typename... Args>
+	template<typename... Args> requires(!R)
 	pointer allocate(Args&&... args)
 	{
 		std::lock_guard<spinlock> lock(m_lock);
@@ -65,6 +95,25 @@ public:
 			throw;
 		}
 
+		m_usage_counts[pos].store(1, std::memory_order_acquire);
+		return pointer(object, function_ref(*this));
+	}
+
+	// Tries to allocate an object from the pool. Returns null pointer when no space is left in this pool.
+	// This variant of method is applicable to reusable pools only.
+	// NOTE: this method is thread-safe but is not atomic: allocation may fail
+	// even if there is free space (when some other thread has just freed an object).
+	template<typename = void> requires(R)
+	pointer allocate() noexcept
+	{
+		std::lock_guard<spinlock> lock(m_lock);
+
+		size_t pos = m_used_bitmap.occupy_zero();
+		if (pos == SIZE_MAX) {
+			return pointer();
+		}
+
+		T *object = std::launder(reinterpret_cast<T *>(&m_objects[pos]));
 		m_usage_counts[pos].store(1, std::memory_order_acquire);
 		return pointer(object, function_ref(*this));
 	}
@@ -96,7 +145,14 @@ public:
 			}
 
 			// This was the last owner, now destroy the object
-			object->~T();
+			if constexpr (!R) {
+				object->~T();
+			} else {
+				static_assert(std::is_nothrow_invocable_v<decltype(&T::clear), T>,
+					"Managed object in reusable pool must have `clear() noexcept` method");
+				object->clear();
+			}
+
 			std::lock_guard<spinlock> lock(m_lock);
 			m_used_bitmap.clear(id);
 		}
@@ -106,7 +162,10 @@ private:
 	spinlock m_lock;
 	bitset<N> m_used_bitmap;
 	std::array<std::atomic_uint8_t, N> m_usage_counts;
-	std::array<std::aligned_storage_t<sizeof(T), alignof(T)>, N> m_objects;
+	typename detail::fixed_pool_storage<T, N, R>::type m_objects;
 };
+
+template<typename T, size_t N>
+using reusable_fixed_pool = fixed_pool<T, N, true>;
 
 }

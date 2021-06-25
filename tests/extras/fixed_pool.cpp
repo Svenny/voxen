@@ -2,6 +2,9 @@
 
 #include <catch2/catch.hpp>
 
+namespace
+{
+
 class ValueChecker final {
 public:
 	ValueChecker(int *value_ptr, int value) noexcept : m_value_ptr(value_ptr), m_required_value(value) {}
@@ -20,6 +23,8 @@ private:
 	int *m_value_ptr = nullptr;
 	const int m_required_value;
 };
+
+}
 
 TEST_CASE("The most basic test of 'fixed_pool'", "[extras::fixed_pool]")
 {
@@ -47,4 +52,59 @@ TEST_CASE("The most basic test of 'fixed_pool'", "[extras::fixed_pool]")
 	auto ptr5 = std::move(ptr3);
 	value = 2;
 	// `value` must be 2 here
+}
+
+namespace
+{
+
+class ReusableObject final {
+public:
+	~ReusableObject() noexcept
+	{
+		REQUIRE(m_value == 0);
+	}
+
+	void afterAllocated()
+	{
+		REQUIRE(m_value == 0);
+	}
+
+	void add(int value)
+	{
+		m_value += value;
+	}
+
+	void clear() noexcept
+	{
+		m_value = 0;
+	}
+
+private:
+	int m_value = 0;
+};
+
+}
+
+TEST_CASE("The most basic test of 'reusable_fixed_pool'", "[extras::fixed_pool]")
+{
+	extras::reusable_fixed_pool<ReusableObject, 3> pool;
+
+	auto ptr1 = pool.allocate();
+	auto ptr2 = pool.allocate();
+	auto ptr3 = pool.allocate();
+	REQUIRE(ptr3);
+	auto ptr4 = pool.allocate();
+	REQUIRE(!ptr4);
+
+	ptr1->afterAllocated();
+	ptr1->add(5);
+	ptr1 = extras::refcnt_ptr<ReusableObject>();
+
+	ptr2->afterAllocated();
+	ptr2->add(2);
+	ptr3->afterAllocated();
+	std::swap(ptr2, ptr3);
+
+	ptr2->add(5);
+	ptr3->add(3);
 }
