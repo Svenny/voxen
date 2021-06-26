@@ -89,8 +89,9 @@ bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView
 	float scale = float(header.scale);
 	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
 
-	const glm::vec3 &aabb_min = surface.aabbMin();
-	const glm::vec3 &aabb_max = surface.aabbMax();
+	const Aabb &aabb = surface.aabb();
+	const glm::vec3 &aabb_min = aabb.min();
+	const glm::vec3 &aabb_max = aabb.max();
 
 	for (int i = 0; i < 8; i++) {
 		glm::vec4 point;
