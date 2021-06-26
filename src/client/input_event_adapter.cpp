@@ -220,7 +220,8 @@ void InputEventAdapter::init() {
 			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos)
 				parseToken(value, event, parameter_name, default_value);
 			else
-				string_split_apply(value, KEYS_SEQUENCE_DELIMITER, [event, &default_value, parameter_name](string_view s){
+				extras::string_split_apply(value, KEYS_SEQUENCE_DELIMITER,
+				[event, &default_value, parameter_name](string_view s){
 					parseToken(s, event, parameter_name, default_value);
 				});
 		}
@@ -341,7 +342,7 @@ int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int>* tuple_ptr,
 		int key_type = 0; //0 - unknown, 1 - key button, 2 - mouse button
 		bool fully_parsed = true;
 
-		string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken){
+		extras::string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken){
 			parseComplexToken(subtoken, key, mods, key_type, fully_parsed);
 		});
 

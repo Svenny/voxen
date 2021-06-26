@@ -37,12 +37,14 @@ template<typename R, bool NX, typename... Args>
 class function_ref<R(Args...) noexcept(NX)> final : public detail::function_ref_tag {
 public:
 	template<typename T>
-	constexpr explicit function_ref(T &object) noexcept requires(!std::is_base_of_v<detail::function_ref_tag, T>)
-		: m_object(reinterpret_cast<void *>(std::addressof(object))), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
+	constexpr function_ref(T &&object) noexcept
+		requires(!std::is_base_of_v<detail::function_ref_tag, std::remove_reference_t<T>>)
+		: m_object(reinterpret_cast<void *>(std::addressof(object))),
+		  m_caller(detail::fnref_do_call<std::remove_reference_t<T>, R, NX, Args...>)
 	{}
 
 	template<typename T>
-	constexpr explicit function_ref(T *object) noexcept requires(!std::is_base_of_v<detail::function_ref_tag, T>)
+	constexpr function_ref(T *object) noexcept requires(!std::is_base_of_v<detail::function_ref_tag, T>)
 		: m_object(reinterpret_cast<void *>(object)), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
 	{}
 
