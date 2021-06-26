@@ -1,19 +1,29 @@
 #pragma once
 
-#include <voxen/config.hpp>
-
+// Extras are not expected to change frequently, but they contain a fair
+// amount of template-based code, so it might be wise to precompile them
+#include <extras/bitset.hpp>
 #include <extras/defer.hpp>
 #include <extras/dyn_array.hpp>
+#include <extras/enum_utils.hpp>
+#include <extras/fixed_pool.hpp>
+#include <extras/function_ref.hpp>
 #include <extras/math.hpp>
+#include <extras/pimpl.hpp>
+#include <extras/refcnt_ptr.hpp>
+#include <extras/source_location.hpp>
+#include <extras/spinlock.hpp>
+#include <extras/string_utils.hpp>
 
+// `glm.hpp` and `ext.hpp` should include all non-experimental GLM
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/ext.hpp>
 
+// Not sure if there are headers not transitively included by these
 #include <fmt/compile.h>
 #include <fmt/format.h>
 
+// Hope all std headers are listed here :)
 #include <algorithm>
 #include <any>
 #include <array>

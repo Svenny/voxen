@@ -65,8 +65,10 @@ target_link_libraries(voxen PUBLIC glfw fmt::fmt stdc++fs cxxopts SimpleIni Thre
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
 
-# Enable precompiled headers in all but Debug builds
-target_precompile_headers(voxen PRIVATE $<$<NOT:$<CONFIG:Debug>>:<voxen/pch.hpp$<ANGLE-R>>)
+option(VOXEN_USE_PCH "Use precompiled headers" ON)
+if(VOXEN_USE_PCH)
+	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
+endif()
 
 option(VOXEN_BUILD_TESTS "Build tests for some small parts of codebase" OFF)
 if(VOXEN_BUILD_TESTS)
