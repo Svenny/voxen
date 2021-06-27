@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/util/aabb.hpp>
+#include <voxen/util/allocator.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
@@ -31,8 +32,8 @@ public:
 	const Aabb &aabb() const noexcept { return m_aabb; }
 
 protected:
-	std::vector<SurfaceVertex> m_vertices;
-	std::vector<uint32_t> m_indices;
+	std::vector<SurfaceVertex, DomainAllocator<SurfaceVertex, AllocationDomain::TerrainMesh>> m_vertices;
+	std::vector<uint32_t, DomainAllocator<uint32_t, AllocationDomain::TerrainMesh>> m_indices;
 	Aabb m_aabb;
 
 	// This class is not intended for direct use, so ctors are not public
