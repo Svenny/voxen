@@ -63,7 +63,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/seam.hpp
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
-	include/voxen/common/terrain/types.hpp
 	include/voxen/common/terrain/voxel_grid.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp

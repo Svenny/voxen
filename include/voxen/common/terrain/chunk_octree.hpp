@@ -1,7 +1,7 @@
 #pragma once
 
+#include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/qef_solver.hpp>
-#include <voxen/common/terrain/types.hpp>
 
 #include <array>
 #include <cassert>
