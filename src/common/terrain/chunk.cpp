@@ -28,11 +28,9 @@ TerrainChunk &TerrainChunk::operator = (TerrainChunk &&other) noexcept
 {
 	assert(m_header == other.m_header);
 	assert(m_version <= other.m_version);
-	if (m_version == other.m_version) {
-		// Equal versions must guarantee data equality, so no need to transfer anything
-		assert(primaryData() == other.primaryData());
-		// Secondary data is not compared as it must be a function of primary data
-	} else {
+
+	// Equal versions must guarantee data equality, so copy only when they differ
+	if (m_version != other.m_version) {
 		m_version = other.m_version;
 		m_primary_data = std::move(other.m_primary_data);
 		m_secondary_data = std::move(other.m_secondary_data);
@@ -44,11 +42,9 @@ TerrainChunk &TerrainChunk::operator = (const TerrainChunk &other)
 {
 	assert(m_header == other.m_header);
 	assert(m_version <= other.m_version);
-	if (m_version == other.m_version) {
-		// Equal versions must guarantee data equality, so no need to transfer anything
-		assert(primaryData() == other.primaryData());
-		// Secondary data is not compared as it must be a function of primary data
-	} else {
+
+	// Equal versions must guarantee data equality, so copy only when they differ
+	if (m_version != other.m_version) {
 		m_version = other.m_version;
 		m_primary_data = other.m_primary_data;
 		m_secondary_data = other.m_secondary_data;

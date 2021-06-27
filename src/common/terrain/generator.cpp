@@ -61,7 +61,7 @@ struct ZeroCrossingContext {
 };
 
 template<int D, typename F, typename DF>
-static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, HermiteDataStorage &storage)
+static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, terrain::HermiteDataStorage &storage)
 {
 	glm::dvec3 point_world =
 		findZeroCrossing<D>(ctx.x0, ctx.y0, ctx.z0, ctx.c1, ctx.value_lesser, ctx.value_bigger, f);
@@ -73,7 +73,7 @@ static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, Herm
 	voxel_t solid_voxel = lesser_endpoint_solid ? ctx.voxel_lesser : ctx.voxel_bigger;
 
 	storage.emplace(point_local.x, point_local.y, point_local.z,
-	                normal, offset, Axis(D), lesser_endpoint_solid, solid_voxel);
+	                normal, offset, D, lesser_endpoint_solid, solid_voxel);
 }
 
 static double fbase(double x, double z) noexcept
@@ -100,12 +100,12 @@ static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 
 void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output) const
 {
-	constexpr uint32_t SIZE = TerrainChunkPrimaryData::GRID_VERTEX_COUNT;
+	constexpr uint32_t SIZE = terrain::VoxelGrid::GRID_SIZE;
 	using ValuesArray = std::array<std::array<std::array<double, SIZE>, SIZE>, SIZE>;
 
 	Log::trace("Generating chunk at ({}, {}, {})(x{})", header.base_x, header.base_y, header.base_z, header.scale);
 
-	auto &voxels = output.voxels;
+	auto &grid = output.voxel_grid;
 	// Temporary storage for SDF values, we will need it to find zero crossings
 	auto p_values = std::make_unique<ValuesArray>();
 	ValuesArray &values = *p_values;
@@ -118,6 +118,8 @@ void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPr
 		double y = double(header.base_y + i * step);
 		for (uint32_t j = 0; j < SIZE; j++) {
 			double x = double(header.base_x + j * step);
+			voxel_t *scanline = grid.zScanline(j, i).data();
+
 			for (uint32_t k = 0; k < SIZE; k++) {
 				double z = double(header.base_z + k * step);
 
@@ -127,7 +129,7 @@ void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPr
 				voxel_t voxel = 0;
 				if (value <= 0.0)
 					voxel = 1;
-				voxels[i][j][k] = voxel;
+				scanline[k] = voxel;
 			}
 		}
 	}
@@ -140,6 +142,9 @@ void TerrainGenerator::generate(const TerrainChunkHeader &header, TerrainChunkPr
 		.sign_lesser = false, .sign_bigger = false,
 		.voxel_lesser = 0, .voxel_bigger = 0
 	};
+
+	const auto &voxels = grid.voxels();
+
 	for (uint32_t i = 0; i < SIZE; i++) {
 		ctx.y0 = double(header.base_y + i * step);
 		for (uint32_t j = 0; j < SIZE; j++) {
