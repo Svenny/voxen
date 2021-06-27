@@ -38,12 +38,12 @@ set(VOXEN_SOURCES
 	src/client/input_event_adapter.cpp
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
-	src/common/terrain/chunk_data.cpp
 	src/common/terrain/chunk_header.cpp
 	src/common/terrain/chunk_octree.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/hermite_data.cpp
 	src/common/terrain/loader.cpp
+	src/common/terrain/primary_data.cpp
 	src/common/terrain/qef_solver.cpp
 	src/common/terrain/seam.cpp
 	src/common/terrain/surface.cpp

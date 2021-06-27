@@ -11,7 +11,8 @@ namespace voxen
 
 class TerrainChunk {
 public:
-	static constexpr inline uint32_t SIZE = TerrainChunkPrimaryData::GRID_CELL_COUNT;
+	// TODO: remove this deprecated alias
+	static constexpr inline uint32_t SIZE = terrain::Config::CHUNK_SIZE;
 
 	explicit TerrainChunk(const TerrainChunkHeader &header);
 	TerrainChunk(TerrainChunk &&) noexcept;

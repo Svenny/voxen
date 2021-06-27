@@ -194,7 +194,7 @@ struct DcBuildArgs {
 	const float epsilon;
 };
 
-static const HermiteDataStorage &selectHermiteStorage(const TerrainChunkPrimaryData &grid, int dim) noexcept
+static const terrain::HermiteDataStorage &selectHermiteStorage(const TerrainChunkPrimaryData &grid, int dim) noexcept
 {
 	switch (dim) {
 	case 0:
@@ -212,12 +212,12 @@ static std::pair<uint32_t, ChunkOctreeLeaf *>
 	buildLeaf(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
 {
 	QefSolver3D &solver = args.solver;
-	const auto &grid = args.primary_data;
 
 	solver.reset();
 	glm::vec3 avg_normal { 0 };
 
-	std::array<voxel_t, 8> corners = grid.materialsOfCell(min_corner);
+	const auto &grid = args.primary_data.voxel_grid;
+	std::array<voxel_t, 8> corners = grid.getCellLinear(min_corner.x, min_corner.y, min_corner.z);
 
 	bool has_edges = false;
 
@@ -227,7 +227,7 @@ static std::pair<uint32_t, ChunkOctreeLeaf *>
 		{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 } }  // Z
 	};
 	for (int dim = 0; dim <= 2; dim++) {
-		auto &storage = selectHermiteStorage(grid, dim);
+		auto &storage = selectHermiteStorage(args.primary_data, dim);
 
 		for (int i = 0; i < 4; i++) {
 			voxel_t mat1 = corners[edge_table[dim][i][0]];
@@ -359,6 +359,7 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 			return true;
 		}
 	}
+
 	// Cube midpoint sign check failed
 	return false;
 }
@@ -518,7 +519,7 @@ void TerrainSurfaceBuilder::buildBasicOctree(const TerrainChunkPrimaryData &inpu
 		.epsilon = 0.12f
 	};
 
-	auto[root_id, root] = buildNode(glm::ivec3(0), TerrainChunkPrimaryData::GRID_CELL_COUNT, 0, args);
+	auto[root_id, root] = buildNode(glm::ivec3(0), terrain::Config::CHUNK_SIZE, 0, args);
 	octree.setBaseRoot(root_id);
 }
 

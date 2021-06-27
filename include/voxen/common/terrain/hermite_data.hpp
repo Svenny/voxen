@@ -1,12 +1,13 @@
 #pragma once
 
-#include <voxen/common/terrain/types.hpp>
+#include <voxen/common/terrain/config.hpp>
+#include <voxen/util/allocator.hpp>
 
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 
 #include <vector>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 class HermiteDataEntry {
@@ -26,7 +27,7 @@ public:
 	*/
 	explicit HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z,
 	                          const glm::vec3 &normal, double offset,
-	                          Axis axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept;
+	                          int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept;
 	HermiteDataEntry(HermiteDataEntry &&) = default;
 	HermiteDataEntry(const HermiteDataEntry &) = default;
 	HermiteDataEntry &operator = (HermiteDataEntry &&) = default;
@@ -45,8 +46,6 @@ public:
 	glm::ivec3 biggerEndpoint() const noexcept;
 	/// Returns true if the lesser endpoint is solid, false otherwise
 	bool isLesserEndpointSolid() const noexcept { return m_solid_endpoint == 0; }
-
-	bool operator == (const HermiteDataEntry &other) const noexcept;
 
 private:
 	/** \brief Surface normal in zero-crossing point
@@ -76,9 +75,12 @@ static_assert(sizeof(HermiteDataEntry) == 16, "16-byte Hermite data packing is b
 */
 class HermiteDataStorage {
 public:
-	using iterator = std::vector<HermiteDataEntry>::iterator;
-	using const_iterator = std::vector<HermiteDataEntry>::const_iterator;
-	using size_type = std::vector<HermiteDataEntry>::size_type;
+	using AllocatorType = DomainAllocator<HermiteDataEntry, AllocationDomain::TerrainHermite>;
+	using StorageType = std::vector<HermiteDataEntry, AllocatorType>;
+
+	using iterator = StorageType::iterator;
+	using const_iterator = StorageType::const_iterator;
+	using size_type = StorageType::size_type;
 	using coord_t = HermiteDataEntry::coord_t;
 
 	template<typename... Args>
@@ -108,13 +110,9 @@ public:
 	const_iterator cbegin() const noexcept { return m_storage.cbegin(); }
 	const_iterator cend() const noexcept { return m_storage.cend(); }
 
-	// Compare two Hermite data storages for contents equality.
-	// NOTE: VERY SLOW, use only when really needed (preferably for debug only).
-	bool operator == (const HermiteDataStorage &other) const noexcept { return m_storage == other.m_storage; }
-
 private:
 	/// Wrapped container
-	std::vector<HermiteDataEntry> m_storage;
+	StorageType m_storage;
 	/// 'Less' comparator for entries, orders them as (Y, X, Z) tuples
 	static bool entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept;
 };
