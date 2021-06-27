@@ -1,7 +1,6 @@
 #pragma once
 
 #include <voxen/common/terrain/chunk.hpp>
-#include <voxen/common/terrain/types.hpp>
 
 #include <vector>
 
