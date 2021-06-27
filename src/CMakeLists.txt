@@ -48,6 +48,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/seam.cpp
 	src/common/terrain/surface.cpp
 	src/common/terrain/surface_builder.cpp
+	src/common/terrain/voxel_grid.cpp
 	src/common/player.cpp
 	src/common/terrain.cpp
 	src/common/threadpool.cpp

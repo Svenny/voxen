@@ -53,6 +53,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/chunk_data.hpp
 	include/voxen/common/terrain/chunk_header.hpp
 	include/voxen/common/terrain/chunk_octree.hpp
+	include/voxen/common/terrain/config.hpp
 	include/voxen/common/terrain/generator.hpp
 	include/voxen/common/terrain/hermite_data.hpp
 	include/voxen/common/terrain/loader.hpp
@@ -62,6 +63,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
 	include/voxen/common/terrain/types.hpp
+	include/voxen/common/terrain/voxel_grid.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/terrain.hpp
 	include/voxen/common/threadpool.hpp
