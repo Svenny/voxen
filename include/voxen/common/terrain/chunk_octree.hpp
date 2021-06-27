@@ -2,6 +2,7 @@
 
 #include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/qef_solver.hpp>
+#include <voxen/util/allocator.hpp>
 
 #include <array>
 #include <cassert>
@@ -74,11 +75,14 @@ public:
 	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
 
 private:
-	std::vector<ChunkOctreeCell> m_cells;
-	std::vector<ChunkOctreeLeaf> m_leaves;
+	template<typename T>
+	using Vector = std::vector<T, DomainAllocator<T, AllocationDomain::TerrainOctree>>;
 
-	std::vector<uint32_t> m_free_cells;
-	std::vector<uint32_t> m_free_leaves;
+	Vector<ChunkOctreeCell> m_cells;
+	Vector<ChunkOctreeLeaf> m_leaves;
+
+	Vector<uint32_t> m_free_cells;
+	Vector<uint32_t> m_free_leaves;
 
 	uint32_t m_base_root_id = INVALID_NODE_ID;
 	uint32_t m_ext_root_id = INVALID_NODE_ID;
