@@ -24,8 +24,8 @@ void AllocationTracker<D>::decreaseMemoryUsage(size_t value) noexcept
 	s_memoryUsage.fetch_sub(value, std::memory_order_relaxed);
 }
 
-template class AllocationTracker<AllocationDomain::TerrainHermite>;
 template class AllocationTracker<AllocationDomain::TerrainMesh>;
 template class AllocationTracker<AllocationDomain::TerrainOctree>;
+template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 
 }

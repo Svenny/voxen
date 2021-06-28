@@ -22,8 +22,8 @@ public:
 
 	bool operator == (const TerrainChunkSecondaryData &other) const noexcept;
 
-	ChunkOctree octree;
-	TerrainSurface surface;
+	terrain::ChunkOctree octree;
+	terrain::ChunkOwnSurface surface;
 };
 
 }

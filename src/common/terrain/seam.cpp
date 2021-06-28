@@ -8,6 +8,11 @@
 namespace voxen
 {
 
+using terrain::ChunkOctree;
+using terrain::ChunkOctreeCell;
+using terrain::ChunkOctreeLeaf;
+using terrain::ChunkOctreeNodeBase;
+
 void TerrainChunkSeamSet::clear() noexcept
 {
 	m_refs.clear();

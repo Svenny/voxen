@@ -105,12 +105,3 @@ private:
 };
 
 }
-
-namespace voxen
-{
-
-// TODO: remove these deprecated aliases
-using TerrainSurfaceVertex = terrain::SurfaceVertex;
-using TerrainSurface = terrain::ChunkOwnSurface;
-
-}

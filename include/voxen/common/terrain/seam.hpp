@@ -32,7 +32,7 @@ public:
 
 	void clear() noexcept;
 
-	void extendOctree(TerrainChunkHeader header, ChunkOctree &output);
+	void extendOctree(TerrainChunkHeader header, terrain::ChunkOctree &output);
 
 private:
 	// Three least significant bits of these pointers are

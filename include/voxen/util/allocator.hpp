@@ -9,12 +9,12 @@ namespace voxen
 {
 
 enum class AllocationDomain {
-	// Hermite data storage of terrain chunks primary data
-	TerrainHermite,
 	// Vertices and indices storage of terrain chunks
 	TerrainMesh,
 	// Octree nodes storage of terrain chunks secondary data
-	TerrainOctree
+	TerrainOctree,
+	// Primary data storage of chunks and chunks themselves
+	TerrainPrimary
 };
 
 // A helper class to control per-domain memory usage
@@ -72,8 +72,8 @@ public:
 	constexpr bool operator == (const DomainAllocator &) const noexcept { return true; }
 };
 
-extern template class AllocationTracker<AllocationDomain::TerrainHermite>;
 extern template class AllocationTracker<AllocationDomain::TerrainMesh>;
 extern template class AllocationTracker<AllocationDomain::TerrainOctree>;
+extern template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 
 }

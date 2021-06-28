@@ -17,7 +17,7 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 	const auto &surface = chunk.secondaryData().surface;
 	auto iter = m_chunk_gpu_data.find(header);
 
-	VkDeviceSize needed_vtx_size = surface.numVertices() * sizeof(TerrainSurfaceVertex);
+	VkDeviceSize needed_vtx_size = surface.numVertices() * sizeof(terrain::SurfaceVertex);
 	VkDeviceSize needed_idx_size = surface.numIndices() * sizeof(uint32_t);
 
 	if (needed_vtx_size == 0 || needed_idx_size == 0) {
@@ -103,10 +103,10 @@ void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunk
 		m_chunk_gpu_data.erase(header);
 }
 
-void TerrainSynchronizer::enqueueSurfaceTransfer(const TerrainSurface &surface, ChunkGpuData &data)
+void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &surface, ChunkGpuData &data)
 {
 	auto &transfer = Backend::backend().transferManager();
-	transfer.uploadToBuffer(data.vtx_buffer, surface.vertices(), surface.numVertices() * sizeof(TerrainSurfaceVertex));
+	transfer.uploadToBuffer(data.vtx_buffer, surface.vertices(), surface.numVertices() * sizeof(terrain::SurfaceVertex));
 	transfer.uploadToBuffer(data.idx_buffer, surface.indices(), surface.numIndices() * sizeof(uint32_t));
 }
 

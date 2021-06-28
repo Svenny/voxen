@@ -2,8 +2,6 @@
 
 #include <glm/vec3.hpp>
 
-#include <cfloat>
-
 namespace voxen
 {
 
@@ -13,7 +11,7 @@ public:
 	// Initially AABB is invalid - that is, its `min()` is larger than `max()`.
 	// Operations on it will return undefined values until the first call
 	// to expanding method, such as `mergeWidth()` or `includePoint()`.
-	Aabb() = default;
+	Aabb() noexcept;
 	Aabb(Aabb &&) = default;
 	Aabb(const Aabb &) = default;
 	Aabb &operator = (Aabb &&) = default;
@@ -34,8 +32,8 @@ public:
 	const glm::vec3 &max() const noexcept { return m_max; }
 
 private:
-	glm::vec3 m_min { FLT_MAX, FLT_MAX, FLT_MAX };
-	glm::vec3 m_max { FLT_MIN, FLT_MIN, FLT_MIN };
+	glm::vec3 m_min;
+	glm::vec3 m_max;
 };
 
 }

@@ -10,8 +10,13 @@
 namespace voxen
 {
 
+using terrain::ChunkOctree;
+using terrain::ChunkOctreeCell;
+using terrain::ChunkOctreeLeaf;
+using terrain::ChunkOctreeNodeBase;
+
 template<int D>
-static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, TerrainSurface &surface)
+static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
 {
 	constexpr int CORNERS_TABLE[3][4][2] = {
 		{ { 5, 7 }, { 1, 3 }, { 0, 2 }, { 4, 6 } }, // X
@@ -86,7 +91,7 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 }
 
 template<int D>
-static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, TerrainSurface &surface)
+static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
 {
 	if (!nodes[0] || !nodes[1]) {
 		// No valid lowest quadruples can be generated
@@ -133,7 +138,7 @@ static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const Chu
 	}
 }
 
-static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, TerrainSurface &surface)
+static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
@@ -165,7 +170,7 @@ static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree,
 	}
 }
 
-static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, TerrainSurface &surface)
+static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
