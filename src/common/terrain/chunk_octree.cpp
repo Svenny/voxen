@@ -3,7 +3,7 @@
 #include <cassert>
 #include <tuple>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 #if VOXEN_DEBUG_BUILD == 1

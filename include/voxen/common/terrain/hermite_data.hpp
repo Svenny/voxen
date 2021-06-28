@@ -75,7 +75,7 @@ static_assert(sizeof(HermiteDataEntry) == 16, "16-byte Hermite data packing is b
 */
 class HermiteDataStorage {
 public:
-	using AllocatorType = DomainAllocator<HermiteDataEntry, AllocationDomain::TerrainHermite>;
+	using AllocatorType = DomainAllocator<HermiteDataEntry, AllocationDomain::TerrainPrimary>;
 	using StorageType = std::vector<HermiteDataEntry, AllocatorType>;
 
 	using iterator = StorageType::iterator;

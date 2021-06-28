@@ -50,7 +50,7 @@ private:
 	std::unordered_map<TerrainChunkHeader, ChunkGpuData, HeaderHasher> m_chunk_gpu_data;
 	uint32_t m_sync_age = 0;
 
-	void enqueueSurfaceTransfer(const TerrainSurface &surface, ChunkGpuData &data);
+	void enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &surface, ChunkGpuData &data);
 };
 
 }

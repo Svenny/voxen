@@ -8,7 +8,7 @@
 #include <cassert>
 #include <vector>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 struct ChunkOctreeLeaf;

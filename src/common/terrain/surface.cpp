@@ -36,6 +36,7 @@ void ChunkOwnSurface::addTriangle(uint32_t a, uint32_t b, uint32_t c)
 void ChunkSeamSurface::init(extras::refcnt_ptr<ChunkOwnSurface> base_surface) noexcept
 {
 	assert(base_surface);
+	doClear();
 	m_base_surface = std::move(base_surface);
 	m_aabb = m_base_surface->aabb();
 }
