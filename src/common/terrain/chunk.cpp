@@ -1,5 +1,59 @@
 #include <voxen/common/terrain/chunk.hpp>
 
+#include <voxen/common/terrain/chunk_octree.hpp>
+#include <voxen/common/terrain/primary_data.hpp>
+#include <voxen/common/terrain/surface.hpp>
+
+#include <cassert>
+
+namespace voxen::terrain
+{
+
+Chunk::Chunk(CreationInfo info) noexcept : m_id(info.id)
+{
+	if (info.reuse_type != ReuseType::Nothing) {
+		assert(info.reuse_chunk);
+		// Though there is no such technical limitation, reusing
+		// a chunk from different location is a logical error
+		assert(info.reuse_chunk->id() == m_id);
+	}
+
+	m_primary_data = std::move(info.new_primary_data);
+	m_octree = std::move(info.new_octree);
+	m_own_surface = std::move(info.new_own_surface);
+	m_seam_surface = std::move(info.new_seam_surface);
+
+	switch (info.reuse_type) {
+	case ReuseType::Full:
+		m_seam_surface = info.reuse_chunk->m_seam_surface;
+		[[fallthrough]];
+	case ReuseType::NoSeam:
+		m_own_surface = info.reuse_chunk->m_own_surface;
+		[[fallthrough]];
+	case ReuseType::NoSurface:
+		m_octree = info.reuse_chunk->m_octree;
+		[[fallthrough]];
+	case ReuseType::OnlyPrimaryData:
+		m_primary_data = info.reuse_chunk->m_primary_data;
+		break;
+	case ReuseType::Nothing:
+		// Well, nothing
+		break;
+	}
+
+	// We hold invariant that all components exist after construction
+	assert(m_primary_data);
+	assert(m_octree);
+	assert(m_own_surface);
+	assert(m_seam_surface);
+
+	if (info.reuse_type != ReuseType::Full) {
+		m_seam_surface->init(m_own_surface);
+	}
+}
+
+}
+
 #include <cassert>
 #include <limits>
 

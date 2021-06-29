@@ -1,11 +1,86 @@
 #pragma once
 
+#include <voxen/common/terrain/chunk_id.hpp>
+
+#include <extras/refcnt_ptr.hpp>
+
+namespace voxen::terrain
+{
+
+class ChunkOctree;
+class ChunkOwnSurface;
+class ChunkSeamSurface;
+struct ChunkPrimaryData;
+
+class Chunk final {
+public:
+	// Determines the amount of reusing "previous" chunk
+	enum class ReuseType {
+		// All components of previous chunk stay the same
+		Full,
+		// Primary data, octree and own surface of previous
+		// chunk stay the same, a new seam surface is provided
+		NoSeam,
+		// Primary data and octree of previous chunk
+		// stay the same, new surfaces are provided
+		NoSurface,
+		// Primary data of previous chunk stays the same,
+		// new octree and new surfaces are provided
+		OnlyPrimaryData,
+		// All components are provided, previous chunk is not reused
+		Nothing
+	};
+
+	struct CreationInfo final {
+		ChunkId id;
+		ReuseType reuse_type;
+		const Chunk *reuse_chunk;
+		extras::refcnt_ptr<ChunkPrimaryData> new_primary_data;
+		extras::refcnt_ptr<ChunkOctree> new_octree;
+		extras::refcnt_ptr<ChunkOwnSurface> new_own_surface;
+		extras::refcnt_ptr<ChunkSeamSurface> new_seam_surface;
+	};
+
+	explicit Chunk(CreationInfo info) noexcept;
+	Chunk() = delete;
+	Chunk(Chunk &&) = delete;
+	Chunk(const Chunk &) = delete;
+	Chunk &operator = (Chunk &&) = delete;
+	Chunk &operator = (const Chunk &) = delete;
+	~Chunk() = default;
+
+	const ChunkId &id() const noexcept { return m_id; }
+
+	ChunkPrimaryData &primaryData() noexcept { return *m_primary_data; }
+	const ChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
+
+	ChunkOctree &octree() noexcept { return *m_octree; }
+	const ChunkOctree &octree() const noexcept { return *m_octree; }
+
+	ChunkOwnSurface &ownSurface() noexcept { return *m_own_surface; }
+	const ChunkOwnSurface &ownSurface() const noexcept { return *m_own_surface; }
+
+	ChunkSeamSurface &seamSurface() noexcept { return *m_seam_surface; }
+	const ChunkSeamSurface &seamSurface() const noexcept { return *m_seam_surface; }
+
+private:
+	const ChunkId m_id;
+
+	extras::refcnt_ptr<ChunkPrimaryData> m_primary_data;
+	extras::refcnt_ptr<ChunkOctree> m_octree;
+	extras::refcnt_ptr<ChunkOwnSurface> m_own_surface;
+	extras::refcnt_ptr<ChunkSeamSurface> m_seam_surface;
+};
+
+}
+
 #include <voxen/common/terrain/chunk_data.hpp>
 #include <voxen/common/terrain/chunk_header.hpp>
 
 #include <memory>
 #include <cstdint>
 
+// TODO: remove this deprecated implementation
 namespace voxen
 {
 
