@@ -52,6 +52,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/chunk.hpp
 	include/voxen/common/terrain/chunk_data.hpp
 	include/voxen/common/terrain/chunk_header.hpp
+	include/voxen/common/terrain/chunk_id.hpp
 	include/voxen/common/terrain/chunk_octree.hpp
 	include/voxen/common/terrain/config.hpp
 	include/voxen/common/terrain/generator.hpp
