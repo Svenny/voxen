@@ -74,6 +74,7 @@ set(VOXEN_HEADERS
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp
+	include/voxen/util/debug.hpp
 	include/voxen/util/elapsed_timer.hpp
 	include/voxen/util/exception.hpp
 	include/voxen/util/hash.hpp
