@@ -48,6 +48,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/window.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
+	include/voxen/common/terrain/allocator.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
 	include/voxen/common/terrain/chunk_data.hpp
