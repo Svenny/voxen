@@ -14,7 +14,9 @@ enum class AllocationDomain {
 	// Octree nodes storage of terrain chunks secondary data
 	TerrainOctree,
 	// Primary data storage of chunks and chunks themselves
-	TerrainPrimary
+	TerrainPrimary,
+	// Caches which may be safely discarded when there is memory demand
+	StandbyCache,
 };
 
 // A helper class to control per-domain memory usage
@@ -75,5 +77,6 @@ public:
 extern template class AllocationTracker<AllocationDomain::TerrainMesh>;
 extern template class AllocationTracker<AllocationDomain::TerrainOctree>;
 extern template class AllocationTracker<AllocationDomain::TerrainPrimary>;
+extern template class AllocationTracker<AllocationDomain::StandbyCache>;
 
 }

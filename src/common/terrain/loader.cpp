@@ -9,9 +9,7 @@
 namespace voxen
 {
 
-static constexpr inline size_t CACHE_SIZE = 65536;
-
-TerrainLoader::TerrainLoader() : m_cache(CACHE_SIZE), m_generator()
+TerrainLoader::TerrainLoader() : m_generator()
 #if VOXEN_DEBUG_BUILD == 1
 , m_loaded_chunks(0, [](const TerrainChunkHeader& header) {return header.hash();})
 #endif /* VOXEN_DEBUG_BUILD */
@@ -30,6 +28,8 @@ void TerrainLoader::load(TerrainChunk &chunk)
 	m_access_mutex.unlock();
 #endif /* VOXEN_DEBUG_BUILD */
 
+	// TODO: cache disabled during rewriting to new terrain arch
+#if 0
 	m_access_mutex.lock();
 	if (m_cache.tryFill(chunk))
 	{
@@ -37,6 +37,8 @@ void TerrainLoader::load(TerrainChunk &chunk)
 		return;
 	}
 	m_access_mutex.unlock();
+#endif
+
 	// TODO: support loading from disk
 	auto[primary, secondary] = chunk.beginEdit();
 	m_generator.generate(header, primary);
@@ -59,9 +61,14 @@ void TerrainLoader::unload(const TerrainChunk &chunk)
 	// TODO: support saving to disk
 	// insert will update chunk data, if the chunk still in cache
 	// or insert again, if the cache already flush the chunk
+
+	// TODO: cache disabled during rewriting to new terrain arch
+	(void) chunk;
+#if 0
 	m_access_mutex.lock();
 	m_cache.insert(chunk);
 	m_access_mutex.unlock();
+#endif
 }
 
 }
