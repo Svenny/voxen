@@ -23,6 +23,12 @@ public:
 // Alias for voxel ID storage type
 using voxel_t = uint8_t;
 
+// Alias for chunk version storage type.
+// Version is assumed to be strictly increased after each change to chunk contents. So logic will break
+// completely when it gets past UINT32_MAX (thus wrapping to zero), but we don't expect any real-world
+// runtime to ever reach values that large (more than 4 billion edits of a single chunk).
+using chunk_ver_t = uint32_t;
+
 }
 
 namespace voxen

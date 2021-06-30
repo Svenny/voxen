@@ -75,7 +75,7 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 		float base_x = float(data.header.base_x);
 		float base_y = float(data.header.base_y);
 		float base_z = float(data.header.base_z);
-		float size = float(TerrainChunk::SIZE * data.header.scale);
+		float size = float(terrain::Config::CHUNK_SIZE * data.header.scale);
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 

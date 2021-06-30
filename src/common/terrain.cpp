@@ -67,7 +67,7 @@ struct TerrainOctreeNode {
 
 	void updateChunks(double x, double y, double z, TerrainOctree& octree, TerrainLoader &loader)
 	{
-		if (m_header.size == TerrainChunk::SIZE)
+		if (m_header.size == terrain::Config::CHUNK_SIZE)
 			return;
 		double center_x = double(m_header.size) * 0.5 + double(m_header.base_x);
 		double center_y = double(m_header.size) * 0.5 + double(m_header.base_y);
@@ -179,7 +179,7 @@ struct TerrainOctreeNode {
 	void createChunk(TerrainLoader &loader)
 	{
 		TerrainChunkHeader header;
-		header.scale = m_header.size / TerrainChunk::SIZE;
+		header.scale = m_header.size / terrain::Config::CHUNK_SIZE;
 		header.base_x = m_header.base_x;
 		header.base_y = m_header.base_y;
 		header.base_z = m_header.base_z;
@@ -355,7 +355,7 @@ TerrainOctree::TerrainOctree(TerrainLoader &loader, uint32_t num_xz_chunks, uint
 	// TODO (Svenny): currently no multiple highest-level nodes are supported
 	assert(num_xz_chunks == num_y_chunks);
 
-	int64_t node_size = int64_t(TerrainChunk::SIZE) * int64_t(num_xz_chunks);
+	int64_t node_size = int64_t(terrain::Config::CHUNK_SIZE) * int64_t(num_xz_chunks);
 	int64_t base_coord = -node_size / 2;
 	m_tree = new TerrainOctreeNode(TerrainOctreeNodeHeader{base_coord, base_coord, base_coord, node_size}, loader);
 	Log::info("Created terrain octree with {} XZ and {} Y chunks", m_xz_chunks, m_y_chunks);

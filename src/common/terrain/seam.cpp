@@ -187,20 +187,20 @@ static uint32_t copySubtree(CopyContext &ctx, uint32_t dst_node,
 void TerrainChunkSeamSet::extendOctree(TerrainChunkHeader header, ChunkOctree &output)
 {
 	const auto[new_scale, new_base_x, new_base_y, new_base_z] = selectExtendedRootDimensions(header);
-	const int64_t new_root_size = int64_t(new_scale * TerrainChunk::SIZE);
+	const int64_t new_root_size = int64_t(new_scale * terrain::Config::CHUNK_SIZE);
 	const int8_t new_root_depth = -int8_t(std::countr_zero(new_scale / header.scale));
 
 	ExtendContext ext_ctx {
 		.tree = output,
 		.root_x = header.base_x, .root_y = header.base_y, .root_z = header.base_z,
-		.root_size = int64_t(header.scale * TerrainChunk::SIZE)
+		.root_size = int64_t(header.scale * terrain::Config::CHUNK_SIZE)
 	};
 	output.setExtendedRoot(extendRoot(ext_ctx, new_base_x, new_base_y, new_base_z, new_root_size, new_root_depth));
 
 	// These coords are maximal for unextended octree/chunk and represent chunks contact point
-	const int64_t mid_x = header.base_x + int64_t(header.scale * TerrainChunk::SIZE);
-	const int64_t mid_y = header.base_y + int64_t(header.scale * TerrainChunk::SIZE);
-	const int64_t mid_z = header.base_z + int64_t(header.scale * TerrainChunk::SIZE);
+	const int64_t mid_x = header.base_x + int64_t(header.scale * terrain::Config::CHUNK_SIZE);
+	const int64_t mid_y = header.base_y + int64_t(header.scale * terrain::Config::CHUNK_SIZE);
+	const int64_t mid_z = header.base_z + int64_t(header.scale * terrain::Config::CHUNK_SIZE);
 
 	// Now copy nodes from other trees
 	for (uintptr_t ref : m_refs) {
@@ -219,7 +219,7 @@ void TerrainChunkSeamSet::extendOctree(TerrainChunkHeader header, ChunkOctree &o
 			.src_tree = src_octree,
 			.src_node = src_octree.idToPointer(src_octree.baseRoot()),
 			.src_x = src_header.base_x, .src_y = src_header.base_y, .src_z = src_header.base_z,
-			.src_size = int64_t(src_header.scale * TerrainChunk::SIZE),
+			.src_size = int64_t(src_header.scale * terrain::Config::CHUNK_SIZE),
 
 			.strategy_mask = ref & uintptr_t(0b111),
 			.contact_x = mid_x, .contact_y = mid_y, .contact_z = mid_z,
@@ -257,7 +257,7 @@ TerrainChunkSeamSet::selectExtendedRootDimensions(const TerrainChunkHeader &head
 		min_z = std::min(min_z, h.base_z);
 	}
 
-	const int64_t half_size = int64_t((new_scale / 2) * TerrainChunk::SIZE);
+	const int64_t half_size = int64_t((new_scale / 2) * terrain::Config::CHUNK_SIZE);
 	// Place new root base at the base of pivot first. Assuming refs set is valid, it
 	// it should be sufficient to decrease each coordinate by half root size to obtain
 	// a properly aligned extended octree (such that any ref is strictly its valid child).
