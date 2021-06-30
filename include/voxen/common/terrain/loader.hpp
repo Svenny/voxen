@@ -23,7 +23,7 @@ public:
 	void unload(const TerrainChunk &chunk);
 private:
 	std::mutex m_access_mutex;
-	TerrainChunkCache m_cache;
+	terrain::ChunkCache m_cache;
 	const TerrainGenerator m_generator;
 #if VOXEN_DEBUG_BUILD == 1
 	std::unordered_set<TerrainChunkHeader, std::function<uint64_t(const TerrainChunkHeader&)>> m_loaded_chunks;

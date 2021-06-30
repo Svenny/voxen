@@ -18,6 +18,13 @@ public:
 	// the faster is allocation, but it also increases lower bound on memory
 	// usage (causing memory overhead/waste when storage is underutilized).
 	constexpr static uint32_t ALLOCATION_SUBPOOL_SIZE = 512;
+	// Recently unloaded chunks are stored into a cache to allow fast reloading
+	// (imagine "going back and forth" scenario). This cache is set-associative.
+	constexpr static size_t CHUNK_CACHE_SET_SIZE = 8;
+	// How much chunks can standby cache hold in theory. Note that due to set
+	// associativity it may start evictions even when not being fully occupied.
+	// Also note actual cache capacity may be slightly greater due to round-off.
+	constexpr static size_t CHUNK_CACHE_FULL_SIZE = 65536;
 };
 
 // Alias for voxel ID storage type
