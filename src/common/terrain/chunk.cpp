@@ -1,5 +1,6 @@
 #include <voxen/common/terrain/chunk.hpp>
 
+#include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/primary_data.hpp>
 #include <voxen/common/terrain/surface.hpp>
@@ -9,19 +10,18 @@
 namespace voxen::terrain
 {
 
-Chunk::Chunk(CreationInfo info) noexcept : m_id(info.id)
+Chunk::Chunk(CreationInfo info) noexcept : m_id(info.id), m_version(info.version)
 {
 	if (info.reuse_type != ReuseType::Nothing) {
 		assert(info.reuse_chunk);
 		// Though there is no such technical limitation, reusing
 		// a chunk from different location is a logical error
 		assert(info.reuse_chunk->id() == m_id);
+		// Note that this check is not sufficient to catch all cases of bad version management.
+		// It's possible that chunk with this ID was removed in some tick and then created again,
+		// in which case there would be no `info.reuse_chunk` but version must still be increased.
+		assert(info.reuse_chunk->version() < m_version);
 	}
-
-	m_primary_data = std::move(info.new_primary_data);
-	m_octree = std::move(info.new_octree);
-	m_own_surface = std::move(info.new_own_surface);
-	m_seam_surface = std::move(info.new_seam_surface);
 
 	switch (info.reuse_type) {
 	case ReuseType::Full:
@@ -42,12 +42,20 @@ Chunk::Chunk(CreationInfo info) noexcept : m_id(info.id)
 	}
 
 	// We hold invariant that all components exist after construction
-	assert(m_primary_data);
-	assert(m_octree);
-	assert(m_own_surface);
-	assert(m_seam_surface);
+	if (!m_primary_data) {
+		m_primary_data = PoolAllocator::allocatePrimaryData();
+	}
 
-	if (info.reuse_type != ReuseType::Full) {
+	if (!m_octree) {
+		m_octree = PoolAllocator::allocateOctree();
+	}
+
+	if (!m_own_surface) {
+		m_own_surface = PoolAllocator::allocateOwnSurface();
+	}
+
+	if (!m_seam_surface) {
+		m_seam_surface = PoolAllocator::allocateSeamSurface();
 		m_seam_surface->init(m_own_surface);
 	}
 }

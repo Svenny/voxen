@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/common/terrain/chunk_id.hpp>
+#include <voxen/common/terrain/config.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
@@ -19,26 +20,29 @@ public:
 		// All components of previous chunk stay the same
 		Full,
 		// Primary data, octree and own surface of previous
-		// chunk stay the same, a new seam surface is provided
+		// chunk stay the same, a new seam surface is allocated
 		NoSeam,
 		// Primary data and octree of previous chunk
-		// stay the same, new surfaces are provided
+		// stay the same, new surfaces are allocated
 		NoSurface,
 		// Primary data of previous chunk stays the same,
-		// new octree and new surfaces are provided
+		// new octree and new surfaces are allocated
 		OnlyPrimaryData,
-		// All components are provided, previous chunk is not reused
+		// All components are allocated, previous chunk is not reused
 		Nothing
 	};
 
 	struct CreationInfo final {
+		// ID of the to-be-created chunk. If reusing something, must be equal to `reuse_chunk->id()`.
 		ChunkId id;
+		// Version is set externally. Any newly created chunk must have its version strictly greater
+		// than any previous one with the same ID. Otherwise undefined caching behavior will occur.
+		chunk_ver_t version;
+		// Determines which components of `reuse_chunk` will be copied
 		ReuseType reuse_type;
+		// Pointer to "predecessor" chunk to reuse pointer to some parts of it.
+		// Must not be null if `reuse_type != ReuseType::Nothing`.
 		const Chunk *reuse_chunk;
-		extras::refcnt_ptr<ChunkPrimaryData> new_primary_data;
-		extras::refcnt_ptr<ChunkOctree> new_octree;
-		extras::refcnt_ptr<ChunkOwnSurface> new_own_surface;
-		extras::refcnt_ptr<ChunkSeamSurface> new_seam_surface;
 	};
 
 	explicit Chunk(CreationInfo info) noexcept;
@@ -50,6 +54,7 @@ public:
 	~Chunk() = default;
 
 	const ChunkId &id() const noexcept { return m_id; }
+	chunk_ver_t version() const noexcept { return m_version; }
 
 	ChunkPrimaryData &primaryData() noexcept { return *m_primary_data; }
 	const ChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
@@ -65,6 +70,7 @@ public:
 
 private:
 	const ChunkId m_id;
+	const chunk_ver_t m_version;
 
 	extras::refcnt_ptr<ChunkPrimaryData> m_primary_data;
 	extras::refcnt_ptr<ChunkOctree> m_octree;
@@ -105,9 +111,6 @@ public:
 
 	void increaseVersion() noexcept;
 	void copyVoxelData();
-
-	glm::dvec3 worldToLocal(double x, double y, double z) const noexcept { return m_header.worldToLocal(x, y, z); }
-	glm::dvec3 localToWorld(double x, double y, double z) const noexcept { return m_header.localToWorld(x, y, z); }
 
 	// Only `const` getters. Use `beginEdit()`/`endEdit()` to obtain non-const references.
 	const TerrainChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
