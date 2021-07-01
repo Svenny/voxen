@@ -66,16 +66,16 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 
 	auto &terrain = backend.terrainSynchronizer();
 	terrain.walkActiveChunks(
-	[&](const TerrainChunkGpuData &data) {
+	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
 		if (data.index_count == 0) {
 			// Don't draw junk lines for empty chunks
 			return;
 		}
 
-		float base_x = float(data.header.base_x);
-		float base_y = float(data.header.base_y);
-		float base_z = float(data.header.base_z);
-		float size = float(terrain::Config::CHUNK_SIZE * data.header.scale);
+		float base_x = float(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+		float base_y = float(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+		float base_z = float(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+		float size = float(terrain::Config::CHUNK_SIZE << id.lod);
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 

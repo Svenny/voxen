@@ -45,7 +45,7 @@ public:
 		const Chunk *reuse_chunk;
 	};
 
-	explicit Chunk(CreationInfo info) noexcept;
+	explicit Chunk(CreationInfo info);
 	Chunk() = delete;
 	Chunk(Chunk &&) = delete;
 	Chunk(const Chunk &) = delete;
@@ -55,6 +55,7 @@ public:
 
 	const ChunkId &id() const noexcept { return m_id; }
 	chunk_ver_t version() const noexcept { return m_version; }
+	chunk_ver_t seamVersion() const noexcept { return m_seam_version; }
 
 	ChunkPrimaryData &primaryData() noexcept { return *m_primary_data; }
 	const ChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
@@ -71,83 +72,12 @@ public:
 private:
 	const ChunkId m_id;
 	const chunk_ver_t m_version;
+	const chunk_ver_t m_seam_version;
 
 	extras::refcnt_ptr<ChunkPrimaryData> m_primary_data;
 	extras::refcnt_ptr<ChunkOctree> m_octree;
 	extras::refcnt_ptr<ChunkOwnSurface> m_own_surface;
 	extras::refcnt_ptr<ChunkSeamSurface> m_seam_surface;
-};
-
-}
-
-#include <voxen/common/terrain/chunk_data.hpp>
-#include <voxen/common/terrain/chunk_header.hpp>
-
-#include <memory>
-#include <cstdint>
-
-// TODO: remove this deprecated implementation
-namespace voxen
-{
-
-class TerrainChunk {
-public:
-	// TODO: remove this deprecated alias
-	static constexpr inline uint32_t SIZE = terrain::Config::CHUNK_SIZE;
-
-	explicit TerrainChunk(const TerrainChunkHeader &header);
-	TerrainChunk(TerrainChunk &&) noexcept;
-	TerrainChunk(const TerrainChunk &);
-	TerrainChunk &operator = (TerrainChunk &&) noexcept;
-	TerrainChunk &operator = (const TerrainChunk &);
-	~TerrainChunk() = default;
-
-	const TerrainChunkHeader &header() const noexcept { return m_header; }
-	uint32_t version() const noexcept { return m_version; }
-
-	// This methods must used before and after editing voxel data
-	std::pair<TerrainChunkPrimaryData &, TerrainChunkSecondaryData &> beginEdit();
-	void endEdit() noexcept;
-
-	void increaseVersion() noexcept;
-	void copyVoxelData();
-
-	// Only `const` getters. Use `beginEdit()`/`endEdit()` to obtain non-const references.
-	const TerrainChunkPrimaryData &primaryData() const noexcept { return *m_primary_data; }
-	const TerrainChunkSecondaryData &secondaryData() const noexcept { return *m_secondary_data; }
-
-private:
-	const TerrainChunkHeader m_header;
-	// Assumed to be strictly increased after each change to chunk contents.
-	// Yes, this means all logic will break completely when it gets past UINT32_MAX
-	// (thus wrapping to zero), but we don't expect any real-world runtime to ever
-	// reach values that large (it's more than 4 billion edits of a single chunk after all).
-	uint32_t m_version;
-	std::shared_ptr<TerrainChunkPrimaryData> m_primary_data;
-	std::shared_ptr<TerrainChunkSecondaryData> m_secondary_data;
-};
-
-struct TerrainChunkEditBlock {
-	TerrainChunkEditBlock(TerrainChunkEditBlock &&) = delete;
-	TerrainChunkEditBlock(const TerrainChunkEditBlock &) = delete;
-	TerrainChunkEditBlock &operator = (TerrainChunkEditBlock &&) = delete;
-	TerrainChunkEditBlock &operator = (const TerrainChunkEditBlock &) = delete;
-
-	explicit TerrainChunkEditBlock(TerrainChunk &edited_chunk) : chunk(edited_chunk)
-	{
-		auto[primary, secondary] = chunk.beginEdit();
-		primary_data = &primary;
-		secondary_data = &secondary;
-	}
-
-	~TerrainChunkEditBlock() noexcept
-	{
-		chunk.endEdit();
-	}
-
-	TerrainChunk &chunk;
-	TerrainChunkPrimaryData *primary_data = nullptr;
-	TerrainChunkSecondaryData *secondary_data = nullptr;
 };
 
 }

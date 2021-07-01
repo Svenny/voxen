@@ -2,11 +2,13 @@
 
 #include <voxen/common/terrain/chunk.hpp>
 
+#include <cassert>
 #include <vector>
 
 namespace voxen
 {
 
+// TODO: this class is deprecated and must be removed
 class TerrainChunkSeamSet {
 public:
 	TerrainChunkSeamSet() = default;
@@ -16,14 +18,14 @@ public:
 	TerrainChunkSeamSet &operator = (const TerrainChunkSeamSet &) = default;
 	~TerrainChunkSeamSet() = default;
 
-	template<int D> void addEdgeRef(const TerrainChunk *ptr) noexcept
+	template<int D> void addEdgeRef(const terrain::Chunk *ptr) noexcept
 	{
 		assert(ptr);
 		uintptr_t p = reinterpret_cast<uintptr_t>(ptr) | uintptr_t(COPY_STRATEGY_MASK_EDGE[D]);
 		m_refs.emplace_back(p);
 	}
 
-	template<int D> void addFaceRef(const TerrainChunk *ptr) noexcept
+	template<int D> void addFaceRef(const terrain::Chunk *ptr) noexcept
 	{
 		assert(ptr);
 		uintptr_t p = reinterpret_cast<uintptr_t>(ptr) | uintptr_t(COPY_STRATEGY_MASK_FACE[D]);
@@ -32,7 +34,7 @@ public:
 
 	void clear() noexcept;
 
-	void extendOctree(TerrainChunkHeader header, terrain::ChunkOctree &output);
+	void extendOctree(terrain::ChunkId id, terrain::ChunkOctree &output);
 
 private:
 	// Three least significant bits of these pointers are
@@ -40,7 +42,7 @@ private:
 	// dimensions must be equal to the contact point
 	std::vector<uintptr_t> m_refs;
 
-	std::tuple<uint32_t, int64_t, int64_t, int64_t> selectExtendedRootDimensions(const TerrainChunkHeader &header) const;
+	terrain::ChunkId selectExtendedRoot(terrain::ChunkId id) const;
 
 	static constexpr inline uint8_t COPY_STRATEGY_MASK_EDGE[3] = { 0b110, 0b101, 0b011 };
 	static constexpr inline uint8_t COPY_STRATEGY_MASK_FACE[3] = { 0b001, 0b010, 0b100 };

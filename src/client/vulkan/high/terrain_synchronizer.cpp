@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
+#include <voxen/common/terrain/surface.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -11,11 +12,12 @@ void TerrainSynchronizer::beginSyncSession()
 	m_sync_age++;
 }
 
-void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
+void TerrainSynchronizer::syncChunk(const terrain::Chunk &chunk)
 {
-	const auto &header = chunk.header();
-	const auto &surface = chunk.secondaryData().surface;
-	auto iter = m_chunk_gpu_data.find(header);
+	const auto &id = chunk.id();
+	// TODO: doesn't support seam surfaces for now
+	const auto &surface = chunk.ownSurface();
+	auto iter = m_chunk_gpu_data.find(id);
 
 	VkDeviceSize needed_vtx_size = surface.numVertices() * sizeof(terrain::SurfaceVertex);
 	VkDeviceSize needed_idx_size = surface.numIndices() * sizeof(uint32_t);
@@ -61,7 +63,7 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 	idx_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	// Add a new entry
-	iter = m_chunk_gpu_data.emplace(header, ChunkGpuData {
+	iter = m_chunk_gpu_data.emplace(id, ChunkGpuData {
 		.vtx_buffer = Buffer(vtx_info, Buffer::Usage::DeviceLocal),
 		.idx_buffer = Buffer(idx_info, Buffer::Usage::DeviceLocal),
 		.index_count = surface.numIndices(),
@@ -77,21 +79,20 @@ void TerrainSynchronizer::endSyncSession()
 	Backend::backend().transferManager().ensureUploadsDone();
 }
 
-void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunkGpuData &)> chunk_callback,
+void TerrainSynchronizer::walkActiveChunks(std::function<void(terrain::ChunkId, const TerrainChunkGpuData &)> chunk_callback,
                                            std::function<void(VkBuffer, VkBuffer)> buffers_switch_callback)
 {
 	// TODO: replace with framerate-independent garbage collection mechanism
 	constexpr uint32_t MAX_AGE_DIFF = 720; // 720 frames (5 sec on 144 FPS, 12 sec on 60 FPS)
 
 	TerrainChunkGpuData data = {};
-	std::vector<TerrainChunkHeader> for_erase;
+	std::vector<terrain::ChunkId> for_erase;
 
 	for (const auto &entry : m_chunk_gpu_data) {
 		if (entry.second.age == m_sync_age) {
 			buffers_switch_callback(entry.second.vtx_buffer, entry.second.idx_buffer);
-			data.header = entry.first;
 			data.index_count = entry.second.index_count;
-			chunk_callback(data);
+			chunk_callback(entry.first, data);
 		}
 
 		uint32_t age_diff = m_sync_age - entry.second.age;
@@ -99,8 +100,8 @@ void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunk
 			for_erase.emplace_back(entry.first);
 	}
 
-	for (const auto &header : for_erase)
-		m_chunk_gpu_data.erase(header);
+	for (const auto &id : for_erase)
+		m_chunk_gpu_data.erase(id);
 }
 
 void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &surface, ChunkGpuData &data)

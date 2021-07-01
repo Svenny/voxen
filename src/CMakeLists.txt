@@ -39,7 +39,6 @@ set(VOXEN_SOURCES
 	src/common/terrain/allocator.cpp
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
-	src/common/terrain/chunk_header.cpp
 	src/common/terrain/chunk_id.cpp
 	src/common/terrain/chunk_octree.cpp
 	src/common/terrain/coord.cpp

@@ -19,10 +19,6 @@ public:
 	extras::refcnt_ptr<Chunk> load(ChunkId id);
 	void unload(extras::refcnt_ptr<Chunk> chunk);
 
-	// TODO: remove these deprecated functions
-	void load(TerrainChunk &chunk);
-	void unload(const TerrainChunk &chunk);
-
 private:
 	std::mutex m_access_mutex;
 	ChunkCache m_cache;

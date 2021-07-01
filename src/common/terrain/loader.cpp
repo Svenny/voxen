@@ -73,16 +73,4 @@ void TerrainLoader::unload(extras::refcnt_ptr<Chunk> chunk)
 	// Currently chunks are just dropped
 }
 
-void TerrainLoader::load(TerrainChunk &chunk)
-{
-	// TODO: support loading from disk
-	auto[primary, secondary] = chunk.beginEdit();
-	m_generator.generate(chunk.header(), primary);
-	TerrainSurfaceBuilder::buildBasicOctree(primary, secondary);
-	chunk.endEdit();
-}
-
-void TerrainLoader::unload(const TerrainChunk &/*chunk*/)
-{}
-
 }

@@ -3,6 +3,8 @@
 #include <voxen/common/terrain/coord.hpp>
 #include <voxen/util/log.hpp>
 
+#include <glm/geometric.hpp>
+
 #include <bit>
 #include <cmath>
 
@@ -66,7 +68,7 @@ static glm::dvec3 findZeroCrossing(double x0, double y0, double z0,
 }
 
 template<int D, typename F, typename DF>
-static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, terrain::HermiteDataStorage &storage)
+static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, HermiteDataStorage &storage)
 {
 	glm::dvec3 point_world =
 		findZeroCrossing<D>(ctx.x0, ctx.y0, ctx.z0, ctx.c1, ctx.value_lesser, ctx.value_bigger, f);
@@ -103,7 +105,7 @@ static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 	return glm::dvec3(dx, 1.0, dz);
 }
 
-static void doGenerate(ChunkId id, ChunkPrimaryData &output)
+void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 {
 	constexpr uint32_t GRID_SIZE = VoxelGrid::GRID_SIZE;
 	using ValuesArray = std::array<std::array<std::array<double, GRID_SIZE>, GRID_SIZE>, GRID_SIZE>;
@@ -191,21 +193,6 @@ static void doGenerate(ChunkId id, ChunkPrimaryData &output)
 			}
 		}
 	}
-}
-
-void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
-{
-	doGenerate(id, output);
-}
-
-void TerrainGenerator::generate(const TerrainChunkHeader &header, ChunkPrimaryData &output) const
-{
-	doGenerate(ChunkId {
-		.lod = uint32_t(std::countr_zero(header.scale)),
-		.base_x = int32_t(header.base_x / int64_t(Config::CHUNK_SIZE)),
-		.base_y = int32_t(header.base_y / int64_t(Config::CHUNK_SIZE)),
-		.base_z = int32_t(header.base_z / int64_t(Config::CHUNK_SIZE))
-	}, output);
 }
 
 }

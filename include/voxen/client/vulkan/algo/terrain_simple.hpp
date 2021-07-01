@@ -20,7 +20,7 @@ public:
 	void executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view);
 
 private:
-	static bool isChunkVisible(const TerrainChunk &chunk, const GameView &view) noexcept;
+	static bool isChunkVisible(const terrain::Chunk &chunk, const GameView &view) noexcept;
 };
 
 }

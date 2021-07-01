@@ -16,7 +16,7 @@ WorldState::WorldState(const WorldState &other)
 {
 }
 
-void WorldState::walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const
+void WorldState::walkActiveChunks(std::function<void(const terrain::Chunk &)> visitor) const
 {
 	m_terrain->walkActiveChunks(std::move(visitor));
 }
