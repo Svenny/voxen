@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace voxen::terrain
@@ -35,13 +36,5 @@ using voxel_t = uint8_t;
 // completely when it gets past UINT32_MAX (thus wrapping to zero), but we don't expect any real-world
 // runtime to ever reach values that large (more than 4 billion edits of a single chunk).
 using chunk_ver_t = uint32_t;
-
-}
-
-namespace voxen
-{
-
-// TODO: remove this deprecated alias
-using voxel_t = terrain::voxel_t;
 
 }

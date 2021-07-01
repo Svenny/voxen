@@ -4,7 +4,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
-
+#include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/math.hpp>
@@ -35,7 +35,7 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	auto &terrain = backend.terrainSynchronizer();
 	{
 		terrain.beginSyncSession();
-		state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
+		state.walkActiveChunks([&](const terrain::Chunk &chunk) {
 			if (isChunkVisible(chunk, view)) {
 				terrain.syncChunk(chunk);
 			}
@@ -50,12 +50,11 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	auto view_proj_mat = view.cameraMatrix();
 
 	terrain.walkActiveChunks(
-	[&](const TerrainChunkGpuData &data) {
-		const auto &header = data.header;
-		float base_x = float(header.base_x);
-		float base_y = float(header.base_y);
-		float base_z = float(header.base_z);
-		float size = float(header.scale);
+	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
+		float base_x = float(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+		float base_y = float(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+		float base_z = float(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+		float size = float(1u << id.lod);
 		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
 		glm::mat4 mat = view_proj_mat * model_mat;
 
@@ -74,19 +73,20 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	});
 }
 
-bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView &view) noexcept
+bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameView &view) noexcept
 {
-	const auto &header = chunk.header();
-	const auto &surface = chunk.secondaryData().surface;
+	const auto &id = chunk.id();
+	// TODO: doesn't acoount for seam surfaces
+	const auto &surface = chunk.ownSurface();
 
 	if (surface.numIndices() == 0) {
 		return false;
 	}
 
-	float base_x = float(header.base_x);
-	float base_y = float(header.base_y);
-	float base_z = float(header.base_z);
-	float scale = float(header.scale);
+	float base_x = float(id.base_x * terrain::Config::CHUNK_SIZE);
+	float base_y = float(id.base_y * terrain::Config::CHUNK_SIZE);
+	float base_z = float(id.base_z * terrain::Config::CHUNK_SIZE);
+	float scale = float(1u << id.lod);
 	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
 
 	const Aabb &aabb = surface.aabb();

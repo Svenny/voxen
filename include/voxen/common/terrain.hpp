@@ -56,7 +56,7 @@ public:
 	// Call once per world tick
 	void updateChunks(double x, double y, double z, terrain::TerrainLoader &loader);
 
-	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
+	void walkActiveChunks(std::function<void(const terrain::Chunk &)> visitor) const;
 
 	void asyncSplitNodeCreation(TerrainOctreeNodeHeader header, terrain::TerrainLoader &loader);
 

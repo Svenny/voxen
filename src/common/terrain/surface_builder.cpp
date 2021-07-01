@@ -1,22 +1,20 @@
 #include <voxen/common/terrain/surface_builder.hpp>
 
+#include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/octree_tables.hpp>
+#include <voxen/common/terrain/primary_data.hpp>
+#include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/log.hpp>
 
 #include <algorithm>
 #include <array>
 #include <vector>
 
-namespace voxen
+namespace voxen::terrain
 {
 
-using terrain::ChunkOctree;
-using terrain::ChunkOctreeCell;
-using terrain::ChunkOctreeLeaf;
-using terrain::ChunkOctreeNodeBase;
-
 template<int D>
-static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
+static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	constexpr int CORNERS_TABLE[3][4][2] = {
 		{ { 5, 7 }, { 1, 3 }, { 0, 2 }, { 4, 6 } }, // X
@@ -91,7 +89,7 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 }
 
 template<int D>
-static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
+static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	if (!nodes[0] || !nodes[1]) {
 		// No valid lowest quadruples can be generated
@@ -138,7 +136,7 @@ static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const Chu
 	}
 }
 
-static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
+static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
@@ -170,7 +168,7 @@ static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree,
 	}
 }
 
-static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, terrain::ChunkOwnSurface &surface)
+static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
@@ -192,25 +190,30 @@ static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, terrain
 	}
 }
 
+static const HermiteDataStorage &selectHermiteStorage(const ChunkPrimaryData &data, int dim) noexcept
+{
+	switch (dim) {
+	case 0:
+		return data.hermite_data_x;
+	case 1:
+		return data.hermite_data_y;
+	case 2:
+		return data.hermite_data_z;
+	default:
+		__builtin_unreachable();
+	}
+}
+
+namespace
+{
+
 struct DcBuildArgs {
 	ChunkOctree &octree;
-	const TerrainChunkPrimaryData &primary_data;
+	const ChunkPrimaryData &primary_data;
 	QefSolver3D &solver;
 	const float epsilon;
 };
 
-static const terrain::HermiteDataStorage &selectHermiteStorage(const TerrainChunkPrimaryData &grid, int dim) noexcept
-{
-	switch (dim) {
-	case 0:
-		return grid.hermite_data_x;
-	case 1:
-		return grid.hermite_data_y;
-	case 2:
-		return grid.hermite_data_z;
-	default:
-		__builtin_unreachable();
-	}
 }
 
 static std::pair<uint32_t, ChunkOctreeLeaf *>
@@ -511,27 +514,29 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	return { id, leaf };
 }
 
-void TerrainSurfaceBuilder::buildBasicOctree(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output)
+void SurfaceBuilder::buildOctree()
 {
-	auto &octree = output.octree;
+	ChunkOctree &octree = m_chunk.octree();
 	octree.clear();
 
 	QefSolver3D qef_solver;
 	DcBuildArgs args {
 		.octree = octree,
-		.primary_data = input,
+		.primary_data = m_chunk.primaryData(),
 		.solver = qef_solver,
 		.epsilon = 0.12f
 	};
 
-	auto[root_id, root] = buildNode(glm::ivec3(0), terrain::Config::CHUNK_SIZE, 0, args);
+	auto[root_id, root] = buildNode(glm::ivec3(0), Config::CHUNK_SIZE, 0, args);
 	octree.setBaseRoot(root_id);
 }
 
-void TerrainSurfaceBuilder::buildSurface(TerrainChunkSecondaryData &output)
+void SurfaceBuilder::buildOwnSurface()
 {
-	auto &octree = output.octree;
-	auto &surface = output.surface;
+	m_foreign_chunk_to_idx.clear();
+
+	ChunkOctree &octree = m_chunk.octree();
+	ChunkOwnSurface &surface = m_chunk.ownSurface();
 	surface.clear();
 
 	auto root = octree.idToPointer(octree.extendedRoot());

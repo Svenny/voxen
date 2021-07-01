@@ -36,7 +36,7 @@ public:
 	uint64_t tickId() const noexcept { return m_tick_id; }
 	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
 
-	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
+	void walkActiveChunks(std::function<void(const terrain::Chunk &)> visitor) const;
 private:
 	Player m_player;
 	std::unique_ptr<TerrainOctree> m_terrain;

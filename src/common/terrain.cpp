@@ -1,6 +1,8 @@
 #include <voxen/common/terrain.hpp>
 
+#include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/cache.hpp>
+#include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/octree_tables.hpp>
 #include <voxen/common/terrain/seam.hpp>
 #include <voxen/common/terrain/surface_builder.hpp>
@@ -8,6 +10,7 @@
 #include <voxen/util/hash.hpp>
 
 #include <algorithm>
+#include <bit>
 #include <queue>
 
 namespace voxen
@@ -41,7 +44,13 @@ struct TerrainOctreeNode {
 				m_children[i] = nullptr;
 		}
 		if (other.m_chunk) {
-			m_chunk = new TerrainChunk(*other.m_chunk);
+			terrain::Chunk::CreationInfo info {
+				.id = other.m_chunk->id(),
+				.version = other.m_chunk->version(),
+				.reuse_type = terrain::Chunk::ReuseType::Full,
+				.reuse_chunk = other.m_chunk.get()
+			};
+			m_chunk = terrain::PoolAllocator::allocateChunk(info);
 		}
 	}
 
@@ -49,14 +58,13 @@ struct TerrainOctreeNode {
 	{
 		for (int i = 0; i < 8; i++)
 			delete m_children[i];
-		delete m_chunk;
 	}
 
 	static void unload(TerrainOctreeNode* node, TerrainLoader &loader)
 	{
 		if (node->m_is_collapsed) {
 			assert(node->m_chunk);
-			loader.unload(*node->m_chunk);
+			loader.unload(std::move(node->m_chunk));
 		}
 		else {
 			assert(!node->m_chunk);
@@ -99,11 +107,10 @@ struct TerrainOctreeNode {
 	void split(TerrainLoader &loader)
 	{
 		assert(m_is_collapsed);
-		loader.unload(*m_chunk);
-		delete m_chunk;
-		m_chunk = nullptr;
+		loader.unload(std::move(m_chunk));
+		m_chunk.reset();
 		m_is_editing = false;
-		m_mutable_secondary = nullptr;
+
 		int64_t child_size = m_header.size / 2;
 		for (int i = 0; i < 8; i++) {
 			if (!m_children[i]) {
@@ -150,11 +157,9 @@ struct TerrainOctreeNode {
 	void doDelayedSplit(TerrainOctree::SplitRequest&& request, TerrainLoader &loader)
 	{
 		assert(m_is_collapsed);
-		loader.unload(*m_chunk);
-		delete m_chunk;
-		m_chunk = nullptr;
+		loader.unload(std::move(m_chunk));
+		m_chunk.reset();
 		m_is_editing = false;
-		m_mutable_secondary = nullptr;
 
 		for (int i = 0; i < 8; i++) {
 			assert(!m_children[i]);
@@ -180,29 +185,29 @@ struct TerrainOctreeNode {
 
 	void createChunk(TerrainLoader &loader)
 	{
-		TerrainChunkHeader header;
-		header.scale = m_header.size / terrain::Config::CHUNK_SIZE;
-		header.base_x = m_header.base_x;
-		header.base_y = m_header.base_y;
-		header.base_z = m_header.base_z;
-		m_chunk = new TerrainChunk(header);
+		terrain::ChunkId id {
+			.lod = uint32_t(std::countr_zero(uint32_t(m_header.size) / terrain::Config::CHUNK_SIZE)),
+			.base_x = int32_t(m_header.base_x / int64_t(terrain::Config::CHUNK_SIZE)),
+			.base_y = int32_t(m_header.base_y / int64_t(terrain::Config::CHUNK_SIZE)),
+			.base_z = int32_t(m_header.base_z / int64_t(terrain::Config::CHUNK_SIZE))
+		};
 
-		loader.load(*m_chunk);
-		auto[_, secondary] = m_chunk->beginEdit();
+		m_chunk = loader.load(id);
+		terrain::SurfaceBuilder builder(*m_chunk);
+		builder.buildOctree();
 		m_is_editing = true;
-		m_mutable_secondary = &secondary;
 	}
 
 	void finalizeEditing()
 	{
 		if (m_chunk) {
 			if (m_is_editing) {
-				m_seam_set.extendOctree(m_chunk->header(), m_mutable_secondary->octree);
-				TerrainSurfaceBuilder::buildSurface(*m_mutable_secondary);
+				m_seam_set.extendOctree(m_chunk->id(), m_chunk->octree());
 
-				m_mutable_secondary = nullptr;
+				terrain::SurfaceBuilder builder(*m_chunk);
+				builder.buildOwnSurface();
+
 				m_is_editing = false;
-				m_chunk->endEdit();
 			}
 
 			m_seam_set.clear();
@@ -217,7 +222,7 @@ struct TerrainOctreeNode {
 
 	TerrainOctreeNodeHeader m_header;
 	TerrainOctreeNode *m_children[8];
-	TerrainChunk *m_chunk = nullptr;
+	extras::refcnt_ptr<terrain::Chunk> m_chunk;
 	bool m_is_collapsed = true;
 	enum class Status : int8_t {Common, RequestAsyncSplit };
 	Status m_status = Status::Common;
@@ -225,7 +230,6 @@ struct TerrainOctreeNode {
 	TerrainChunkSeamSet m_seam_set;
 
 	bool m_is_editing = false;
-	TerrainChunkSecondaryData *m_mutable_secondary = nullptr;
 };
 
 // --- Seam building ---
@@ -251,7 +255,7 @@ static void seamEdgeProc(std::array<TerrainOctreeNode *, 4> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set.addEdgeRef<D>(nodes[2]->m_chunk);
+		nodes[0]->m_seam_set.addEdgeRef<D>(nodes[2]->m_chunk.get());
 		return;
 	}
 
@@ -285,7 +289,7 @@ static void seamFaceProc(std::array<TerrainOctreeNode *, 2> nodes)
 	}
 
 	if (!has_children) {
-		nodes[0]->m_seam_set.addFaceRef<D>(nodes[1]->m_chunk);
+		nodes[0]->m_seam_set.addFaceRef<D>(nodes[1]->m_chunk.get());
 		return;
 	}
 
@@ -460,7 +464,7 @@ void TerrainOctree::runDelaydedSplit(TerrainLoader &loader)
 	}
 }
 
-void TerrainOctree::walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const
+void TerrainOctree::walkActiveChunks(std::function<void(const terrain::Chunk &)> visitor) const
 {
 	if (!m_tree)
 		return;
@@ -473,7 +477,7 @@ void TerrainOctree::walkActiveChunks(std::function<void(const TerrainChunk &)> v
 		stack.pop_back();
 
 		if (node->m_is_collapsed) {
-			TerrainChunk *chunk = node->m_chunk;
+			terrain::Chunk *chunk = node->m_chunk.get();
 			if (chunk)
 				visitor(*chunk);
 			continue;
