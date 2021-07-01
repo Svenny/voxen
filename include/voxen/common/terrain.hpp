@@ -46,7 +46,7 @@ public:
 	};
 
 public:
-	explicit TerrainOctree(TerrainLoader &loader, uint32_t num_xz_chunks, uint32_t num_y_chunks);
+	explicit TerrainOctree(terrain::TerrainLoader &loader, uint32_t num_xz_chunks, uint32_t num_y_chunks);
 	TerrainOctree(TerrainOctree &&other) noexcept;
 	TerrainOctree(const TerrainOctree &other);
 	TerrainOctree &operator = (TerrainOctree &&) = delete;
@@ -54,15 +54,15 @@ public:
 	~TerrainOctree() noexcept;
 
 	// Call once per world tick
-	void updateChunks(double x, double y, double z, TerrainLoader &loader);
+	void updateChunks(double x, double y, double z, terrain::TerrainLoader &loader);
 
 	void walkActiveChunks(std::function<void(const TerrainChunk &)> visitor) const;
 
-	void asyncSplitNodeCreation(TerrainOctreeNodeHeader header, TerrainLoader &loader);
+	void asyncSplitNodeCreation(TerrainOctreeNodeHeader header, terrain::TerrainLoader &loader);
 
 private:
 	void loadPoolResults();
-	void runDelaydedSplit(TerrainLoader &loader);
+	void runDelaydedSplit(terrain::TerrainLoader &loader);
 
 private:
 	const uint32_t m_xz_chunks, m_y_chunks;

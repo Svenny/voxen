@@ -8,25 +8,28 @@
 
 #if VOXEN_DEBUG_BUILD == 1
 #include <unordered_set>
-#include <functional>
 #endif /* VOXEN_DEBUG_BUILD */
 
-namespace voxen
+namespace voxen::terrain
 {
 
 // This class supports access from multiple threads
 class TerrainLoader {
 public:
-	TerrainLoader();
+	extras::refcnt_ptr<Chunk> load(ChunkId id);
+	void unload(extras::refcnt_ptr<Chunk> chunk);
 
+	// TODO: remove these deprecated functions
 	void load(TerrainChunk &chunk);
 	void unload(const TerrainChunk &chunk);
+
 private:
 	std::mutex m_access_mutex;
-	terrain::ChunkCache m_cache;
-	terrain::TerrainGenerator m_generator;
+	ChunkCache m_cache;
+	TerrainGenerator m_generator;
+
 #if VOXEN_DEBUG_BUILD == 1
-	std::unordered_set<TerrainChunkHeader, std::function<uint64_t(const TerrainChunkHeader&)>> m_loaded_chunks;
+	std::unordered_set<ChunkId> m_loaded_chunks;
 #endif /* VOXEN_DEBUG_BUILD */
 };
 

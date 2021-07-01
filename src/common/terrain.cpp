@@ -13,6 +13,8 @@
 namespace voxen
 {
 
+using terrain::TerrainLoader;
+
 // --- TerrainOctree nodes ---
 
 struct TerrainOctreeNode {

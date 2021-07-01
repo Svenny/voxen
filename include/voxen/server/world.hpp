@@ -24,7 +24,7 @@ public:
 
 	void update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
 private:
-	TerrainLoader m_loader;
+	terrain::TerrainLoader m_loader;
 
 	// `getLastState()` and `update()` may be called from different
 	// threads simultaneously. This mutex protects from data race
