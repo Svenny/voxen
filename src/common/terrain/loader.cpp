@@ -1,74 +1,88 @@
 #include <voxen/common/terrain/loader.hpp>
 
+#include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/surface_builder.hpp>
 
-#if VOXEN_DEBUG_BUILD == 1
+#include <extras/defer.hpp>
+
 #include <cassert>
-#endif /* VOXEN_DEBUG_BUILD */
 
-namespace voxen
+namespace voxen::terrain
 {
 
-TerrainLoader::TerrainLoader() : m_generator()
+extras::refcnt_ptr<Chunk> TerrainLoader::load(ChunkId id)
+{
 #if VOXEN_DEBUG_BUILD == 1
-, m_loaded_chunks(0, [](const TerrainChunkHeader& header) {return header.hash();})
+	{
+		std::lock_guard<std::mutex> lock(m_access_mutex);
+		auto iter = m_loaded_chunks.find(id);
+		// We must not load an already loaded chunk
+		assert(iter == m_loaded_chunks.end());
+		m_loaded_chunks.insert(id);
+	}
+
+	defer_fail {
+		// Rollback in case of load failure
+		std::lock_guard<std::mutex> lock(m_access_mutex);
+		m_loaded_chunks.erase(id);
+	};
 #endif /* VOXEN_DEBUG_BUILD */
+
+	{
+		std::lock_guard<std::mutex> lock(m_access_mutex);
+		if (auto ptr = m_cache.tryLoad(id); ptr) {
+			// Standby cache hit
+			return ptr;
+		}
+	}
+
+	// TODO: support loading from disk
+	// As we are always generating "virgin chunk", assign 0 version unconditionally
+
+	auto ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
+		.id = id,
+		.version = 0,
+		.reuse_type = Chunk::ReuseType::Nothing,
+		.reuse_chunk = nullptr
+	});
+
+	m_generator.generate(id, ptr->primaryData());
+	// TODO: generate octree and own surface
+
+	return ptr;
+}
+
+void TerrainLoader::unload(extras::refcnt_ptr<Chunk> chunk)
 {
+	assert(chunk);
+
+	std::lock_guard<std::mutex> lock(m_access_mutex);
+
+#if VOXEN_DEBUG_BUILD == 1
+	{
+		auto iter = m_loaded_chunks.find(chunk->id());
+		// We must not unload not yet loaded chunk
+		assert(iter != m_loaded_chunks.end());
+		m_loaded_chunks.erase(iter);
+	}
+#endif /* VOXEN_DEBUG_BUILD */
+
+	m_cache.insert(std::move(chunk));
+
+	// TODO: support saving to disk
+	// Currently chunks are just dropped
 }
 
 void TerrainLoader::load(TerrainChunk &chunk)
 {
-	const auto &header = chunk.header();
-#if VOXEN_DEBUG_BUILD == 1
-	m_access_mutex.lock();
-	auto search = m_loaded_chunks.find(header);
-	// We mustn't load already loaded chunk
-	assert(search == m_loaded_chunks.end());
-	m_loaded_chunks.insert(header);
-	m_access_mutex.unlock();
-#endif /* VOXEN_DEBUG_BUILD */
-
-	// TODO: cache disabled during rewriting to new terrain arch
-#if 0
-	m_access_mutex.lock();
-	if (m_cache.tryFill(chunk))
-	{
-		m_access_mutex.unlock();
-		return;
-	}
-	m_access_mutex.unlock();
-#endif
-
 	// TODO: support loading from disk
 	auto[primary, secondary] = chunk.beginEdit();
-	m_generator.generate(header, primary);
+	m_generator.generate(chunk.header(), primary);
 	TerrainSurfaceBuilder::buildBasicOctree(primary, secondary);
 	chunk.endEdit();
 }
 
-void TerrainLoader::unload(const TerrainChunk &chunk)
-{
-#if VOXEN_DEBUG_BUILD == 1
-	TerrainChunkHeader header = chunk.header();
-	m_access_mutex.lock();
-	auto search = m_loaded_chunks.find(header);
-	// We mustn't unload not loaded yet chunk
-	assert(search != m_loaded_chunks.end());
-	m_loaded_chunks.erase(search);
-	m_access_mutex.unlock();
-#endif /* VOXEN_DEBUG_BUILD */
-
-	// TODO: support saving to disk
-	// insert will update chunk data, if the chunk still in cache
-	// or insert again, if the cache already flush the chunk
-
-	// TODO: cache disabled during rewriting to new terrain arch
-	(void) chunk;
-#if 0
-	m_access_mutex.lock();
-	m_cache.insert(chunk);
-	m_access_mutex.unlock();
-#endif
-}
+void TerrainLoader::unload(const TerrainChunk &/*chunk*/)
+{}
 
 }
