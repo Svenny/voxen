@@ -42,6 +42,7 @@ set(VOXEN_SOURCES
 	src/common/terrain/chunk_header.cpp
 	src/common/terrain/chunk_id.cpp
 	src/common/terrain/chunk_octree.cpp
+	src/common/terrain/coord.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/hermite_data.cpp
 	src/common/terrain/loader.cpp
