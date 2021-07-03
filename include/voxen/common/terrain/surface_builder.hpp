@@ -7,6 +7,8 @@
 namespace voxen::terrain
 {
 
+struct ChunkOctreeLeaf;
+
 class SurfaceBuilder final {
 public:
 	explicit SurfaceBuilder(Chunk &chunk) noexcept : m_chunk(chunk) {}
@@ -29,7 +31,7 @@ public:
 
 private:
 	Chunk &m_chunk;
-	std::unordered_map<const Chunk *, uint32_t> m_foreign_chunk_to_idx;
+	std::unordered_map<const ChunkOctreeLeaf *, uint32_t> m_foreign_leaf_to_idx;
 };
 
 }
