@@ -91,7 +91,7 @@ public:
 	uint32_t addExtraVertex(const SurfaceVertex &vertex);
 	// Add three indices making a triangle to the end of index array.
 	// NOTE: indexing is including vertices from base surface.
-	void addTriange(uint32_t a, uint32_t b, uint32_t c);
+	void addTriangle(uint32_t a, uint32_t b, uint32_t c);
 
 	// Returns the sum of numbers of vertices in own and seam surface
 	uint32_t numAllVertices() const noexcept;

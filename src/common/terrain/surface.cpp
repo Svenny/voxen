@@ -54,7 +54,7 @@ uint32_t ChunkSeamSurface::addExtraVertex(const SurfaceVertex &vertex)
 	return id + m_base_surface->numVertices();
 }
 
-void ChunkSeamSurface::addTriange(uint32_t a, uint32_t b, uint32_t c)
+void ChunkSeamSurface::addTriangle(uint32_t a, uint32_t b, uint32_t c)
 {
 	assert(std::max({ a, b, c }) < numAllVertices());
 	doAddTriangle(a, b, c);
