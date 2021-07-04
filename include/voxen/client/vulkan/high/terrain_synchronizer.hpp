@@ -39,13 +39,15 @@ private:
 		Buffer idx_buffer;
 		uint32_t index_count;
 		uint32_t version;
+		uint32_t seam_version;
 		uint32_t age;
 	};
 
 	std::unordered_map<terrain::ChunkId, ChunkGpuData> m_chunk_gpu_data;
 	uint32_t m_sync_age = 0;
 
-	void enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &surface, ChunkGpuData &data);
+	void enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &own_surface,
+	                            const terrain::ChunkSeamSurface &seam_surface, ChunkGpuData &data);
 };
 
 }

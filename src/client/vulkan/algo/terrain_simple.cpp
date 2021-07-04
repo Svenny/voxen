@@ -76,10 +76,10 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameView &view) noexcept
 {
 	const auto &id = chunk.id();
-	// TODO: doesn't acoount for seam surfaces
 	const auto &surface = chunk.ownSurface();
+	const auto &seam_surface = chunk.seamSurface();
 
-	if (surface.numIndices() == 0) {
+	if (surface.numIndices() == 0 && seam_surface.numIndices() == 0) {
 		return false;
 	}
 
@@ -89,7 +89,7 @@ bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameVi
 	float scale = float(1u << id.lod);
 	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
 
-	const Aabb &aabb = surface.aabb();
+	const Aabb &aabb = seam_surface.aabb();
 	const glm::vec3 &aabb_min = aabb.min();
 	const glm::vec3 &aabb_max = aabb.max();
 

@@ -20,6 +20,7 @@ public:
 	~TransferManager() noexcept;
 
 	void uploadToBuffer(VkBuffer buffer, const void *data, VkDeviceSize size);
+	void uploadToBuffer(VkBuffer buffer, VkDeviceSize offset, const void *data, VkDeviceSize size);
 	void ensureUploadsDone();
 private:
 	CommandPool m_command_pool;
