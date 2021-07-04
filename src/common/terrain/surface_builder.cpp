@@ -228,12 +228,15 @@ void faceProc(FaceProcArgs<S> args)
 		const int node_id = FACE_PROC_RECURSION_TABLE[D][i][0];
 		const ChunkOctreeNodeBase *n = nodes[node_id];
 
+		if constexpr (S) {
+			sub_octrees[i] = args.octrees[node_id];
+		}
+
 		if (!n->is_leaf) {
 			const ChunkOctreeCell *cell = n->castToCell();
 			const uint32_t child_id = cell->children_ids[FACE_PROC_RECURSION_TABLE[D][i][1]];
 
 			if constexpr (S) {
-				sub_octrees[i] = args.octrees[node_id];
 				sub[i] = args.octrees[node_id]->idToPointer(child_id);
 			} else {
 				sub[i] = args.octree.idToPointer(child_id);
@@ -687,8 +690,8 @@ uint32_t getEqualizedRoot(RootEqualizationArgs args) noexcept
 	// Go from the highest-order bits
 	for (uint32_t i = args.descend_length - 1; ~i; i--) {
 		const ChunkOctreeNodeBase *node = args.octree.idToPointer(node_id);
-		if (node->is_leaf) {
-			// We've hit a leaf before completing the descend
+		if (!node || node->is_leaf) {
+			// We've hit a non-existent node or leaf before completing the descend
 			return node_id;
 		}
 
@@ -702,6 +705,117 @@ uint32_t getEqualizedRoot(RootEqualizationArgs args) noexcept
 	}
 
 	return node_id;
+}
+
+template<int D>
+void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_idx)
+{
+	const ChunkId my_id = my.id();
+	const ChunkId his_id = his.id();
+
+	ChunkOctree &my_octree = my.octree();
+	const ChunkOctree &his_octree = his.octree();
+
+	uint32_t my_root_id = my_octree.baseRoot();
+	uint32_t his_root_id = his_octree.baseRoot();
+
+	if (my_id.lod < his_id.lod) {
+		// "My" chunk is smaller, need to equalize "his" root
+		uint32_t descend_mask[3];
+		descend_mask[0] = uint32_t(my_id.base_x - his_id.base_x);
+		descend_mask[1] = uint32_t(my_id.base_y - his_id.base_y);
+		descend_mask[2] = uint32_t(my_id.base_z - his_id.base_z);
+		descend_mask[D] = 0u; // Always take children with smaller `D` coord
+
+		his_root_id = getEqualizedRoot(RootEqualizationArgs {
+			.octree = his_octree,
+			.descend_mask_x = descend_mask[0],
+			.descend_mask_y = descend_mask[1],
+			.descend_mask_z = descend_mask[2],
+			.descend_length = his_id.lod - my_id.lod
+		});
+	} else if (my_id.lod > his_id.lod) {
+		// "his" chunk is smaller, need to equalize "my" root
+		uint32_t descend_mask[3];
+		descend_mask[0] = uint32_t(his_id.base_x - my_id.base_x);
+		descend_mask[1] = uint32_t(his_id.base_y - my_id.base_y);
+		descend_mask[2] = uint32_t(his_id.base_z - my_id.base_z);
+		descend_mask[D] = ~0u; // Always take children with bigger `D` coord
+
+		my_root_id = getEqualizedRoot(RootEqualizationArgs {
+			.octree = my_octree,
+			.descend_mask_x = descend_mask[0],
+			.descend_mask_y = descend_mask[1],
+			.descend_mask_z = descend_mask[2],
+			.descend_length = my_id.lod - his_id.lod
+		});
+	}
+
+	const ChunkOctreeNodeBase *my_root = my_octree.idToPointer(my_root_id);
+	const ChunkOctreeNodeBase *his_root = his_octree.idToPointer(his_root_id);
+
+	faceProc<D, true>(FaceProcSeamArgs {
+		.nodes = { my_root, his_root },
+		.octrees = { &my_octree, &his_octree },
+		.surface = my.seamSurface(),
+		.foreign_leaf_to_idx = foreign_leaf_to_idx
+	});
+}
+
+template<int D>
+void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
+                     const Chunk &his_b, LeafToIdxMap &foreign_leaf_to_idx)
+{
+	std::array<const Chunk *, 4> chunks = { &my, &his_a, &his_ab, &his_b };
+	std::array<ChunkId, 4> ids;
+	std::array<const ChunkOctree *, 4> octrees;
+
+	ChunkId min_chunk_id { .lod = UINT32_MAX };
+
+	for (int i = 0; i < 4; i++) {
+		ids[i] = chunks[i]->id();
+		octrees[i] = &chunks[i]->octree();
+
+		if (ids[i].lod < min_chunk_id.lod) {
+			min_chunk_id = ids[i];
+		}
+	}
+
+	constexpr int D1 = (D + 1) % 3;
+	constexpr int D2 = (D + 2) % 3;
+
+	std::array<const ChunkOctreeNodeBase *, 4> roots;
+	for (int i = 0; i < 4; i++) {
+		uint32_t root_id = octrees[i]->baseRoot();
+
+		if (ids[i].lod > min_chunk_id.lod) {
+			// "his" chunk is smaller, need to equalize "my" root
+			uint32_t descend_mask[3];
+			descend_mask[0] = uint32_t(min_chunk_id.base_x - ids[i].base_x);
+			descend_mask[1] = uint32_t(min_chunk_id.base_y - ids[i].base_y);
+			descend_mask[2] = uint32_t(min_chunk_id.base_z - ids[i].base_z);
+			descend_mask[D1] = (i == 0 || i == 3) ? ~0u : 0u;
+			descend_mask[D2] = (i == 0 || i == 1) ? ~0u : 0u;
+
+			// This chunk is bigger than minimal, need to equalize its root
+			root_id = getEqualizedRoot(RootEqualizationArgs {
+				.octree = *octrees[i],
+				.descend_mask_x = descend_mask[0],
+				.descend_mask_y = descend_mask[1],
+				.descend_mask_z = descend_mask[2],
+				.descend_length = ids[i].lod - min_chunk_id.lod
+			});
+		}
+
+		roots[i] = octrees[i]->idToPointer(root_id);
+	}
+
+	edgeProc<D, true>(EdgeProcSeamArgs {
+		.nodes = roots,
+		.octrees = octrees,
+		.surface = my.seamSurface(),
+		.foreign_leaf_to_idx = foreign_leaf_to_idx
+	});
 }
 
 } // end anonymous namespace
@@ -729,77 +843,39 @@ void SurfaceBuilder::buildOwnSurface()
 	ChunkOwnSurface &surface = m_chunk.ownSurface();
 	surface.clear();
 
-	auto *root = octree.idToPointer(octree.extendedRoot());
+	auto *root = octree.idToPointer(octree.baseRoot());
 	makeVertices(root, octree, surface);
 	cellProc(root, octree, surface);
 }
 
-void SurfaceBuilder::buildFaceSeamX(const Chunk &other)
+template<> void SurfaceBuilder::buildFaceSeam<0>(const Chunk &other)
 {
-	const ChunkId my_id = m_chunk.id();
-	const ChunkId his_id = other.id();
-
-	ChunkOctree &my_octree = m_chunk.octree();
-	const ChunkOctree &his_octree = other.octree();
-
-	uint32_t my_root_id = my_octree.baseRoot();
-	uint32_t his_root_id = his_octree.baseRoot();
-
-	if (my_id.lod < his_id.lod) {
-		// "My" chunk is smaller, need to equalize "other" root
-		his_root_id = getEqualizedRoot(RootEqualizationArgs {
-			.octree = his_octree,
-			.descend_mask_x = 0u, // Always take children with smaller X
-			.descend_mask_y = uint32_t(his_id.base_y - my_id.base_y),
-			.descend_mask_z = uint32_t(his_id.base_z - my_id.base_z),
-			.descend_length = his_id.lod - my_id.lod
-		});
-	} else if (my_id.lod > his_id.lod) {
-		// "Other" chunk is smaller, need to equalize "my" root
-		my_root_id = getEqualizedRoot(RootEqualizationArgs {
-			.octree = my_octree,
-			.descend_mask_x = ~0u, // Always take children with bigger X
-			.descend_mask_y = uint32_t(my_id.base_y - his_id.base_y),
-			.descend_mask_z = uint32_t(my_id.base_z - his_id.base_z),
-			.descend_length = my_id.lod - his_id.lod
-		});
-	}
-
-	const ChunkOctreeNodeBase *my_root = my_octree.idToPointer(my_root_id);
-	const ChunkOctreeNodeBase *his_root = his_octree.idToPointer(his_root_id);
-
-	faceProc<0, true>(FaceProcSeamArgs {
-		.nodes = { my_root, his_root },
-		.octrees = { &my_octree, &his_octree },
-		.surface = m_chunk.seamSurface(),
-		.foreign_leaf_to_idx = m_foreign_leaf_to_idx
-	});
+	doBuildFaceSeam<0>(m_chunk, other, m_foreign_leaf_to_idx);
 }
 
-// TODO (Svenny): to be implemented
-/*void SurfaceBuilder::buildFaceSeamY(const Chunk &other)
+template<> void SurfaceBuilder::buildFaceSeam<1>(const Chunk &other)
 {
-
+	doBuildFaceSeam<0>(m_chunk, other, m_foreign_leaf_to_idx);
 }
 
-void SurfaceBuilder::buildFaceSeamZ(const Chunk &other)
+template<> void SurfaceBuilder::buildFaceSeam<2>(const Chunk &other)
 {
-
+	doBuildFaceSeam<2>(m_chunk, other, m_foreign_leaf_to_idx);
 }
 
-void SurfaceBuilder::buildEdgeSeamX(const Chunk &other_y, const Chunk &other_z, const Chunk &other_yz)
+template<> void SurfaceBuilder::buildEdgeSeam<0>(const Chunk &other_y, const Chunk &other_yz, const Chunk &other_z)
 {
-
+	doBuildEdgeSeam<0>(m_chunk, other_y, other_yz, other_z, m_foreign_leaf_to_idx);
 }
 
-void SurfaceBuilder::buildEdgeSeamY(const Chunk &other_x, const Chunk &other_z, const Chunk &other_xz)
+template<> void SurfaceBuilder::buildEdgeSeam<1>(const Chunk &other_z, const Chunk &other_xz, const Chunk &other_x)
 {
-
+	doBuildEdgeSeam<1>(m_chunk, other_z, other_xz, other_x, m_foreign_leaf_to_idx);
 }
 
-void SurfaceBuilder::buildEdgeSeamZ(const Chunk &other_x, const Chunk &other_y, const Chunk &other_xy)
+template<> void SurfaceBuilder::buildEdgeSeam<2>(const Chunk &other_x, const Chunk &other_xy, const Chunk &other_y)
 {
-
-}*/
+	doBuildEdgeSeam<2>(m_chunk, other_x, other_xy, other_y, m_foreign_leaf_to_idx);
+}
 
 }
