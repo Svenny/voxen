@@ -743,9 +743,9 @@ void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_
 	if (my_id.lod < his_id.lod) {
 		// "My" chunk is smaller, need to equalize "his" root
 		uint32_t descend_mask[3];
-		descend_mask[0] = uint32_t(my_id.base_x - his_id.base_x);
-		descend_mask[1] = uint32_t(my_id.base_y - his_id.base_y);
-		descend_mask[2] = uint32_t(my_id.base_z - his_id.base_z);
+		descend_mask[0] = uint32_t(my_id.base_x - his_id.base_x) >> my_id.lod;
+		descend_mask[1] = uint32_t(my_id.base_y - his_id.base_y) >> my_id.lod;
+		descend_mask[2] = uint32_t(my_id.base_z - his_id.base_z) >> my_id.lod;
 		descend_mask[D] = 0u; // Always take children with smaller `D` coord
 
 		his_root_id = getEqualizedRoot(RootEqualizationArgs {
@@ -758,9 +758,9 @@ void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_
 	} else if (my_id.lod > his_id.lod) {
 		// "his" chunk is smaller, need to equalize "my" root
 		uint32_t descend_mask[3];
-		descend_mask[0] = uint32_t(his_id.base_x - my_id.base_x);
-		descend_mask[1] = uint32_t(his_id.base_y - my_id.base_y);
-		descend_mask[2] = uint32_t(his_id.base_z - my_id.base_z);
+		descend_mask[0] = uint32_t(his_id.base_x - my_id.base_x) >> his_id.lod;
+		descend_mask[1] = uint32_t(his_id.base_y - my_id.base_y) >> his_id.lod;
+		descend_mask[2] = uint32_t(his_id.base_z - my_id.base_z) >> his_id.lod;
 		descend_mask[D] = ~0u; // Always take children with bigger `D` coord
 
 		my_root_id = getEqualizedRoot(RootEqualizationArgs {
@@ -813,9 +813,9 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 		if (ids[i].lod > min_chunk_id.lod) {
 			// "his" chunk is smaller, need to equalize "my" root
 			uint32_t descend_mask[3];
-			descend_mask[0] = uint32_t(min_chunk_id.base_x - ids[i].base_x);
-			descend_mask[1] = uint32_t(min_chunk_id.base_y - ids[i].base_y);
-			descend_mask[2] = uint32_t(min_chunk_id.base_z - ids[i].base_z);
+			descend_mask[0] = uint32_t(min_chunk_id.base_x - ids[i].base_x) >> min_chunk_id.lod;
+			descend_mask[1] = uint32_t(min_chunk_id.base_y - ids[i].base_y) >> min_chunk_id.lod;
+			descend_mask[2] = uint32_t(min_chunk_id.base_z - ids[i].base_z) >> min_chunk_id.lod;
 			descend_mask[D1] = (i == 0 || i == 3) ? ~0u : 0u;
 			descend_mask[D2] = (i == 0 || i == 1) ? ~0u : 0u;
 
@@ -878,7 +878,7 @@ template<> void SurfaceBuilder::buildFaceSeam<0>(const Chunk &other)
 
 template<> void SurfaceBuilder::buildFaceSeam<1>(const Chunk &other)
 {
-	doBuildFaceSeam<0>(m_chunk, other, m_foreign_leaf_to_idx);
+	doBuildFaceSeam<1>(m_chunk, other, m_foreign_leaf_to_idx);
 }
 
 template<> void SurfaceBuilder::buildFaceSeam<2>(const Chunk &other)
