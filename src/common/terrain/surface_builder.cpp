@@ -27,13 +27,28 @@ void addLeafToSurface(ChunkOctreeLeaf *leaf, ChunkOwnSurface &surface)
 	leaf->surface_vertex_id = surface.addVertex({ vertex, normal });
 }
 
-// TODO (Svenny): merge this function with above one?
-uint32_t addLeafToSurface(const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface)
+uint32_t addLeafToSurface(const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface, ChunkId base_id, ChunkId foreign_id)
 {
 	assert(leaf);
 	//TODO(sirgienko) add Material support, when we will have any voxel data
 	//MaterialFilter filter;
-	const glm::vec3 &vertex = leaf->surface_vertex;
+
+	// Apply position/scale correction for foreign vertex.
+	// It's in chunk-local coordinates of another chunk, convert it to ours.
+	glm::vec3 vertex = leaf->surface_vertex;
+
+	// Correct for the scale
+	if (base_id.lod < foreign_id.lod) {
+		vertex *= float(1u << (foreign_id.lod - base_id.lod));
+	} else if (base_id.lod > foreign_id.lod) {
+		vertex /= float(1u << (base_id.lod - foreign_id.lod));
+	}
+
+	// Correct for the origin
+	vertex += glm::vec3(foreign_id.base_x - base_id.base_x,
+	                    foreign_id.base_y - base_id.base_y,
+	                    foreign_id.base_z - base_id.base_z) * (float(Config::CHUNK_SIZE) / float(1u << base_id.lod));
+
 	const glm::vec3 &normal = leaf->surface_normal;
 	// TODO (Svenny): add material selection
 	return surface.addExtraVertex({ vertex, normal });
@@ -41,14 +56,14 @@ uint32_t addLeafToSurface(const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface
 
 using LeafToIdxMap = std::unordered_map<const ChunkOctreeLeaf *, uint32_t>;
 
-uint32_t getForeignLeafVertexIndex(LeafToIdxMap &map, const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface)
+uint32_t getForeignLeafVertexIndex(LeafToIdxMap &map, const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface, ChunkId base_id, ChunkId foreign_id)
 {
 	auto iter = map.find(leaf);
 	if (iter != map.end()) {
 		return iter->second;
 	}
 
-	uint32_t idx = addLeafToSurface(leaf, surface);
+	uint32_t idx = addLeafToSurface(leaf, surface, base_id, foreign_id);
 	map.emplace(leaf, idx);
 	return idx;
 }
@@ -62,6 +77,7 @@ struct EdgeProcOwnArgs final {
 struct EdgeProcSeamArgs final {
 	std::array<const ChunkOctreeNodeBase *, 4> nodes;
 	std::array<const ChunkOctree *, 4> octrees;
+	std::array<ChunkId, 4> chunk_ids;
 	ChunkSeamSurface &surface;
 	LeafToIdxMap &foreign_leaf_to_idx;
 };
@@ -150,18 +166,18 @@ void edgeProc(EdgeProcArgs<S> args)
 	uint32_t id0 = leaves[0]->surface_vertex_id;
 	uint32_t id1, id2, id3;
 	if constexpr (S) {
-		auto get_index = [&args](const ChunkOctreeLeaf *leaf, const ChunkOctree *octree) {
-			if (octree == args.octrees[0]) {
+		auto get_index = [&args](const ChunkOctreeLeaf *leaf, int id) {
+			if (args.octrees[id] == args.octrees[0]) {
 				// This is "our" leaf, use its own precalculated vertex ID
 				return leaf->surface_vertex_id;
 			}
 			// This is "foreign" leaf
-			return getForeignLeafVertexIndex(args.foreign_leaf_to_idx, leaf, args.surface);
+			return getForeignLeafVertexIndex(args.foreign_leaf_to_idx, leaf, args.surface, args.chunk_ids[0], args.chunk_ids[id]);
 		};
 
-		id1 = get_index(leaves[1], args.octrees[1]);
-		id2 = get_index(leaves[2], args.octrees[2]);
-		id3 = get_index(leaves[3], args.octrees[3]);
+		id1 = get_index(leaves[1], 1);
+		id2 = get_index(leaves[2], 2);
+		id3 = get_index(leaves[3], 3);
 	} else {
 		id1 = leaves[1]->surface_vertex_id;
 		id2 = leaves[2]->surface_vertex_id;
@@ -194,6 +210,7 @@ struct FaceProcOwnArgs final {
 struct FaceProcSeamArgs final {
 	std::array<const ChunkOctreeNodeBase *, 2> nodes;
 	std::array<const ChunkOctree *, 2> octrees;
+	std::array<ChunkId, 2> chunk_ids;
 	ChunkSeamSurface &surface;
 	LeafToIdxMap &foreign_leaf_to_idx;
 
@@ -221,6 +238,7 @@ void faceProc(FaceProcArgs<S> args)
 	}
 
 	const ChunkOctree *sub_octrees[8];
+	ChunkId sub_ids[8];
 	const ChunkOctreeNodeBase *sub[8];
 
 	bool has_cells = false;
@@ -230,6 +248,7 @@ void faceProc(FaceProcArgs<S> args)
 
 		if constexpr (S) {
 			sub_octrees[i] = args.octrees[node_id];
+			sub_ids[i] = args.chunk_ids[node_id];
 		}
 
 		if (!n->is_leaf) {
@@ -268,6 +287,7 @@ void faceProc(FaceProcArgs<S> args)
 			edge_args.nodes[j] = sub[idx];
 			if constexpr (S) {
 				edge_args.octrees[j] = sub_octrees[idx];
+				edge_args.chunk_ids[j] = sub_ids[idx];
 			}
 		}
 
@@ -281,6 +301,7 @@ void faceProc(FaceProcArgs<S> args)
 			edge_args.nodes[j] = sub[idx];
 			if constexpr (S) {
 				edge_args.octrees[j] = sub_octrees[idx];
+				edge_args.chunk_ids[j] = sub_ids[idx];
 			}
 		}
 
@@ -757,6 +778,7 @@ void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_
 	faceProc<D, true>(FaceProcSeamArgs {
 		.nodes = { my_root, his_root },
 		.octrees = { &my_octree, &his_octree },
+		.chunk_ids = { my_id, his_id },
 		.surface = my.seamSurface(),
 		.foreign_leaf_to_idx = foreign_leaf_to_idx
 	});
@@ -813,6 +835,7 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 	edgeProc<D, true>(EdgeProcSeamArgs {
 		.nodes = roots,
 		.octrees = octrees,
+		.chunk_ids = ids,
 		.surface = my.seamSurface(),
 		.foreign_leaf_to_idx = foreign_leaf_to_idx
 	});
