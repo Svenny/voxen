@@ -21,13 +21,11 @@ public:
 	void buildOctree();
 	void buildOwnSurface();
 
-	void buildFaceSeamX(const Chunk &other);
-	void buildFaceSeamY(const Chunk &other);
-	void buildFaceSeamZ(const Chunk &other);
+	template<int D>
+	void buildFaceSeam(const Chunk &other);
 
-	void buildEdgeSeamX(const Chunk &other_y, const Chunk &other_z, const Chunk &other_yz);
-	void buildEdgeSeamY(const Chunk &other_x, const Chunk &other_z, const Chunk &other_xz);
-	void buildEdgeSeamZ(const Chunk &other_x, const Chunk &other_y, const Chunk &other_xy);
+	template<int D>
+	void buildEdgeSeam(const Chunk &other_a, const Chunk &other_ab, const Chunk &other_b);
 
 private:
 	Chunk &m_chunk;
