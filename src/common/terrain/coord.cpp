@@ -15,4 +15,11 @@ glm::dvec3 CoordUtils::worldToChunkLocal(ChunkId id, const glm::dvec3 &world) no
 	return world / double(1u << id.lod) - glm::dvec3(base);
 }
 
+glm::dvec3 CoordUtils::chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) noexcept
+{
+	glm::ivec3 base(id.base_x, id.base_y, id.base_z);
+	base *= Config::CHUNK_SIZE;
+	return local * double(1u << id.lod) + glm::dvec3(base);
+}
+
 }

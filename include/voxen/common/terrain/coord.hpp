@@ -15,6 +15,8 @@ public:
 
 	// Convert world-space point to chunk-local [0..CHUNK_SIZE) for a given chunk
 	static glm::dvec3 worldToChunkLocal(ChunkId id, const glm::dvec3 &world) noexcept;
+	// Convert chunk-local [0..CHUNK_SIZE) point to world-space for a given chunk
+	static glm::dvec3 chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) noexcept;
 };
 
 }
