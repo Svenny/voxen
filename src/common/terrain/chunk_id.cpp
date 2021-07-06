@@ -42,14 +42,14 @@ ChunkId ChunkId::toChild(unsigned id) const noexcept
 	assert(id < 8u);
 	assert(this->lod > 0u);
 
-	// This mask is ORed with base coordinates to enable one bit
-	const auto onmask = int32_t(1u << (this->lod - 1u));
+	// Half of chunk-space size of this chunk
+	const auto half = int32_t(1u << (this->lod - 1u));
 
 	return ChunkId {
 		.lod = this->lod - 1u,
-		.base_x = this->base_x | ((id & 1) ? onmask : 0),
-		.base_y = this->base_y | ((id & 2) ? onmask : 0),
-		.base_z = this->base_z | ((id & 4) ? onmask : 0)
+		.base_x = this->base_x + ((id & 2u) ? half : 0),
+		.base_y = this->base_y + ((id & 4u) ? half : 0),
+		.base_z = this->base_z + ((id & 1u) ? half : 0)
 	};
 }
 
