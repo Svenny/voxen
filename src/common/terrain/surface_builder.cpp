@@ -861,10 +861,16 @@ void SurfaceBuilder::buildOctree()
 	ChunkOctree &octree = m_chunk.octree();
 	octree.clear();
 
+	ChunkPrimaryData &primary = m_chunk.primaryData();
+	if (primary.hermite_data_x.empty() && primary.hermite_data_y.empty() && primary.hermite_data_z.empty()) {
+		// This chunk has no edges - no need to even spend any time trying to build octree
+		return;
+	}
+
 	QefSolver3D qef_solver;
 	DcBuildArgs args {
 		.octree = octree,
-		.primary_data = m_chunk.primaryData(),
+		.primary_data = primary,
 		.solver = qef_solver,
 		.epsilon = 0.12f
 	};

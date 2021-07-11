@@ -105,6 +105,7 @@ public:
 	const_iterator find(coord_t x, coord_t y, coord_t z) const noexcept;
 	/// Returns the number of currently stored entries
 	size_type size() const noexcept { return m_storage.size(); }
+	bool empty() const noexcept { return m_storage.empty(); }
 	const_iterator begin() const noexcept { return m_storage.begin(); }
 	const_iterator end() const noexcept { return m_storage.end(); }
 	const_iterator cbegin() const noexcept { return m_storage.cbegin(); }
