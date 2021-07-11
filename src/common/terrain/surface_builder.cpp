@@ -145,7 +145,7 @@ void edgeProc(EdgeProcArgs<S> args)
 	/* Find the minimal node, i.e. the node with the maximal depth. By looking at its
 	 materials on endpoints of this edge we may know whether the edge is surface-crossing
 	 and if we need to flip the triangles winding order. */
-	int8_t max_depth = 0;
+	int8_t max_depth = -1;
 	for (int i = 0; i < 4; i++) {
 		if (leaves[i]->depth > max_depth) {
 			max_depth = leaves[i]->depth;
@@ -792,40 +792,53 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 	std::array<ChunkId, 4> ids;
 	std::array<const ChunkOctree *, 4> octrees;
 
-	ChunkId min_chunk_id { .lod = UINT32_MAX };
+	constexpr int D1 = (D + 1) % 3;
+	constexpr int D2 = (D + 2) % 3;
+
+	uint32_t min_chunk_lod = UINT32_MAX;
+	glm::ivec3 min_chunk_base;
+	glm::ivec2 contact_point;
 
 	for (int i = 0; i < 4; i++) {
 		ids[i] = chunks[i]->id();
 		octrees[i] = &chunks[i]->octree();
 
-		if (ids[i].lod < min_chunk_id.lod) {
-			min_chunk_id = ids[i];
+		if (ids[i].lod < min_chunk_lod) {
+			min_chunk_lod = ids[i].lod;
+			min_chunk_base = glm::ivec3(ids[i].base_x, ids[i].base_y, ids[i].base_z);
+			contact_point[0] = min_chunk_base[D1] + ((i == 0 || i == 3) ? int32_t(1u << ids[i].lod) : 0);
+			contact_point[1] = min_chunk_base[D2] + ((i == 0 || i == 1) ? int32_t(1u << ids[i].lod) : 0);
 		}
 	}
-
-	constexpr int D1 = (D + 1) % 3;
-	constexpr int D2 = (D + 2) % 3;
 
 	std::array<const ChunkOctreeNodeBase *, 4> roots;
 	for (int i = 0; i < 4; i++) {
 		uint32_t root_id = octrees[i]->baseRoot();
 
-		if (ids[i].lod > min_chunk_id.lod) {
-			// "his" chunk is smaller, need to equalize "my" root
-			uint32_t descend_mask[3];
-			descend_mask[0] = uint32_t(min_chunk_id.base_x - ids[i].base_x) >> min_chunk_id.lod;
-			descend_mask[1] = uint32_t(min_chunk_id.base_y - ids[i].base_y) >> min_chunk_id.lod;
-			descend_mask[2] = uint32_t(min_chunk_id.base_z - ids[i].base_z) >> min_chunk_id.lod;
-			descend_mask[D1] = (i == 0 || i == 3) ? ~0u : 0u;
-			descend_mask[D2] = (i == 0 || i == 1) ? ~0u : 0u;
-
+		if (ids[i].lod > min_chunk_lod) {
 			// This chunk is bigger than minimal, need to equalize its root
+			const glm::ivec3 base(ids[i].base_x, ids[i].base_y, ids[i].base_z);
+			glm::uvec3 descend_mask;
+			descend_mask[D] = uint32_t(min_chunk_base[D] - base[D]) >> min_chunk_lod;
+
+			if (i == 0 || i == 3) {
+				descend_mask[D1] = uint32_t(contact_point[0] - 1 - base[D1]) >> min_chunk_lod;
+			} else {
+				descend_mask[D1] = uint32_t(contact_point[0] - base[D1]) >> min_chunk_lod;
+			}
+
+			if (i == 0 || i == 1) {
+				descend_mask[D2] = uint32_t(contact_point[1] - 1 - base[D2]) >> min_chunk_lod;
+			} else {
+				descend_mask[D2] = uint32_t(contact_point[1] - base[D2]) >> min_chunk_lod;
+			}
+
 			root_id = getEqualizedRoot(RootEqualizationArgs {
 				.octree = *octrees[i],
-				.descend_mask_x = descend_mask[0],
-				.descend_mask_y = descend_mask[1],
-				.descend_mask_z = descend_mask[2],
-				.descend_length = ids[i].lod - min_chunk_id.lod
+				.descend_mask_x = descend_mask.x,
+				.descend_mask_y = descend_mask.y,
+				.descend_mask_z = descend_mask.z,
+				.descend_length = ids[i].lod - min_chunk_lod
 			});
 		}
 
