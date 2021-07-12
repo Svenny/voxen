@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/terrain/loader.hpp>
+#include <voxen/common/terrain/controller.hpp>
 #include <voxen/common/world_state.hpp>
 
 #include <memory>
@@ -24,7 +24,7 @@ public:
 
 	void update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
 private:
-	terrain::TerrainLoader m_loader;
+	terrain::Controller m_terrain_controller;
 
 	// `getLastState()` and `update()` may be called from different
 	// threads simultaneously. This mutex protects from data race

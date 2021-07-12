@@ -66,10 +66,8 @@ public:
 	ChunkOctreeNodeBase *idToPointer(uint32_t id) noexcept;
 	const ChunkOctreeNodeBase *idToPointer(uint32_t id) const noexcept;
 
-	uint32_t baseRoot() const noexcept { return m_base_root_id; }
-	void setBaseRoot(uint32_t id) noexcept { m_base_root_id = id; }
-	uint32_t extendedRoot() const noexcept { return m_ext_root_id; }
-	void setExtendedRoot(uint32_t id) noexcept { m_ext_root_id = id; }
+	uint32_t root() const noexcept { return m_root_id; }
+	void setRoot(uint32_t id) noexcept { m_root_id = id; }
 
 	static bool isCellId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) == 0; }
 	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
@@ -84,8 +82,7 @@ private:
 	Vector<uint32_t> m_free_cells;
 	Vector<uint32_t> m_free_leaves;
 
-	uint32_t m_base_root_id = INVALID_NODE_ID;
-	uint32_t m_ext_root_id = INVALID_NODE_ID;
+	uint32_t m_root_id = INVALID_NODE_ID;
 };
 
 }

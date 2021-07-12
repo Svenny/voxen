@@ -11,7 +11,7 @@ World::World()
 
 	m_last_state_ptr = std::make_shared<WorldState>();
 	WorldState &initial_state = *m_last_state_ptr;
-	initial_state.setTerrain(std::make_unique<TerrainOctree>(m_loader, /*1u<<21u*/1u << 12u, 1u << 12u));
+	initial_state.setRootControlBlock(m_terrain_controller.doTick());
 
 	Log::debug("Server World created successfully");
 }
@@ -47,7 +47,8 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	}
 
 	// Update chunks
-	next_state.terrain().updateChunks(pos.x, pos.y, pos.z, m_loader);
+	m_terrain_controller.setPointOfInterest(0, pos);
+	next_state.setRootControlBlock(m_terrain_controller.doTick());
 
 	std::lock_guard lock(m_last_state_ptr_lock);
 	m_last_state_ptr = std::move(m_next_state_ptr);

@@ -118,10 +118,19 @@ void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface 
 
 	// TODO (Svenny): support split own/seam surface updates.
 	// Currently a full reupload is done even if only the seam has changed.
-	transfer.uploadToBuffer(data.vtx_buffer, 0, own_surface.vertices(), own_vertices_size);
-	transfer.uploadToBuffer(data.vtx_buffer, own_vertices_size, seam_surface.extraVertices(), seam_vertices_size);
-	transfer.uploadToBuffer(data.idx_buffer, 0, own_surface.indices(), own_indices_size);
-	transfer.uploadToBuffer(data.idx_buffer, own_indices_size, seam_surface.indices(), seam_indices_size);
+	if (own_vertices_size > 0) {
+		transfer.uploadToBuffer(data.vtx_buffer, 0, own_surface.vertices(), own_vertices_size);
+	}
+	if (seam_vertices_size > 0) {
+		transfer.uploadToBuffer(data.vtx_buffer, own_vertices_size, seam_surface.extraVertices(), seam_vertices_size);
+	}
+
+	if (own_indices_size > 0) {
+		transfer.uploadToBuffer(data.idx_buffer, 0, own_surface.indices(), own_indices_size);
+	}
+	if (seam_indices_size > 0) {
+		transfer.uploadToBuffer(data.idx_buffer, own_indices_size, seam_surface.indices(), seam_indices_size);
+	}
 }
 
 }

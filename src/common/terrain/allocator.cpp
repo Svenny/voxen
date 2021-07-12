@@ -2,6 +2,7 @@
 
 #include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/config.hpp>
+#include <voxen/common/terrain/control_block.hpp>
 #include <voxen/common/terrain/primary_data.hpp>
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/allocator.hpp>
@@ -100,6 +101,7 @@ private:
 }
 
 static Superpool<Chunk, false, AllocationDomain::TerrainPrimary> g_chunk_superpool;
+static Superpool<ChunkControlBlock, false, AllocationDomain::TerrainPrimary> g_control_block_superpool;
 static Superpool<ChunkPrimaryData, true, AllocationDomain::TerrainPrimary> g_primary_superpool;
 static Superpool<ChunkOctree, true, AllocationDomain::TerrainOctree> g_octree_superpool;
 static Superpool<ChunkOwnSurface, true, AllocationDomain::TerrainMesh> g_own_surface_superpool;
@@ -108,6 +110,11 @@ static Superpool<ChunkSeamSurface, true, AllocationDomain::TerrainMesh> g_seam_s
 PoolAllocator::ChunkPtr PoolAllocator::allocateChunk(Chunk::CreationInfo info)
 {
 	return g_chunk_superpool.allocate(std::move(info));
+}
+
+PoolAllocator::ControlBlockPtr PoolAllocator::allocateControlBlock(ChunkControlBlock::CreationInfo info)
+{
+	return g_control_block_superpool.allocate(std::move(info));
 }
 
 PoolAllocator::PrimaryDataPtr PoolAllocator::allocatePrimaryData()
@@ -133,6 +140,7 @@ PoolAllocator::SeamSurfacePtr PoolAllocator::allocateSeamSurface()
 void PoolAllocator::collectGarbage() noexcept
 {
 	g_chunk_superpool.gcFast();
+	g_control_block_superpool.gcFast();
 	g_primary_superpool.gcFast();
 	g_octree_superpool.gcFast();
 	g_own_surface_superpool.gcFast();

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk.hpp>
-
 #include <unordered_map>
+
+#include <cstdint>
 
 namespace voxen::terrain
 {
 
+class Chunk;
 struct ChunkOctreeLeaf;
 
 class SurfaceBuilder final {
