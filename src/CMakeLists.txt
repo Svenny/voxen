@@ -41,18 +41,19 @@ set(VOXEN_SOURCES
 	src/common/terrain/chunk.cpp
 	src/common/terrain/chunk_id.cpp
 	src/common/terrain/chunk_octree.cpp
+	src/common/terrain/controller.cpp
+	src/common/terrain/controller_seam_ops.cpp
+	src/common/terrain/control_block.cpp
 	src/common/terrain/coord.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/hermite_data.cpp
 	src/common/terrain/loader.cpp
 	src/common/terrain/primary_data.cpp
 	src/common/terrain/qef_solver.cpp
-	src/common/terrain/seam.cpp
 	src/common/terrain/surface.cpp
 	src/common/terrain/surface_builder.cpp
 	src/common/terrain/voxel_grid.cpp
 	src/common/player.cpp
-	src/common/terrain.cpp
 	src/common/threadpool.cpp
 	src/common/world_state.cpp
 	src/common/gameview.cpp

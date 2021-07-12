@@ -1,5 +1,6 @@
 #include <voxen/common/terrain/surface_builder.hpp>
 
+#include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/octree_tables.hpp>
 #include <voxen/common/terrain/primary_data.hpp>
@@ -141,14 +142,26 @@ void edgeProc(EdgeProcArgs<S> args)
 		leaves[i] = nodes[i]->castToLeaf();
 	}
 
+	uint32_t min_chunk_lod = 0;
+	if constexpr (S) {
+		min_chunk_lod = std::min({ args.chunk_ids[0].lod, args.chunk_ids[1].lod,
+		                           args.chunk_ids[2].lod, args.chunk_ids[3].lod });
+	}
+
 	voxel_t mat1 = 0, mat2 = 0;
 	/* Find the minimal node, i.e. the node with the maximal depth. By looking at its
 	 materials on endpoints of this edge we may know whether the edge is surface-crossing
 	 and if we need to flip the triangles winding order. */
-	int8_t max_depth = -1;
+	int32_t max_depth = INT32_MIN;
 	for (int i = 0; i < 4; i++) {
-		if (leaves[i]->depth > max_depth) {
-			max_depth = leaves[i]->depth;
+		auto depth = static_cast<int32_t>(leaves[i]->depth);
+		if constexpr (S) {
+			// Offset depths of bigger chunks into negative values, equalizing different LODs
+			depth -= int32_t(args.chunk_ids[i].lod - min_chunk_lod);
+		}
+
+		if (depth > max_depth) {
+			max_depth = depth;
 			mat1 = leaves[i]->corners[CORNERS_TABLE[D][i][0]];
 			mat2 = leaves[i]->corners[CORNERS_TABLE[D][i][1]];
 		}
@@ -161,28 +174,27 @@ void edgeProc(EdgeProcArgs<S> args)
 	 winding order should be flipped to remain facing outside of the surface. */
 	const bool flip = (mat1 == 0);
 
-	/* Leaf #0 is guaranteed to belong to "our" chunk, otherwise the call topology was
-	 invalid. Therefore we can classify others as "foreign" by comparing with it. */
-	uint32_t id0 = leaves[0]->surface_vertex_id;
-	uint32_t id1, id2, id3;
-	if constexpr (S) {
-		auto get_index = [&args](const ChunkOctreeLeaf *leaf, int id) {
+	auto get_index = [&args](const ChunkOctreeLeaf *leaf, int id) {
+		if constexpr (!S) {
+			(void) args;
+			(void) id;
+			return leaf->surface_vertex_id;
+		} else {
 			if (args.octrees[id] == args.octrees[0]) {
 				// This is "our" leaf, use its own precalculated vertex ID
 				return leaf->surface_vertex_id;
 			}
 			// This is "foreign" leaf
 			return getForeignLeafVertexIndex(args.foreign_leaf_to_idx, leaf, args.surface, args.chunk_ids[0], args.chunk_ids[id]);
-		};
+		}
+	};
 
-		id1 = get_index(leaves[1], 1);
-		id2 = get_index(leaves[2], 2);
-		id3 = get_index(leaves[3], 3);
-	} else {
-		id1 = leaves[1]->surface_vertex_id;
-		id2 = leaves[2]->surface_vertex_id;
-		id3 = leaves[3]->surface_vertex_id;
-	}
+	/* Leaf #0 is guaranteed to belong to "our" chunk, otherwise the call topology was
+	 invalid. Therefore we can classify others as "foreign" by comparing with it. */
+	uint32_t id0 = leaves[0]->surface_vertex_id;
+	uint32_t id1 = get_index(leaves[1], 1);
+	uint32_t id2 = get_index(leaves[2], 2);
+	uint32_t id3 = get_index(leaves[3], 3);
 
 	if (!flip) {
 		args.surface.addTriangle(id0, id1, id2);
@@ -706,7 +718,7 @@ struct RootEqualizationArgs final {
 
 uint32_t getEqualizedRoot(RootEqualizationArgs args) noexcept
 {
-	uint32_t node_id = args.octree.baseRoot();
+	uint32_t node_id = args.octree.root();
 
 	// Go from the highest-order bits
 	for (uint32_t i = args.descend_length - 1; ~i; i--) {
@@ -737,8 +749,8 @@ void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_
 	ChunkOctree &my_octree = my.octree();
 	const ChunkOctree &his_octree = his.octree();
 
-	uint32_t my_root_id = my_octree.baseRoot();
-	uint32_t his_root_id = his_octree.baseRoot();
+	uint32_t my_root_id = my_octree.root();
+	uint32_t his_root_id = his_octree.root();
 
 	if (my_id.lod < his_id.lod) {
 		// "My" chunk is smaller, need to equalize "his" root
@@ -813,7 +825,7 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 
 	std::array<const ChunkOctreeNodeBase *, 4> roots;
 	for (int i = 0; i < 4; i++) {
-		uint32_t root_id = octrees[i]->baseRoot();
+		uint32_t root_id = octrees[i]->root();
 
 		if (ids[i].lod > min_chunk_lod) {
 			// This chunk is bigger than minimal, need to equalize its root
@@ -876,7 +888,7 @@ void SurfaceBuilder::buildOctree()
 	};
 
 	auto[root_id, root] = buildNode(glm::ivec3(0), Config::CHUNK_SIZE, 0, args);
-	octree.setBaseRoot(root_id);
+	octree.setRoot(root_id);
 }
 
 void SurfaceBuilder::buildOwnSurface()
@@ -885,7 +897,7 @@ void SurfaceBuilder::buildOwnSurface()
 	ChunkOwnSurface &surface = m_chunk.ownSurface();
 	surface.clear();
 
-	auto *root = octree.idToPointer(octree.baseRoot());
+	auto *root = octree.idToPointer(octree.root());
 	makeVertices(root, octree, surface);
 	cellProc(root, octree, surface);
 }

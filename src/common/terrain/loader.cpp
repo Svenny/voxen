@@ -47,7 +47,10 @@ extras::refcnt_ptr<Chunk> TerrainLoader::load(ChunkId id)
 	});
 
 	m_generator.generate(id, ptr->primaryData());
-	// TODO: generate octree and own surface
+	// TODO: this looks like a hack
+	SurfaceBuilder builder(*ptr);
+	builder.buildOctree();
+	builder.buildOwnSurface();
 
 	return ptr;
 }

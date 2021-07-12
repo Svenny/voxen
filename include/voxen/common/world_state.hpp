@@ -1,9 +1,11 @@
 #pragma once
 
 #include <voxen/common/player.hpp>
-#include <voxen/common/terrain.hpp>
+#include <voxen/common/terrain/control_block.hpp>
 
-#include <functional>
+#include <extras/function_ref.hpp>
+#include <extras/refcnt_ptr.hpp>
+
 #include <mutex>
 
 namespace voxen
@@ -29,17 +31,16 @@ public:
 	Player &player() noexcept { return m_player; }
 	const Player &player() const noexcept { return m_player; }
 
-	TerrainOctree &terrain() { return *m_terrain; }
-	const TerrainOctree &terrain() const { return *m_terrain; }
-	void setTerrain(std::unique_ptr<TerrainOctree> &&ptr) noexcept { m_terrain = std::move(ptr); }
+	void setRootControlBlock(extras::refcnt_ptr<terrain::ChunkControlBlock> ptr) noexcept { m_root_cb = std::move(ptr); }
 
 	uint64_t tickId() const noexcept { return m_tick_id; }
 	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
 
-	void walkActiveChunks(std::function<void(const terrain::Chunk &)> visitor) const;
+	void walkActiveChunks(extras::function_ref<void(const terrain::Chunk &)> visitor) const;
+
 private:
 	Player m_player;
-	std::unique_ptr<TerrainOctree> m_terrain;
+	extras::refcnt_ptr<terrain::ChunkControlBlock> m_root_cb;
 	uint64_t m_tick_id = 0;
 };
 
