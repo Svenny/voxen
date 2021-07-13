@@ -39,10 +39,13 @@ void voxen::GameView::init(const voxen::Player& player) noexcept {
 	m_player_dir = player.lookVector();
 	m_player_up = player.upVector();
 	m_player_right = player.rightVector();
-	m_orientation = player.orientation();
-	m_proj_matrix = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-	m_view_matrix = extras::lookAt(player.position(), m_player_dir, m_player_up);
-	m_cam_matrix = m_proj_matrix * m_view_matrix;
+
+	m_cam_position = player.position();
+	m_cam_orientation = player.orientation();
+	m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+	m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_player_dir, m_player_up);
+	m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
+
 	resetKeyState();
 }
 bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) noexcept
@@ -158,7 +161,9 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 			m_player_dir = player.lookVector();
 			m_player_up = player.upVector();
 			m_player_right = player.rightVector();
-			m_orientation = player.orientation();
+
+			m_cam_position = player.position();
+			m_cam_orientation = player.orientation();
 		}
 
 		double dx = 0;
@@ -191,20 +196,20 @@ void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick
 		if (m_state[Direction::RollRight]) rollAngle += m_roll_speed;
 
 		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
-		m_orientation = glm::normalize(rotQuat * m_orientation);
+		m_cam_orientation = glm::normalize(rotQuat * m_cam_orientation);
 
-		glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
+		glm::dmat3 rot_mat = glm::mat3_cast(m_cam_orientation);
 		m_player_dir = extras::dirFromOrientation(rot_mat);
 		m_player_right = extras::rightFromOrientation(rot_mat);
 		m_player_up = extras::upFromOrientation(rot_mat);
 
-		m_proj_matrix = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-		m_view_matrix = extras::lookAt(player.position(), m_player_dir, m_player_up);
-		m_cam_matrix = m_proj_matrix * m_view_matrix;
+		m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+		m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_player_dir, m_player_up);
+		m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
 
 		queue.player_forward_movement_direction = move_forward_direction;
 		queue.player_strafe_movement_direction = move_strafe_direction;
-		queue.player_orientation = m_orientation;
+		queue.player_orientation = m_cam_orientation;
 		queue.forward_speed = m_forward_speed;
 		queue.strafe_speed = m_strafe_speed;
 		m_previous_tick_id = tick_id;

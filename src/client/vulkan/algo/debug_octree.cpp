@@ -42,6 +42,19 @@ AlgoDebugOctree::AlgoDebugOctree() :
 	Log::debug("AlgoDebugOctree created successfully");
 }
 
+static glm::mat4 chunkLocalToClip(terrain::ChunkId id, const GameView &view) noexcept
+{
+	glm::dvec3 base_pos;
+	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+
+	const glm::vec3 offset(base_pos - view.cameraPosition());
+	const float size = float(terrain::Config::CHUNK_SIZE << id.lod);
+	const glm::mat4 local_to_tr_world = extras::scale_translate(offset.x, offset.y, offset.z, size);
+	return view.translatedWorldToClip() * local_to_tr_world;
+}
+
 void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &view)
 {
 	auto &backend = Backend::backend();
@@ -62,8 +75,6 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 		{ 0.0f, 1.0f, 0.0f, 1.0f }
 	};
 
-	auto view_proj_mat = view.cameraMatrix();
-
 	auto &terrain = backend.terrainSynchronizer();
 	terrain.walkActiveChunks(
 	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
@@ -72,12 +83,8 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 			return;
 		}
 
-		float base_x = float(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
-		float base_y = float(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
-		float base_z = float(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
-		float size = float(terrain::Config::CHUNK_SIZE << id.lod);
-		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
-		glm::mat4 mat = view_proj_mat * model_mat;
+		const float size = float(terrain::Config::CHUNK_SIZE << id.lod);
+		const glm::mat4 mat = chunkLocalToClip(id, view);
 
 		PushConstantsBlock block;
 		memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);
