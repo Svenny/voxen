@@ -24,6 +24,19 @@ AlgoTerrainSimple::AlgoTerrainSimple()
 	Log::debug("AlgoTerrainSimple created successfully");
 }
 
+static glm::mat4 chunkLocalToClip(terrain::ChunkId id, const GameView &view) noexcept
+{
+	glm::dvec3 base_pos;
+	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+
+	const glm::vec3 offset(base_pos - view.cameraPosition());
+	const float size = float(1u << id.lod);
+	const glm::mat4 local_to_tr_world = extras::scale_translate(offset.x, offset.y, offset.z, size);
+	return view.translatedWorldToClip() * local_to_tr_world;
+}
+
 void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
@@ -47,16 +60,9 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 
 	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 
-	auto view_proj_mat = view.cameraMatrix();
-
 	terrain.walkActiveChunks(
 	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
-		float base_x = float(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
-		float base_y = float(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
-		float base_z = float(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
-		float size = float(1u << id.lod);
-		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
-		glm::mat4 mat = view_proj_mat * model_mat;
+		const glm::mat4 mat = chunkLocalToClip(id, view);
 
 		PushConstantsBlock block;
 		memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);
@@ -83,11 +89,7 @@ bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameVi
 		return false;
 	}
 
-	float base_x = float(id.base_x * terrain::Config::CHUNK_SIZE);
-	float base_y = float(id.base_y * terrain::Config::CHUNK_SIZE);
-	float base_z = float(id.base_z * terrain::Config::CHUNK_SIZE);
-	float scale = float(1u << id.lod);
-	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
+	const glm::mat4 mat = chunkLocalToClip(id, view);
 
 	const Aabb &aabb = seam_surface.aabb();
 	const glm::vec3 &aabb_min = aabb.min();
