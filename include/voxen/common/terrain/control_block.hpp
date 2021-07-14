@@ -15,6 +15,7 @@ class ChunkControlBlock final {
 public:
 	struct CreationInfo final {
 		const ChunkControlBlock *predecessor;
+		bool reset_seam;
 	};
 
 	enum class State {
@@ -41,7 +42,10 @@ public:
 
 	// Go DFS over this chunk and its children and assert some invariants about their state.
 	// NOTE: this function consists only of asserts so it has no effect in release builds.
-	void validateState(bool has_active_parent = false) const;
+	void validateState(bool has_active_parent = false, bool can_seam_dirty = true) const;
+	// Go DFS over this chunk and its children, collect and log some statistics.
+	// NOTE: this function is intended for debug use only and does nothing in release builds.
+	void printStats() const;
 
 	State state() const noexcept { return m_state; }
 	bool isSeamDirty() const noexcept { return m_seam_dirty; }
@@ -51,11 +55,11 @@ public:
 
 	SurfaceBuilder &surfaceBuilder() noexcept { return *m_surface_builder; }
 	Chunk *chunk() noexcept { return m_chunk.get(); }
-	ChunkControlBlock *child(unsigned id) noexcept { return m_children[id].get(); }
+	ChunkControlBlock *child(int id) noexcept { return m_children[id].get(); }
 
 	const SurfaceBuilder &surfaceBuilder() const noexcept { return *m_surface_builder; }
 	const Chunk *chunk() const noexcept { return m_chunk.get(); }
-	const ChunkControlBlock *child(unsigned id) const noexcept { return m_children[id].get(); }
+	const ChunkControlBlock *child(int id) const noexcept { return m_children[id].get(); }
 
 private:
 	State m_state = State::Invalid;

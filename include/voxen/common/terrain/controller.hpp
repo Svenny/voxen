@@ -71,20 +71,16 @@ private:
 	// Seam-related fucntions are implemented in `controller_seam_ops.cpp` due to their sheer size
 
 	template<int D>
-	std::array<ControlBlockPtr, 4> seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes);
+	std::array<OuterUpdateResult, 4> seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes);
 	template<int D>
-	std::array<ControlBlockPtr, 2> seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes);
-	ControlBlockPtr seamCellProcPhase1(ChunkControlBlock *node);
+	std::array<OuterUpdateResult, 2> seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes);
+	OuterUpdateResult seamCellProcPhase1(ChunkControlBlock *node);
 
 	template<int D>
 	void seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes);
 	template<int D>
 	void seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes);
 	void seamCellProcPhase2(ChunkControlBlock *node);
-
-	void seamCellProcPhase3(ChunkControlBlock *node);
-
-	void getDirtyStats(const ChunkControlBlock *root_cb);
 };
 
 }
