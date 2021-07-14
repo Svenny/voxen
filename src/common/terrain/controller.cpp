@@ -60,11 +60,10 @@ Controller::ControlBlockPtr Controller::doTick()
 		auto ptr = seamCellProcPhase1((*update_result).get());
 		// If we have entered this `if` then root was already
 		// COW-copied, it must not do this for a second time
-		assert(!ptr);
-		getDirtyStats((*update_result).get());
-		// Phase 2 - rebuild seams
+		assert(!ptr.has_value() || !(*ptr));
+		(*update_result)->printStats();
+		// Phase 2 - rebuild seams and clear "seam dirty" flags
 		seamCellProcPhase2((*update_result).get());
-		seamCellProcPhase3((*update_result).get());
 
 		m_root_cb = *std::move(update_result);
 	}
@@ -130,10 +129,15 @@ void Controller::garbageCollectPointsOfInterest()
 
 Controller::ControlBlockPtr Controller::copyOnWrite(const ChunkControlBlock &cb, bool mark_seam_dirty)
 {
-	auto ptr = PoolAllocator::allocateControlBlock(ChunkControlBlock::CreationInfo { .predecessor = &cb });
+	auto ptr = PoolAllocator::allocateControlBlock(ChunkControlBlock::CreationInfo {
+		.predecessor = &cb,
+		.reset_seam = mark_seam_dirty
+	});
+
 	if (mark_seam_dirty) {
 		ptr->setSeamDirty(true);
 	}
+
 	m_new_cbs.emplace(ptr.get());
 	return ptr;
 }
@@ -194,7 +198,7 @@ Controller::OuterUpdateResult Controller::updateChunk(const ChunkControlBlock &c
 	OuterUpdateResult children_update_results[8];
 	bool child_updated = false;
 	bool child_seam_dirty = false;
-	for (unsigned i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		const ChunkControlBlock *child = me->child(i);
 		if (child) {
 			children_update_results[i] = updateChunk(*child, self_update_result.second);
@@ -209,16 +213,25 @@ Controller::OuterUpdateResult Controller::updateChunk(const ChunkControlBlock &c
 		}
 	}
 
-	if (child_updated || (child_seam_dirty && !me->isSeamDirty())) {
+	if (child_updated) {
 		if (!new_me) {
 			// Copy-on-write if any child requested so
 			new_me = copyOnWrite(cb, child_seam_dirty);
 		}
 
-		for (unsigned i = 0; i < 8; i++) {
+		for (int i = 0; i < 8; i++) {
 			if (children_update_results[i].has_value()) {
 				new_me->setChild(i, *std::move(children_update_results[i]));
 			}
+		}
+	}
+
+	if (child_seam_dirty && !me->isSeamDirty()) {
+		// Some child has "seam dirty" flag, need to propagate it
+		if (!new_me) {
+			new_me = copyOnWrite(cb, true);
+		} else {
+			new_me->setSeamDirty(true);
 		}
 	}
 
@@ -376,53 +389,6 @@ Controller::InnerUpdateResult Controller::updateChunkActive(const ChunkControlBl
 	}
 
 	return { std::nullopt, ParentCommand::Nothing };
-}
-
-void Controller::getDirtyStats(const ChunkControlBlock *root_cb)
-{
-	// TODO: this function is debug-only
-	std::unordered_map<ChunkControlBlock::State, size_t> state_counts;
-	std::map<uint32_t, size_t> lod_actives;
-	std::map<uint32_t, size_t> lod_dirty_actives;
-	std::map<uint32_t, size_t> lod_dirty_inactives;
-	size_t count_wtf = 0;
-
-	std::vector<const ChunkControlBlock *> stack;
-	stack.emplace_back(root_cb);
-	while (!stack.empty()) {
-		const ChunkControlBlock *cb = stack.back();
-		stack.pop_back();
-		if (!cb) {
-			continue;
-		}
-
-		state_counts[cb->state()]++;
-
-		if (cb->chunk()) {
-			uint32_t lod = cb->chunk()->id().lod;
-			if (cb->state() == ChunkControlBlock::State::Active) {
-				lod_actives[lod]++;
-				if (cb->isSeamDirty()) {
-					lod_dirty_actives[lod]++;
-				}
-			} else if (cb->isSeamDirty()) {
-				lod_dirty_inactives[lod]++;
-			}
-		} else {
-			count_wtf++;
-		}
-
-		for (int i = 0; i < 8; i++) {
-			stack.emplace_back(cb->child(i));
-		}
-	}
-
-	Log::warn("Dirty stats: loading {}, standby {}, active {}, wtf {}",
-	          state_counts[ChunkControlBlock::State::Loading], state_counts[ChunkControlBlock::State::Standby], state_counts[ChunkControlBlock::State::Active], count_wtf);
-	const uint32_t max_lod = root_cb->chunk()->id().lod;
-	for (uint32_t lod = 0; lod <= max_lod; lod++) {
-		Log::warn("{} => active {}, dirty active {}, dirty inactive {}", lod, lod_actives[lod], lod_dirty_actives[lod], lod_dirty_inactives[lod]);
-	}
 }
 
 }

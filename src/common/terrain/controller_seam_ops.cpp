@@ -56,28 +56,34 @@ static bool needRebuildSeam(const ChunkControlBlock &node) noexcept
 }
 
 template<int D>
-std::array<Controller::ControlBlockPtr, 4> Controller::seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes)
+std::array<Controller::OuterUpdateResult, 4> Controller::seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes)
 {
 	if (!canProceed(nodes)) {
 		return {};
 	}
 
-	std::array<ControlBlockPtr, 4> new_node_ptrs;
+	std::array<OuterUpdateResult, 4> new_node_ptrs;
 	std::array<ChunkControlBlock *, 8> sub;
 
 	// Replace `nodes[i]` with COW-copy if it hasn't been COW-copied in this tick yet
 	auto conditional_cow = [&](int i) {
-		if (new_node_ptrs[i] || m_new_cbs.contains(nodes[i])) {
+		if (new_node_ptrs[i]) {
+			return;
+		}
+
+		if (auto iter = m_new_cbs.find(nodes[i]); iter != m_new_cbs.end()) {
+			(*iter)->setSeamDirty(true);
+			new_node_ptrs[i] = ControlBlockPtr();
 			return;
 		}
 
 		new_node_ptrs[i] = copyOnWrite(*nodes[i], true);
-		nodes[i] = new_node_ptrs[i].get();
+		nodes[i] = (*new_node_ptrs[i]).get();
 	};
 
 	// Check if `sub[i]` has changed and reflect these changes in `nodes[X]`
-	auto check_subproc = [&](ControlBlockPtr new_ptr, int i) {
-		if (!new_ptr) {
+	auto check_subproc = [&](OuterUpdateResult new_ptr, int i) {
+		if (!new_ptr.has_value()) {
 			return;
 		}
 
@@ -87,18 +93,23 @@ std::array<Controller::ControlBlockPtr, 4> Controller::seamEdgeProcPhase1(std::a
 		if (sub[i] == nodes[node_id]) {
 			// This node had no children, it has to be treated specially
 			// No COW needed - it was already done by subproc if needed
-			new_node_ptrs[node_id] = std::move(new_ptr);
-			nodes[node_id] = new_node_ptrs[node_id].get();
-			// Update subnodes' pointers
-			for (int i = 0; i < 8; i++) {
-				if (EDGE_PROC_RECURSION_TABLE[D][i][0] == node_id) {
-					sub[i] = nodes[node_id];
+			if (*new_ptr) {
+				new_node_ptrs[node_id] = std::move(new_ptr);
+				nodes[node_id] = (*new_node_ptrs[node_id]).get();
+				// Update subnodes' pointers
+				for (int i = 0; i < 8; i++) {
+					if (EDGE_PROC_RECURSION_TABLE[D][i][0] == node_id) {
+						sub[i] = nodes[node_id];
+					}
 				}
 			}
 		} else {
 			conditional_cow(node_id);
-			sub[i] = new_ptr.get();
-			nodes[node_id]->setChild(child_id, std::move(new_ptr));
+
+			if (*new_ptr) {
+				sub[i] = (*new_ptr).get();
+				nodes[node_id]->setChild(child_id, *std::move(new_ptr));
+			}
 		}
 	};
 
@@ -110,7 +121,7 @@ std::array<Controller::ControlBlockPtr, 4> Controller::seamEdgeProcPhase1(std::a
 		return new_node_ptrs;
 	}
 
-	auto check_edge_proc = [&](std::array<ControlBlockPtr, 4> new_ptrs, int i1, int i2, int i3, int i4) {
+	auto check_edge_proc = [&](std::array<OuterUpdateResult, 4> new_ptrs, int i1, int i2, int i3, int i4) {
 		check_subproc(std::move(new_ptrs[0]), i1);
 		check_subproc(std::move(new_ptrs[1]), i2);
 		check_subproc(std::move(new_ptrs[2]), i3);
@@ -129,28 +140,34 @@ std::array<Controller::ControlBlockPtr, 4> Controller::seamEdgeProcPhase1(std::a
 }
 
 template<int D>
-std::array<Controller::ControlBlockPtr, 2> Controller::seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes)
+std::array<Controller::OuterUpdateResult, 2> Controller::seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes)
 {
 	if (!canProceed(nodes)) {
 		return {};
 	}
 
-	std::array<ControlBlockPtr, 2> new_node_ptrs;
+	std::array<OuterUpdateResult, 2> new_node_ptrs;
 	std::array<ChunkControlBlock *, 8> sub;
 
 	// Replace `nodes[i]` with COW-copy if it hasn't been COW-copied in this tick yet
 	auto conditional_cow = [&](int i) {
-		if (new_node_ptrs[i] || m_new_cbs.contains(nodes[i])) {
+		if (new_node_ptrs[i]) {
+			return;
+		}
+
+		if (auto iter = m_new_cbs.find(nodes[i]); iter != m_new_cbs.end()) {
+			(*iter)->setSeamDirty(true);
+			new_node_ptrs[i] = ControlBlockPtr();
 			return;
 		}
 
 		new_node_ptrs[i] = copyOnWrite(*nodes[i], true);
-		nodes[i] = new_node_ptrs[i].get();
+		nodes[i] = (*new_node_ptrs[i]).get();
 	};
 
 	// Check if `sub[i]` has changed and reflect these changes in `nodes[X]`
-	auto check_subproc = [&](ControlBlockPtr new_ptr, int i) {
-		if (!new_ptr) {
+	auto check_subproc = [&](OuterUpdateResult new_ptr, int i) {
+		if (!new_ptr.has_value()) {
 			return;
 		}
 
@@ -160,18 +177,23 @@ std::array<Controller::ControlBlockPtr, 2> Controller::seamFaceProcPhase1(std::a
 		if (sub[i] == nodes[node_id]) {
 			// This node had no children, it has to be treated specially
 			// No COW needed - it was already done by subproc if needed
-			new_node_ptrs[node_id] = std::move(new_ptr);
-			nodes[node_id] = new_node_ptrs[node_id].get();
-			// Update subnodes' pointers
-			for (int i = 0; i < 8; i++) {
-				if (FACE_PROC_RECURSION_TABLE[D][i][0] == node_id) {
-					sub[i] = nodes[node_id];
+			if (*new_ptr) {
+				new_node_ptrs[node_id] = std::move(new_ptr);
+				nodes[node_id] = (*new_node_ptrs[node_id]).get();
+				// Update subnodes' pointers
+				for (int i = 0; i < 8; i++) {
+					if (FACE_PROC_RECURSION_TABLE[D][i][0] == node_id) {
+						sub[i] = nodes[node_id];
+					}
 				}
 			}
 		} else {
 			conditional_cow(node_id);
-			sub[i] = new_ptr.get();
-			nodes[node_id]->setChild(child_id, std::move(new_ptr));
+
+			if (*new_ptr) {
+				sub[i] = (*new_ptr).get();
+				nodes[node_id]->setChild(child_id, *std::move(new_ptr));
+			}
 		}
 	};
 
@@ -183,7 +205,7 @@ std::array<Controller::ControlBlockPtr, 2> Controller::seamFaceProcPhase1(std::a
 		return new_node_ptrs;
 	}
 
-	auto check_face_proc = [&](std::array<ControlBlockPtr, 2> new_ptrs, int i1, int i2) {
+	auto check_face_proc = [&](std::array<OuterUpdateResult, 2> new_ptrs, int i1, int i2) {
 		check_subproc(std::move(new_ptrs[0]), i1);
 		check_subproc(std::move(new_ptrs[1]), i2);
 	};
@@ -194,7 +216,7 @@ std::array<Controller::ControlBlockPtr, 2> Controller::seamFaceProcPhase1(std::a
 		check_face_proc(seamFaceProcPhase1<D>({ sub[i1], sub[i2] }), i1, i2);
 	}
 
-	auto check_edge_proc = [&](std::array<ControlBlockPtr, 4> new_ptrs, int i1, int i2, int i3, int i4) {
+	auto check_edge_proc = [&](std::array<OuterUpdateResult, 4> new_ptrs, int i1, int i2, int i3, int i4) {
 		check_subproc(std::move(new_ptrs[0]), i1);
 		check_subproc(std::move(new_ptrs[1]), i2);
 		check_subproc(std::move(new_ptrs[2]), i3);
@@ -221,41 +243,50 @@ std::array<Controller::ControlBlockPtr, 2> Controller::seamFaceProcPhase1(std::a
 	return new_node_ptrs;
 }
 
-Controller::ControlBlockPtr Controller::seamCellProcPhase1(ChunkControlBlock *node)
+Controller::OuterUpdateResult Controller::seamCellProcPhase1(ChunkControlBlock *node)
 {
 	if (!node || !node->isSeamDirty() || node->state() == ChunkControlBlock::State::Active) {
 		return {};
 	}
 
-	ControlBlockPtr new_node_ptr;
+	OuterUpdateResult new_node_ptr;
 	std::array<ChunkControlBlock *, 8> sub;
 
 	// Replace `node` with COW-copy if it hasn't been COW-copied in this tick yet
 	auto conditional_cow = [&]() {
-		if (new_node_ptr || m_new_cbs.contains(node)) {
+		if (new_node_ptr.has_value()) {
+			return;
+		}
+
+		if (auto iter = m_new_cbs.find(node); iter != m_new_cbs.end()) {
+			(*iter)->setSeamDirty(true);
+			new_node_ptr = ControlBlockPtr();
 			return;
 		}
 
 		new_node_ptr = copyOnWrite(*node, true);
-		node = new_node_ptr.get();
+		node = (*new_node_ptr).get();
 	};
 
 	// Check if some child node has changed and reflect these changes in `node`
-	auto check_subproc = [&](ControlBlockPtr new_ptr, int i) {
-		if (!new_ptr) {
+	auto check_subproc = [&](OuterUpdateResult new_ptr, int i) {
+		if (!new_ptr.has_value()) {
 			return;
 		}
 
 		conditional_cow();
-		sub[i] = new_ptr.get();
-		node->setChild(i, std::move(new_ptr));
+
+		if (*new_ptr) {
+			sub[i] = (*new_ptr).get();
+			node->setChild(i, *std::move(new_ptr));
+		}
 	};
 
 	for (int i = 0; i < 8; i++) {
 		sub[i] = node->child(i);
 	}
 
-	auto check_face_proc = [&](std::array<ControlBlockPtr, 2> new_ptrs, int i1, int i2) {
+	auto check_face_proc = [&](std::array<OuterUpdateResult, 2> new_ptrs, int i1, int i2) {
 		check_subproc(std::move(new_ptrs[0]), i1);
 		check_subproc(std::move(new_ptrs[1]), i2);
 	};
@@ -276,7 +307,7 @@ Controller::ControlBlockPtr Controller::seamCellProcPhase1(ChunkControlBlock *no
 		check_face_proc(seamFaceProcPhase1<2>({ sub[i1], sub[i2] }), i1, i2);
 	}
 
-	auto check_edge_proc = [&](std::array<ControlBlockPtr, 4> new_ptrs, int i1, int i2, int i3, int i4) {
+	auto check_edge_proc = [&](std::array<OuterUpdateResult, 4> new_ptrs, int i1, int i2, int i3, int i4) {
 		check_subproc(std::move(new_ptrs[0]), i1);
 		check_subproc(std::move(new_ptrs[1]), i2);
 		check_subproc(std::move(new_ptrs[2]), i3);
@@ -383,6 +414,9 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 {
 	if (!node || !node->isSeamDirty() || node->state() == ChunkControlBlock::State::Active) {
+		if (node) {
+			node->setSeamDirty(false);
+		}
 		return;
 	}
 
@@ -434,19 +468,7 @@ void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 		seamCellProcPhase2(sub[i]);
 	}
 
-	//node->setSeamDirty(false);
-}
-
-void Controller::seamCellProcPhase3(ChunkControlBlock *node)
-{
-	if (!node || !node->isSeamDirty()) {
-		return;
-	}
-
 	node->setSeamDirty(false);
-	for (int i = 0; i < 8; i++) {
-		seamCellProcPhase3(node->child(i));
-	}
 }
 
 }
