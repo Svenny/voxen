@@ -1,13 +1,14 @@
 #pragma once
 
+#include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/qef_solver.hpp>
-#include <voxen/common/terrain/types.hpp>
+#include <voxen/util/allocator.hpp>
 
 #include <array>
 #include <cassert>
 #include <vector>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 struct ChunkOctreeLeaf;
@@ -65,23 +66,23 @@ public:
 	ChunkOctreeNodeBase *idToPointer(uint32_t id) noexcept;
 	const ChunkOctreeNodeBase *idToPointer(uint32_t id) const noexcept;
 
-	uint32_t baseRoot() const noexcept { return m_base_root_id; }
-	void setBaseRoot(uint32_t id) noexcept { m_base_root_id = id; }
-	uint32_t extendedRoot() const noexcept { return m_ext_root_id; }
-	void setExtendedRoot(uint32_t id) noexcept { m_ext_root_id = id; }
+	uint32_t root() const noexcept { return m_root_id; }
+	void setRoot(uint32_t id) noexcept { m_root_id = id; }
 
 	static bool isCellId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) == 0; }
 	static bool isLeafId(uint32_t id) noexcept { return (id & LEAF_ID_BIT) != 0; }
 
 private:
-	std::vector<ChunkOctreeCell> m_cells;
-	std::vector<ChunkOctreeLeaf> m_leaves;
+	template<typename T>
+	using Vector = std::vector<T, DomainAllocator<T, AllocationDomain::TerrainOctree>>;
 
-	std::vector<uint32_t> m_free_cells;
-	std::vector<uint32_t> m_free_leaves;
+	Vector<ChunkOctreeCell> m_cells;
+	Vector<ChunkOctreeLeaf> m_leaves;
 
-	uint32_t m_base_root_id = INVALID_NODE_ID;
-	uint32_t m_ext_root_id = INVALID_NODE_ID;
+	Vector<uint32_t> m_free_cells;
+	Vector<uint32_t> m_free_leaves;
+
+	uint32_t m_root_id = INVALID_NODE_ID;
 };
 
 }

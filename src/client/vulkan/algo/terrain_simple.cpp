@@ -4,7 +4,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
-
+#include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/math.hpp>
@@ -24,6 +24,19 @@ AlgoTerrainSimple::AlgoTerrainSimple()
 	Log::debug("AlgoTerrainSimple created successfully");
 }
 
+static glm::mat4 chunkLocalToClip(terrain::ChunkId id, const GameView &view) noexcept
+{
+	glm::dvec3 base_pos;
+	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+
+	const glm::vec3 offset(base_pos - view.cameraPosition());
+	const float size = float(1u << id.lod);
+	const glm::mat4 local_to_tr_world = extras::scale_translate(offset.x, offset.y, offset.z, size);
+	return view.translatedWorldToClip() * local_to_tr_world;
+}
+
 void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
@@ -35,7 +48,7 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	auto &terrain = backend.terrainSynchronizer();
 	{
 		terrain.beginSyncSession();
-		state.walkActiveChunks([&](const voxen::TerrainChunk &chunk) {
+		state.walkActiveChunks([&](const terrain::Chunk &chunk) {
 			if (isChunkVisible(chunk, view)) {
 				terrain.syncChunk(chunk);
 			}
@@ -47,17 +60,9 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 
 	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 
-	auto view_proj_mat = view.cameraMatrix();
-
 	terrain.walkActiveChunks(
-	[&](const TerrainChunkGpuData &data) {
-		const auto &header = data.header;
-		float base_x = float(header.base_x);
-		float base_y = float(header.base_y);
-		float base_z = float(header.base_z);
-		float size = float(header.scale);
-		glm::mat4 model_mat = extras::scale_translate(base_x, base_y, base_z, size);
-		glm::mat4 mat = view_proj_mat * model_mat;
+	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
+		const glm::mat4 mat = chunkLocalToClip(id, view);
 
 		PushConstantsBlock block;
 		memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);
@@ -74,23 +79,21 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	});
 }
 
-bool AlgoTerrainSimple::isChunkVisible(const TerrainChunk &chunk, const GameView &view) noexcept
+bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameView &view) noexcept
 {
-	const auto &header = chunk.header();
-	const auto &surface = chunk.secondaryData().surface;
+	const auto &id = chunk.id();
+	const auto &surface = chunk.ownSurface();
+	const auto &seam_surface = chunk.seamSurface();
 
-	if (surface.numIndices() == 0) {
+	if (surface.numIndices() == 0 && seam_surface.numIndices() == 0) {
 		return false;
 	}
 
-	float base_x = float(header.base_x);
-	float base_y = float(header.base_y);
-	float base_z = float(header.base_z);
-	float scale = float(header.scale);
-	glm::mat4 mat = view.cameraMatrix() * extras::scale_translate(base_x, base_y, base_z, scale);
+	const glm::mat4 mat = chunkLocalToClip(id, view);
 
-	const glm::vec3 &aabb_min = surface.aabbMin();
-	const glm::vec3 &aabb_max = surface.aabbMax();
+	const Aabb &aabb = seam_surface.aabb();
+	const glm::vec3 &aabb_min = aabb.min();
+	const glm::vec3 &aabb_max = aabb.max();
 
 	for (int i = 0; i < 8; i++) {
 		glm::vec4 point;

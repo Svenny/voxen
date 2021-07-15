@@ -1,17 +1,15 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk_data.hpp>
-#include <voxen/common/terrain/chunk_header.hpp>
+#include <voxen/common/terrain/chunk_id.hpp>
+#include <voxen/common/terrain/primary_data.hpp>
 
-namespace voxen
+namespace voxen::terrain
 {
 
-class TerrainGenerator {
+class TerrainGenerator final {
 public:
 
-	void generate(const TerrainChunkHeader &header, TerrainChunkPrimaryData &output) const;
-private:
-
+	void generate(ChunkId id, ChunkPrimaryData &output) const;
 };
 
 }

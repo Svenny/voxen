@@ -13,7 +13,6 @@ namespace voxen::client::vulkan
 {
 
 struct TerrainChunkGpuData {
-	TerrainChunkHeader header;
 	uint32_t index_count;
 	uint32_t first_index;
 	int32_t vertex_offset;
@@ -29,10 +28,10 @@ public:
 	~TerrainSynchronizer() = default;
 
 	void beginSyncSession();
-	void syncChunk(const TerrainChunk &chunk);
+	void syncChunk(const terrain::Chunk &chunk);
 	void endSyncSession();
 
-	void walkActiveChunks(std::function<void(const TerrainChunkGpuData &)> chunk_callback,
+	void walkActiveChunks(std::function<void(terrain::ChunkId, const TerrainChunkGpuData &)> chunk_callback,
 	                      std::function<void(VkBuffer, VkBuffer)> buffers_switch_callback);
 private:
 	struct ChunkGpuData {
@@ -40,17 +39,15 @@ private:
 		Buffer idx_buffer;
 		uint32_t index_count;
 		uint32_t version;
+		uint32_t seam_version;
 		uint32_t age;
 	};
 
-	struct HeaderHasher {
-		size_t operator() (const TerrainChunkHeader &h) const noexcept { return h.hash(); }
-	};
-
-	std::unordered_map<TerrainChunkHeader, ChunkGpuData, HeaderHasher> m_chunk_gpu_data;
+	std::unordered_map<terrain::ChunkId, ChunkGpuData> m_chunk_gpu_data;
 	uint32_t m_sync_age = 0;
 
-	void enqueueSurfaceTransfer(const TerrainSurface &surface, ChunkGpuData &data);
+	void enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &own_surface,
+	                            const terrain::ChunkSeamSurface &seam_surface, ChunkGpuData &data);
 };
 
 }

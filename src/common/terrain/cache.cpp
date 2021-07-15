@@ -5,114 +5,89 @@
 #include <cassert>
 #include <algorithm>
 
-namespace voxen
+namespace voxen::terrain
 {
 
-TerrainChunkCache::TerrainChunkCache(size_t max_chunks)
-	: m_sets((max_chunks + SET_SIZE - 1) / SET_SIZE)
+constexpr static size_t SET_SIZE = Config::CHUNK_CACHE_SET_SIZE;
+constexpr static size_t MAX_CHUNKS = Config::CHUNK_CACHE_FULL_SIZE;
+constexpr static size_t NUM_SETS = (MAX_CHUNKS + SET_SIZE - 1) / SET_SIZE;
+
+ChunkCache::ChunkCache() : m_sets(NUM_SETS)
 {
-	Log::debug("Creating terrain chunk cache for {} max chunks - using {} sets", max_chunks, m_sets.size());
+	constexpr size_t max_chunks = NUM_SETS * SET_SIZE;
+	Log::debug("Creating terrain chunk cache, using {}x{} sets (up to {} chunks)", NUM_SETS, SET_SIZE, max_chunks);
 }
 
-bool TerrainChunkCache::tryFill(TerrainChunk &chunk)
+extras::refcnt_ptr<Chunk> ChunkCache::tryLoad(ChunkId id) noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(chunk.header());
+	auto[set_id, chunk_pos_in_set] = findSetAndIndex(id);
 	if (chunk_pos_in_set == SET_SIZE) {
 		// Not found
-		return false;
+		return {};
 	}
-	// Update positions - set[chunk_pos_in_set] should become the last element
-	Set &set = m_sets[set_id];
-	auto iter = set.begin() + chunk_pos_in_set;
-	std::rotate(iter, iter + 1, set.end());
-	// Fill the data from the found entry
-	chunk = *(set.back().chunk);
-	return true;
+
+	auto &entry = m_sets[set_id][chunk_pos_in_set];
+	// Move pointer out of the cache so it doesn't linger here
+	return std::exchange(entry, {});
 }
 
-void TerrainChunkCache::insert(const TerrainChunk &chunk)
+void ChunkCache::insert(extras::refcnt_ptr<Chunk> ptr) noexcept
 {
-	const size_t set_id = chunk.header().hash() % m_sets.size();
+	assert(ptr);
+
+	const size_t set_id = ptr->id().fastHash() % m_sets.size();
 	Set &set = m_sets[set_id];
 
 	size_t empty_pos_in_set = SET_SIZE;
 	for (size_t i = 0; i < SET_SIZE; i++) {
-		Entry &entry = set[i];
-		if (!entry.chunk) {
+		auto &entry = set[i];
+		if (!entry) {
 			empty_pos_in_set = i;
 			continue;
 		}
-		if (entry.chunk->header() == chunk.header()) {
-			assert(entry.chunk->version() <= chunk.version());
-			// This chunk is already in the cache, but the content can be different
-			if (entry.chunk->version() < chunk.version())
-				// Update voxel data in cache
-				*entry.chunk = chunk;
+
+		if (entry->id() == ptr->id()) {
+			// This chunk is already in the cache, update the pointer
+			assert(entry->version() <= ptr->version());
+			entry = std::move(ptr);
 			return;
 		}
 	}
+
 	if (empty_pos_in_set != SET_SIZE) {
 		// There is an empty slot in the cache, just fill it
-		set[empty_pos_in_set].chunk = new TerrainChunk(chunk);
+		set[empty_pos_in_set] = std::move(ptr);
 		return;
 	}
-	// Replace the first element with our chunk
-	set[0].replaceWith(chunk);
+
+	// Evict the first element in favor of incoming chunk
+	std::swap(set[0], ptr);
 	// And update positions - make it the last element
 	std::rotate(set.begin(), set.begin() + 1, set.end());
 }
 
-void TerrainChunkCache::invalidate(const TerrainChunkHeader &header)
+void ChunkCache::invalidate(ChunkId id) noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(header);
+	auto[set_id, chunk_pos_in_set] = findSetAndIndex(id);
 
 	if (chunk_pos_in_set != SET_SIZE) {
-		m_sets[set_id][chunk_pos_in_set].clear();
+		m_sets[set_id][chunk_pos_in_set].reset();
 	}
 }
 
-std::pair<size_t, size_t> TerrainChunkCache::findSetAndIndex(const TerrainChunkHeader &header) const noexcept
+std::pair<size_t, size_t> ChunkCache::findSetAndIndex(ChunkId id) const noexcept
 {
-	const size_t set_id = header.hash() % m_sets.size();
+	const size_t set_id = id.fastHash() % m_sets.size();
 	const Set &set = m_sets[set_id];
 
 	for (size_t i = 0; i < SET_SIZE; i++) {
 		const auto &entry = set[i];
-		if (!entry.chunk)
-			continue;
-		if (entry.chunk->header() == header)
+		if (entry && entry->id() == id) {
 			return { set_id, i };
+		}
 	}
 	// Not found
 	return { set_id, SET_SIZE };
-}
-
-TerrainChunkCache::Entry::Entry(Entry &&other) noexcept
-	: chunk(std::exchange(other.chunk, nullptr))
-{
-}
-
-TerrainChunkCache::Entry &TerrainChunkCache::Entry::operator = (Entry &&other) noexcept
-{
-	chunk = std::exchange(other.chunk, nullptr);
-	return *this;
-}
-
-TerrainChunkCache::Entry::~Entry() noexcept
-{
-	delete chunk;
-}
-
-void TerrainChunkCache::Entry::replaceWith(const TerrainChunk &chunk)
-{
-	clear();
-	this->chunk = new TerrainChunk(chunk);
-}
-
-void TerrainChunkCache::Entry::clear() noexcept
-{
-	delete chunk;
-	chunk = nullptr;
 }
 
 }

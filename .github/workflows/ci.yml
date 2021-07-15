@@ -36,8 +36,8 @@ jobs:
           mkdir -p build
           cd build
           rm -rf ./*
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DDEPLOY_BUILD=ON -DVOXEN_BUILD_TESTS=ON ..
-          make -j12
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DDEPLOY_BUILD=ON -DVOXEN_BUILD_TESTS=ON ..
+          cmake --build . -j12
 
       - name: Run tests
         run: |

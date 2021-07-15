@@ -48,28 +48,34 @@ set(VOXEN_HEADERS
 	include/voxen/client/window.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
+	include/voxen/common/terrain/allocator.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
-	include/voxen/common/terrain/chunk_data.hpp
-	include/voxen/common/terrain/chunk_header.hpp
+	include/voxen/common/terrain/chunk_id.hpp
 	include/voxen/common/terrain/chunk_octree.hpp
+	include/voxen/common/terrain/config.hpp
+	include/voxen/common/terrain/controller.hpp
+	include/voxen/common/terrain/control_block.hpp
+	include/voxen/common/terrain/coord.hpp
 	include/voxen/common/terrain/generator.hpp
 	include/voxen/common/terrain/hermite_data.hpp
 	include/voxen/common/terrain/loader.hpp
 	include/voxen/common/terrain/octree_tables.hpp
+	include/voxen/common/terrain/primary_data.hpp
 	include/voxen/common/terrain/qef_solver.hpp
-	include/voxen/common/terrain/seam.hpp
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
-	include/voxen/common/terrain/types.hpp
+	include/voxen/common/terrain/voxel_grid.hpp
 	include/voxen/common/player.hpp
-	include/voxen/common/terrain.hpp
 	include/voxen/common/threadpool.hpp
 	include/voxen/common/world_state.hpp
 	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
 	include/voxen/server/world.hpp
+	include/voxen/util/aabb.hpp
+	include/voxen/util/allocator.hpp
+	include/voxen/util/debug.hpp
 	include/voxen/util/elapsed_timer.hpp
 	include/voxen/util/exception.hpp
 	include/voxen/util/hash.hpp

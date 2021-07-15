@@ -26,9 +26,10 @@ public:
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
 
-	glm::mat4 projectionMatrix() const noexcept { return m_proj_matrix; }
-	glm::mat4 viewMatrix() const noexcept { return m_view_matrix; }
-	glm::mat4 cameraMatrix() const noexcept { return m_cam_matrix; }
+	const glm::mat4 &viewToClip() const noexcept { return m_view_to_clip; }
+	const glm::mat4 &translatedWorldToView() const noexcept { return m_tr_world_to_view; }
+	const glm::mat4 &translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
+	const glm::dvec3 &cameraPosition() const noexcept { return m_cam_position; }
 
 private:
 	enum Direction : int {
@@ -65,10 +66,11 @@ private:
 	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;
 
-	glm::dquat m_orientation;
-	glm::mat4 m_proj_matrix;
-	glm::mat4 m_view_matrix;
-	glm::mat4 m_cam_matrix;
+	glm::dvec3 m_cam_position;
+	glm::dquat m_cam_orientation;
+	glm::mat4 m_view_to_clip;
+	glm::mat4 m_tr_world_to_view;
+	glm::mat4 m_tr_world_to_clip;
 
 	// Previous tick id
 	std::uint64_t m_previous_tick_id;

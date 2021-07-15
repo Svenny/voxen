@@ -33,6 +33,11 @@ TransferManager::~TransferManager() noexcept
 
 void TransferManager::uploadToBuffer(VkBuffer buffer, const void *data, VkDeviceSize size)
 {
+	uploadToBuffer(buffer, 0, data, size);
+}
+
+void TransferManager::uploadToBuffer(VkBuffer buffer, VkDeviceSize offset, const void *data, VkDeviceSize size)
+{
 	if (size == 0) {
 		Log::warn("Empty upload requested");
 		return;
@@ -63,7 +68,7 @@ void TransferManager::uploadToBuffer(VkBuffer buffer, const void *data, VkDevice
 	auto &backend = Backend::backend();
 	VkBufferCopy copy = {};
 	copy.srcOffset = m_staging_written;
-	copy.dstOffset = 0;
+	copy.dstOffset = offset;
 	copy.size = size;
 	// TODO: handle the case when transfer and target queues are different
 	backend.vkCmdCopyBuffer(m_command_buffers[0], m_staging_buffer, buffer, 1, &copy);

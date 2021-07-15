@@ -1,8 +1,10 @@
 #include <voxen/common/terrain/hermite_data.hpp>
 
+#include <cassert>
+#include <cmath>
 #include <algorithm>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 static uint32_t doubleTo24Unorm(double value) noexcept
@@ -15,14 +17,18 @@ static double unorm24ToDouble(uint32_t value) noexcept
 	return double(value) / 16777215.0;
 }
 
-// -- HermiteDataEntry ---
+// --- HermiteDataEntry ---
 
 HermiteDataEntry::HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z,
                                    const glm::vec3 &normal, double offset,
-                                   Axis axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept
+                                   int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept
 	: m_axis(uint32_t(axis)), m_solid_voxel(solid_voxel),
 	  m_lesser_x(lesser_x), m_lesser_y(lesser_y), m_lesser_z(lesser_z)
 {
+	assert(offset >= 0.0 && offset <= 1.0);
+	assert(axis >= 0 && axis <= 2);
+	assert(solid_voxel != 0);
+
 	m_normal_x = normal.x;
 	m_normal_z = normal.z;
 	m_offset = doubleTo24Unorm(offset);
@@ -33,7 +39,7 @@ HermiteDataEntry::HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t l
 glm::vec3 HermiteDataEntry::surfaceNormal() const noexcept
 {
 	float y_squared = 1.0f - m_normal_x * m_normal_x - m_normal_z * m_normal_z;
-	float normal_y = glm::sqrt(glm::max(0.0f, y_squared));
+	float normal_y = std::sqrt(std::max(0.0f, y_squared));
 	if (m_normal_y_sign)
 		normal_y = -normal_y;
 	return { m_normal_x, normal_y, m_normal_z };
@@ -56,17 +62,6 @@ glm::ivec3 HermiteDataEntry::biggerEndpoint() const noexcept
 	glm::ivec3 point(m_lesser_x, m_lesser_y, m_lesser_z);
 	point[m_axis]++;
 	return point;
-}
-
-bool HermiteDataEntry::operator == (const HermiteDataEntry &other) const noexcept
-{
-	return m_normal_x == other.m_normal_x && m_normal_z == other.m_normal_z &&
-		m_offset == other.m_offset &&
-		m_normal_y_sign == other.m_normal_y_sign &&
-		m_solid_endpoint == other.m_solid_endpoint &&
-		m_axis == other.m_axis &&
-		m_solid_voxel == other.m_solid_voxel &&
-		m_lesser_x == other.m_lesser_x && m_lesser_y == other.m_lesser_y && m_lesser_z == other.m_lesser_z;
 }
 
 // --- HermiteDataStorage ---

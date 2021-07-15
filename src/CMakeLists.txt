@@ -36,26 +36,33 @@ set(VOXEN_SOURCES
 	src/client/render.cpp
 	src/client/window.cpp
 	src/client/input_event_adapter.cpp
+	src/common/terrain/allocator.cpp
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
-	src/common/terrain/chunk_data.cpp
-	src/common/terrain/chunk_header.cpp
+	src/common/terrain/chunk_id.cpp
 	src/common/terrain/chunk_octree.cpp
+	src/common/terrain/controller.cpp
+	src/common/terrain/controller_seam_ops.cpp
+	src/common/terrain/control_block.cpp
+	src/common/terrain/coord.cpp
 	src/common/terrain/generator.cpp
 	src/common/terrain/hermite_data.cpp
 	src/common/terrain/loader.cpp
+	src/common/terrain/primary_data.cpp
 	src/common/terrain/qef_solver.cpp
-	src/common/terrain/seam.cpp
 	src/common/terrain/surface.cpp
 	src/common/terrain/surface_builder.cpp
+	src/common/terrain/voxel_grid.cpp
 	src/common/player.cpp
-	src/common/terrain.cpp
 	src/common/threadpool.cpp
 	src/common/world_state.cpp
 	src/common/gameview.cpp
 	src/common/config.cpp
 	src/common/filemanager.cpp
 	src/server/world.cpp
+	src/util/aabb.cpp
+	src/util/allocator.cpp
+	src/util/debug.cpp
 	src/util/elapsed_timer.cpp
 	src/util/exception.cpp
 	src/util/hash.cpp
@@ -81,21 +88,42 @@ set(VOXEN_SHADERS
 
 set(VOXEN_SHADER_BINARIES)
 
-set(VOXEN_SHADER_COMPILER_OPTIONS -O --target-env=vulkan1.2 -Werror)
+set(VOXEN_SHADER_COMPILER_OPTIONS
+	-O --target-env=vulkan1.2 -Werror
+	-I${CMAKE_SOURCE_DIR}/src/shaders/include
+)
+
 if (USE_VULKAN_DEBUGGING)
 	# Enable debug information generation
 	set(VOXEN_SHADER_COMPILER_OPTIONS ${VOXEN_SHADER_COMPILER_OPTIONS} -g)
 endif()
 
 foreach(SHADER ${VOXEN_SHADERS})
+	# Input GLSL file
 	set(SHADER_SOURCE ${CMAKE_SOURCE_DIR}/src/shaders/${SHADER})
-	set(SHADER_BIN ${CMAKE_BINARY_DIR}/data/game/assets/shaders/${SHADER}.spv)
+	# Output SPIR-V file
+	set(SHADER_BIN_RELATIVE data/game/assets/shaders/${SHADER}.spv)
+	set(SHADER_BIN ${CMAKE_BINARY_DIR}/${SHADER_BIN_RELATIVE})
+	# Output .d file to account for changed `#include`s
+	set(SHADER_DEPFILE ${CMAKE_BINARY_DIR}/shader_deps/${SHADER}.d)
+
+	# Create output directories if needed
 	get_filename_component(SHADER_DIR ${SHADER_BIN} DIRECTORY)
 	file(MAKE_DIRECTORY ${SHADER_DIR})
-	add_custom_command(OUTPUT ${SHADER_BIN} DEPENDS ${SHADER_SOURCE} COMMENT "Building SPIR-V for shader ${SHADER}"
-		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS} ${SHADER_SOURCE} -o ${SHADER_BIN})
+	get_filename_component(SHADER_DIR ${SHADER_DEPFILE} DIRECTORY)
+	file(MAKE_DIRECTORY ${SHADER_DIR})
+
+	add_custom_command(OUTPUT ${SHADER_BIN}
+		MAIN_DEPENDENCY ${SHADER_SOURCE} DEPFILE ${SHADER_DEPFILE}
+		COMMENT "Building SPIR-V for shader ${SHADER}"
+		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS}
+			${SHADER_SOURCE} -o ${SHADER_BIN} -MD -MF ${SHADER_DEPFILE} -MT ${SHADER_BIN_RELATIVE}
+	)
+
 	list(APPEND VOXEN_SHADER_BINARIES ${SHADER_BIN})
-	message(STATUS "Compiling shader ${SHADER}, source ${SHADER_SOURCE}, binary ${SHADER_BIN}")
+
+	file(RELATIVE_PATH SHADER_DIR ${CMAKE_BINARY_DIR} ${SHADER_BIN})
+	message(STATUS "Adding compile GLSL shader '${SHADER}' to SPIR-V binary '${SHADER_DIR}'")
 endforeach()
 
 add_custom_target(voxen-shaders DEPENDS ${VOXEN_SHADER_BINARIES})

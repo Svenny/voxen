@@ -1,23 +1,101 @@
 #include <voxen/common/terrain/surface_builder.hpp>
 
+#include <voxen/common/terrain/chunk.hpp>
+#include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/octree_tables.hpp>
+#include <voxen/common/terrain/primary_data.hpp>
+#include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/log.hpp>
 
 #include <algorithm>
 #include <array>
 #include <vector>
 
-namespace voxen
+namespace voxen::terrain
 {
 
-template<int D>
-static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const ChunkOctree &octree, TerrainSurface &surface)
+namespace
+{
+
+void addLeafToSurface(ChunkOctreeLeaf *leaf, ChunkOwnSurface &surface)
+{
+	assert(leaf);
+	//TODO(sirgienko) add Material support, when we will have any voxel data
+	//MaterialFilter filter;
+	const glm::vec3 &vertex = leaf->surface_vertex;
+	const glm::vec3 &normal = leaf->surface_normal;
+	// TODO (Svenny): add material selection
+	leaf->surface_vertex_id = surface.addVertex({ vertex, normal });
+}
+
+uint32_t addLeafToSurface(const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface, ChunkId base_id, ChunkId foreign_id)
+{
+	assert(leaf);
+	//TODO(sirgienko) add Material support, when we will have any voxel data
+	//MaterialFilter filter;
+
+	// Apply position/scale correction for foreign vertex.
+	// It's in chunk-local coordinates of another chunk, convert it to ours.
+	glm::vec3 vertex = leaf->surface_vertex;
+
+	// Correct for the scale
+	if (base_id.lod < foreign_id.lod) {
+		vertex *= float(1u << (foreign_id.lod - base_id.lod));
+	} else if (base_id.lod > foreign_id.lod) {
+		vertex /= float(1u << (base_id.lod - foreign_id.lod));
+	}
+
+	// Correct for the origin
+	vertex += glm::vec3(foreign_id.base_x - base_id.base_x,
+	                    foreign_id.base_y - base_id.base_y,
+	                    foreign_id.base_z - base_id.base_z) * (float(Config::CHUNK_SIZE) / float(1u << base_id.lod));
+
+	const glm::vec3 &normal = leaf->surface_normal;
+	// TODO (Svenny): add material selection
+	return surface.addExtraVertex({ vertex, normal });
+}
+
+using LeafToIdxMap = std::unordered_map<const ChunkOctreeLeaf *, uint32_t>;
+
+uint32_t getForeignLeafVertexIndex(LeafToIdxMap &map, const ChunkOctreeLeaf *leaf, ChunkSeamSurface &surface, ChunkId base_id, ChunkId foreign_id)
+{
+	auto iter = map.find(leaf);
+	if (iter != map.end()) {
+		return iter->second;
+	}
+
+	uint32_t idx = addLeafToSurface(leaf, surface, base_id, foreign_id);
+	map.emplace(leaf, idx);
+	return idx;
+}
+
+struct EdgeProcOwnArgs final {
+	std::array<const ChunkOctreeNodeBase *, 4> nodes;
+	const ChunkOctree &octree;
+	ChunkOwnSurface &surface;
+};
+
+struct EdgeProcSeamArgs final {
+	std::array<const ChunkOctreeNodeBase *, 4> nodes;
+	std::array<const ChunkOctree *, 4> octrees;
+	std::array<ChunkId, 4> chunk_ids;
+	ChunkSeamSurface &surface;
+	LeafToIdxMap &foreign_leaf_to_idx;
+};
+
+template<bool S>
+using EdgeProcArgs = std::conditional_t<S, EdgeProcSeamArgs, EdgeProcOwnArgs>;
+
+template<int D, bool S>
+void edgeProc(EdgeProcArgs<S> args)
 {
 	constexpr int CORNERS_TABLE[3][4][2] = {
 		{ { 5, 7 }, { 1, 3 }, { 0, 2 }, { 4, 6 } }, // X
 		{ { 3, 7 }, { 2, 6 }, { 0, 4 }, { 1, 5 } }, // Y
 		{ { 6, 7 }, { 4, 5 }, { 0, 1 }, { 2, 3 } }  // Z
 	};
+
+	const std::array<const ChunkOctreeNodeBase *, 4> &nodes = args.nodes;
 
 	if (!nodes[0] || !nodes[1] || !nodes[2] || !nodes[3]) {
 		// If at least one node is missing then (by topological safety test guarantee) this
@@ -28,21 +106,32 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 	const ChunkOctreeNodeBase *sub[8];
 	bool all_leaves = true;
 	for (int i = 0; i < 8; i++) {
-		const ChunkOctreeNodeBase *n = nodes[EDGE_PROC_RECURSION_TABLE[D][i][0]];
+		const int node_id = EDGE_PROC_RECURSION_TABLE[D][i][0];
+		const ChunkOctreeNodeBase *n = nodes[node_id];
+
 		if (!n->is_leaf) {
 			const ChunkOctreeCell *cell = n->castToCell();
-			sub[i] = octree.idToPointer(cell->children_ids[EDGE_PROC_RECURSION_TABLE[D][i][1]]);
+			const uint32_t child_id = cell->children_ids[EDGE_PROC_RECURSION_TABLE[D][i][1]];
+
+			if constexpr (S) {
+				sub[i] = args.octrees[node_id]->idToPointer(child_id);
+			} else {
+				sub[i] = args.octree.idToPointer(child_id);
+			}
+
 			all_leaves = false;
+		} else {
+			sub[i] = n;
 		}
-		else sub[i] = n;
 	}
+
 	if (!all_leaves) {
 		for (int i = 0; i < 2; i++) {
-			int i1 = SUBEDGE_SHARING_TABLE[D][i][0];
-			int i2 = SUBEDGE_SHARING_TABLE[D][i][1];
-			int i3 = SUBEDGE_SHARING_TABLE[D][i][2];
-			int i4 = SUBEDGE_SHARING_TABLE[D][i][3];
-			edgeProc<D>({ sub[i1], sub[i2], sub[i3], sub[i4] }, octree, surface);
+			args.nodes[0] = sub[SUBEDGE_SHARING_TABLE[D][i][0]];
+			args.nodes[1] = sub[SUBEDGE_SHARING_TABLE[D][i][1]];
+			args.nodes[2] = sub[SUBEDGE_SHARING_TABLE[D][i][2]];
+			args.nodes[3] = sub[SUBEDGE_SHARING_TABLE[D][i][3]];
+			edgeProc<D, S>(args);
 		}
 		return;
 	}
@@ -53,14 +142,26 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 		leaves[i] = nodes[i]->castToLeaf();
 	}
 
+	uint32_t min_chunk_lod = 0;
+	if constexpr (S) {
+		min_chunk_lod = std::min({ args.chunk_ids[0].lod, args.chunk_ids[1].lod,
+		                           args.chunk_ids[2].lod, args.chunk_ids[3].lod });
+	}
+
 	voxel_t mat1 = 0, mat2 = 0;
 	/* Find the minimal node, i.e. the node with the maximal depth. By looking at its
 	 materials on endpoints of this edge we may know whether the edge is surface-crossing
 	 and if we need to flip the triangles winding order. */
-	int8_t max_depth = 0;
+	int32_t max_depth = INT32_MIN;
 	for (int i = 0; i < 4; i++) {
-		if (leaves[i]->depth > max_depth) {
-			max_depth = leaves[i]->depth;
+		auto depth = static_cast<int32_t>(leaves[i]->depth);
+		if constexpr (S) {
+			// Offset depths of bigger chunks into negative values, equalizing different LODs
+			depth -= int32_t(args.chunk_ids[i].lod - min_chunk_lod);
+		}
+
+		if (depth > max_depth) {
+			max_depth = depth;
 			mat1 = leaves[i]->corners[CORNERS_TABLE[D][i][0]];
 			mat2 = leaves[i]->corners[CORNERS_TABLE[D][i][1]];
 		}
@@ -71,69 +172,156 @@ static void edgeProc(std::array<const ChunkOctreeNodeBase *, 4> nodes, const Chu
 
 	/* We assume that lesser endpoint is solid. If this is not the case, the triangles'
 	 winding order should be flipped to remain facing outside of the surface. */
-	bool flip = (mat1 == 0);
+	const bool flip = (mat1 == 0);
+
+	auto get_index = [&args](const ChunkOctreeLeaf *leaf, int id) {
+		if constexpr (!S) {
+			(void) args;
+			(void) id;
+			return leaf->surface_vertex_id;
+		} else {
+			if (args.octrees[id] == args.octrees[0]) {
+				// This is "our" leaf, use its own precalculated vertex ID
+				return leaf->surface_vertex_id;
+			}
+			// This is "foreign" leaf
+			return getForeignLeafVertexIndex(args.foreign_leaf_to_idx, leaf, args.surface, args.chunk_ids[0], args.chunk_ids[id]);
+		}
+	};
+
+	/* Leaf #0 is guaranteed to belong to "our" chunk, otherwise the call topology was
+	 invalid. Therefore we can classify others as "foreign" by comparing with it. */
 	uint32_t id0 = leaves[0]->surface_vertex_id;
-	uint32_t id1 = leaves[1]->surface_vertex_id;
-	uint32_t id2 = leaves[2]->surface_vertex_id;
-	uint32_t id3 = leaves[3]->surface_vertex_id;
+	uint32_t id1 = get_index(leaves[1], 1);
+	uint32_t id2 = get_index(leaves[2], 2);
+	uint32_t id3 = get_index(leaves[3], 3);
+
 	if (!flip) {
-		surface.addTriangle(id0, id1, id2);
-		surface.addTriangle(id0, id2, id3);
+		args.surface.addTriangle(id0, id1, id2);
+		args.surface.addTriangle(id0, id2, id3);
 	} else {
-		surface.addTriangle(id0, id2, id1);
-		surface.addTriangle(id0, id3, id2);
+		args.surface.addTriangle(id0, id2, id1);
+		args.surface.addTriangle(id0, id3, id2);
 	}
 }
 
-template<int D>
-static void faceProc(std::array<const ChunkOctreeNodeBase *, 2> nodes, const ChunkOctree &octree, TerrainSurface &surface)
+struct FaceProcOwnArgs final {
+	std::array<const ChunkOctreeNodeBase *, 2> nodes;
+	const ChunkOctree &octree;
+	ChunkOwnSurface &surface;
+
+	EdgeProcOwnArgs toEdgeProcArgs() const noexcept
+	{
+		return EdgeProcOwnArgs {
+			.octree = octree,
+			.surface = surface
+		};
+	}
+};
+
+struct FaceProcSeamArgs final {
+	std::array<const ChunkOctreeNodeBase *, 2> nodes;
+	std::array<const ChunkOctree *, 2> octrees;
+	std::array<ChunkId, 2> chunk_ids;
+	ChunkSeamSurface &surface;
+	LeafToIdxMap &foreign_leaf_to_idx;
+
+	EdgeProcSeamArgs toEdgeProcArgs() const noexcept
+	{
+		return EdgeProcSeamArgs {
+			.surface = surface,
+			.foreign_leaf_to_idx = foreign_leaf_to_idx
+		};
+	}
+};
+
+template<bool S>
+using FaceProcArgs = std::conditional_t<S, FaceProcSeamArgs, FaceProcOwnArgs>;
+
+template<int D, bool S>
+void faceProc(FaceProcArgs<S> args)
 {
+	const std::array<const ChunkOctreeNodeBase *, 2> &nodes = args.nodes;
+
 	if (!nodes[0] || !nodes[1]) {
 		// No valid lowest quadruples can be generated
 		// from this pair if at least one node doesn't exist
 		return;
 	}
 
+	const ChunkOctree *sub_octrees[8];
+	ChunkId sub_ids[8];
 	const ChunkOctreeNodeBase *sub[8];
+
 	bool has_cells = false;
 	for (int i = 0; i < 8; i++) {
-		const ChunkOctreeNodeBase *n = nodes[FACE_PROC_RECURSION_TABLE[D][i][0]];
+		const int node_id = FACE_PROC_RECURSION_TABLE[D][i][0];
+		const ChunkOctreeNodeBase *n = nodes[node_id];
+
+		if constexpr (S) {
+			sub_octrees[i] = args.octrees[node_id];
+			sub_ids[i] = args.chunk_ids[node_id];
+		}
+
 		if (!n->is_leaf) {
 			const ChunkOctreeCell *cell = n->castToCell();
-			sub[i] = octree.idToPointer(cell->children_ids[FACE_PROC_RECURSION_TABLE[D][i][1]]);
+			const uint32_t child_id = cell->children_ids[FACE_PROC_RECURSION_TABLE[D][i][1]];
+
+			if constexpr (S) {
+				sub[i] = args.octrees[node_id]->idToPointer(child_id);
+			} else {
+				sub[i] = args.octree.idToPointer(child_id);
+			}
+
 			has_cells = true;
+		} else {
+			sub[i] = n;
 		}
-		else sub[i] = n;
 	}
+
 	if (!has_cells) {
 		// Both nodes are leaves => no valid lowest octuples can be generated
 		return;
 	}
 
 	for (int i = 0; i < 4; i++) {
-		int i1 = SUBFACE_SHARING_TABLE[D][i][0];
-		int i2 = SUBFACE_SHARING_TABLE[D][i][1];
-		faceProc<D>({ sub[i1], sub[i2] }, octree, surface);
+		args.nodes[0] = sub[SUBFACE_SHARING_TABLE[D][i][0]];
+		args.nodes[1] = sub[SUBFACE_SHARING_TABLE[D][i][1]];
+		faceProc<D, S>(args);
 	}
+
+	EdgeProcArgs<S> edge_args = args.toEdgeProcArgs();
+
 	constexpr int D1 = (D + 1) % 3;
 	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D1][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D1][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D1][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D1][i][3];
-		edgeProc<D1>({ sub[i1], sub[i2], sub[i3], sub[i4] }, octree, surface);
+		for (int j = 0; j < 4; j++) {
+			int idx = SUBEDGE_SHARING_TABLE[D1][i][j];
+			edge_args.nodes[j] = sub[idx];
+			if constexpr (S) {
+				edge_args.octrees[j] = sub_octrees[idx];
+				edge_args.chunk_ids[j] = sub_ids[idx];
+			}
+		}
+
+		edgeProc<D1, S>(edge_args);
 	}
+
 	constexpr int D2 = (D + 2) % 3;
 	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D2][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D2][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D2][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D2][i][3];
-		edgeProc<D2>({ sub[i1], sub[i2], sub[i3], sub[i4] }, octree, surface);
+		for (int j = 0; j < 4; j++) {
+			int idx = SUBEDGE_SHARING_TABLE[D2][i][j];
+			edge_args.nodes[j] = sub[idx];
+			if constexpr (S) {
+				edge_args.octrees[j] = sub_octrees[idx];
+				edge_args.chunk_ids[j] = sub_ids[idx];
+			}
+		}
+
+		edgeProc<D2, S>(edge_args);
 	}
 }
 
-static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, TerrainSurface &surface)
+void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
@@ -150,34 +338,49 @@ static void cellProc(const ChunkOctreeNodeBase *node, const ChunkOctree &octree,
 		sub[i] = octree.idToPointer(cell->children_ids[i]);
 		cellProc(sub[i], octree, surface);
 	}
+
+	FaceProcOwnArgs face_args {
+		.octree = octree,
+		.surface = surface
+	};
 	for (int i = 0; i < 4; i++) {
-		faceProc<0>({ sub[SUBFACE_SHARING_TABLE[0][i][0]], sub[SUBFACE_SHARING_TABLE[0][i][1]] }, octree, surface);
-		faceProc<1>({ sub[SUBFACE_SHARING_TABLE[1][i][0]], sub[SUBFACE_SHARING_TABLE[1][i][1]] }, octree, surface);
-		faceProc<2>({ sub[SUBFACE_SHARING_TABLE[2][i][0]], sub[SUBFACE_SHARING_TABLE[2][i][1]] }, octree, surface);
+		face_args.nodes = { sub[SUBFACE_SHARING_TABLE[0][i][0]], sub[SUBFACE_SHARING_TABLE[0][i][1]] };
+		faceProc<0, false>(face_args);
+
+		face_args.nodes = { sub[SUBFACE_SHARING_TABLE[1][i][0]], sub[SUBFACE_SHARING_TABLE[1][i][1]] };
+		faceProc<1, false>(face_args);
+
+		face_args.nodes = { sub[SUBFACE_SHARING_TABLE[2][i][0]], sub[SUBFACE_SHARING_TABLE[2][i][1]] };
+		faceProc<2, false>(face_args);
 	}
+
+	EdgeProcOwnArgs edge_args {
+		.octree = octree,
+		.surface = surface
+	};
 	for (int i = 0; i < 2; i++) {
-		edgeProc<0>({ sub[SUBEDGE_SHARING_TABLE[0][i][0]], sub[SUBEDGE_SHARING_TABLE[0][i][1]],
-		              sub[SUBEDGE_SHARING_TABLE[0][i][2]], sub[SUBEDGE_SHARING_TABLE[0][i][3]] }, octree, surface);
-		edgeProc<1>({ sub[SUBEDGE_SHARING_TABLE[1][i][0]], sub[SUBEDGE_SHARING_TABLE[1][i][1]],
-		              sub[SUBEDGE_SHARING_TABLE[1][i][2]], sub[SUBEDGE_SHARING_TABLE[1][i][3]] }, octree, surface);
-		edgeProc<2>({ sub[SUBEDGE_SHARING_TABLE[2][i][0]], sub[SUBEDGE_SHARING_TABLE[2][i][1]],
-		              sub[SUBEDGE_SHARING_TABLE[2][i][2]], sub[SUBEDGE_SHARING_TABLE[2][i][3]] }, octree, surface);
+		edge_args.nodes = { sub[SUBEDGE_SHARING_TABLE[0][i][0]], sub[SUBEDGE_SHARING_TABLE[0][i][1]],
+		                    sub[SUBEDGE_SHARING_TABLE[0][i][2]], sub[SUBEDGE_SHARING_TABLE[0][i][3]] };
+		edgeProc<0, false>(edge_args);
+
+		edge_args.nodes = { sub[SUBEDGE_SHARING_TABLE[1][i][0]], sub[SUBEDGE_SHARING_TABLE[1][i][1]],
+		                    sub[SUBEDGE_SHARING_TABLE[1][i][2]], sub[SUBEDGE_SHARING_TABLE[1][i][3]] };
+		edgeProc<1, false>(edge_args);
+
+		edge_args.nodes = { sub[SUBEDGE_SHARING_TABLE[2][i][0]], sub[SUBEDGE_SHARING_TABLE[2][i][1]],
+		                    sub[SUBEDGE_SHARING_TABLE[2][i][2]], sub[SUBEDGE_SHARING_TABLE[2][i][3]] };
+		edgeProc<2, false>(edge_args);
 	}
 }
 
-static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, TerrainSurface &surface)
+void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, ChunkOwnSurface &surface)
 {
 	if (!node) {
 		return;
 	}
-	//TODO(sirgienko) add Material support, when we will have any voxel data
-	//MaterialFilter filter;
+
 	if (node->is_leaf) {
-		ChunkOctreeLeaf *leaf = node->castToLeaf();
-		const glm::vec3 &vertex = leaf->surface_vertex;
-		const glm::vec3 &normal = leaf->surface_normal;
-		// TODO (Svenny): add material selection
-		leaf->surface_vertex_id = surface.addVertex({ vertex, normal });
+		addLeafToSurface(node->castToLeaf(), surface);
 	} else {
 		ChunkOctreeCell *cell = node->castToCell();
 		for (int i = 0; i < 8; i++) {
@@ -187,37 +390,36 @@ static void makeVertices(ChunkOctreeNodeBase *node, ChunkOctree &octree, Terrain
 	}
 }
 
-struct DcBuildArgs {
-	ChunkOctree &octree;
-	const TerrainChunkPrimaryData &primary_data;
-	QefSolver3D &solver;
-	const float epsilon;
-};
-
-static const HermiteDataStorage &selectHermiteStorage(const TerrainChunkPrimaryData &grid, int dim) noexcept
+const HermiteDataStorage &selectHermiteStorage(const ChunkPrimaryData &data, int dim) noexcept
 {
 	switch (dim) {
 	case 0:
-		return grid.hermite_data_x;
+		return data.hermite_data_x;
 	case 1:
-		return grid.hermite_data_y;
+		return data.hermite_data_y;
 	case 2:
-		return grid.hermite_data_z;
+		return data.hermite_data_z;
 	default:
 		__builtin_unreachable();
 	}
 }
 
-static std::pair<uint32_t, ChunkOctreeLeaf *>
-	buildLeaf(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
+struct DcBuildArgs {
+	ChunkOctree &octree;
+	const ChunkPrimaryData &primary_data;
+	QefSolver3D &solver;
+	const float epsilon;
+};
+
+std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
 {
 	QefSolver3D &solver = args.solver;
-	const auto &grid = args.primary_data;
 
 	solver.reset();
 	glm::vec3 avg_normal { 0 };
 
-	std::array<voxel_t, 8> corners = grid.materialsOfCell(min_corner);
+	const auto &grid = args.primary_data.voxel_grid;
+	std::array<voxel_t, 8> corners = grid.getCellLinear(min_corner.x, min_corner.y, min_corner.z);
 
 	bool has_edges = false;
 
@@ -227,7 +429,7 @@ static std::pair<uint32_t, ChunkOctreeLeaf *>
 		{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 } }  // Z
 	};
 	for (int dim = 0; dim <= 2; dim++) {
-		auto &storage = selectHermiteStorage(grid, dim);
+		auto &storage = selectHermiteStorage(args.primary_data, dim);
 
 		for (int i = 0; i < 4; i++) {
 			voxel_t mat1 = corners[edge_table[dim][i][0]];
@@ -270,7 +472,7 @@ using CubeMaterials = std::array<std::array<std::array<voxel_t, 3>, 3>, 3>;
 
 // Check topological safety of collapsing 2x2x2 leaves to a single leaf.
 // Checking by 3x3x3 cube of their corners' materials.
-static bool checkTopoSafety(const CubeMaterials &mats) noexcept
+bool checkTopoSafety(const CubeMaterials &mats) noexcept
 {
 	// Maps DC cell vertices ordering to MC one
 	constexpr int DC_TO_MC[8] = { 0, 3, 1, 2, 4, 7, 5, 6 };
@@ -359,12 +561,13 @@ static bool checkTopoSafety(const CubeMaterials &mats) noexcept
 			return true;
 		}
 	}
+
 	// Cube midpoint sign check failed
 	return false;
 }
 
-static std::pair<uint32_t, ChunkOctreeNodeBase *>
-	buildNode(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
+std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32_t size,
+                                                    int8_t depth, DcBuildArgs &args)
 {
 	assert(size > 0);
 	if (size == 1) {
@@ -505,32 +708,228 @@ static std::pair<uint32_t, ChunkOctreeNodeBase *>
 	return { id, leaf };
 }
 
-void TerrainSurfaceBuilder::buildBasicOctree(const TerrainChunkPrimaryData &input, TerrainChunkSecondaryData &output)
+struct RootEqualizationArgs final {
+	const ChunkOctree &octree;
+	uint32_t descend_mask_x;
+	uint32_t descend_mask_y;
+	uint32_t descend_mask_z;
+	uint32_t descend_length;
+};
+
+uint32_t getEqualizedRoot(RootEqualizationArgs args) noexcept
 {
-	auto &octree = output.octree;
+	uint32_t node_id = args.octree.root();
+
+	// Go from the highest-order bits
+	for (uint32_t i = args.descend_length - 1; ~i; i--) {
+		const ChunkOctreeNodeBase *node = args.octree.idToPointer(node_id);
+		if (!node || node->is_leaf) {
+			// We've hit a non-existent node or leaf before completing the descend
+			return node_id;
+		}
+
+		const uint32_t bit = (1u << i);
+		uint32_t child_id = 0;
+		child_id |= (args.descend_mask_x & bit) ? 2u : 0u;
+		child_id |= (args.descend_mask_y & bit) ? 4u : 0u;
+		child_id |= (args.descend_mask_z & bit) ? 1u : 0u;
+
+		node_id = node->castToCell()->children_ids[child_id];
+	}
+
+	return node_id;
+}
+
+template<int D>
+void doBuildFaceSeam(Chunk &my, const Chunk &his, LeafToIdxMap &foreign_leaf_to_idx)
+{
+	const ChunkId my_id = my.id();
+	const ChunkId his_id = his.id();
+
+	ChunkOctree &my_octree = my.octree();
+	const ChunkOctree &his_octree = his.octree();
+
+	uint32_t my_root_id = my_octree.root();
+	uint32_t his_root_id = his_octree.root();
+
+	if (my_id.lod < his_id.lod) {
+		// "My" chunk is smaller, need to equalize "his" root
+		uint32_t descend_mask[3];
+		descend_mask[0] = uint32_t(my_id.base_x - his_id.base_x) >> my_id.lod;
+		descend_mask[1] = uint32_t(my_id.base_y - his_id.base_y) >> my_id.lod;
+		descend_mask[2] = uint32_t(my_id.base_z - his_id.base_z) >> my_id.lod;
+		descend_mask[D] = 0u; // Always take children with smaller `D` coord
+
+		his_root_id = getEqualizedRoot(RootEqualizationArgs {
+			.octree = his_octree,
+			.descend_mask_x = descend_mask[0],
+			.descend_mask_y = descend_mask[1],
+			.descend_mask_z = descend_mask[2],
+			.descend_length = his_id.lod - my_id.lod
+		});
+	} else if (my_id.lod > his_id.lod) {
+		// "his" chunk is smaller, need to equalize "my" root
+		uint32_t descend_mask[3];
+		descend_mask[0] = uint32_t(his_id.base_x - my_id.base_x) >> his_id.lod;
+		descend_mask[1] = uint32_t(his_id.base_y - my_id.base_y) >> his_id.lod;
+		descend_mask[2] = uint32_t(his_id.base_z - my_id.base_z) >> his_id.lod;
+		descend_mask[D] = ~0u; // Always take children with bigger `D` coord
+
+		my_root_id = getEqualizedRoot(RootEqualizationArgs {
+			.octree = my_octree,
+			.descend_mask_x = descend_mask[0],
+			.descend_mask_y = descend_mask[1],
+			.descend_mask_z = descend_mask[2],
+			.descend_length = my_id.lod - his_id.lod
+		});
+	}
+
+	const ChunkOctreeNodeBase *my_root = my_octree.idToPointer(my_root_id);
+	const ChunkOctreeNodeBase *his_root = his_octree.idToPointer(his_root_id);
+
+	faceProc<D, true>(FaceProcSeamArgs {
+		.nodes = { my_root, his_root },
+		.octrees = { &my_octree, &his_octree },
+		.chunk_ids = { my_id, his_id },
+		.surface = my.seamSurface(),
+		.foreign_leaf_to_idx = foreign_leaf_to_idx
+	});
+}
+
+template<int D>
+void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
+                     const Chunk &his_b, LeafToIdxMap &foreign_leaf_to_idx)
+{
+	std::array<const Chunk *, 4> chunks = { &my, &his_a, &his_ab, &his_b };
+	std::array<ChunkId, 4> ids;
+	std::array<const ChunkOctree *, 4> octrees;
+
+	constexpr int D1 = (D + 1) % 3;
+	constexpr int D2 = (D + 2) % 3;
+
+	uint32_t min_chunk_lod = UINT32_MAX;
+	glm::ivec3 min_chunk_base;
+	glm::ivec2 contact_point;
+
+	for (int i = 0; i < 4; i++) {
+		ids[i] = chunks[i]->id();
+		octrees[i] = &chunks[i]->octree();
+
+		if (ids[i].lod < min_chunk_lod) {
+			min_chunk_lod = ids[i].lod;
+			min_chunk_base = glm::ivec3(ids[i].base_x, ids[i].base_y, ids[i].base_z);
+			contact_point[0] = min_chunk_base[D1] + ((i == 0 || i == 3) ? int32_t(1u << ids[i].lod) : 0);
+			contact_point[1] = min_chunk_base[D2] + ((i == 0 || i == 1) ? int32_t(1u << ids[i].lod) : 0);
+		}
+	}
+
+	std::array<const ChunkOctreeNodeBase *, 4> roots;
+	for (int i = 0; i < 4; i++) {
+		uint32_t root_id = octrees[i]->root();
+
+		if (ids[i].lod > min_chunk_lod) {
+			// This chunk is bigger than minimal, need to equalize its root
+			const glm::ivec3 base(ids[i].base_x, ids[i].base_y, ids[i].base_z);
+			glm::uvec3 descend_mask;
+			descend_mask[D] = uint32_t(min_chunk_base[D] - base[D]) >> min_chunk_lod;
+
+			if (i == 0 || i == 3) {
+				descend_mask[D1] = uint32_t(contact_point[0] - 1 - base[D1]) >> min_chunk_lod;
+			} else {
+				descend_mask[D1] = uint32_t(contact_point[0] - base[D1]) >> min_chunk_lod;
+			}
+
+			if (i == 0 || i == 1) {
+				descend_mask[D2] = uint32_t(contact_point[1] - 1 - base[D2]) >> min_chunk_lod;
+			} else {
+				descend_mask[D2] = uint32_t(contact_point[1] - base[D2]) >> min_chunk_lod;
+			}
+
+			root_id = getEqualizedRoot(RootEqualizationArgs {
+				.octree = *octrees[i],
+				.descend_mask_x = descend_mask.x,
+				.descend_mask_y = descend_mask.y,
+				.descend_mask_z = descend_mask.z,
+				.descend_length = ids[i].lod - min_chunk_lod
+			});
+		}
+
+		roots[i] = octrees[i]->idToPointer(root_id);
+	}
+
+	edgeProc<D, true>(EdgeProcSeamArgs {
+		.nodes = roots,
+		.octrees = octrees,
+		.chunk_ids = ids,
+		.surface = my.seamSurface(),
+		.foreign_leaf_to_idx = foreign_leaf_to_idx
+	});
+}
+
+} // end anonymous namespace
+
+void SurfaceBuilder::buildOctree()
+{
+	ChunkOctree &octree = m_chunk.octree();
 	octree.clear();
+
+	ChunkPrimaryData &primary = m_chunk.primaryData();
+	if (primary.hermite_data_x.empty() && primary.hermite_data_y.empty() && primary.hermite_data_z.empty()) {
+		// This chunk has no edges - no need to even spend any time trying to build octree
+		return;
+	}
 
 	QefSolver3D qef_solver;
 	DcBuildArgs args {
 		.octree = octree,
-		.primary_data = input,
+		.primary_data = primary,
 		.solver = qef_solver,
 		.epsilon = 0.12f
 	};
 
-	auto[root_id, root] = buildNode(glm::ivec3(0), TerrainChunkPrimaryData::GRID_CELL_COUNT, 0, args);
-	octree.setBaseRoot(root_id);
+	auto[root_id, root] = buildNode(glm::ivec3(0), Config::CHUNK_SIZE, 0, args);
+	octree.setRoot(root_id);
 }
 
-void TerrainSurfaceBuilder::buildSurface(TerrainChunkSecondaryData &output)
+void SurfaceBuilder::buildOwnSurface()
 {
-	auto &octree = output.octree;
-	auto &surface = output.surface;
+	ChunkOctree &octree = m_chunk.octree();
+	ChunkOwnSurface &surface = m_chunk.ownSurface();
 	surface.clear();
 
-	auto root = octree.idToPointer(octree.extendedRoot());
+	auto *root = octree.idToPointer(octree.root());
 	makeVertices(root, octree, surface);
 	cellProc(root, octree, surface);
+}
+
+template<> void SurfaceBuilder::buildFaceSeam<0>(const Chunk &other)
+{
+	doBuildFaceSeam<0>(m_chunk, other, m_foreign_leaf_to_idx);
+}
+
+template<> void SurfaceBuilder::buildFaceSeam<1>(const Chunk &other)
+{
+	doBuildFaceSeam<1>(m_chunk, other, m_foreign_leaf_to_idx);
+}
+
+template<> void SurfaceBuilder::buildFaceSeam<2>(const Chunk &other)
+{
+	doBuildFaceSeam<2>(m_chunk, other, m_foreign_leaf_to_idx);
+}
+
+template<> void SurfaceBuilder::buildEdgeSeam<0>(const Chunk &other_y, const Chunk &other_yz, const Chunk &other_z)
+{
+	doBuildEdgeSeam<0>(m_chunk, other_y, other_yz, other_z, m_foreign_leaf_to_idx);
+}
+
+template<> void SurfaceBuilder::buildEdgeSeam<1>(const Chunk &other_z, const Chunk &other_xz, const Chunk &other_x)
+{
+	doBuildEdgeSeam<1>(m_chunk, other_z, other_xz, other_x, m_foreign_leaf_to_idx);
+}
+
+template<> void SurfaceBuilder::buildEdgeSeam<2>(const Chunk &other_x, const Chunk &other_xy, const Chunk &other_y)
+{
+	doBuildEdgeSeam<2>(m_chunk, other_x, other_xy, other_y, m_foreign_leaf_to_idx);
 }
 
 }

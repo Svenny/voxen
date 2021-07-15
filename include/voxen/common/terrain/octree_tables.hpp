@@ -1,14 +1,14 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 
-namespace voxen
+namespace voxen::terrain
 {
 
 /* An offset in cell-size units from the lowest to a given corner.
  Equal to permuted bit representation of entry index (idx = YXZ).
  Equal to `glm::ivec3((idx & 2) >> 1, (idx & 4) >> 2, idx & 1)`. */
-inline constexpr glm::ivec3 CELL_CORNER_OFFSET_TABLE[8] = {
+constexpr glm::ivec3 CELL_CORNER_OFFSET_TABLE[8] = {
 	{ 0, 0, 0 }, { 0, 0, 1 }, { 1, 0, 0 }, { 1, 0, 1 },
 	{ 0, 1, 0 }, { 0, 1, 1 }, { 1, 1, 0 }, { 1, 1, 1 }
 };
@@ -16,7 +16,7 @@ inline constexpr glm::ivec3 CELL_CORNER_OFFSET_TABLE[8] = {
 /* Quadruples of cell's children sharing an edge along some axis. First dimension
  is axis, second dimension - quadruple number, third dimension - children ID's list.
  NOTE: order of ID's in the list is important for `edgeProc` call, preserve it. */
-inline constexpr int SUBEDGE_SHARING_TABLE[3][2][4] = {
+constexpr int SUBEDGE_SHARING_TABLE[3][2][4] = {
 	{ { 0, 4, 5, 1 }, { 2, 6, 7, 3 } }, // X
 	{ { 0, 1, 3, 2 }, { 4, 5, 7, 6 } }, // Y
 	{ { 0, 2, 6, 4 }, { 1, 3, 7, 5 } }  // Z
@@ -25,7 +25,7 @@ inline constexpr int SUBEDGE_SHARING_TABLE[3][2][4] = {
 /* Pairs of cell's children sharing a face along some axis. First dimension
  is axis, second dimension - pair number, third dimension - children ID's list.
  NOTE: order of ID's in the list is important for `faceProc` call, preserve it. */
-inline constexpr int SUBFACE_SHARING_TABLE[3][4][2] = {
+constexpr int SUBFACE_SHARING_TABLE[3][4][2] = {
 	{ { 0, 2 }, { 4, 6 }, { 5, 7 }, { 1, 3 } }, // X
 	{ { 0, 4 }, { 1, 5 }, { 3, 7 }, { 2, 6 } }, // Y
 	{ { 0, 1 }, { 2, 3 }, { 6, 7 }, { 4, 5 } }  // Z
@@ -50,7 +50,7 @@ inline constexpr int SUBFACE_SHARING_TABLE[3][4][2] = {
  On the left, nodes are numbered as in `edgeProc` arguments list. On the right, their
  children are numbered with conventional children numbering notation. We can see we'll
  need "child 3 of node 0", "child 2 of node 1" etc. during the recursive call. */
-inline constexpr int EDGE_PROC_RECURSION_TABLE[3][8][2] = {
+constexpr int EDGE_PROC_RECURSION_TABLE[3][8][2] = {
 	{ { 0, 5 }, { 3, 4 }, { 0, 7 }, { 3, 6 },
 	  { 1, 1 }, { 2, 0 }, { 1, 3 }, { 2, 2 } }, // X
 	{ { 0, 3 }, { 1, 2 }, { 3, 1 }, { 2, 0 },
@@ -74,7 +74,7 @@ inline constexpr int EDGE_PROC_RECURSION_TABLE[3][8][2] = {
  On the left, nodes are numbered as in `faceProc` arguments list. On the right, their
  children are numbered with conventional children numbering notation. We can see we'll
  need "child 1 of node 0", "child 2 of node 1" etc. during the recursive call. */
-inline constexpr int FACE_PROC_RECURSION_TABLE[3][8][2] = {
+constexpr int FACE_PROC_RECURSION_TABLE[3][8][2] = {
 	{ { 0, 2 }, { 0, 3 }, { 1, 0 }, { 1, 1 },
 	  { 0, 6 }, { 0, 7 }, { 1, 4 }, { 1, 5 } }, // X
 	{ { 0, 4 }, { 0, 5 }, { 0, 6 }, { 0, 7 },

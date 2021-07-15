@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
+#include <voxen/common/terrain/surface.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -11,14 +12,15 @@ void TerrainSynchronizer::beginSyncSession()
 	m_sync_age++;
 }
 
-void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
+void TerrainSynchronizer::syncChunk(const terrain::Chunk &chunk)
 {
-	const auto &header = chunk.header();
-	const auto &surface = chunk.secondaryData().surface;
-	auto iter = m_chunk_gpu_data.find(header);
+	const auto &id = chunk.id();
+	const auto &own_surface = chunk.ownSurface();
+	const auto &seam_surface = chunk.seamSurface();
+	auto iter = m_chunk_gpu_data.find(id);
 
-	VkDeviceSize needed_vtx_size = surface.numVertices() * sizeof(TerrainSurfaceVertex);
-	VkDeviceSize needed_idx_size = surface.numIndices() * sizeof(uint32_t);
+	VkDeviceSize needed_vtx_size = seam_surface.numAllVertices() * sizeof(terrain::SurfaceVertex);
+	VkDeviceSize needed_idx_size = (own_surface.numIndices() + seam_surface.numIndices()) * sizeof(uint32_t);
 
 	if (needed_vtx_size == 0 || needed_idx_size == 0) {
 		// No mesh, erase any data and return immediately to avoid empty allocations
@@ -32,7 +34,7 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 		// Update age in any case
 		data.age = m_sync_age;
 
-		if (data.version == chunk.version()) {
+		if (data.version == chunk.version() && data.seam_version == chunk.seamVersion()) {
 			// Already synchronized
 			return;
 		}
@@ -40,7 +42,8 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 		if (data.vtx_buffer.size() >= needed_vtx_size && data.idx_buffer.size() >= needed_idx_size) {
 			// Enough space in buffers, just enqueue a transfer
 			data.version = chunk.version();
-			enqueueSurfaceTransfer(surface, iter->second);
+			data.seam_version = chunk.seamVersion();
+			enqueueSurfaceTransfer(own_surface, seam_surface, iter->second);
 			return;
 		}
 
@@ -61,15 +64,16 @@ void TerrainSynchronizer::syncChunk(const TerrainChunk &chunk)
 	idx_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	// Add a new entry
-	iter = m_chunk_gpu_data.emplace(header, ChunkGpuData {
+	iter = m_chunk_gpu_data.emplace(id, ChunkGpuData {
 		.vtx_buffer = Buffer(vtx_info, Buffer::Usage::DeviceLocal),
 		.idx_buffer = Buffer(idx_info, Buffer::Usage::DeviceLocal),
-		.index_count = surface.numIndices(),
+		.index_count = own_surface.numIndices() + seam_surface.numIndices(),
 		.version = chunk.version(),
+		.seam_version = chunk.seamVersion(),
 		.age = m_sync_age
 	}).first;
 
-	enqueueSurfaceTransfer(surface, iter->second);
+	enqueueSurfaceTransfer(own_surface, seam_surface, iter->second);
 }
 
 void TerrainSynchronizer::endSyncSession()
@@ -77,21 +81,20 @@ void TerrainSynchronizer::endSyncSession()
 	Backend::backend().transferManager().ensureUploadsDone();
 }
 
-void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunkGpuData &)> chunk_callback,
+void TerrainSynchronizer::walkActiveChunks(std::function<void(terrain::ChunkId, const TerrainChunkGpuData &)> chunk_callback,
                                            std::function<void(VkBuffer, VkBuffer)> buffers_switch_callback)
 {
 	// TODO: replace with framerate-independent garbage collection mechanism
 	constexpr uint32_t MAX_AGE_DIFF = 720; // 720 frames (5 sec on 144 FPS, 12 sec on 60 FPS)
 
 	TerrainChunkGpuData data = {};
-	std::vector<TerrainChunkHeader> for_erase;
+	std::vector<terrain::ChunkId> for_erase;
 
 	for (const auto &entry : m_chunk_gpu_data) {
 		if (entry.second.age == m_sync_age) {
 			buffers_switch_callback(entry.second.vtx_buffer, entry.second.idx_buffer);
-			data.header = entry.first;
 			data.index_count = entry.second.index_count;
-			chunk_callback(data);
+			chunk_callback(entry.first, data);
 		}
 
 		uint32_t age_diff = m_sync_age - entry.second.age;
@@ -99,15 +102,35 @@ void TerrainSynchronizer::walkActiveChunks(std::function<void(const TerrainChunk
 			for_erase.emplace_back(entry.first);
 	}
 
-	for (const auto &header : for_erase)
-		m_chunk_gpu_data.erase(header);
+	for (const auto &id : for_erase)
+		m_chunk_gpu_data.erase(id);
 }
 
-void TerrainSynchronizer::enqueueSurfaceTransfer(const TerrainSurface &surface, ChunkGpuData &data)
+void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &own_surface,
+                                                 const terrain::ChunkSeamSurface &seam_surface, ChunkGpuData &data)
 {
 	auto &transfer = Backend::backend().transferManager();
-	transfer.uploadToBuffer(data.vtx_buffer, surface.vertices(), surface.numVertices() * sizeof(TerrainSurfaceVertex));
-	transfer.uploadToBuffer(data.idx_buffer, surface.indices(), surface.numIndices() * sizeof(uint32_t));
+
+	const VkDeviceSize own_vertices_size = own_surface.numVertices() * sizeof(terrain::SurfaceVertex);
+	const VkDeviceSize own_indices_size = own_surface.numIndices() * sizeof(uint32_t);
+	const VkDeviceSize seam_vertices_size = seam_surface.numExtraVertices() * sizeof(terrain::SurfaceVertex);
+	const VkDeviceSize seam_indices_size = seam_surface.numIndices() * sizeof(uint32_t);
+
+	// TODO (Svenny): support split own/seam surface updates.
+	// Currently a full reupload is done even if only the seam has changed.
+	if (own_vertices_size > 0) {
+		transfer.uploadToBuffer(data.vtx_buffer, 0, own_surface.vertices(), own_vertices_size);
+	}
+	if (seam_vertices_size > 0) {
+		transfer.uploadToBuffer(data.vtx_buffer, own_vertices_size, seam_surface.extraVertices(), seam_vertices_size);
+	}
+
+	if (own_indices_size > 0) {
+		transfer.uploadToBuffer(data.idx_buffer, 0, own_surface.indices(), own_indices_size);
+	}
+	if (seam_indices_size > 0) {
+		transfer.uploadToBuffer(data.idx_buffer, own_indices_size, seam_surface.indices(), seam_indices_size);
+	}
 }
 
 }

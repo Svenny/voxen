@@ -14,14 +14,17 @@ set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_
 # Enforce good coding standards to at least some extent
 string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
-# RTTI is only useful for dynamic_cast, which means a design flaw in 99,9% cases
-string(APPEND CMAKE_CXX_FLAGS " -fno-rtti")
 
 # Clang's IPO uses ThinLTO which does not slow down build times as severely as usual -flto
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
+endif()
+
+option(VOXEN_FASTER_MATH_FLAGS "Speed up math at the of cost strict standard compliance" OFF)
+if(VOXEN_FASTER_MATH_FLAGS)
+	string(APPEND CMAKE_CXX_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math")
 endif()
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
