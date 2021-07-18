@@ -6,10 +6,18 @@
 #include <future>
 #include <cassert>
 
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen
 {
+
+// This number is subtracted from threads count returned by `std`.
+// 2 loaded threads are used by Voxen: World thread and GUI thread.
+constexpr static size_t STD_THREAD_COUNT_OFFSET = 2;
+// The number of threads started in case no explicit request was made and `std`
+// didn't return meaningful value. Assuming an "average" 8-threaded machine.
+constexpr static size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
 
 struct ThreadPool::ReportableWorkerState
 {
@@ -29,18 +37,19 @@ struct ThreadPool::ReportableWorker
 
 ThreadPool* ThreadPool::global_voxen_pool = nullptr;
 
-ThreadPool::ThreadPool(int start_thread_count)
+ThreadPool::ThreadPool(size_t thread_count)
 {
-	if (start_thread_count == -1) {
+	if (thread_count == 0) {
 		size_t std_hint = std::thread::hardware_concurrency();
-		if (std_hint == 0) {
-			start_thread_count = DEFAULT_START_THREAD_COUNT;
+		if (std_hint <= STD_THREAD_COUNT_OFFSET) {
+			thread_count = DEFAULT_THREAD_COUNT;
 		} else {
-			start_thread_count = ((int)std_hint - 2); //2 already used by voxen: World thread and GUI thread
+			thread_count = std_hint - STD_THREAD_COUNT_OFFSET;
 		}
 	}
 
-	for (int i = 0; i < start_thread_count; i++) {
+	Log::info("Starting thread pool with {} threads", thread_count);
+	for (size_t i = 0; i < thread_count; i++) {
 		run_worker(make_worker());
 	}
 }
@@ -64,6 +73,35 @@ ThreadPool::~ThreadPool() noexcept
 		delete m_workers.back();
 		m_workers.pop_back();
 	}
+}
+
+void ThreadPool::doEnqueueTask(TaskType type, std::packaged_task<void()> task)
+{
+	if (type != TaskType::Standard) {
+		throw MessageException("non-standard tasks are not supported yet");
+	}
+
+	size_t min_job_count = SIZE_MAX;
+	ReportableWorker *min_job_thread = nullptr;
+
+	for (ReportableWorker *worker : m_workers) {
+		size_t job_count;
+
+		{
+			std::unique_lock<std::mutex> lock(worker->state.state_mutex);
+			job_count = worker->state.tasks_queue.size();
+		}
+
+		if (job_count < min_job_count) {
+			min_job_count = job_count;
+			min_job_thread = worker;
+		}
+	}
+	assert(min_job_thread);
+
+	std::unique_lock<std::mutex> lock(min_job_thread->state.state_mutex);
+	min_job_thread->state.tasks_queue.emplace(std::move(task));
+	min_job_thread->state.semaphore.notify_one();
 }
 
 void ThreadPool::workerFunction(ReportableWorkerState* state)
@@ -115,30 +153,6 @@ void ThreadPool::cleanup_finished_workers()
 	}
 }
 
-void ThreadPool::enqueueTask(std::function<void()>&& task_function, Priority priority)
-{
-	//TODO(sirgienko) add support for prioritization
-	(void)priority;
-
-	std::packaged_task<void()> task(std::move(task_function));
-
-	std::vector<int> jobs_count(m_workers.size());
-	for (size_t i = 0; i < m_workers.size(); i++)
-	{
-		ReportableWorker* worker = m_workers[i];
-		std::unique_lock<std::mutex> lock(worker->state.state_mutex);
-		jobs_count[i] = worker->state.tasks_queue.size();
-	}
-	auto iter = std::min_element(jobs_count.begin(), jobs_count.end());
-	int worker_idx = iter - jobs_count.begin();
-	ReportableWorker* worker = m_workers[worker_idx];
-	{
-	std::unique_lock<std::mutex> lock(worker->state.state_mutex);
-	worker->state.tasks_queue.push(std::move(task));
-	worker->state.semaphore.notify_one();
-	}
-}
-
 size_t ThreadPool::threads_count() const
 {
 	return m_workers.size();
@@ -150,10 +164,10 @@ size_t ThreadPool::task_queue_size(ReportableWorkerState* state)
 	return state->tasks_queue.size();
 }
 
-void ThreadPool::initGlobalVoxenPool(int start_thread_count)
+void ThreadPool::initGlobalVoxenPool(size_t thread_count)
 {
 	assert(global_voxen_pool == nullptr);
-	global_voxen_pool = new ThreadPool(start_thread_count);
+	global_voxen_pool = new ThreadPool(thread_count);
 	Log::info("Create global voxen ThreadPool with {} threads", global_voxen_pool->threads_count());
 }
 

@@ -4,6 +4,7 @@
 #include <queue>
 #include <memory>
 #include <functional>
+#include <future>
 
 namespace voxen
 {
@@ -55,27 +56,50 @@ private:
 
 class ThreadPool {
 public:
-	enum class Priority {
-		Urgent, High, Medium, Low
+	enum class TaskType {
+		// This is a CPU-bound task without particular timing restrictions
+		Standard
 	};
 
-public:
-	ThreadPool(int start_thread_count = -1);
-	ThreadPool(const ThreadPool& other) = delete;
-	ThreadPool(ThreadPool&& other) = delete;
+	explicit ThreadPool(size_t thread_count = 0);
+	ThreadPool(ThreadPool &&) = delete;
+	ThreadPool(const ThreadPool &) = delete;
+	ThreadPool &operator = (ThreadPool &&) = delete;
+	ThreadPool &operator = (const ThreadPool &) = delete;
 	~ThreadPool() noexcept;
 
-	void enqueueTask(std::function<void()>&& task_function, Priority priority = Priority::Medium);
+	template<typename F, typename... Args>
+	std::future<std::invoke_result_t<F, Args...>> enqueueTask(TaskType type, F &&f, Args&&... args)
+	{
+		using R = std::invoke_result_t<F, Args...>;
+
+		std::promise<R> promise;
+		std::future<R> future = promise.get_future();
+
+		doEnqueueTask(type, std::packaged_task<void()> {
+			[promise = std::move(promise), task = std::bind(std::forward<F>(f), std::forward<Args>(args)...)]() mutable {
+				try {
+					promise.set_value(task());
+				} catch (...) {
+					promise.set_exception(std::current_exception());
+				}
+			}
+		});
+
+		return future;
+	}
 
 	size_t threads_count() const;
 
-	static void initGlobalVoxenPool(int start_thread_count = -1);
+	static void initGlobalVoxenPool(size_t thread_count = 0);
 	static void releaseGlobalVoxenPool();
 	static ThreadPool& globalVoxenPool();
 
 private:
 	struct ReportableWorkerState;
 	struct ReportableWorker;
+
+	void doEnqueueTask(TaskType type, std::packaged_task<void()> task);
 
 	static void workerFunction(ReportableWorkerState* state);
 	static size_t task_queue_size(ReportableWorkerState* state);
@@ -86,8 +110,6 @@ private:
 private:
 	std::vector<ReportableWorker*> m_workers;
 	static ThreadPool* global_voxen_pool;
-
-	constexpr static int DEFAULT_START_THREAD_COUNT = 6;
 };
 
 }
