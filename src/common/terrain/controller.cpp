@@ -1,13 +1,11 @@
 #include <voxen/common/terrain/controller.hpp>
 
 #include <voxen/config.hpp>
+#include <voxen/common/threadpool.hpp>
 #include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/control_block.hpp>
 #include <voxen/common/terrain/coord.hpp>
-// TODO temp include
-#include <voxen/util/log.hpp>
-#include <map>
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -152,9 +150,11 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 	});
 
 	assert(!m_async_chunk_loads.contains(id));
-	m_async_chunk_loads[id] = std::async(std::launch::async, [this, id]() {
-		return m_loader.load(id);
-	});
+	m_async_chunk_loads[id] = ThreadPool::globalVoxenPool().enqueueTask(ThreadPool::TaskType::Standard,
+		[this, id]() {
+			return m_loader.load(id);
+		}
+	);
 
 	auto cb_ptr = PoolAllocator::allocateControlBlock(ChunkControlBlock::CreationInfo { .predecessor = nullptr });
 	m_new_cbs.emplace(cb_ptr.get());
