@@ -15,6 +15,7 @@ void ChunkControlBlock::clearTemporaryFlags() noexcept
 	m_chunk_copied = false;
 	m_chunk_changed = false;
 	m_induced_seam_dirty = false;
+	m_surface_builder.reset();
 }
 
 void ChunkControlBlock::copyChunk()
@@ -43,18 +44,25 @@ void ChunkControlBlock::setChunk(extras::refcnt_ptr<Chunk> ptr)
 	m_surface_builder.reset();
 }
 
-void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirty) const
+void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirty, bool can_chunk_changed) const
 {
 	if constexpr (true || BuildConfig::kIsReleaseBuild) {
 		(void) has_active_parent;
 		(void) can_seam_dirty;
+		(void) can_chunk_changed;
 		// This code consists only of asserts, hothing to do here in release
 		return;
 	}
-#if 0
+
 	// "Seam dirty" flag must propagate up to the root, i.e.
 	// there must be no "dirty" chunks with "clean" parent
-	assert(can_seam_dirty || !m_seam_dirty);
+	assert(can_seam_dirty || !m_induced_seam_dirty);
+	// Same with "chunk changed" flag
+	assert(can_chunk_changed || !m_chunk_changed);
+
+	if (m_chunk_changed) {
+		assert(m_induced_seam_dirty);
+	}
 
 	const bool is_active = m_state == ChunkControlBlock::State::Active;
 
@@ -78,7 +86,7 @@ void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirt
 	bool has_children = false;
 	for (const auto &child : m_children) {
 		if (child) {
-			child->validateState(is_active || has_active_parent, m_seam_dirty);
+			child->validateState(is_active || has_active_parent, m_induced_seam_dirty, m_chunk_changed);
 			has_children = true;
 		}
 	}
@@ -87,7 +95,6 @@ void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirt
 		// Any path to leaf must go through an active chunk
 		assert(is_active || has_active_parent);
 	}
-#endif
 }
 
 void ChunkControlBlock::printStats() const
