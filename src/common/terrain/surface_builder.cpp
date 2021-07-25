@@ -441,8 +441,8 @@ std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::ivec3 min_corner, int32_t 
 
 			has_edges = true;
 			auto edge_pos = min_corner + CELL_CORNER_OFFSET_TABLE[edge_table[dim][i][0]];
-			auto iter = storage.find(edge_pos.x, edge_pos.y, edge_pos.z);
-			assert(iter != storage.end());
+			const auto iter = storage.find(edge_pos.x, edge_pos.y, edge_pos.z);
+			assert(iter != storage.cend());
 
 			glm::vec3 vertex = iter->surfacePoint();
 			glm::vec3 normal = iter->surfaceNormal();

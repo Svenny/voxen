@@ -82,7 +82,6 @@ void Controller::seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes)
 	bool has_children = getSubNodes(nodes, sub, EDGE_PROC_RECURSION_TABLE[D]);
 	if (!has_children) {
 		if (needRebuildSeam(*nodes[0])) {
-			nodes[0]->copyChunk();
 			nodes[0]->setInducedSeamDirty(true);
 		}
 		return;
@@ -115,7 +114,6 @@ void Controller::seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes)
 	bool has_children = getSubNodes(nodes, sub, FACE_PROC_RECURSION_TABLE[D]);
 	if (!has_children) {
 		if (needRebuildSeam(*nodes[0])) {
-			nodes[0]->copyChunk();
 			nodes[0]->setInducedSeamDirty(true);
 		}
 		return;
@@ -225,6 +223,7 @@ void Controller::seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes)
 	if (!has_children) {
 		// No need to waste time updating seams for non-active chunks
 		if (nodes[0]->state() == ChunkControlBlock::State::Active) {
+			nodes[0]->copyChunk();
 			nodes[0]->surfaceBuilder().buildEdgeSeam<D>(*nodes[0]->chunk(), *nodes[1]->chunk(),
 			                                            *nodes[2]->chunk(), *nodes[3]->chunk());
 		}
@@ -252,6 +251,7 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 	if (!has_children) {
 		// No need to waste time updating seams for non-active chunks
 		if (nodes[0]->state() == ChunkControlBlock::State::Active) {
+			nodes[0]->copyChunk();
 			nodes[0]->surfaceBuilder().buildFaceSeam<D>(*nodes[0]->chunk(), *nodes[1]->chunk());
 		}
 		return;
