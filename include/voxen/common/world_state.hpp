@@ -1,15 +1,20 @@
 #pragma once
 
 #include <voxen/common/player.hpp>
-#include <voxen/common/terrain/control_block.hpp>
 
 #include <extras/function_ref.hpp>
 #include <extras/refcnt_ptr.hpp>
 
 #include <mutex>
+#include <vector>
 
 namespace voxen
 {
+
+namespace terrain
+{
+class Chunk;
+}
 
 //TODO actual real queue
 struct DebugQueueRtW {
@@ -23,6 +28,8 @@ struct DebugQueueRtW {
 
 class WorldState {
 public:
+	using ChunkPtrVector = std::vector<extras::refcnt_ptr<terrain::Chunk>>;
+
 	WorldState() = default;
 	WorldState(WorldState &&other) noexcept;
 	WorldState(const WorldState &other);
@@ -31,7 +38,7 @@ public:
 	Player &player() noexcept { return m_player; }
 	const Player &player() const noexcept { return m_player; }
 
-	void setRootControlBlock(extras::refcnt_ptr<terrain::ChunkControlBlock> ptr) noexcept { m_root_cb = std::move(ptr); }
+	void setActiveChunks(ChunkPtrVector value) noexcept { m_active_chunks = std::move(value); }
 
 	uint64_t tickId() const noexcept { return m_tick_id; }
 	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
@@ -40,7 +47,7 @@ public:
 
 private:
 	Player m_player;
-	extras::refcnt_ptr<terrain::ChunkControlBlock> m_root_cb;
+	ChunkPtrVector m_active_chunks;
 	uint64_t m_tick_id = 0;
 };
 
