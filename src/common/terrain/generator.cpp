@@ -1,6 +1,5 @@
 #include <voxen/common/terrain/generator.hpp>
 
-#include <voxen/common/terrain/coord.hpp>
 #include <voxen/util/log.hpp>
 
 #include <glm/geometric.hpp>
@@ -15,8 +14,9 @@ namespace
 {
 
 struct ZeroCrossingContext {
-	const ChunkId id;
-	double x0, y0, z0, c1;
+	HermiteDataEntry::coord_t store_x, store_y, store_z;
+	glm::dvec3 edge_world_min;
+	double edge_world_length;
 	double value_lesser, value_bigger;
 	bool sign_lesser, sign_bigger;
 	voxel_t voxel_lesser, voxel_bigger;
@@ -25,12 +25,10 @@ struct ZeroCrossingContext {
 }
 
 template<int D, typename F>
-static glm::dvec3 findZeroCrossing(double x0, double y0, double z0,
-                                   double c1, double f0, double f1, F &&f) noexcept
+static glm::dvec3 findZeroCrossing(glm::dvec3 p, double c1, double f0, double f1, F &&f) noexcept
 {
 	constexpr int STEP_COUNT = 6;
 
-	glm::dvec3 p(x0, y0, z0);
 	double c0 = p[D];
 	int side = 0;
 	double mid = c0;
@@ -70,16 +68,18 @@ static glm::dvec3 findZeroCrossing(double x0, double y0, double z0,
 template<int D, typename F, typename DF>
 static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, HermiteDataStorage &storage)
 {
+	const double edge_world_min_c = ctx.edge_world_min[D];
+	const double edge_world_max_c = edge_world_min_c + ctx.edge_world_length;
+
 	glm::dvec3 point_world =
-		findZeroCrossing<D>(ctx.x0, ctx.y0, ctx.z0, ctx.c1, ctx.value_lesser, ctx.value_bigger, f);
-	glm::dvec3 point_local = CoordUtils::worldToChunkLocal(ctx.id, point_world);
-	double offset = glm::fract(point_local[D]);
+		findZeroCrossing<D>(ctx.edge_world_min, edge_world_max_c, ctx.value_lesser, ctx.value_bigger, f);
+	double offset = (point_world[D] - edge_world_min_c) / ctx.edge_world_length;
 
 	glm::vec3 normal = glm::normalize(df(point_world.x, point_world.y, point_world.z));
 	bool lesser_endpoint_solid = ctx.sign_lesser;
 	voxel_t solid_voxel = lesser_endpoint_solid ? ctx.voxel_lesser : ctx.voxel_bigger;
 
-	storage.emplace(point_local.x, point_local.y, point_local.z,
+	storage.emplace(ctx.store_x, ctx.store_y, ctx.store_z,
 	                normal, offset, D, lesser_endpoint_solid, solid_voxel);
 }
 
@@ -141,23 +141,24 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 		}
 	}
 
-	// Find edges
+	// Find surface-crossing edges
 	ZeroCrossingContext ctx {
-		.id = id,
-		.x0 = 0.0, .y0 = 0.0, .z0 = 0.0, .c1 = 0.0,
-		.value_lesser = 0.0, .value_bigger = 0.0,
-		.sign_lesser = false, .sign_bigger = false,
-		.voxel_lesser = 0, .voxel_bigger = 0
+		.edge_world_length = double(scale)
 	};
 
 	const auto &voxels = grid.voxels();
 
 	for (uint32_t i = 0; i < GRID_SIZE; i++) {
-		ctx.y0 = double(base_y + i * scale);
+		ctx.store_y = i;
+		ctx.edge_world_min.y = double(base_y + i * scale);
+
 		for (uint32_t j = 0; j < GRID_SIZE; j++) {
-			ctx.x0 = double(base_x + j * scale);
+			ctx.store_x = j;
+			ctx.edge_world_min.x = double(base_x + j * scale);
+
 			for (uint32_t k = 0; k < GRID_SIZE; k++) {
-				ctx.z0 = double(base_z + k * scale);
+				ctx.store_z = k;
+				ctx.edge_world_min.z = double(base_z + k * scale);
 
 				ctx.value_lesser = values[i][j][k];
 				ctx.sign_lesser = values[i][j][k] <= 0.0;
@@ -166,7 +167,6 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 				if (i + 1 < GRID_SIZE) {
 					ctx.sign_bigger = (values[i + 1][j][k] <= 0.0);
 					if (ctx.sign_lesser != ctx.sign_bigger) {
-						ctx.c1 = ctx.y0 + double(scale);
 						ctx.value_bigger = values[i + 1][j][k];
 						ctx.voxel_bigger = voxels[i + 1][j][k];
 						addZeroCrossing<1>(ctx, f, df, output.hermite_data_y);
@@ -175,7 +175,6 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 				if (j + 1 < GRID_SIZE) {
 					ctx.sign_bigger = (values[i][j + 1][k] <= 0.0);
 					if (ctx.sign_lesser != ctx.sign_bigger) {
-						ctx.c1 = ctx.x0 + double(scale);
 						ctx.value_bigger = values[i][j + 1][k];
 						ctx.voxel_bigger = voxels[i][j + 1][k];
 						addZeroCrossing<0>(ctx, f, df, output.hermite_data_x);
@@ -184,7 +183,6 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 				if (k + 1 < GRID_SIZE) {
 					ctx.sign_bigger = (values[i][j][k + 1] <= 0.0);
 					if (ctx.sign_lesser != ctx.sign_bigger) {
-						ctx.c1 = ctx.z0 + double(scale);
 						ctx.value_bigger = values[i][j][k + 1];
 						ctx.voxel_bigger = voxels[i][j][k + 1];
 						addZeroCrossing<2>(ctx, f, df, output.hermite_data_z);
