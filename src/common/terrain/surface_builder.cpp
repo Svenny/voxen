@@ -868,12 +868,12 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 
 } // end anonymous namespace
 
-void SurfaceBuilder::buildOctree()
+void SurfaceBuilder::buildOctree(Chunk &chunk)
 {
-	ChunkOctree &octree = m_chunk.octree();
+	ChunkOctree &octree = chunk.octree();
 	octree.clear();
 
-	ChunkPrimaryData &primary = m_chunk.primaryData();
+	ChunkPrimaryData &primary = chunk.primaryData();
 	if (primary.hermite_data_x.empty() && primary.hermite_data_y.empty() && primary.hermite_data_z.empty()) {
 		// This chunk has no edges - no need to even spend any time trying to build octree
 		return;
@@ -891,10 +891,10 @@ void SurfaceBuilder::buildOctree()
 	octree.setRoot(root_id);
 }
 
-void SurfaceBuilder::buildOwnSurface()
+void SurfaceBuilder::buildOwnSurface(Chunk &chunk)
 {
-	ChunkOctree &octree = m_chunk.octree();
-	ChunkOwnSurface &surface = m_chunk.ownSurface();
+	ChunkOctree &octree = chunk.octree();
+	ChunkOwnSurface &surface = chunk.ownSurface();
 	surface.clear();
 
 	auto *root = octree.idToPointer(octree.root());
@@ -902,34 +902,45 @@ void SurfaceBuilder::buildOwnSurface()
 	cellProc(root, octree, surface);
 }
 
-template<> void SurfaceBuilder::buildFaceSeam<0>(const Chunk &other)
+template<>
+void SurfaceBuilder::buildFaceSeam<0>(Chunk &me, const Chunk &other)
 {
-	doBuildFaceSeam<0>(m_chunk, other, m_foreign_leaf_to_idx);
+	doBuildFaceSeam<0>(me, other, m_foreign_leaf_to_idx);
 }
 
-template<> void SurfaceBuilder::buildFaceSeam<1>(const Chunk &other)
+template<>
+void SurfaceBuilder::buildFaceSeam<1>(Chunk &me, const Chunk &other)
 {
-	doBuildFaceSeam<1>(m_chunk, other, m_foreign_leaf_to_idx);
+	doBuildFaceSeam<1>(me, other, m_foreign_leaf_to_idx);
 }
 
-template<> void SurfaceBuilder::buildFaceSeam<2>(const Chunk &other)
+template<>
+void SurfaceBuilder::buildFaceSeam<2>(Chunk &me, const Chunk &other)
 {
-	doBuildFaceSeam<2>(m_chunk, other, m_foreign_leaf_to_idx);
+	doBuildFaceSeam<2>(me, other, m_foreign_leaf_to_idx);
 }
 
-template<> void SurfaceBuilder::buildEdgeSeam<0>(const Chunk &other_y, const Chunk &other_yz, const Chunk &other_z)
+template<>
+void SurfaceBuilder::buildEdgeSeam<0>(Chunk &me, const Chunk &other_y, const Chunk &other_yz, const Chunk &other_z)
 {
-	doBuildEdgeSeam<0>(m_chunk, other_y, other_yz, other_z, m_foreign_leaf_to_idx);
+	doBuildEdgeSeam<0>(me, other_y, other_yz, other_z, m_foreign_leaf_to_idx);
 }
 
-template<> void SurfaceBuilder::buildEdgeSeam<1>(const Chunk &other_z, const Chunk &other_xz, const Chunk &other_x)
+template<>
+void SurfaceBuilder::buildEdgeSeam<1>(Chunk &me, const Chunk &other_z, const Chunk &other_xz, const Chunk &other_x)
 {
-	doBuildEdgeSeam<1>(m_chunk, other_z, other_xz, other_x, m_foreign_leaf_to_idx);
+	doBuildEdgeSeam<1>(me, other_z, other_xz, other_x, m_foreign_leaf_to_idx);
 }
 
-template<> void SurfaceBuilder::buildEdgeSeam<2>(const Chunk &other_x, const Chunk &other_xy, const Chunk &other_y)
+template<>
+void SurfaceBuilder::buildEdgeSeam<2>(Chunk &me, const Chunk &other_x, const Chunk &other_xy, const Chunk &other_y)
 {
-	doBuildEdgeSeam<2>(m_chunk, other_x, other_xy, other_y, m_foreign_leaf_to_idx);
+	doBuildEdgeSeam<2>(me, other_x, other_xy, other_y, m_foreign_leaf_to_idx);
+}
+
+void SurfaceBuilder::reset() noexcept
+{
+	m_foreign_leaf_to_idx.clear();
 }
 
 }

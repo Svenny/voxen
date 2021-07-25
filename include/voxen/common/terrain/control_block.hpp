@@ -53,11 +53,11 @@ public:
 
 	extras::refcnt_ptr<Chunk> chunkPtr() const noexcept { return m_chunk; }
 
-	SurfaceBuilder &surfaceBuilder() noexcept { return *m_surface_builder; }
+	SurfaceBuilder &surfaceBuilder() noexcept { return m_surface_builder; }
 	Chunk *chunk() noexcept { return m_chunk.get(); }
 	ChunkControlBlock *child(int id) noexcept { return m_children[id].get(); }
 
-	const SurfaceBuilder &surfaceBuilder() const noexcept { return *m_surface_builder; }
+	const SurfaceBuilder &surfaceBuilder() const noexcept { return m_surface_builder; }
 	const Chunk *chunk() const noexcept { return m_chunk.get(); }
 	const ChunkControlBlock *child(int id) const noexcept { return m_children[id].get(); }
 
@@ -65,10 +65,11 @@ private:
 	State m_state = State::Invalid;
 	bool m_seam_dirty = false;
 	bool m_over_active = false;
-	std::unique_ptr<SurfaceBuilder> m_surface_builder;
+
+	extras::refcnt_ptr<ChunkControlBlock> m_children[8];
 
 	extras::refcnt_ptr<Chunk> m_chunk;
-	extras::refcnt_ptr<ChunkControlBlock> m_children[8];
+	SurfaceBuilder m_surface_builder;
 };
 
 }
