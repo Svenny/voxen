@@ -22,6 +22,11 @@ uint32_t ChunkSurfaceBase::doAddVertex(const SurfaceVertex &vertex)
 
 void ChunkSurfaceBase::doAddTriangle(uint32_t a, uint32_t b, uint32_t c)
 {
+	if (a == b || b == c || a == c) {
+		// Skip degenerate triangles
+		return;
+	}
+
 	m_indices.emplace_back(a);
 	m_indices.emplace_back(b);
 	m_indices.emplace_back(c);

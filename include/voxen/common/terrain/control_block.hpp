@@ -40,7 +40,7 @@ public:
 
 	// Go DFS over this chunk and its children and assert some invariants about their state.
 	// NOTE: this function consists only of asserts so it has no effect in release builds.
-	void validateState(bool has_active_parent = false, bool can_seam_dirty = true) const;
+	void validateState(bool has_active_parent = false, bool can_seam_dirty = true, bool can_chunk_changed = true) const;
 	// Go DFS over this chunk and its children, collect and log some statistics.
 	// NOTE: this function is intended for debug use only and does nothing in release builds.
 	void printStats() const;
