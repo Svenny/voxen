@@ -10,7 +10,7 @@ namespace voxen::terrain
 using RecursionTable = int[8][2];
 
 template<size_t N>
-static bool canProceed(const std::array<ChunkControlBlock *, N> &nodes) noexcept
+static bool canProceedPhase1(const std::array<ChunkControlBlock *, N> &nodes) noexcept
 {
 	for (size_t i = 0; i < N; i++) {
 		if (!nodes[i]) {
@@ -22,6 +22,18 @@ static bool canProceed(const std::array<ChunkControlBlock *, N> &nodes) noexcept
 	}
 
 	return false;
+}
+
+template<size_t N>
+static bool canProceedPhase2(const std::array<ChunkControlBlock *, N> &nodes) noexcept
+{
+	for (size_t i = 0; i < N; i++) {
+		if (!nodes[i]) {
+			return false;
+		}
+	}
+	// We will only rebuild seams of `nodes[0]`, so don't care about other nodes' flags
+	return nodes[0]->isSeamDirty();
 }
 
 template<size_t N>
@@ -58,7 +70,7 @@ static bool needRebuildSeam(const ChunkControlBlock &node) noexcept
 template<int D>
 std::array<Controller::OuterUpdateResult, 4> Controller::seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes)
 {
-	if (!canProceed(nodes)) {
+	if (!canProceedPhase1(nodes)) {
 		return {};
 	}
 
@@ -142,7 +154,7 @@ std::array<Controller::OuterUpdateResult, 4> Controller::seamEdgeProcPhase1(std:
 template<int D>
 std::array<Controller::OuterUpdateResult, 2> Controller::seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes)
 {
-	if (!canProceed(nodes)) {
+	if (!canProceedPhase1(nodes)) {
 		return {};
 	}
 
@@ -347,7 +359,7 @@ Controller::OuterUpdateResult Controller::seamCellProcPhase1(ChunkControlBlock *
 template<int D>
 void Controller::seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes)
 {
-	if (!canProceed(nodes)) {
+	if (!canProceedPhase2(nodes)) {
 		return;
 	}
 
@@ -356,7 +368,8 @@ void Controller::seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes)
 	if (!has_children) {
 		// No need to waste time updating seams for non-active chunks
 		if (nodes[0]->state() == ChunkControlBlock::State::Active) {
-			nodes[0]->surfaceBuilder().buildEdgeSeam<D>(*nodes[1]->chunk(), *nodes[2]->chunk(), *nodes[3]->chunk());
+			nodes[0]->surfaceBuilder().buildEdgeSeam<D>(*nodes[0]->chunk(), *nodes[1]->chunk(),
+			                                            *nodes[2]->chunk(), *nodes[3]->chunk());
 		}
 		return;
 	}
@@ -373,7 +386,7 @@ void Controller::seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes)
 template<int D>
 void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 {
-	if (!canProceed(nodes)) {
+	if (!canProceedPhase2(nodes)) {
 		return;
 	}
 
@@ -382,7 +395,7 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 	if (!has_children) {
 		// No need to waste time updating seams for non-active chunks
 		if (nodes[0]->state() == ChunkControlBlock::State::Active) {
-			nodes[0]->surfaceBuilder().buildFaceSeam<D>(*nodes[1]->chunk());
+			nodes[0]->surfaceBuilder().buildFaceSeam<D>(*nodes[0]->chunk(), *nodes[1]->chunk());
 		}
 		return;
 	}
@@ -413,10 +426,14 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 
 void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 {
-	if (!node || !node->isSeamDirty() || node->state() == ChunkControlBlock::State::Active) {
-		if (node) {
-			node->setSeamDirty(false);
-		}
+	if (!node || !node->isSeamDirty()) {
+		return;
+	}
+
+	if (node->state() == ChunkControlBlock::State::Active) {
+		// We've reached active node. No need to go deeper,
+		// there will be no active-active contact points.
+		node->setSeamDirty(false);
 		return;
 	}
 
@@ -463,11 +480,13 @@ void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 		seamEdgeProcPhase2<2>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 
-	// Recursively apply `seamCellProc` to children
+	// Recursively apply `seamCellProc` to children. Note it's applied after
+	// face and edge functions to avoid resetting "seam dirty" flag too early.
 	for (int i = 0; i < 8; i++) {
 		seamCellProcPhase2(sub[i]);
 	}
 
+	// Reset "seam dirty" flag as the last step, we're guaranteed this node will not be visited again
 	node->setSeamDirty(false);
 }
 

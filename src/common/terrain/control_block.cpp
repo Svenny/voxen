@@ -33,7 +33,7 @@ ChunkControlBlock::ChunkControlBlock(CreationInfo info)
 				m_chunk = pred->chunkPtr();
 			}
 
-			m_surface_builder = std::make_unique<SurfaceBuilder>(*m_chunk);
+			m_surface_builder.reset();
 		}
 
 		for (unsigned i = 0; i < 8; i++) {
@@ -55,7 +55,7 @@ ChunkControlBlock::~ChunkControlBlock() noexcept// = default;
 void ChunkControlBlock::setChunk(extras::refcnt_ptr<Chunk> ptr)
 {
 	m_chunk = std::move(ptr);
-	m_surface_builder = std::make_unique<SurfaceBuilder>(*m_chunk);
+	m_surface_builder.reset();
 }
 
 void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirty) const
