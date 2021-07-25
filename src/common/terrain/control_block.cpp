@@ -10,46 +10,31 @@
 namespace voxen::terrain
 {
 
-ChunkControlBlock::ChunkControlBlock(CreationInfo info)
+void ChunkControlBlock::clearTemporaryFlags() noexcept
 {
-	const ChunkControlBlock *pred = info.predecessor;
-
-	if (pred) {
-		m_state = pred->m_state;
-		m_seam_dirty = pred->m_seam_dirty;
-		m_over_active = pred->m_over_active;
-
-		if (pred->m_chunk) {
-			const Chunk *base = pred->m_chunk.get();
-
-			if (info.reset_seam) {
-				m_chunk = PoolAllocator::allocateChunk(Chunk::CreationInfo {
-					.id = base->id(),
-					.version = base->version(),
-					.reuse_type = Chunk::ReuseType::NoSeam,
-					.reuse_chunk = base
-				});
-			} else {
-				m_chunk = pred->chunkPtr();
-			}
-
-			m_surface_builder.reset();
-		}
-
-		for (unsigned i = 0; i < 8; i++) {
-			m_children[i] = pred->m_children[i];
-		}
-	}
+	m_chunk_copied = false;
+	m_chunk_changed = false;
+	m_induced_seam_dirty = false;
 }
 
-ChunkControlBlock::~ChunkControlBlock() noexcept// = default;
+void ChunkControlBlock::copyChunk()
 {
-	// TODO: temporary for debugging, to certainly break on use-after-free
-	m_state = State::Invalid;
-	m_chunk.reset();
-	for (auto &ptr : m_children) {
-		ptr.reset();
+	assert(m_chunk);
+
+	if (m_chunk_copied) {
+		return;
 	}
+
+	const Chunk *old_chunk = m_chunk.get();
+	m_chunk = PoolAllocator::allocateChunk(Chunk::CreationInfo {
+		.id = old_chunk->id(),
+		.version = old_chunk->version(),
+		.reuse_type = Chunk::ReuseType::NoSeam,
+		.reuse_chunk = old_chunk
+	});
+
+	m_chunk_copied = true;
+	m_surface_builder.reset();
 }
 
 void ChunkControlBlock::setChunk(extras::refcnt_ptr<Chunk> ptr)
@@ -60,13 +45,13 @@ void ChunkControlBlock::setChunk(extras::refcnt_ptr<Chunk> ptr)
 
 void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirty) const
 {
-	if constexpr (BuildConfig::kIsReleaseBuild) {
+	if constexpr (true || BuildConfig::kIsReleaseBuild) {
 		(void) has_active_parent;
 		(void) can_seam_dirty;
 		// This code consists only of asserts, hothing to do here in release
 		return;
 	}
-
+#if 0
 	// "Seam dirty" flag must propagate up to the root, i.e.
 	// there must be no "dirty" chunks with "clean" parent
 	assert(can_seam_dirty || !m_seam_dirty);
@@ -102,6 +87,7 @@ void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirt
 		// Any path to leaf must go through an active chunk
 		assert(is_active || has_active_parent);
 	}
+#endif
 }
 
 void ChunkControlBlock::printStats() const
@@ -110,7 +96,7 @@ void ChunkControlBlock::printStats() const
 		// This code is too heavyweight to run in release
 		return;
 	}
-
+#if 0
 	if (!Log::willBeLogged(Log::Level::Trace)) {
 		return;
 	}
@@ -156,6 +142,7 @@ void ChunkControlBlock::printStats() const
 		Log::trace("{} => active {}, dirty active {}, dirty inactive {}", lod, lod_actives[lod],
 		           lod_dirty_actives[lod], lod_dirty_inactives[lod]);
 	}
+#endif
 }
 
 }
