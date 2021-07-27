@@ -2,10 +2,8 @@
 
 #include <voxen/config.hpp>
 #include <voxen/common/terrain/allocator.hpp>
-#include <voxen/util/log.hpp>
 
 #include <cassert>
-#include <map>
 
 namespace voxen::terrain
 {
@@ -95,61 +93,6 @@ void ChunkControlBlock::validateState(bool has_active_parent, bool can_seam_dirt
 		// Any path to leaf must go through an active chunk
 		assert(is_active || has_active_parent);
 	}
-}
-
-void ChunkControlBlock::printStats() const
-{
-	if constexpr (BuildConfig::kIsReleaseBuild) {
-		// This code is too heavyweight to run in release
-		return;
-	}
-#if 0
-	if (!Log::willBeLogged(Log::Level::Trace)) {
-		return;
-	}
-
-	std::unordered_map<ChunkControlBlock::State, size_t> state_counts;
-	std::map<uint32_t, size_t> lod_actives;
-	std::map<uint32_t, size_t> lod_dirty_actives;
-	std::map<uint32_t, size_t> lod_dirty_inactives;
-
-	std::vector<const ChunkControlBlock *> stack;
-	stack.emplace_back(this);
-
-	while (!stack.empty()) {
-		const ChunkControlBlock *cb = stack.back();
-		stack.pop_back();
-		if (!cb) {
-			continue;
-		}
-
-		state_counts[cb->state()]++;
-
-		if (cb->chunk()) {
-			uint32_t lod = cb->chunk()->id().lod;
-			if (cb->state() == ChunkControlBlock::State::Active) {
-				lod_actives[lod]++;
-				if (cb->isSeamDirty()) {
-					lod_dirty_actives[lod]++;
-				}
-			} else if (cb->isSeamDirty()) {
-				lod_dirty_inactives[lod]++;
-			}
-		}
-
-		for (int i = 0; i < 8; i++) {
-			stack.emplace_back(cb->child(i));
-		}
-	}
-
-	Log::trace("Dirty stats: loading {}, standby {}, active {}", state_counts[ChunkControlBlock::State::Loading],
-	           state_counts[ChunkControlBlock::State::Standby], state_counts[ChunkControlBlock::State::Active]);
-	const uint32_t max_lod = m_chunk->id().lod;
-	for (uint32_t lod = 0; lod <= max_lod; lod++) {
-		Log::trace("{} => active {}, dirty active {}, dirty inactive {}", lod, lod_actives[lod],
-		           lod_dirty_actives[lod], lod_dirty_inactives[lod]);
-	}
-#endif
 }
 
 }
