@@ -33,6 +33,8 @@ public:
 	WorldState() = default;
 	WorldState(WorldState &&other) noexcept;
 	WorldState(const WorldState &other);
+	WorldState &operator = (WorldState &&) = delete;
+	WorldState &operator = (const WorldState &) = delete;
 	~WorldState() = default;
 
 	Player &player() noexcept { return m_player; }
