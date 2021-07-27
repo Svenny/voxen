@@ -41,8 +41,10 @@ void TerrainSynchronizer::syncChunk(const terrain::Chunk &chunk)
 
 		if (data.vtx_buffer.size() >= needed_vtx_size && data.idx_buffer.size() >= needed_idx_size) {
 			// Enough space in buffers, just enqueue a transfer
+			data.index_count = own_surface.numIndices() + seam_surface.numIndices();
 			data.version = chunk.version();
 			data.seam_version = chunk.seamVersion();
+
 			enqueueSurfaceTransfer(own_surface, seam_surface, iter->second);
 			return;
 		}
