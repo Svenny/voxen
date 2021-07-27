@@ -18,27 +18,12 @@
 namespace voxen::terrain
 {
 
-constexpr static uint32_t SUPERCHUNK_MAX_LOD = 12;
-// Maximal time, in ticks, after which non-updated point of interest will be discared
-// TODO (Svenny): move to `terrain/config.hpp`
-constexpr static uint64_t MAX_POI_AGE = 1000;
-// Maximal number of direct (non-seam) chunk ops which can be queued during one tick
-// TODO (Svenny): move to `terrain/config.hpp`
-constexpr static uint32_t MAX_DIRECT_OP_COUNT = 32;
-// World-space size of a superchunk
-constexpr static double SUPERCHUNK_WORLD_SIZE = double(Config::CHUNK_SIZE << SUPERCHUNK_MAX_LOD);
-// Distance (in world-space coordinates) from point of interest
-// to superchunk center which will trigger loading the superchunk
-constexpr static double SUPERCHUNK_ENGAGE_RADIUS = SUPERCHUNK_WORLD_SIZE * 0.75;
-// Maximal time, in ticks, after which non-engaged superchunk will get unloaded
-constexpr static uint32_t SUPERCHUNK_MAX_IDLE_AGE = 1000;
-
 std::vector<Controller::ChunkPtr> Controller::doTick()
 {
 	garbageCollectPointsOfInterest();
 	engageSuperchunks();
 
-	m_load_quota = 0;
+	m_direct_op_quota = 0;
 
 	// Walk over superchunks and update them
 	for (auto iter = m_superchunks.begin(); iter != m_superchunks.end(); /* no change here */) {
@@ -48,7 +33,7 @@ std::vector<Controller::ChunkPtr> Controller::doTick()
 		ChunkControlBlock &cb = *info.ptr;
 
 		info.idle_age++;
-		if (info.idle_age > SUPERCHUNK_MAX_IDLE_AGE) {
+		if (info.idle_age > Config::SUPERCHUNK_MAX_AGE) {
 			// Superchunk is out of interest and can be unloaded
 			updateChunk(cb, ParentCommand::Unload);
 			iter = m_superchunks.erase(iter);
@@ -84,7 +69,7 @@ std::vector<Controller::ChunkPtr> Controller::doTick()
 
 	std::vector<ChunkPtr> result;
 	std::vector<const ChunkControlBlock *> stack;
-	stack.reserve(8 * SUPERCHUNK_MAX_LOD);
+	stack.reserve(8 * Config::CHUNK_MAX_LOD);
 
 	// Inner seams must be rebuilt strictly after cross-superchunk
 	// ones because "seam dirty" flags are reset in Phase 2 pass
@@ -138,8 +123,7 @@ uint32_t Controller::calcLodDirection(ChunkId id) const
 	// This value multiplied by chunk side size gives an
 	// average of inscribed and circumscribed spheres' radii
 	constexpr double PSEUDORADIUS_MULT = (glm::root_two<double>() + 1.0) / 2.0;
-	// The target angular diameter of a single chunk, LODs will be adjusted to reach it
-	constexpr double OPTIMAL_PHI = glm::radians(50.0);
+	constexpr double OPTIMAL_PHI = glm::radians(Config::CHUNK_OPTIMAL_ANGULAR_SIZE_DEGREES);
 	const double OPTIMAL_TAN_HALF_PHI = glm::tan(OPTIMAL_PHI * 0.5);
 
 	// Radius of a sphere used to approximate angular diameter of a chunk
@@ -173,17 +157,22 @@ void Controller::garbageCollectPointsOfInterest()
 	}
 
 	points.erase(std::remove_if(points.begin(), points.end(), [](const PointOfInterest &point) {
-		return point.age > MAX_POI_AGE;
+		return point.age > Config::POINT_OF_INTEREST_MAX_AGE;
 	}), points.end());
 }
 
 void Controller::engageSuperchunks()
 {
+	constexpr static double SUPERCHUNK_WORLD_SIZE = double(Config::CHUNK_SIZE << Config::CHUNK_MAX_LOD);
+
 	auto &points = m_points_of_interest;
 
 	for (auto &point : points) {
-		glm::ivec3 engage_min = glm::floor((point.position - SUPERCHUNK_ENGAGE_RADIUS) / SUPERCHUNK_WORLD_SIZE - 0.5);
-		glm::ivec3 engage_max = glm::ceil((point.position + SUPERCHUNK_ENGAGE_RADIUS) / SUPERCHUNK_WORLD_SIZE - 0.5);
+		// Subtracting 0.5 because integer coordinates are for superchunk
+		// bases, but we want to check engagement against their centers
+		const glm::dvec3 p = point.position / SUPERCHUNK_WORLD_SIZE;
+		glm::ivec3 engage_min = glm::floor(p - (Config::SUPERCHUNK_ENGAGE_FACTOR + 0.5));
+		glm::ivec3 engage_max = glm::ceil(p + (Config::SUPERCHUNK_ENGAGE_FACTOR - 0.5));
 
 		for (int32_t y = engage_min.y; y <= engage_max.y; y++) {
 			for (int32_t x = engage_min.x; x <= engage_max.x; x++) {
@@ -204,14 +193,17 @@ void Controller::engageSuperchunks()
 
 Controller::ControlBlockPtr Controller::loadSuperchunk(glm::ivec3 base)
 {
-	base <<= SUPERCHUNK_MAX_LOD;
+	base <<= Config::CHUNK_MAX_LOD;
 	return enqueueLoadingChunk(ChunkId {
-		.lod = SUPERCHUNK_MAX_LOD, .base_x = base.x, .base_y = base.y, .base_z = base.z
+		.lod = Config::CHUNK_MAX_LOD, .base_x = base.x, .base_y = base.y, .base_z = base.z
 	});
 }
 
 Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 {
+	// TODO (Svenny): we are allocating a "dummy" chunk just to have chunk ID
+	// available (it's replaced by loaded chunk then). Consider refactoring
+	// something in `ChunkControlBlock` to eliminate the need for this dummy?
 	auto chunk_ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
 		.id = id,
 		.version = 0,
@@ -291,20 +283,17 @@ Controller::InnerUpdateResult Controller::updateChunkLoading(ChunkControlBlock &
 	assert(parent_cmd == ParentCommand::Nothing);
 	(void) parent_cmd; // For builds with disabled asserts
 
-	// TODO: this is just debug stub
-	if (m_load_quota < MAX_DIRECT_OP_COUNT) {
-		assert(cb.chunk());
-		auto iter = m_async_chunk_loads.find(cb.chunk()->id());
-		assert(iter != m_async_chunk_loads.end());
-		assert(iter->second.valid());
+	// TODO: this looks hacky
+	assert(cb.chunk());
+	auto iter = m_async_chunk_loads.find(cb.chunk()->id());
+	assert(iter != m_async_chunk_loads.end());
+	assert(iter->second.valid());
 
-		if (iter->second.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
-			cb.setState(ChunkControlBlock::State::Standby);
-			cb.setChunk(iter->second.get());
-			m_async_chunk_loads.erase(iter);
-			m_load_quota++;
-			return { true, ParentCommand::Nothing };
-		}
+	if (iter->second.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
+		cb.setState(ChunkControlBlock::State::Standby);
+		cb.setChunk(iter->second.get());
+		m_async_chunk_loads.erase(iter);
+		return { true, ParentCommand::Nothing };
 	}
 
 	return { true, ParentCommand::Nothing };
@@ -314,7 +303,7 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 {
 	assert(cb.chunk());
 
-	if (cb.isOverActive()) {
+	if (cb.isOverActive() && m_direct_op_quota < Config::TERRAIN_MAX_DIRECT_OP_COUNT) {
 		assert(parent_cmd == ParentCommand::Nothing);
 
 		// We are over active, check if LOD deterioration is possible
@@ -344,6 +333,7 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 		}
 
 		// All checks are passed, we can safely deteriorate LOD
+		m_direct_op_quota++;
 		cb.setState(ChunkControlBlock::State::Active);
 		cb.setOverActive(false);
 		cb.setChunkChanged(true);
@@ -394,7 +384,7 @@ Controller::InnerUpdateResult Controller::updateChunkActive(ChunkControlBlock &c
 
 	const ChunkId my_id = cb.chunk()->id();
 	const uint32_t my_lod_dir = calcLodDirection(my_id);
-	if (my_lod_dir < my_id.lod) {
+	if (my_lod_dir < my_id.lod && m_direct_op_quota + 8 <= Config::TERRAIN_MAX_DIRECT_OP_COUNT) {
 		// We need to improve LOD, check if we can do it
 		ControlBlockPtr new_children[8];
 		bool can_improve = true;
@@ -416,6 +406,7 @@ Controller::InnerUpdateResult Controller::updateChunkActive(ChunkControlBlock &c
 			return { true, ParentCommand::Nothing };
 		}
 
+		m_direct_op_quota += 8;
 		cb.setState(ChunkControlBlock::State::Standby);
 		cb.setOverActive(true);
 		return { true, ParentCommand::BecomeActive };

@@ -11,8 +11,33 @@ class Config final {
 public:
 	Config() = delete;
 
+	// --- Main parameters ---
+
 	// Number of cells in the chunk. Must be a power of two.
 	constexpr static uint32_t CHUNK_SIZE = 32;
+	// Maximal LOD (inclusive) which a single chunk can have. Chunks with this
+	// LOD value is called a "superchunk" and a uniform grid is made from them.
+	constexpr static uint32_t CHUNK_MAX_LOD = 12;
+
+	// --- LOD control parameters ---
+
+	// The target angular diameter of a single chunk, LODs will be adjusted to
+	// reach it. Decreasing this parameter will yield finer overall LODs.
+	constexpr static double CHUNK_OPTIMAL_ANGULAR_SIZE_DEGREES = 50.0;
+	// Maximal distance (measured in superchunks) from point of interest
+	// to superchunk center which will trigger loading this superchunk.
+	// The bigger it is, the more superchunks are loaded around POI.
+	constexpr static double SUPERCHUNK_ENGAGE_FACTOR = 0.75;
+
+	// --- Performance-tuning parameters ---
+
+	// Maximal time, in ticks, after which non-updated point of interest will be discared
+	constexpr static uint32_t POINT_OF_INTEREST_MAX_AGE = 1000;
+	// Maximal time, in ticks, after which non-engaged superchunk will get unloaded
+	constexpr static uint32_t SUPERCHUNK_MAX_AGE = 1000;
+	// Maximal number of direct (non-seam) chunk changes which can happen during one tick.
+	// This limit is a tradeoff between upper bound on a signle tick latency and throughput.
+	constexpr static uint32_t TERRAIN_MAX_DIRECT_OP_COUNT = 64;
 	// Allocation of terrain-related entities is done through object pools,
 	// which are in turn composed of subpools - contiguous storages of fixed size.
 	// This constant determines the size of a single subpool. The larger it is,
