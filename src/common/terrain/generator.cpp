@@ -3,6 +3,7 @@
 #include <voxen/util/log.hpp>
 
 #include <glm/geometric.hpp>
+#include <glm/vec2.hpp>
 
 #include <bit>
 #include <cmath>
@@ -83,25 +84,29 @@ static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, Herm
 	                normal, offset, D, lesser_endpoint_solid, solid_voxel);
 }
 
+constexpr static double MOUNTAIN_SPREAD = 10'000.0;
+constexpr static double MOUNTAIN_THINNESS = 1.0 / 490'000.0;
+constexpr static double MOUNTAIN_BASE_HEIGHT = 550.0;
+
 static double fbase(double x, double z) noexcept
 {
-	const double hypot = std::hypot(x, z);
-	const double amp = std::max(15.0, 0.05 * hypot);
-	const double freq = 0.1 / std::sqrt(1.0 + hypot);
-	return amp * (std::sin(freq * x) + std::cos(freq * z));
+	const double len = glm::length(glm::dvec2(x, z));
+	const double order = glm::round(len / MOUNTAIN_SPREAD);
+	const double pivot = order * MOUNTAIN_SPREAD;
+	const double offset = glm::abs(len - pivot);
+	return -MOUNTAIN_BASE_HEIGHT * glm::exp2(-MOUNTAIN_THINNESS * offset * offset);
 }
 
 static double f(double x, double y, double z) noexcept
 {
-	const double base = -0.000001 * (x * x + z * z);
-	return y + base + fbase(x, z) + (std::sin(0.075 * x) + std::cos(0.075 * z));
+	return y + fbase(x, z) - 20.0;
 }
 
 static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 {
 	const double eps = 1e-6;
-	double dx = (fbase(x + eps, z) - fbase(x - eps, z)) / (eps + eps) - 0.000002 * x + 0.075 * std::cos(0.075 * x);
-	double dz = (fbase(x, z + eps) - fbase(x, z - eps)) / (eps + eps) - 0.000002 * z - 0.075 * std::sin(0.075 * z);
+	double dx = (fbase(x + eps, z) - fbase(x - eps, z)) / (eps + eps);
+	double dz = (fbase(x, z + eps) - fbase(x, z - eps)) / (eps + eps);
 	return glm::dvec3(dx, 1.0, dz);
 }
 
