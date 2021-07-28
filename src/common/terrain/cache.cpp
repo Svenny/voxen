@@ -18,17 +18,19 @@ ChunkCache::ChunkCache() : m_sets(NUM_SETS)
 	Log::debug("Creating terrain chunk cache, using {}x{} sets (up to {} chunks)", NUM_SETS, SET_SIZE, max_chunks);
 }
 
-extras::refcnt_ptr<Chunk> ChunkCache::tryLoad(ChunkId id) noexcept
+bool ChunkCache::tryLoad(Chunk &chunk) noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(id);
+	auto[set_id, chunk_pos_in_set] = findSetAndIndex(chunk.id());
 	if (chunk_pos_in_set == SET_SIZE) {
 		// Not found
-		return {};
+		return false;
 	}
 
 	auto &entry = m_sets[set_id][chunk_pos_in_set];
 	// Move pointer out of the cache so it doesn't linger here
-	return std::exchange(entry, {});
+	extras::refcnt_ptr<Chunk> ptr = std::move(entry);
+	chunk = std::move(*ptr);
+	return true;
 }
 
 void ChunkCache::insert(extras::refcnt_ptr<Chunk> ptr) noexcept

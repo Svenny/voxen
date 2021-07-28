@@ -16,7 +16,7 @@ namespace voxen::terrain
 // This class supports access from multiple threads
 class TerrainLoader {
 public:
-	extras::refcnt_ptr<Chunk> load(ChunkId id);
+	void load(Chunk &chunk);
 	void unload(extras::refcnt_ptr<Chunk> chunk);
 
 private:

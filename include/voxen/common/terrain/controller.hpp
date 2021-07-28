@@ -66,7 +66,7 @@ private:
 	std::vector<PointOfInterest> m_points_of_interest;
 	std::unordered_map<glm::ivec3, SuperchunkInfo, VecHasher> m_superchunks;
 
-	std::unordered_map<ChunkId, std::future<extras::refcnt_ptr<Chunk>>> m_async_chunk_loads;
+	std::unordered_map<ChunkId, std::future<void>> m_async_chunk_loads;
 	uint32_t m_direct_op_quota = 0;
 
 	uint32_t calcLodDirection(ChunkId id) const;

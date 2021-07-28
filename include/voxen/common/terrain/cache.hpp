@@ -19,10 +19,10 @@ public:
 	~ChunkCache() = default;
 
 	// Lookup chunk with given ID in the cache.
-	// Returns null pointer if there is no such chunk.
+	// Returns `false` if there is no such chunk, otherwise `chunk` will be filled with data.
 	// On cache hit chunk is automatically evicted from the cache, as otherwise it
 	// will be never destroyed (cache holds a reference) until evicted by some `insert`.
-	extras::refcnt_ptr<Chunk> tryLoad(ChunkId id) noexcept;
+	bool tryLoad(Chunk &chunk) noexcept;
 	// Insert a chunk into the cache. Updates the pointer
 	// if chunk with the same ID is already in the cache.
 	void insert(extras::refcnt_ptr<Chunk> ptr) noexcept;

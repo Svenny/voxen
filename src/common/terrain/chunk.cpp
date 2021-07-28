@@ -83,4 +83,19 @@ Chunk::Chunk(CreationInfo info) : m_id(info.id), m_version(info.version), m_seam
 	}
 }
 
+Chunk &Chunk::operator = (Chunk &&other) noexcept
+{
+	assert(m_id == other.m_id);
+
+	m_version = other.m_version;
+	m_seam_version = other.m_seam_version;
+
+	std::swap(m_primary_data, other.m_primary_data);
+	std::swap(m_octree, other.m_octree);
+	std::swap(m_own_surface, other.m_own_surface);
+	std::swap(m_seam_surface, other.m_seam_surface);
+
+	return *this;
+}
+
 }

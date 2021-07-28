@@ -201,9 +201,7 @@ Controller::ControlBlockPtr Controller::loadSuperchunk(glm::ivec3 base)
 
 Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 {
-	// TODO (Svenny): we are allocating a "dummy" chunk just to have chunk ID
-	// available (it's replaced by loaded chunk then). Consider refactoring
-	// something in `ChunkControlBlock` to eliminate the need for this dummy?
+	// Chunk will be filled by `TerrainLoader`
 	auto chunk_ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
 		.id = id,
 		.version = 0,
@@ -213,8 +211,8 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 
 	assert(!m_async_chunk_loads.contains(id));
 	m_async_chunk_loads[id] = ThreadPool::globalVoxenPool().enqueueTask(ThreadPool::TaskType::Standard,
-		[this, id]() {
-			return m_loader.load(id);
+		[this, chunk_ptr]() {
+			m_loader.load(*chunk_ptr);
 		}
 	);
 
@@ -290,8 +288,8 @@ Controller::InnerUpdateResult Controller::updateChunkLoading(ChunkControlBlock &
 	assert(iter->second.valid());
 
 	if (iter->second.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
+		iter->second.get();
 		cb.setState(ChunkControlBlock::State::Standby);
-		cb.setChunk(iter->second.get());
 		m_async_chunk_loads.erase(iter);
 		return { true, ParentCommand::Nothing };
 	}

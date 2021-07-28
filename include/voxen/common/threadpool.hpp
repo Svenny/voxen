@@ -79,7 +79,12 @@ public:
 		doEnqueueTask(type, std::packaged_task<void()> {
 			[promise = std::move(promise), task = std::bind(std::forward<F>(f), std::forward<Args>(args)...)]() mutable {
 				try {
-					promise.set_value(task());
+					if constexpr (std::is_same_v<R, void>) {
+						task();
+						promise.set_value();
+					} else {
+						promise.set_value(task());
+					}
 				} catch (...) {
 					promise.set_exception(std::current_exception());
 				}

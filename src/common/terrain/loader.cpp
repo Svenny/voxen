@@ -10,8 +10,10 @@
 namespace voxen::terrain
 {
 
-extras::refcnt_ptr<Chunk> TerrainLoader::load(ChunkId id)
+void TerrainLoader::load(Chunk &chunk)
 {
+	const ChunkId id = chunk.id();
+
 #if VOXEN_DEBUG_BUILD == 1
 	{
 		std::lock_guard<std::mutex> lock(m_access_mutex);
@@ -30,27 +32,16 @@ extras::refcnt_ptr<Chunk> TerrainLoader::load(ChunkId id)
 
 	{
 		std::lock_guard<std::mutex> lock(m_access_mutex);
-		if (auto ptr = m_cache.tryLoad(id); ptr) {
+		if (m_cache.tryLoad(chunk)) {
 			// Standby cache hit
-			return ptr;
+			return;
 		}
 	}
 
 	// TODO: support loading from disk
-	// As we are always generating "virgin chunk", assign 0 version unconditionally
-
-	auto ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
-		.id = id,
-		.version = 0,
-		.reuse_type = Chunk::ReuseType::Nothing,
-		.reuse_chunk = nullptr
-	});
-
-	m_generator.generate(id, ptr->primaryData());
-	SurfaceBuilder::buildOctree(*ptr);
-	SurfaceBuilder::buildOwnSurface(*ptr);
-
-	return ptr;
+	m_generator.generate(id, chunk.primaryData());
+	SurfaceBuilder::buildOctree(chunk);
+	SurfaceBuilder::buildOwnSurface(chunk);
 }
 
 void TerrainLoader::unload(extras::refcnt_ptr<Chunk> chunk)

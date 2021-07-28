@@ -49,7 +49,7 @@ public:
 	Chunk() = delete;
 	Chunk(Chunk &&) = delete;
 	Chunk(const Chunk &) = delete;
-	Chunk &operator = (Chunk &&) = delete;
+	Chunk &operator = (Chunk &&) noexcept;
 	Chunk &operator = (const Chunk &) = delete;
 	~Chunk() = default;
 
@@ -71,8 +71,8 @@ public:
 
 private:
 	const ChunkId m_id;
-	const chunk_ver_t m_version;
-	const chunk_ver_t m_seam_version;
+	chunk_ver_t m_version;
+	chunk_ver_t m_seam_version;
 
 	extras::refcnt_ptr<ChunkPrimaryData> m_primary_data;
 	extras::refcnt_ptr<ChunkOctree> m_octree;
