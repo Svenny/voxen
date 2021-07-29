@@ -8,38 +8,54 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: [ self-hosted, Linux ]
+  build-ubuntu:
+    runs-on: [ self-hosted, ubuntu ]
+    strategy:
+      matrix:
+        name: [ clang-12-debug, clang-12-release ]
+        include:
+          - name: clang-12-debug
+            cc: clang-12
+            cxx: clang++-12
+            type: Debug
+            tests: ON
+          - name: clang-12-release
+            cc: clang-12
+            cxx: clang++-12
+            type: Release
+            tests: OFF
     steps:
       - name: Checkout the branch
+        uses: actions/checkout@v2
         # See workaround for pull requests below
         if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          git fetch --no-tags --prune
-          git checkout --force $GITHUB_SHA
-          git submodule update --init --recursive --jobs 8
+        with:
+          submodules: true
 
       - name: Checkout pull request head
+        uses: actions/checkout@v2
         if: ${{ github.event_name == 'pull_request' }}
-        env:
+        with:
           # In case of pull requests $GITHUB_SHA contains random value
           # not existing in repository so use this hack to get true SHA
-          GITHUB_TRUE_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git fetch --no-tags --prune
-          git checkout --force $GITHUB_TRUE_SHA
-          git submodule update --init --recursive --jobs 8
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: true
 
       - name: Build Voxen
         run: |
-          source ~/vulkan-sdk/setup-env.sh
-          mkdir -p build
-          cd build
-          rm -rf ./*
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DDEPLOY_BUILD=ON -DVOXEN_BUILD_TESTS=ON ..
-          cmake --build . -j12
+          BUILD_DIR=$XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
+          mkdir -p $BUILD_DIR
+          rm -rf $BUILD_DIR/*
+          cmake -S . -B $BUILD_DIR -GNinja             \
+              -DDEPLOY_BUILD=ON                        \
+              -DCMAKE_C_COMPILER=${{ matrix.cc }}      \
+              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}   \
+              -DCMAKE_BUILD_TYPE=${{ matrix.type }}    \
+              -DVOXEN_BUILD_TESTS=${{ matrix.tests }}
+          cmake --build $BUILD_DIR -j12
 
-      - name: Run tests
+      - name: Run simple tests
+        if: matrix.tests == 'ON'
         run: |
-          cd build
+          cd $XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
           ctest -j12
