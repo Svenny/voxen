@@ -18,9 +18,12 @@ string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
 # Clang's IPO uses ThinLTO which does not slow down build times as severely as usual -flto
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
 endif()
+
+# Always use LLD because why not
+string(APPEND CMAKE_EXE_LINKER_FLAGS " -fuse-ld=lld")
+string(APPEND CMAKE_SHARED_LINKER_FLAGS " -fuse-ld=lld")
 
 option(VOXEN_FASTER_MATH_FLAGS "Speed up math at the of cost strict standard compliance" OFF)
 if(VOXEN_FASTER_MATH_FLAGS)
