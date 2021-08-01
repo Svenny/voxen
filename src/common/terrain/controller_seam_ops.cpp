@@ -67,7 +67,7 @@ static bool needRebuildSeam(const ChunkControlBlock &node) noexcept
 		return false;
 	}
 	// Ignore surfaceless chunks - they can't contribute to the seam
-	return node.chunk()->octree().root() != ChunkOctree::INVALID_NODE_ID;
+	return node.chunk()->hasSurface();
 }
 
 template<int D>

@@ -75,6 +75,8 @@ bool Capabilities::checkMandatoryProperties()
 	CHECK_MANDATORY_FEATURE(features10.features, independentBlend);
 	// Needed for few-drawcall terrain rendering
 	CHECK_MANDATORY_FEATURE(features10.features, multiDrawIndirect);
+	// Needed to easily pack multiple meshes into a single buffer
+	CHECK_MANDATORY_FEATURE(features10.features, drawIndirectFirstInstance);
 	// TODO: is it really needed?
 	CHECK_MANDATORY_FEATURE(features11, shaderDrawParameters);
 	// Setting render targets at the beginning of renderpass is much more convenient

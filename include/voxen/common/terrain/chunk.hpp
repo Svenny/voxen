@@ -53,6 +53,11 @@ public:
 	Chunk &operator = (const Chunk &) = delete;
 	~Chunk() = default;
 
+	// Returns `true` if this chunk does not cross the terrain surface.
+	// NOTE: this method checks octree, not surface meshes. It's possible
+	// and valid to return `true` even when meshes contain no indices.
+	bool hasSurface() const noexcept;
+
 	const ChunkId &id() const noexcept { return m_id; }
 	chunk_ver_t version() const noexcept { return m_version; }
 	chunk_ver_t seamVersion() const noexcept { return m_seam_version; }

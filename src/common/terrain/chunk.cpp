@@ -98,4 +98,10 @@ Chunk &Chunk::operator = (Chunk &&other) noexcept
 	return *this;
 }
 
+bool Chunk::hasSurface() const noexcept
+{
+	// If no octree root then neither own nor seam surface can contain any vertices
+	return octree().root() != ChunkOctree::INVALID_NODE_ID;
+}
+
 }

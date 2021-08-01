@@ -85,7 +85,12 @@ std::vector<Controller::ChunkPtr> Controller::doTick()
 			stack.pop_back();
 
 			if (cb->state() == ChunkControlBlock::State::Active) {
-				result.emplace_back(cb->chunkPtr());
+				// Don't add surfaceless chunks to active list, greatly shortening it.
+				// TODO (Svenny): this will have undesired consequences if some downstream
+				// algorithm (ore scanning?) will require below-the-surface voxel data.
+				if (cb->chunk()->hasSurface()) {
+					result.emplace_back(cb->chunkPtr());
+				}
 				continue;
 			}
 

@@ -95,27 +95,48 @@ bool AlgoTerrainSimple::isChunkVisible(const terrain::Chunk &chunk, const GameVi
 	const glm::vec3 &aabb_min = aabb.min();
 	const glm::vec3 &aabb_max = aabb.max();
 
-	for (int i = 0; i < 8; i++) {
-		glm::vec4 point;
-		point.x = (i & 1) ? aabb_min.x : aabb_max.x;
-		point.y = (i & 2) ? aabb_min.y : aabb_max.y;
-		point.z = (i & 4) ? aabb_min.z : aabb_max.z;
-		point.w = 1.0f;
+	const glm::vec4 partial_ndc_min[3] = {
+		mat[0] * aabb_min.x, mat[1] * aabb_min.y, mat[2] * aabb_min.z
+	};
+	const glm::vec4 partial_ndc_max[3] = {
+		mat[0] * aabb_max.x, mat[1] * aabb_max.y, mat[2] * aabb_max.z
+	};
+	const glm::vec4 partial_ndc_w = mat[3];
 
-		glm::vec4 ndc = mat * point;
-		ndc /= ndc.w;
-		if (ndc.x >= -1.0f && ndc.x <= 1.0f) {
-			return true;
-		}
-		if (ndc.y >= -1.0f && ndc.y <= 1.0f) {
-			return true;
-		}
-		if (ndc.z >= 0.0f && ndc.z <= 1.0f) {
-			return true;
-		}
+	glm::vec3 ndc_points[8];
+
+	for (int i = 0; i < 8; i++) {
+		glm::vec4 ndc = partial_ndc_w;
+		ndc += (i & 1) ? partial_ndc_min[0] : partial_ndc_max[0];
+		ndc += (i & 2) ? partial_ndc_min[1] : partial_ndc_max[1];
+		ndc += (i & 4) ? partial_ndc_min[2] : partial_ndc_max[2];
+		ndc_points[i] = glm::vec3(ndc) / ndc.w;
 	}
 
-	return false;
+	bool inside;
+
+#define CHECK(expr) \
+	inside = false; \
+	for (int i = 0; i < 8; i++) { \
+		if (ndc_points[i].expr) { \
+			inside = true; \
+			break; \
+		} \
+	} \
+	if (!inside) { \
+		return false; \
+	}
+
+	CHECK(z >= 0.0f);
+	CHECK(z <= 1.0f);
+	CHECK(x >= -1.0f);
+	CHECK(x <= 1.0f);
+	CHECK(y >= -1.0f);
+	CHECK(y <= 1.0f);
+
+#undef CHECK
+
+	return true;
 }
 
 }

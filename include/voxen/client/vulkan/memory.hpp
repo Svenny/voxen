@@ -16,7 +16,7 @@ enum class DeviceMemoryUseCase : uint32_t {
 	// Guaranteed to be DEVICE_LOCAL. Not guaranteed to be HOST_VISIBLE.
 	GpuOnly,
 	// Allocation is made for resource which is written by CPU and then read by GPU once.
-	// For example, static assets uploading.
+	// For example, staging buffer for static assets uploading.
 	// Guaranteed to be HOST_VISIBLE and HOST_COHERENT, will unlikely be HOST_CACHED.
 	// Will unlikely be DEVICE_LOCAL.
 	Upload,
