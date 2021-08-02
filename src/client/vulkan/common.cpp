@@ -38,10 +38,15 @@ const char *VulkanException::what() const noexcept
 	return m_message.c_str();
 }
 
+static size_t alignUp(size_t size, size_t align) noexcept
+{
+	return (size + align - 1u) & ~(align - 1u);
+}
+
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,
                                     VkSystemAllocationScope /*scope*/) noexcept
 {
-	void *ptr = aligned_alloc(align, size);
+	void *ptr = aligned_alloc(align, alignUp(size, align));
 	if (!ptr) {
 		Log::warn("Vulkan code has ran out of memory!");
 		return nullptr;
@@ -80,7 +85,7 @@ static void *VKAPI_PTR vulkanRealloc(void *user_data, void *original, size_t siz
 		new_ptr = realloc(original, size);
 	} else {
 		// We have to resort to `aligned_alloc+memcpy+free` scheme
-		new_ptr = aligned_alloc(align, size);
+		new_ptr = aligned_alloc(align, alignUp(size, align));
 		if (new_ptr) {
 			memcpy(new_ptr, original, std::min(old_sz, size));
 			free(original);

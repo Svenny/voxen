@@ -44,8 +44,9 @@ static void printErrno(const char *message, const string& path) noexcept {
 }
 
 struct RawBytesStorage {
-	void set_size(size_t size) noexcept {
-		m_data = new std::byte[size];
+	void set_size(size_t size) {
+		std::allocator<std::byte> alloc;
+		m_data = alloc.allocate(size);
 		m_size = size;
 	}
 	void* data() noexcept { return m_data; }
