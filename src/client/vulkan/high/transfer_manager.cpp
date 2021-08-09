@@ -97,14 +97,14 @@ void TransferManager::ensureUploadsDone()
 	device.waitIdle();
 }
 
-Buffer TransferManager::createStagingBuffer()
+FatVkBuffer TransferManager::createStagingBuffer()
 {
 	VkBufferCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	info.size = MAX_UPLOAD_SIZE;
 	info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	return Buffer(info, Buffer::Usage::Staging);
+	return FatVkBuffer(info, DeviceMemoryUseCase::Upload);
 }
 
 }

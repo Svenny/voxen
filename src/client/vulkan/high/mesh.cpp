@@ -91,7 +91,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		info.size = vertex_buffer_size;
 		info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 		info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		m_vertex_buffer.emplace(info, Buffer::Usage::DeviceLocal);
+		m_vertex_buffer.emplace(info, DeviceMemoryUseCase::GpuOnly);
 
 		transfer.uploadToBuffer(m_vertex_buffer.value(), create_info.vertex_data, vertex_buffer_size);
 	}
@@ -103,7 +103,7 @@ Mesh::Mesh(const MeshCreateInfo &create_info)
 		info.size = index_buffer_size;
 		info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		m_index_buffer.emplace(info, Buffer::Usage::DeviceLocal);
+		m_index_buffer.emplace(info, DeviceMemoryUseCase::GpuOnly);
 
 		transfer.uploadToBuffer(m_index_buffer.value(), create_info.index_data, index_buffer_size);
 	}

@@ -67,8 +67,8 @@ void TerrainSynchronizer::syncChunk(const terrain::Chunk &chunk)
 
 	// Add a new entry
 	iter = m_chunk_gpu_data.emplace(id, ChunkGpuData {
-		.vtx_buffer = Buffer(vtx_info, Buffer::Usage::DeviceLocal),
-		.idx_buffer = Buffer(idx_info, Buffer::Usage::DeviceLocal),
+		.vtx_buffer = FatVkBuffer(vtx_info, DeviceMemoryUseCase::GpuOnly),
+		.idx_buffer = FatVkBuffer(idx_info, DeviceMemoryUseCase::GpuOnly),
 		.index_count = own_surface.numIndices() + seam_surface.numIndices(),
 		.version = chunk.version(),
 		.seam_version = chunk.seamVersion(),

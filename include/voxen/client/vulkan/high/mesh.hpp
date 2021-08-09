@@ -48,8 +48,8 @@ public:
 private:
 	const VertexFormat m_vertex_format;
 	const IndexFormat m_index_format;
-	std::optional<Buffer> m_vertex_buffer;
-	std::optional<Buffer> m_index_buffer;
+	std::optional<FatVkBuffer> m_vertex_buffer;
+	std::optional<FatVkBuffer> m_index_buffer;
 };
 
 }
