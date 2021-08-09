@@ -8,12 +8,22 @@
 #include <atomic>
 #include <string>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
 
-const char *getVkResultString(VkResult result) noexcept;
-const char *getVkResultDescription(VkResult result) noexcept;
-const char *getVkFormatString(VkFormat format) noexcept;
+// Some stateless utility functions
+class VulkanUtils final {
+public:
+	VulkanUtils() = delete;
+
+	static const char *getVkResultString(VkResult result) noexcept;
+	static const char *getVkResultDescription(VkResult result) noexcept;
+	static const char *getVkFormatString(VkFormat format) noexcept;
+
+	// Returns minimal integer multiple of `alignment` not less than `size`. `alignment` must be a power of two.
+	static uint32_t alignUp(uint32_t size, uint32_t alignment) noexcept;
+	static uint64_t alignUp(uint64_t size, uint64_t alignment) noexcept;
+};
 
 class VulkanException : public Exception {
 public:
@@ -30,21 +40,21 @@ protected:
 	bool m_exception_occured = false;
 };
 
-class VulkanHostAllocator {
+class HostAllocator {
 public:
-	VulkanHostAllocator() noexcept;
-	VulkanHostAllocator(VulkanHostAllocator &&) = delete;
-	VulkanHostAllocator(const VulkanHostAllocator &) = delete;
-	VulkanHostAllocator &operator = (VulkanHostAllocator &&) = delete;
-	VulkanHostAllocator &operator = (const VulkanHostAllocator &) = delete;
-	~VulkanHostAllocator() noexcept;
+	HostAllocator() noexcept;
+	HostAllocator(HostAllocator &&) = delete;
+	HostAllocator(const HostAllocator &) = delete;
+	HostAllocator &operator = (HostAllocator &&) = delete;
+	HostAllocator &operator = (const HostAllocator &) = delete;
+	~HostAllocator() noexcept;
 
-	static VulkanHostAllocator &instance() noexcept { return g_instance; }
+	static HostAllocator &instance() noexcept { return g_instance; }
 	static const VkAllocationCallbacks *callbacks() noexcept { return &g_instance.m_callbacks; }
 	static size_t allocated() noexcept { return g_instance.m_allocated.load(); }
 
 private:
-	static VulkanHostAllocator g_instance;
+	static HostAllocator g_instance;
 
 	VkAllocationCallbacks m_callbacks;
 	std::atomic_size_t m_allocated;

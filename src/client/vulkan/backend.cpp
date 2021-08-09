@@ -268,7 +268,7 @@ void Backend::doStop(StartStopMode mode) noexcept
 			m_device->waitIdle();
 		}
 		catch (const VulkanException &e) {
-			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", getVkResultString(e.result()));
+			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", VulkanUtils::getVkResultString(e.result()));
 		}
 	}
 

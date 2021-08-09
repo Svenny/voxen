@@ -13,7 +13,7 @@ RenderPass::RenderPass(const VkRenderPassCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateRenderPass(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkCreateRenderPass(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateRenderPass");
 	}
@@ -23,7 +23,7 @@ RenderPass::RenderPass(const VkRenderPassCreateInfo2 &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateRenderPass2(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkCreateRenderPass2(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateRenderPass2");
 	}
@@ -44,7 +44,7 @@ RenderPass::~RenderPass() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyRenderPass(device, m_handle, VulkanHostAllocator::callbacks());
+	backend.vkDestroyRenderPass(device, m_handle, HostAllocator::callbacks());
 }
 
 RenderPassCollection::RenderPassCollection() :

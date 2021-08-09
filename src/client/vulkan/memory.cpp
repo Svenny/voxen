@@ -16,7 +16,7 @@ DeviceMemory::DeviceMemory(const VkMemoryAllocateInfo &info)
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 
-	VkResult result = backend.vkAllocateMemory(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkAllocateMemory(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkAllocateMemory");
 	}
@@ -26,7 +26,7 @@ DeviceMemory::~DeviceMemory() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkFreeMemory(device, m_handle, VulkanHostAllocator::callbacks());
+	backend.vkFreeMemory(device, m_handle, HostAllocator::callbacks());
 	Log::trace("Freed device memory block 0x{:X}", uintptr_t(m_handle));
 }
 

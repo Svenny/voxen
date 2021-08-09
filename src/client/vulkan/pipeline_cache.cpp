@@ -32,7 +32,7 @@ PipelineCache::PipelineCache(const char *path) : m_save_path(path)
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreatePipelineCache(device, &info, VulkanHostAllocator::callbacks(), &m_cache);
+	VkResult result = backend.vkCreatePipelineCache(device, &info, HostAllocator::callbacks(), &m_cache);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreatePipelineCache");
 	Log::debug("PipelineCache created successfully");
@@ -56,7 +56,7 @@ bool PipelineCache::dump() noexcept
 	VkDevice device = backend.device();
 	VkResult result = backend.vkGetPipelineCacheData(device, m_cache, &buffer_size, buffer);
 	if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
-		Log::warn("Vulkan API error when saving pipeline cache: {}", getVkResultString(result));
+		Log::warn("Vulkan API error when saving pipeline cache: {}", VulkanUtils::getVkResultString(result));
 		return false;
 	} else if (result == VK_INCOMPLETE) {
 		size_t full_size;
@@ -74,7 +74,7 @@ PipelineCache::~PipelineCache() noexcept
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyPipelineCache(device, m_cache, VulkanHostAllocator::callbacks());
+	backend.vkDestroyPipelineCache(device, m_cache, HostAllocator::callbacks());
 }
 
 }

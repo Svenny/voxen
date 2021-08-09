@@ -10,7 +10,7 @@ ImageView::ImageView(const VkImageViewCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateImageView(device, &info, VulkanHostAllocator::callbacks(), &m_view);
+	VkResult result = backend.vkCreateImageView(device, &info, HostAllocator::callbacks(), &m_view);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateImageView");
 }
@@ -19,7 +19,7 @@ ImageView::~ImageView() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyImageView(device, m_view, VulkanHostAllocator::callbacks());
+	backend.vkDestroyImageView(device, m_view, HostAllocator::callbacks());
 }
 
 }

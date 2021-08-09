@@ -50,7 +50,7 @@ bool Instance::checkVulkanSupport() const
 	uint32_t version = 0;
 	VkResult result = backend.vkEnumerateInstanceVersion(&version);
 	if (result != VK_SUCCESS) {
-		Log::error("vkEnumerateInstanceVersion failed: {}", getVkResultString(result));
+		Log::error("vkEnumerateInstanceVersion failed: {}", VulkanUtils::getVkResultString(result));
 		return false;
 	}
 
@@ -171,7 +171,7 @@ void Instance::createInstance()
 	create_info.ppEnabledLayerNames = layer_list.data();
 
 	auto &backend = Backend::backend();
-	VkResult result = backend.vkCreateInstance(&create_info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkCreateInstance(&create_info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkCreateInstance");
 }
@@ -179,7 +179,7 @@ void Instance::createInstance()
 void Instance::destroyInstance() noexcept
 {
 	auto &backend = Backend::backend();
-	backend.vkDestroyInstance(m_handle, VulkanHostAllocator::callbacks());
+	backend.vkDestroyInstance(m_handle, HostAllocator::callbacks());
 	backend.unloadInstanceLevelApi();
 }
 

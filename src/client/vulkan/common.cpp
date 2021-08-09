@@ -5,15 +5,25 @@
 #include <cstddef>
 #include <malloc.h>
 
-namespace voxen::client
+namespace voxen::client::vulkan
 {
+
+uint32_t VulkanUtils::alignUp(uint32_t size, uint32_t alignment) noexcept
+{
+	return (size + alignment - 1u) & ~(alignment - 1u);
+}
+
+uint64_t VulkanUtils::alignUp(uint64_t size, uint64_t alignment) noexcept
+{
+	return (size + alignment - 1u) & ~(alignment - 1u);
+}
 
 VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc) noexcept
 	: Exception(loc), m_result(result)
 {
 	try {
-		const char *err = getVkResultString(result);
-		const char *desc = getVkResultDescription(result);
+		const char *err = VulkanUtils::getVkResultString(result);
+		const char *desc = VulkanUtils::getVkResultDescription(result);
 		if (api) {
 			Log::error("{} failed with error code {}", api, err, loc);
 			m_message = fmt::format("{} failed: {} ({})", api, err, desc);
@@ -38,15 +48,10 @@ const char *VulkanException::what() const noexcept
 	return m_message.c_str();
 }
 
-static size_t alignUp(size_t size, size_t align) noexcept
-{
-	return (size + align - 1u) & ~(align - 1u);
-}
-
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,
                                     VkSystemAllocationScope /*scope*/) noexcept
 {
-	void *ptr = aligned_alloc(align, alignUp(size, align));
+	void *ptr = aligned_alloc(align, VulkanUtils::alignUp(size, align));
 	if (!ptr) {
 		Log::warn("Vulkan code has ran out of memory!");
 		return nullptr;
@@ -85,7 +90,7 @@ static void *VKAPI_PTR vulkanRealloc(void *user_data, void *original, size_t siz
 		new_ptr = realloc(original, size);
 	} else {
 		// We have to resort to `aligned_alloc+memcpy+free` scheme
-		new_ptr = aligned_alloc(align, alignUp(size, align));
+		new_ptr = aligned_alloc(align, VulkanUtils::alignUp(size, align));
 		if (new_ptr) {
 			memcpy(new_ptr, original, std::min(old_sz, size));
 			free(original);
@@ -105,9 +110,9 @@ static void *VKAPI_PTR vulkanRealloc(void *user_data, void *original, size_t siz
 	return new_ptr;
 }
 
-VulkanHostAllocator VulkanHostAllocator::g_instance;
+HostAllocator HostAllocator::g_instance;
 
-VulkanHostAllocator::VulkanHostAllocator() noexcept : m_allocated(0)
+HostAllocator::HostAllocator() noexcept : m_allocated(0)
 {
 	m_callbacks.pUserData = &m_allocated;
 	m_callbacks.pfnAllocation = vulkanMalloc;
@@ -117,7 +122,7 @@ VulkanHostAllocator::VulkanHostAllocator() noexcept : m_allocated(0)
 	m_callbacks.pfnInternalFree = nullptr;
 }
 
-VulkanHostAllocator::~VulkanHostAllocator() noexcept
+HostAllocator::~HostAllocator() noexcept
 {
 	size_t leftover = m_allocated.load();
 	if (leftover != 0) {
@@ -125,7 +130,7 @@ VulkanHostAllocator::~VulkanHostAllocator() noexcept
 	}
 }
 
-const char *getVkResultString(VkResult result) noexcept
+const char *VulkanUtils::getVkResultString(VkResult result) noexcept
 {
 	// Copy-pasted from Vulkan spec 1.2.132
 	switch (result) {
@@ -169,7 +174,7 @@ const char *getVkResultString(VkResult result) noexcept
 	}
 }
 
-const char *getVkResultDescription(VkResult result) noexcept
+const char *VulkanUtils::getVkResultDescription(VkResult result) noexcept
 {
 	// Copy-pasted from Vulkan spec 1.2.132
 	switch (result) {
@@ -229,7 +234,7 @@ const char *getVkResultDescription(VkResult result) noexcept
 	}
 }
 
-const char *getVkFormatString(VkFormat format) noexcept
+const char *VulkanUtils::getVkFormatString(VkFormat format) noexcept
 {
 	// The list is copy-pasted from Vulkan 1.2.170 headers.
 	// Multiplane, some block, 4-bit, scaled and other crazy formats were removed.
