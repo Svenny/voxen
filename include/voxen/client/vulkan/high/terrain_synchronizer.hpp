@@ -35,8 +35,8 @@ public:
 	                      std::function<void(VkBuffer, VkBuffer)> buffers_switch_callback);
 private:
 	struct ChunkGpuData {
-		Buffer vtx_buffer;
-		Buffer idx_buffer;
+		FatVkBuffer vtx_buffer;
+		FatVkBuffer idx_buffer;
 		uint32_t index_count;
 		uint32_t version;
 		uint32_t seam_version;

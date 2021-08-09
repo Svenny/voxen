@@ -8,65 +8,78 @@
 namespace voxen::client::vulkan
 {
 
-static DeviceMemoryUseCase usageToUseCase(Buffer::Usage usage) noexcept
-{
-	// TODO: get rid of this enum in favor of `DeviceMemoryUseCase`
-	switch (usage) {
-	case Buffer::Usage::Staging:
-		return DeviceMemoryUseCase::Upload;
-	case Buffer::Usage::Readback:
-		return DeviceMemoryUseCase::Readback;
-	default:
-		return DeviceMemoryUseCase::GpuOnly;
-	}
-}
-
-Buffer::Buffer(const VkBufferCreateInfo &info, Usage usage)
-	: m_size(info.size)
+WrappedVkBuffer::WrappedVkBuffer(const VkBufferCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	auto allocator = VulkanHostAllocator::callbacks();
-
-	VkResult result = backend.vkCreateBuffer(device, &info, allocator, &m_buffer);
+	VkResult result = backend.vkCreateBuffer(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateBuffer");
 	}
-	defer_fail { backend.vkDestroyBuffer(device, m_buffer, allocator); };
+}
 
-	const DeviceAllocator::ResourceAllocationInfo reqs {
-		.use_case = usageToUseCase(usage),
-		.dedicated_if_preferred = false,
-		.force_dedicated = false
-	};
-	m_memory = backend.deviceAllocator().allocate(m_buffer, reqs);
+WrappedVkBuffer::WrappedVkBuffer(WrappedVkBuffer &&other) noexcept
+{
+	m_handle = std::exchange(other.m_handle, static_cast<VkBuffer>(VK_NULL_HANDLE));
+}
 
-	result = backend.vkBindBufferMemory(device, m_buffer, m_memory.handle(), m_memory.offset());
+WrappedVkBuffer &WrappedVkBuffer::operator = (WrappedVkBuffer &&other) noexcept
+{
+	std::swap(m_handle, other.m_handle);
+	return *this;
+}
+
+WrappedVkBuffer::~WrappedVkBuffer() noexcept
+{
+	auto &backend = Backend::backend();
+	VkDevice device = backend.device();
+	backend.vkDestroyBuffer(device, m_handle, VulkanHostAllocator::callbacks());
+}
+
+void WrappedVkBuffer::bindMemory(VkDeviceMemory memory, VkDeviceSize offset)
+{
+	auto &backend = Backend::backend();
+	VkDevice device = backend.device();
+	VkResult result = backend.vkBindBufferMemory(device, m_handle, memory, offset);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBindBufferMemory");
 	}
 }
 
-Buffer::Buffer(Buffer &&other) noexcept
-{
-	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
-	m_memory = std::move(other.m_memory);
-	m_size = other.m_size;
-}
-
-Buffer &Buffer::operator = (Buffer &&other) noexcept
-{
-	m_buffer = std::exchange(other.m_buffer, static_cast<VkBuffer>(VK_NULL_HANDLE));
-	m_memory = std::move(other.m_memory);
-	m_size = other.m_size;
-	return *this;
-}
-
-Buffer::~Buffer() noexcept
+void WrappedVkBuffer::getMemoryRequirements(VkMemoryRequirements &reqs) const noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
-	backend.vkDestroyBuffer(device, m_buffer, VulkanHostAllocator::callbacks());
+	backend.vkGetBufferMemoryRequirements(backend.device(), m_handle, &reqs);
+}
+
+FatVkBuffer::FatVkBuffer(const VkBufferCreateInfo &info, DeviceMemoryUseCase use_case)
+	: m_buffer(info), m_size(info.size)
+{
+	auto &backend = Backend::backend();
+
+	const DeviceAllocator::ResourceAllocationInfo reqs {
+		.use_case = use_case,
+		.dedicated_if_preferred = false,
+		.force_dedicated = false
+	};
+	m_memory = backend.deviceAllocator().allocate(m_buffer, reqs);
+
+	m_buffer.bindMemory(m_memory.handle(), m_memory.offset());
+}
+
+FatVkBuffer::FatVkBuffer(FatVkBuffer &&other) noexcept
+{
+	m_buffer = std::move(other.m_buffer);
+	m_memory = std::move(other.m_memory);
+	m_size = std::exchange(other.m_size, 0);
+}
+
+FatVkBuffer &FatVkBuffer::operator = (FatVkBuffer &&other) noexcept
+{
+	std::swap(m_buffer, other.m_buffer);
+	std::swap(m_memory, other.m_memory);
+	std::swap(m_size, other.m_size);
+	return *this;
 }
 
 }

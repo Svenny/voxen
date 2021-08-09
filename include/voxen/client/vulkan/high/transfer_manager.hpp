@@ -25,11 +25,11 @@ public:
 private:
 	CommandPool m_command_pool;
 	extras::dyn_array<CommandBuffer> m_command_buffers;
-	Buffer m_staging_buffer;
+	FatVkBuffer m_staging_buffer;
 	void *m_staging_mapped_data = nullptr;
 	VkDeviceSize m_staging_written = 0;
 
-	Buffer createStagingBuffer();
+	FatVkBuffer createStagingBuffer();
 };
 
 }
