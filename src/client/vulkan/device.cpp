@@ -137,7 +137,7 @@ void Device::createDevice()
 	create_info.enabledExtensionCount = uint32_t(ext_list.size());
 	create_info.ppEnabledExtensionNames = ext_list.data();
 
-	VkResult result = backend.vkCreateDevice(phys_device, &create_info, VulkanHostAllocator::callbacks(), &m_device);
+	VkResult result = backend.vkCreateDevice(phys_device, &create_info, HostAllocator::callbacks(), &m_device);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateDevice");
 	}
@@ -156,7 +156,7 @@ void Device::obtainQueueHandles() noexcept
 void Device::destroyDevice() noexcept
 {
 	auto &backend = Backend::backend();
-	backend.vkDestroyDevice(m_device, VulkanHostAllocator::callbacks());
+	backend.vkDestroyDevice(m_device, HostAllocator::callbacks());
 	backend.unloadDeviceLevelApi();
 }
 

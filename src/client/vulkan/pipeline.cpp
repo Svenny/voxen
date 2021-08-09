@@ -293,7 +293,7 @@ PipelineCollection::PipelineCollection() {
 	assert(backend.pipelineCache() != nullptr);
 	VkDevice device = backend.device();
 	VkPipelineCache cache = backend.pipelineCache();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
 	fillPipelineParts(*graphics_parts, backend);
@@ -316,7 +316,7 @@ PipelineCollection::~PipelineCollection() noexcept {
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	for (VkPipeline pipe : m_graphics_pipelines)
 		backend.vkDestroyPipeline(device, pipe, allocator);

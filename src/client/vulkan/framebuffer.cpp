@@ -15,7 +15,7 @@ Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateFramebuffer(device, &info, VulkanHostAllocator::callbacks(), &m_framebuffer);
+	VkResult result = backend.vkCreateFramebuffer(device, &info, HostAllocator::callbacks(), &m_framebuffer);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateFramebuffer");
 	}
@@ -25,7 +25,7 @@ Framebuffer::~Framebuffer() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyFramebuffer(device, m_framebuffer, VulkanHostAllocator::callbacks());
+	backend.vkDestroyFramebuffer(device, m_framebuffer, HostAllocator::callbacks());
 }
 
 FramebufferCollection::FramebufferCollection() :

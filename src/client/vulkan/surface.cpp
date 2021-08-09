@@ -20,7 +20,7 @@ Surface::Surface(Window &window)
 	Log::debug("Creating Surface");
 	auto &backend = Backend::backend();
 	VkInstance instance = backend.instance();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	VkResult result = glfwCreateWindowSurface(instance, window.glfwHandle(), allocator, &m_surface);
 	if (result != VK_SUCCESS) {
@@ -39,7 +39,7 @@ Surface::~Surface() noexcept
 	Log::debug("Destroying Surface");
 	auto &backend = Backend::backend();
 	VkInstance instance = backend.instance();
-	backend.vkDestroySurfaceKHR(instance, m_surface, VulkanHostAllocator::callbacks());
+	backend.vkDestroySurfaceKHR(instance, m_surface, HostAllocator::callbacks());
 }
 
 void Surface::checkPresentSupport()

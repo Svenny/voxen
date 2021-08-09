@@ -12,7 +12,7 @@ WrappedVkBuffer::WrappedVkBuffer(const VkBufferCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateBuffer(device, &info, VulkanHostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkCreateBuffer(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateBuffer");
 	}
@@ -33,7 +33,7 @@ WrappedVkBuffer::~WrappedVkBuffer() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyBuffer(device, m_handle, VulkanHostAllocator::callbacks());
+	backend.vkDestroyBuffer(device, m_handle, HostAllocator::callbacks());
 }
 
 void WrappedVkBuffer::bindMemory(VkDeviceMemory memory, VkDeviceSize offset)

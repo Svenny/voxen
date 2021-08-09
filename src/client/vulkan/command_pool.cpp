@@ -16,7 +16,7 @@ CommandPool::CommandPool(uint32_t queue_family) {
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateCommandPool(device, &info, VulkanHostAllocator::callbacks(), &m_cmd_pool);
+	VkResult result = backend.vkCreateCommandPool(device, &info, HostAllocator::callbacks(), &m_cmd_pool);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateCommandPool");
 	}
@@ -82,7 +82,7 @@ void CommandPool::reset(bool release_resources) {
 CommandPool::~CommandPool() noexcept {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	backend.vkDestroyCommandPool(device, m_cmd_pool, VulkanHostAllocator::callbacks());
+	backend.vkDestroyCommandPool(device, m_cmd_pool, HostAllocator::callbacks());
 }
 
 }

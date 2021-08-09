@@ -33,7 +33,7 @@ void Swapchain::recreateSwapchain()
 	VkPhysicalDevice phys_device = backend.physicalDevice();
 	VkDevice device = backend.device();
 	VkSurfaceKHR surface = backend.surface();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	VkSwapchainCreateInfoKHR info = {};
 	info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -129,7 +129,7 @@ void Swapchain::destroySwapchain() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	m_image_extent = { 0, 0 };
 	for (VkImageView view : m_image_views)
@@ -203,7 +203,7 @@ void Swapchain::createImageViews()
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
-	auto allocator = VulkanHostAllocator::callbacks();
+	auto allocator = HostAllocator::callbacks();
 
 	VkImageViewCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

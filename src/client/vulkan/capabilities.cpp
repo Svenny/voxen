@@ -214,15 +214,18 @@ bool Capabilities::checkMandatoryFormats(VkPhysicalDevice device)
 		backend.vkGetPhysicalDeviceFormatProperties(device, req.format, &props);
 
 		if ((props.linearTilingFeatures & req.linear) != req.linear) {
-			Log::info("Not all linear tiling features are supported for format '{}'", getVkFormatString(req.format));
+			Log::info("Not all linear tiling features are supported for format '{}'",
+			          VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.optimalTilingFeatures & req.optimal) != req.optimal) {
-			Log::info("Not all optimal tiling features are supported for format '{}'", getVkFormatString(req.format));
+			Log::info("Not all optimal tiling features are supported for format '{}'",
+			          VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.bufferFeatures & req.buffer) != req.buffer) {
-			Log::info("Not all buffer features are supported for format '{}'", getVkFormatString(req.format));
+			Log::info("Not all buffer features are supported for format '{}'",
+			          VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 	}
