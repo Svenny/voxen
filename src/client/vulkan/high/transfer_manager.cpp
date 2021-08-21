@@ -14,12 +14,9 @@ TransferManager::TransferManager()
 	m_command_buffers(m_command_pool.allocateCommandBuffers(1)),
 	m_staging_buffer(createStagingBuffer())
 {
-	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
-	VkDeviceMemory memory = m_staging_buffer.allocation().handle();
-	VkResult result = backend.vkMapMemory(device, memory, 0, VK_WHOLE_SIZE, 0, &m_staging_mapped_data);
-	if (result != VK_SUCCESS)
-		throw VulkanException(result, "vkMapMemory");
+	m_staging_mapped_data = m_staging_buffer.allocation().tryHostMap();
+	// Asserting because buffer is allocated with `Upload` use case which guarantees host visibility
+	assert(m_staging_mapped_data);
 
 	Log::debug("TransferManager created successfully");
 }

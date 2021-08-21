@@ -19,13 +19,8 @@ Image::Image(const VkImageCreateInfo &info)
 		throw VulkanException(result, "vkCreateImage");
 	defer_fail { backend.vkDestroyImage(device, m_image, allocator); };
 
-	const DeviceAllocator::ResourceAllocationInfo reqs {
-		// TODO: For now we support only device-local images
-		.use_case = DeviceMemoryUseCase::GpuOnly,
-		.dedicated_if_preferred = false,
-		.force_dedicated = false
-	};
-	m_memory = backend.deviceAllocator().allocate(m_image, reqs);
+	// TODO: For now we support only device-local images
+	m_memory = backend.deviceAllocator().allocate(m_image, DeviceMemoryUseCase::GpuOnly);
 
 	result = backend.vkBindImageMemory(device, m_image, m_memory.handle(), m_memory.offset());
 	if (result != VK_SUCCESS)

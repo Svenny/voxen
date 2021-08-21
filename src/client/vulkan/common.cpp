@@ -1,5 +1,6 @@
 #include <voxen/client/vulkan/common.hpp>
 
+#include <voxen/client/vulkan/config.hpp>
 #include <voxen/util/log.hpp>
 
 #include <cstddef>
@@ -16,6 +17,11 @@ uint32_t VulkanUtils::alignUp(uint32_t size, uint32_t alignment) noexcept
 uint64_t VulkanUtils::alignUp(uint64_t size, uint64_t alignment) noexcept
 {
 	return (size + alignment - 1u) & ~(alignment - 1u);
+}
+
+uint64_t VulkanUtils::calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept
+{
+	return (size * numerator + denomenator - 1u) / denomenator;
 }
 
 VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc) noexcept
@@ -128,6 +134,15 @@ HostAllocator::~HostAllocator() noexcept
 	if (leftover != 0) {
 		Log::warn("Vulkan code has memory leak! Approx. {} bytes left over", leftover);
 	}
+}
+
+const VkAllocationCallbacks *HostAllocator::callbacks() noexcept
+{
+	if constexpr (Config::TRACK_HOST_ALLOCATIONS) {
+		return &g_instance.m_callbacks;
+	}
+
+	return nullptr;
 }
 
 const char *VulkanUtils::getVkResultString(VkResult result) noexcept

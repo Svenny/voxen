@@ -56,14 +56,7 @@ FatVkBuffer::FatVkBuffer(const VkBufferCreateInfo &info, DeviceMemoryUseCase use
 	: m_buffer(info), m_size(info.size)
 {
 	auto &backend = Backend::backend();
-
-	const DeviceAllocator::ResourceAllocationInfo reqs {
-		.use_case = use_case,
-		.dedicated_if_preferred = false,
-		.force_dedicated = false
-	};
-	m_memory = backend.deviceAllocator().allocate(m_buffer, reqs);
-
+	m_memory = backend.deviceAllocator().allocate(m_buffer, use_case);
 	m_buffer.bindMemory(m_memory.handle(), m_memory.offset());
 }
 
