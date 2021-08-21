@@ -15,6 +15,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/command_buffer.cpp
 	src/client/vulkan/command_pool.cpp
 	src/client/vulkan/common.cpp
+	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_manager.cpp
 	src/client/vulkan/device.cpp
 	src/client/vulkan/framebuffer.cpp

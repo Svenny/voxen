@@ -5,6 +5,7 @@
 #include <extras/enum_utils.hpp>
 
 #include <array>
+#include <list>
 #include <memory>
 
 namespace voxen::client::vulkan
@@ -38,59 +39,41 @@ enum class DeviceMemoryUseCase : uint32_t {
 	EnumSize
 };
 
-class DeviceMemory final {
-public:
-	explicit DeviceMemory(const VkMemoryAllocateInfo &info);
-	DeviceMemory(DeviceMemory &&) = delete;
-	DeviceMemory(const DeviceMemory &) = delete;
-	DeviceMemory &operator = (DeviceMemory &&) = delete;
-	DeviceMemory &operator = (const DeviceMemory &) = delete;
-	~DeviceMemory() noexcept;
-
-	void *map(VkDeviceSize offset, VkDeviceSize size = VK_WHOLE_SIZE);
-	void unmap();
-
-	void *mappedPointer() noexcept { return m_mapped_ptr; }
-
-	VkDeviceMemory handle() const noexcept { return m_handle; }
-	const void *mappedPointer() const noexcept { return m_mapped_ptr; }
-
-	operator VkDeviceMemory() const noexcept { return m_handle; }
-
-private:
-	VkDeviceMemory m_handle = VK_NULL_HANDLE;
-	void *m_mapped_ptr = nullptr;
-};
+// NOTE: this class is internal to `DeviceAllocator` implementation and is not used in any public API
+class DeviceAllocationArena;
 
 class DeviceAllocation final {
 public:
 	DeviceAllocation() = default;
-	explicit DeviceAllocation(std::shared_ptr<DeviceMemory> memory, VkDeviceSize offset, VkDeviceSize size) noexcept;
-	DeviceAllocation(DeviceAllocation &&) = default;
+	explicit DeviceAllocation(DeviceAllocationArena *arena, uint32_t begin, uint32_t end) noexcept;
+	DeviceAllocation(DeviceAllocation &&other) noexcept;
 	DeviceAllocation(const DeviceAllocation &) = delete;
-	DeviceAllocation &operator = (DeviceAllocation &&) = default;
+	DeviceAllocation &operator = (DeviceAllocation &&other) noexcept;
 	DeviceAllocation &operator = (const DeviceAllocation &) = delete;
-	~DeviceAllocation() = default;
+	~DeviceAllocation() noexcept;
 
-	VkDeviceMemory handle() const noexcept { return m_handle; }
-	VkDeviceSize offset() const noexcept { return m_offset; }
-	VkDeviceSize size() const noexcept { return m_size; }
+	VkDeviceMemory handle() const noexcept;
+	VkDeviceSize offset() const noexcept { return m_begin_offset; }
+	VkDeviceSize size() const noexcept { return m_end_offset - m_begin_offset; }
+	// Returns host address space pointer to the beginning of this memory block.
+	// NOTE: even if memory was allocated with use case which guarantees
+	// host visibility this pointer can be null. Call `tryHostMap()` first.
+	void *hostPointer() const noexcept;
+
+	// If this memory was allocated with use case which guarantees host visibility, then it
+	// will be mapped and host pointer will be returned (or an exception if mapping failed).
+	// Otherwise (when host visibility was not guaranteed) either null or valid host pointer will be
+	// returned - so it's possible to optimize for UMA platforms where all memory is host visible.
+	void *tryHostMap() const;
 
 private:
-	VkDeviceMemory m_handle = VK_NULL_HANDLE;
-	VkDeviceSize m_offset = 0;
-	VkDeviceSize m_size = 0;
-	std::shared_ptr<DeviceMemory> m_memory_block;
+	DeviceAllocationArena *m_arena = nullptr;
+	uint32_t m_begin_offset = 0;
+	uint32_t m_end_offset = 0;
 };
 
 class DeviceAllocator final {
 public:
-	struct ResourceAllocationInfo {
-		DeviceMemoryUseCase use_case;
-		bool dedicated_if_preferred;
-		bool force_dedicated;
-	};
-
 	struct AllocationInfo {
 		// Minimal size of the allocation
 		VkDeviceSize size;
@@ -114,20 +97,34 @@ public:
 	~DeviceAllocator() noexcept;
 
 	// NOTE: memory is NOT automatically bound to the buffer after allocation
-	DeviceAllocation allocate(VkBuffer buffer, const ResourceAllocationInfo &info);
+	DeviceAllocation allocate(VkBuffer buffer, DeviceMemoryUseCase use_case);
 	// NOTE: disjoint images are not supported by this method
 	// NOTE: memory is NOT automatically bound to the image after allocation
-	DeviceAllocation allocate(VkImage image, const ResourceAllocationInfo &info);
+	DeviceAllocation allocate(VkImage image, DeviceMemoryUseCase use_case);
 	DeviceAllocation allocate(const AllocationInfo &info);
 
+	// Returns memory properties of the physical device, as reported by Vulkan driver.
+	// These properties do not change after `DeviceAllocator` is created.
+	const VkPhysicalDeviceMemoryProperties &deviceMemoryProperties() const noexcept { return m_mem_props; };
+
+	// This method is called by `DeviceAllocationArena` when it is completely free.
+	// Arena is deleted after calling this, so in some sense it's similar to `delete this`.
+	// NOTE: this is an internal API exposed in public section, do not call it.
+	void arenaFreeCallback(DeviceAllocationArena *arena) noexcept;
+
 private:
-	DeviceAllocation allocateDedicated(const AllocationInfo &info, const VkMemoryDedicatedAllocateInfo &dedicated_info);
+	DeviceAllocation allocateInternal(const AllocationInfo &info, const VkMemoryDedicatedAllocateInfo *dedicated_info);
 	uint32_t selectMemoryType(const AllocationInfo &info) const;
+	VkDeviceSize getAllocSizeLimit(uint32_t memory_type) const;
 	void readMemoryProperties();
 
+	static DeviceMemoryUseCase mostLikelyUseCase(VkMemoryPropertyFlags flags) noexcept;
 	static int32_t scoreForUseCase(DeviceMemoryUseCase use_case, VkMemoryPropertyFlags flags) noexcept;
 
 	VkPhysicalDeviceMemoryProperties m_mem_props;
+	std::array<VkDeviceSize, VK_MAX_MEMORY_TYPES> m_arena_sizes;
+	std::array<std::list<DeviceAllocationArena>, VK_MAX_MEMORY_TYPES> m_arena_lists;
+	std::list<DeviceAllocationArena> m_dedicated_arenas;
 };
 
 }

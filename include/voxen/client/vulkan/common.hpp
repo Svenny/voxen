@@ -23,6 +23,8 @@ public:
 	// Returns minimal integer multiple of `alignment` not less than `size`. `alignment` must be a power of two.
 	static uint32_t alignUp(uint32_t size, uint32_t alignment) noexcept;
 	static uint64_t alignUp(uint64_t size, uint64_t alignment) noexcept;
+	// Multiplies `size` by `numerator` and then divides by `denomenator` with rounding up.
+	static uint64_t calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept;
 };
 
 class VulkanException : public Exception {
@@ -50,7 +52,7 @@ public:
 	~HostAllocator() noexcept;
 
 	static HostAllocator &instance() noexcept { return g_instance; }
-	static const VkAllocationCallbacks *callbacks() noexcept { return &g_instance.m_callbacks; }
+	static const VkAllocationCallbacks *callbacks() noexcept;
 	static size_t allocated() noexcept { return g_instance.m_allocated.load(); }
 
 private:
