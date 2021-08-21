@@ -20,24 +20,30 @@ void Log::doLog(Level level, extras::source_location where,
 		fmt::vformat_to(t_message_buffer, format_str, format_args);
 		std::string_view text(t_message_buffer.data(), t_message_buffer.size());
 
-		fmt::print(FMT_STRING("[{:s}:{:d}][{:s}] {:s}\n"),
+		FILE *sink = stdout;
+		if (level >= Level::Warn) {
+			// Flush `stdout` to not mess the messages when it's directed to same output as `stderr`
+			fflush(stdout);
+			sink = stderr;
+		}
+
+		fmt::print(sink, FMT_STRING("[{:s}:{:d}][{:s}] {:s}\n"),
 		           where.file_name(), where.line(),
 		           extras::enum_name(level), text);
-
-		if (level >= Level::Warn) {
-			// It's probably desired to see warnings as early as possible, so flush the output buffer
-			fflush(stdout);
-		}
 	} catch (const fmt::format_error &err) {
+		fflush(stdout);
 		fprintf(stderr, "[%s:%u][WARN] Caught fmt::format_error when trying to log: %s\n",
 		        where.file_name(), where.line(), err.what());
 	} catch (const std::bad_alloc &err) {
+		fflush(stdout);
 		fprintf(stderr, "[%s:%u][WARN] Caught std::bad_alloc when trying to log: %s\n",
 		        where.file_name(), where.line(), err.what());
 	} catch (const std::exception &err) {
+		fflush(stdout);
 		fprintf(stderr, "[%s:%u][WARN] Caught std::exception when trying to log: %s\n",
 		        where.file_name(), where.line(), err.what());
 	} catch (...) {
+		fflush(stdout);
 		fprintf(stderr, "[%s:%u][WARN] Caught unknown exception when trying to log\n",
 		        where.file_name(), where.line());
 	}
