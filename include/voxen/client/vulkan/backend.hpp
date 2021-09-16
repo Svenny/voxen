@@ -13,6 +13,7 @@ namespace voxen::client::vulkan
 class AlgoDebugOctree;
 class AlgoTerrainSimple;
 class Capabilities;
+class DescriptorSetLayoutCollection;
 class Device;
 class DeviceAllocator;
 class FramebufferCollection;
@@ -71,6 +72,10 @@ public:
 	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }
 	PipelineCache &pipelineCache() noexcept { return *m_pipeline_cache; }
 	const PipelineCache &pipelineCache() const noexcept { return *m_pipeline_cache; }
+	DescriptorSetLayoutCollection &descriptorSetLayoutCollection() noexcept
+		{ return *m_descriptor_set_layout_collection; }
+	const DescriptorSetLayoutCollection &descriptorSetLayoutCollection() const noexcept
+		{ return *m_descriptor_set_layout_collection; }
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
@@ -126,6 +131,7 @@ private:
 
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
 	PipelineCache *m_pipeline_cache = nullptr;
+	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 
 	Surface *m_surface = nullptr;

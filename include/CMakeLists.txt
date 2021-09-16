@@ -28,6 +28,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/common.hpp
 	include/voxen/client/vulkan/config.hpp
 	include/voxen/client/vulkan/descriptor_manager.hpp
+	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/device.hpp
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/image.hpp
