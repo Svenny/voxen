@@ -89,9 +89,14 @@ void Device::createDevice()
 	imageless_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
 	imageless_features.imagelessFramebuffer = VK_TRUE;
 
+	VkPhysicalDeviceScalarBlockLayoutFeatures sbl_features = {};
+	sbl_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
+	sbl_features.pNext = &imageless_features;
+	sbl_features.scalarBlockLayout = VK_TRUE;
+
 	VkPhysicalDeviceFeatures2 features = {};
 	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	features.pNext = &imageless_features;
+	features.pNext = &sbl_features;
 	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
 
 	auto &backend = Backend::backend();

@@ -5,7 +5,8 @@
 namespace voxen
 {
 
-// 3D axis-aligned bounding box
+// 3D axis-aligned bounding box.
+// GFX compatibility note: this class is mirrored in shaders, see `src/shaders/include/util/aabb.glsl`.
 class Aabb {
 public:
 	// Initially AABB is invalid - that is, its `min()` is larger than `max()`.

@@ -84,6 +84,7 @@ endif()
 set(VOXEN_SHADERS
 	debug/octree.vert
 	debug/octree.frag
+	terrain/frustum_cull.comp
 	terrain/simple.vert
 	terrain/simple.frag
 )
