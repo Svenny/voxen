@@ -21,9 +21,19 @@ public:
 		NUM_GRAPHICS_PIPELINES
 	};
 
-	VkPipeline operator[](GraphicsPipelineId idx) const;
+	enum ComputePipelineId : uint32_t {
+		TERRAIN_FRUSTUM_CULL_PIPELINE,
+
+		NUM_COMPUTE_PIPELINES
+	};
+
+	VkPipeline operator[](GraphicsPipelineId idx) const noexcept;
+	VkPipeline operator[](ComputePipelineId idx) const noexcept;
 private:
+	void destroyPipelines() noexcept;
+
 	std::array<VkPipeline, NUM_GRAPHICS_PIPELINES> m_graphics_pipelines;
+	std::array<VkPipeline, NUM_COMPUTE_PIPELINES> m_compute_pipelines;
 };
 
 }

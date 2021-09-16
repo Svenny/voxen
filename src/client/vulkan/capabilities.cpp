@@ -81,6 +81,9 @@ bool Capabilities::checkMandatoryProperties()
 	CHECK_MANDATORY_FEATURE(features11, shaderDrawParameters);
 	// Setting render targets at the beginning of renderpass is much more convenient
 	CHECK_MANDATORY_FEATURE(features12, imagelessFramebuffer);
+	// Scalar block layout is used to store some objects without excessive
+	// padding (for instance AABBs and Vulkan indirect draw commands)
+	CHECK_MANDATORY_FEATURE(features12, scalarBlockLayout);
 	// TODO: is it really needed?
 	CHECK_MANDATORY_FEATURE(features12, uniformBufferStandardLayout);
 	// TODO: is it really needed?

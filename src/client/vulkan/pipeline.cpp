@@ -278,15 +278,63 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.subpass = 0;
 }
 
+struct ComputePipelineParts {
+	ComputePipelineParts() noexcept
+	{
+		for (auto &info : create_infos) {
+			info = {};
+			info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+			info.pNext = nullptr;
+			info.flags = 0;
+			info.basePipelineHandle = VK_NULL_HANDLE;
+			info.basePipelineIndex = -1;
+		}
+	}
+
+	VkComputePipelineCreateInfo create_infos[PipelineCollection::NUM_COMPUTE_PIPELINES];
+};
+
+template<uint32_t ID>
+void addParts(ComputePipelineParts &parts, Backend &backend);
+
+template<>
+void addParts<PipelineCollection::TERRAIN_FRUSTUM_CULL_PIPELINE>(ComputePipelineParts &parts, Backend &backend)
+{
+	auto &my_create_info = parts.create_infos[PipelineCollection::TERRAIN_FRUSTUM_CULL_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	my_create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	my_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	my_create_info.stage.module = module_collection[ShaderModuleCollection::TERRAIN_FRUSTUM_CULL_COMPUTE];
+	my_create_info.stage.pName = "main";
+
+	my_create_info.layout = backend.pipelineLayoutCollection().terrainFrustumCullLayout();
+}
+
 template<uint32_t ID = 0>
-void fillPipelineParts(GraphicsPipelineParts &parts, Backend &backend) {
+static void fillPipelineParts(GraphicsPipelineParts &parts, Backend &backend)
+{
 	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
 		addParts<ID>(parts, backend);
 		fillPipelineParts<ID + 1>(parts, backend);
 	}
 }
 
-PipelineCollection::PipelineCollection() {
+template<uint32_t ID = 0>
+static void fillPipelineParts(ComputePipelineParts &parts, Backend &backend)
+{
+	if constexpr (ID < PipelineCollection::NUM_COMPUTE_PIPELINES) {
+		addParts<ID>(parts, backend);
+		fillPipelineParts<ID + 1>(parts, backend);
+	}
+}
+
+PipelineCollection::PipelineCollection()
+{
+	m_graphics_pipelines.fill(VK_NULL_HANDLE);
+	m_compute_pipelines.fill(VK_NULL_HANDLE);
+	defer_fail { destroyPipelines(); };
+
 	Log::debug("Creating PipelineCollection");
 
 	auto &backend = Backend::backend();
@@ -299,32 +347,56 @@ PipelineCollection::PipelineCollection() {
 	fillPipelineParts(*graphics_parts, backend);
 
 	VkResult result = backend.vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
-	                                                    graphics_parts->create_infos, allocator,
-	                                                    m_graphics_pipelines.data());
+		graphics_parts->create_infos, allocator, m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
-		// Some pipelines could have been successfully created, destroy them
-		for (VkPipeline pipe : m_graphics_pipelines)
-			backend.vkDestroyPipeline(device, pipe, allocator);
-		throw VulkanException(result, "vkDestroyPipeline");
+		throw VulkanException(result, "vkCreateGraphicsPipelines");
+	}
+
+	auto compute_parts = std::make_unique<ComputePipelineParts>();
+	fillPipelineParts(*compute_parts, backend);
+
+	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES,
+		compute_parts->create_infos, allocator, m_compute_pipelines.data());
+	if (result != VK_SUCCESS) {
+		throw VulkanException(result, "vkCreateComputePipelines");
 	}
 
 	Log::debug("PipelineCollection created successfully");
 }
 
-PipelineCollection::~PipelineCollection() noexcept {
+PipelineCollection::~PipelineCollection() noexcept
+{
 	Log::debug("Destroying PipelineCollection");
+	destroyPipelines();
+}
 
+VkPipeline PipelineCollection::operator[](GraphicsPipelineId idx) const noexcept
+{
+	assert(idx < NUM_GRAPHICS_PIPELINES);
+	return m_graphics_pipelines[idx];
+}
+
+VkPipeline PipelineCollection::operator[](ComputePipelineId idx) const noexcept
+{
+	assert(idx < NUM_COMPUTE_PIPELINES);
+	return m_compute_pipelines[idx];
+}
+
+void PipelineCollection::destroyPipelines() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	auto allocator = HostAllocator::callbacks();
 
-	for (VkPipeline pipe : m_graphics_pipelines)
+	for (VkPipeline &pipe : m_graphics_pipelines) {
 		backend.vkDestroyPipeline(device, pipe, allocator);
-}
+		pipe = VK_NULL_HANDLE;
+	}
 
-VkPipeline PipelineCollection::operator[](GraphicsPipelineId idx) const
-{
-	return m_graphics_pipelines.at(idx);
+	for (VkPipeline &pipe : m_compute_pipelines) {
+		backend.vkDestroyPipeline(device, pipe, allocator);
+		pipe = VK_NULL_HANDLE;
+	}
 }
 
 }

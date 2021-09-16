@@ -73,14 +73,14 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 		.pImmutableSamplers = nullptr
 	};
 	bindings[1] = {
-		.binding = 0,
+		.binding = 1,
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
 		.pImmutableSamplers = nullptr
 	};
 	bindings[2] = {
-		.binding = 0,
+		.binding = 2,
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
