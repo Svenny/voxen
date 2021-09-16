@@ -10,7 +10,7 @@ namespace voxen::client::vulkan
 // to be as flexible as possible. It can be used either directly or via some higher-level class.
 class WrappedVkBuffer final {
 public:
-	constexpr WrappedVkBuffer(VkBuffer handle = VK_NULL_HANDLE) noexcept : m_handle(handle) {}
+	constexpr explicit WrappedVkBuffer(VkBuffer handle = VK_NULL_HANDLE) noexcept : m_handle(handle) {}
 	explicit WrappedVkBuffer(const VkBufferCreateInfo &info);
 	WrappedVkBuffer(WrappedVkBuffer &&other) noexcept;
 	WrappedVkBuffer(const WrappedVkBuffer &) = delete;

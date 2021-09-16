@@ -29,10 +29,14 @@ public:
 	~PipelineLayoutCollection() = default;
 
 	PipelineLayout &descriptorlessLayout() noexcept { return m_descriptorless_layout; }
+	PipelineLayout &terrainFrustumCullLayout() noexcept { return m_terrain_frustum_cull_layout; }
+
 private:
 	PipelineLayout m_descriptorless_layout;
+	PipelineLayout m_terrain_frustum_cull_layout;
 
 	PipelineLayout createDescriptorlessLayout();
+	PipelineLayout createTerrainFrustumCullLayout();
 };
 
 }

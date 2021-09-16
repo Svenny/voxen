@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/device.hpp>
 
 #include <voxen/util/log.hpp>
@@ -23,22 +24,48 @@ PipelineLayout::~PipelineLayout() noexcept {
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()
-	: m_descriptorless_layout(createDescriptorlessLayout())
+	: m_descriptorless_layout(createDescriptorlessLayout()),
+	m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
 
-PipelineLayout PipelineLayoutCollection::createDescriptorlessLayout() {
-	VkPushConstantRange range;
-	range.offset = 0;
-	range.size = 128;
-	range.stageFlags = VK_SHADER_STAGE_ALL;
+PipelineLayout PipelineLayoutCollection::createDescriptorlessLayout()
+{
+	constexpr VkPushConstantRange range {
+		.stageFlags = VK_SHADER_STAGE_ALL,
+		.offset = 0,
+		.size = 128
+	};
 
-	VkPipelineLayoutCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	info.pushConstantRangeCount = 1;
-	info.pPushConstantRanges = &range;
-	return PipelineLayout(info);
+	return PipelineLayout(VkPipelineLayoutCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 0,
+		.pSetLayouts = nullptr,
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &range
+	});
+}
+
+PipelineLayout PipelineLayoutCollection::createTerrainFrustumCullLayout()
+{
+	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
+
+	VkDescriptorSetLayout layouts[2];
+	layouts[0] = ds_collection.mainSceneLayout();
+	layouts[1] = ds_collection.terrainFrustumCullLayout();
+
+	return PipelineLayout(VkPipelineLayoutCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 2,
+		.pSetLayouts = layouts,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr
+	});
 }
 
 }
