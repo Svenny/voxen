@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/client/vulkan/buffer.hpp>
 #include <voxen/client/vulkan/command_buffer.hpp>
 #include <voxen/client/vulkan/command_pool.hpp>
 #include <voxen/client/vulkan/sync.hpp>
@@ -40,6 +40,9 @@ private:
 
 	CommandPool m_graphics_command_pool;
 	extras::dyn_array<CommandBuffer> m_graphics_command_buffers;
+	FatVkBuffer m_main_scene_ubo;
+
+	void updateMainSceneUbo(const GameView &view);
 };
 
 }

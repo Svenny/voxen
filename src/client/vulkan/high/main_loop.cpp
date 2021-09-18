@@ -3,6 +3,7 @@
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
 #include <voxen/client/vulkan/algo/terrain_simple.hpp>
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
@@ -14,6 +15,11 @@
 namespace voxen::client::vulkan
 {
 
+struct MainSceneUbo {
+	glm::mat4 translated_world_to_clip;
+	glm::vec3 world_position; float _pad0;
+};
+
 MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
 MainLoop::MainLoop()
@@ -21,6 +27,20 @@ MainLoop::MainLoop()
 	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
 {
+	m_main_scene_ubo = FatVkBuffer(VkBufferCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.size = sizeof(MainSceneUbo) * Config::NUM_CPU_PENDING_FRAMES,
+		.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = nullptr
+	}, DeviceMemoryUseCase::FastUpload);
+
+	m_main_scene_ubo.allocation().tryHostMap();
+	assert(m_main_scene_ubo.allocation().hostPointer());
+
 	Log::debug("MainLoop created successfully");
 }
 
@@ -43,6 +63,10 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	VkResult result = backend.vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkWaitForFences");
+
+	// Advance current set ID when CPU resources for current frame
+	// are not used anymore but before any CPU work has started
+	backend.descriptorManager().startNewFrame();
 
 	uint32_t swapchain_image_id = swapchain.acquireImage(frame_acquired_semaphore);
 
@@ -67,6 +91,8 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	result = backend.vkBeginCommandBuffer(cmd_buf, &cmd_begin_info);
 	if (result != VK_SUCCESS)
 		throw VulkanException(result, "vkBeginCommandBuffer");
+
+	updateMainSceneUbo(view);
 
 	VkRenderPassAttachmentBeginInfo attachment_info = {};
 	attachment_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
@@ -131,6 +157,41 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	swapchain.presentImage(swapchain_image_id, render_done_semaphore);
 
 	m_frame_id++;
+}
+
+void MainLoop::updateMainSceneUbo(const GameView &view)
+{
+	auto &backend = Backend::backend();
+
+	const uint32_t set_id = backend.descriptorManager().setId();
+	const uintptr_t ubo_data_offset = set_id * sizeof(MainSceneUbo);
+
+	MainSceneUbo *ubo_data = reinterpret_cast<MainSceneUbo *>
+		(uintptr_t(m_main_scene_ubo.allocation().hostPointer()) + ubo_data_offset);
+
+	ubo_data->translated_world_to_clip = view.translatedWorldToClip();
+	ubo_data->world_position = view.cameraPosition();
+
+	const VkDescriptorBufferInfo buffer_info {
+		.buffer = m_main_scene_ubo,
+		.offset = ubo_data_offset,
+		.range = sizeof(MainSceneUbo)
+	};
+
+	const VkWriteDescriptorSet write {
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.pNext = nullptr,
+		.dstSet = backend.descriptorManager().mainSceneSet(),
+		.dstBinding = 0,
+		.dstArrayElement = 0,
+		.descriptorCount = 1,
+		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.pImageInfo = nullptr,
+		.pBufferInfo = &buffer_info,
+		.pTexelBufferView = nullptr
+	};
+
+	backend.vkUpdateDescriptorSets(backend.device(), 1, &write, 0, nullptr);
 }
 
 }
