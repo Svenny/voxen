@@ -24,26 +24,29 @@ PipelineLayout::~PipelineLayout() noexcept {
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()
-	: m_descriptorless_layout(createDescriptorlessLayout()),
+	: m_terrain_basic_layout(createTerrainBasicLayout()),
 	m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
 
-PipelineLayout PipelineLayoutCollection::createDescriptorlessLayout()
+PipelineLayout PipelineLayoutCollection::createTerrainBasicLayout()
 {
+	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
+	VkDescriptorSetLayout layout = ds_collection.mainSceneLayout();
+
 	constexpr VkPushConstantRange range {
 		.stageFlags = VK_SHADER_STAGE_ALL,
 		.offset = 0,
-		.size = 128
+		.size = 2 * sizeof(glm::vec4)
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.setLayoutCount = 0,
-		.pSetLayouts = nullptr,
+		.setLayoutCount = 1,
+		.pSetLayouts = &layout,
 		.pushConstantRangeCount = 1,
 		.pPushConstantRanges = &range
 	});
