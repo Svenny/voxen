@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/capabilities.hpp>
+#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
@@ -50,6 +51,7 @@ struct Backend::Impl {
 		Storage<PipelineCache>,
 		Storage<DescriptorSetLayoutCollection>,
 		Storage<PipelineLayoutCollection>,
+		Storage<DescriptorManager>,
 
 		Storage<Surface>,
 		Storage<RenderPassCollection>,
@@ -226,6 +228,7 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 			m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
 			m_impl.constructModule(m_descriptor_set_layout_collection);
 			m_impl.constructModule(m_pipeline_layout_collection);
+			m_impl.constructModule(m_descriptor_manager);
 		}
 
 		if (start_surface_dep) {
@@ -295,6 +298,7 @@ void Backend::doStop(StartStopMode mode) noexcept
 	}
 
 	if (stop_all) {
+		m_impl.destructModule(m_descriptor_manager);
 		m_impl.destructModule(m_pipeline_layout_collection);
 		m_impl.destructModule(m_descriptor_set_layout_collection);
 		m_impl.destructModule(m_pipeline_cache);

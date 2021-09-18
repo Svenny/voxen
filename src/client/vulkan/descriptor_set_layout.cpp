@@ -42,6 +42,15 @@ DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()
 	Log::debug("DescriptorSetLayoutCollection created successfully");
 }
 
+void DescriptorSetLayoutCollection::appendDescriptorConsumption(const VkDescriptorSetLayoutCreateInfo &info)
+{
+	for (uint32_t i = 0; i < info.bindingCount; i++) {
+		VkDescriptorType type = info.pBindings[i].descriptorType;
+		uint32_t count = info.pBindings[i].descriptorCount;
+		m_descriptor_consumption[type] += count;
+	}
+}
+
 WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createMainSceneLayout()
 {
 	VkDescriptorSetLayoutBinding bindings[1];
@@ -53,13 +62,16 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createMainSceneLayou
 		.pImmutableSamplers = nullptr
 	};
 
-	return WrappedVkDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo {
+	const VkDescriptorSetLayoutCreateInfo info {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.bindingCount = 1,
 		.pBindings = bindings,
-	});
+	};
+
+	appendDescriptorConsumption(info);
+	return WrappedVkDescriptorSetLayout(info);
 }
 
 WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustumCullLayout()
@@ -87,13 +99,16 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 		.pImmutableSamplers = nullptr
 	};
 
-	return WrappedVkDescriptorSetLayout(VkDescriptorSetLayoutCreateInfo {
+	const VkDescriptorSetLayoutCreateInfo info {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.bindingCount = 3,
 		.pBindings = bindings,
-	});
+	};
+
+	appendDescriptorConsumption(info);
+	return WrappedVkDescriptorSetLayout(info);
 }
 
 }
