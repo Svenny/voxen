@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
+#include <unordered_map>
+
 namespace voxen::client::vulkan
 {
 
@@ -32,13 +34,18 @@ public:
 	DescriptorSetLayoutCollection &operator = (const DescriptorSetLayoutCollection &) = delete;
 	~DescriptorSetLayoutCollection() = default;
 
+	const std::unordered_map<VkDescriptorType, uint32_t> totalDescriptorConsumption() const noexcept
+		{ return m_descriptor_consumption; }
+
 	WrappedVkDescriptorSetLayout &mainSceneLayout() noexcept { return m_main_scene_layout; }
 	WrappedVkDescriptorSetLayout &terrainFrustumCullLayout() noexcept { return m_terrain_frustum_cull_layout; }
 
 private:
+	std::unordered_map<VkDescriptorType, uint32_t> m_descriptor_consumption;
 	WrappedVkDescriptorSetLayout m_main_scene_layout;
 	WrappedVkDescriptorSetLayout m_terrain_frustum_cull_layout;
 
+	void appendDescriptorConsumption(const VkDescriptorSetLayoutCreateInfo &info);
 	WrappedVkDescriptorSetLayout createMainSceneLayout();
 	WrappedVkDescriptorSetLayout createTerrainFrustumCullLayout();
 };

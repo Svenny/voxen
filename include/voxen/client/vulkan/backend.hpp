@@ -13,6 +13,7 @@ namespace voxen::client::vulkan
 class AlgoDebugOctree;
 class AlgoTerrainSimple;
 class Capabilities;
+class DescriptorManager;
 class DescriptorSetLayoutCollection;
 class Device;
 class DeviceAllocator;
@@ -78,6 +79,8 @@ public:
 		{ return *m_descriptor_set_layout_collection; }
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
+	DescriptorManager &descriptorManager() noexcept { return *m_descriptor_manager; }
+	const DescriptorManager &descriptorManager() const noexcept { return *m_descriptor_manager; }
 
 	Surface &surface() noexcept { return *m_surface; }
 	const Surface &surface() const noexcept { return *m_surface; }
@@ -133,6 +136,7 @@ private:
 	PipelineCache *m_pipeline_cache = nullptr;
 	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
+	DescriptorManager *m_descriptor_manager = nullptr;
 
 	Surface *m_surface = nullptr;
 	RenderPassCollection *m_render_pass_collection = nullptr;
