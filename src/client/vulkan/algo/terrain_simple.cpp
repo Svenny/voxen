@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/common/terrain/surface.hpp>
@@ -15,8 +16,8 @@ namespace voxen::client::vulkan
 {
 
 struct PushConstantsBlock {
-	float mtx[16];
-	float sun_dir[3];
+	glm::vec4 chunk_base_scale;
+	glm::vec3 sun_direction; float _pad0;
 };
 
 AlgoTerrainSimple::AlgoTerrainSimple()
@@ -37,13 +38,25 @@ static glm::mat4 chunkLocalToClip(terrain::ChunkId id, const GameView &view) noe
 	return view.translatedWorldToClip() * local_to_tr_world;
 }
 
+static glm::vec4 calcChunkBaseScale(terrain::ChunkId id, const GameView &view) noexcept
+{
+	glm::dvec3 base_pos;
+	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+
+	const float size = float(1u << id.lod);
+	return glm::vec4(base_pos - view.cameraPosition(), size);
+}
+
 void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = backend.pipelineCollection();
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
-	VkPipelineLayout pipeline_layout = pipeline_layout_collection.descriptorlessLayout();
+	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
+	VkDescriptorSet descriptor_set = backend.descriptorManager().mainSceneSet();
 
 	auto &terrain = backend.terrainSynchronizer();
 	{
@@ -57,16 +70,16 @@ void AlgoTerrainSimple::executePass(VkCommandBuffer cmd_buffer, const WorldState
 	}
 
 	backend.vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	backend.vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+	                                0, 1, &descriptor_set, 0, nullptr);
 
 	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 
 	terrain.walkActiveChunks(
 	[&](terrain::ChunkId id, const TerrainChunkGpuData &data) {
-		const glm::mat4 mat = chunkLocalToClip(id, view);
-
 		PushConstantsBlock block;
-		memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);
-		memcpy(block.sun_dir, glm::value_ptr(SUN_DIR), sizeof(float) * 3);
+		block.chunk_base_scale = calcChunkBaseScale(id, view);
+		block.sun_direction = SUN_DIR;
 		backend.vkCmdPushConstants(cmd_buffer, pipeline_layout,
 		                           VK_SHADER_STAGE_ALL,
 		                           0, sizeof(block), &block);

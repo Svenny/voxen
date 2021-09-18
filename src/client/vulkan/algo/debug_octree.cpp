@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 
@@ -32,8 +33,8 @@ constexpr static uint16_t INDEX_BUFFER_DATA[] = {
 };
 
 struct PushConstantsBlock {
-	float mtx[16];
-	float color[4];
+	glm::vec4 chunk_base_scale;
+	glm::vec4 debug_color;
 };
 
 AlgoDebugOctree::AlgoDebugOctree() :
@@ -42,17 +43,15 @@ AlgoDebugOctree::AlgoDebugOctree() :
 	Log::debug("AlgoDebugOctree created successfully");
 }
 
-static glm::mat4 chunkLocalToClip(terrain::ChunkId id, const GameView &view) noexcept
+static glm::vec4 calcChunkBaseScale(terrain::ChunkId id, const GameView &view) noexcept
 {
 	glm::dvec3 base_pos;
 	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
 	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
 	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
 
-	const glm::vec3 offset(base_pos - view.cameraPosition());
 	const float size = float(terrain::Config::CHUNK_SIZE << id.lod);
-	const glm::mat4 local_to_tr_world = extras::scale_translate(offset.x, offset.y, offset.z, size);
-	return view.translatedWorldToClip() * local_to_tr_world;
+	return glm::vec4(base_pos - view.cameraPosition(), size);
 }
 
 void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &view)
@@ -61,9 +60,12 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = backend.pipelineCollection();
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_OCTREE_PIPELINE];
-	VkPipelineLayout pipeline_layout = pipeline_layout_collection.descriptorlessLayout();
+	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
+	VkDescriptorSet descriptor_set = backend.descriptorManager().mainSceneSet();
 
 	backend.vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	backend.vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+	                                0, 1, &descriptor_set, 0, nullptr);
 	m_cell_mesh.bindBuffers(cmd_buffer);
 
 	static constexpr float NODE_COLORS[6][4] = {
@@ -84,15 +86,14 @@ void AlgoDebugOctree::executePass(VkCommandBuffer cmd_buffer, const GameView &vi
 		}
 
 		const float size = float(terrain::Config::CHUNK_SIZE << id.lod);
-		const glm::mat4 mat = chunkLocalToClip(id, view);
+		const int idx = std::clamp(int(log2f(size / 32.0f)), 0, 5);
 
 		PushConstantsBlock block;
-		memcpy(block.mtx, glm::value_ptr(mat), sizeof(float) * 16);
-		int idx = std::clamp(int(log2f(size / 32.0f)), 0, 5);
-		block.color[0] = NODE_COLORS[idx][0];
-		block.color[1] = NODE_COLORS[idx][1];
-		block.color[2] = NODE_COLORS[idx][2];
-		block.color[3] = NODE_COLORS[idx][3];
+		block.chunk_base_scale = calcChunkBaseScale(id, view);
+		block.debug_color.r = NODE_COLORS[idx][0];
+		block.debug_color.g = NODE_COLORS[idx][1];
+		block.debug_color.b = NODE_COLORS[idx][2];
+		block.debug_color.a = NODE_COLORS[idx][3];
 		backend.vkCmdPushConstants(cmd_buffer, pipeline_layout,
 		                           VK_SHADER_STAGE_ALL,
 		                           0, sizeof(block), &block);

@@ -239,7 +239,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
+	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
 	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;
 }
@@ -273,7 +273,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().descriptorlessLayout();
+	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
 	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
 	my_create_info.subpass = 0;
 }
