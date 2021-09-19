@@ -25,7 +25,7 @@ MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 MainLoop::MainLoop()
 	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE),
 	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
-	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(MAX_PENDING_FRAMES))
+	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
 {
 	m_main_scene_ubo = FatVkBuffer(VkBufferCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -55,7 +55,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	VkDevice device = backend.device();
 	auto &swapchain = backend.swapchain();
 
-	size_t pending_frame_id = m_frame_id % MAX_PENDING_FRAMES;
+	size_t pending_frame_id = m_frame_id % Config::NUM_CPU_PENDING_FRAMES;
 	VkSemaphore frame_acquired_semaphore = m_pending_frame_syncs[pending_frame_id].frame_acquired_semaphore;
 	VkSemaphore render_done_semaphore = m_pending_frame_syncs[pending_frame_id].render_done_semaphore;
 	VkFence render_done_fence = m_pending_frame_syncs[pending_frame_id].render_done_fence;
