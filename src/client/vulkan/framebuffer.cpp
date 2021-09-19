@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/framebuffer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/surface.hpp>
@@ -33,6 +34,8 @@ FramebufferCollection::FramebufferCollection() :
 	m_scene_depth_stencil_buffer_view(createSceneDepthStencilBufferView()),
 	m_scene_framebuffer(createSceneFramebuffer())
 {
+	// To allow multiple frames we need to keep N copies of render targets
+	static_assert(Config::NUM_GPU_PENDING_FRAMES == 1, "A single pending GPU frame is currently assumed");
 	Log::debug("FramebufferCollection created successfully");
 }
 
