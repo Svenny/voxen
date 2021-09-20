@@ -17,6 +17,7 @@
 #include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
+#include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/algo/terrain_simple.hpp>
 
 #include <voxen/client/vulkan/high/main_loop.hpp>
@@ -63,7 +64,8 @@ struct Backend::Impl {
 
 		Storage<MainLoop>,
 		Storage<AlgoDebugOctree>,
-		Storage<AlgoTerrainSimple>
+		Storage<AlgoTerrainSimple>,
+		Storage<TerrainRenderer>
 	> storage;
 
 	template<typename T, typename... Args> void constructModule(T *&ptr, Args&&... args)
@@ -244,6 +246,7 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 			m_impl.constructModule(m_main_loop);
 			m_impl.constructModule(m_algo_debug_octree);
 			m_impl.constructModule(m_algo_terrain_simple);
+			m_impl.constructModule(m_terrain_renderer);
 		}
 
 		return true;
@@ -283,6 +286,7 @@ void Backend::doStop(StartStopMode mode) noexcept
 	const bool stop_swapchain_dep = (stop_surface_dep || mode == StartStopMode::SwapchainDependentOnly);
 
 	if (stop_swapchain_dep) {
+		m_impl.destructModule(m_terrain_renderer);
 		m_impl.destructModule(m_algo_terrain_simple);
 		m_impl.destructModule(m_algo_debug_octree);
 		m_impl.destructModule(m_main_loop);
