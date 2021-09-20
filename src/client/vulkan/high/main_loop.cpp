@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/high/main_loop.hpp>
 
 #include <voxen/client/vulkan/algo/debug_octree.hpp>
+#include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/algo/terrain_simple.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
@@ -94,6 +95,11 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	updateMainSceneUbo(view);
 
+	auto &terrain_renderer = backend.terrainRenderer();
+	terrain_renderer.onNewWorldState(state);
+	terrain_renderer.onFrameBegin(view);
+	terrain_renderer.launchFrustumCull(cmd_buf);
+
 	VkRenderPassAttachmentBeginInfo attachment_info = {};
 	attachment_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
 	VkImageView attachments[2] = {
@@ -129,8 +135,10 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	};
 	backend.vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
 
-	backend.algoTerrainSimple().executePass(cmd_buf, state, view);
-	backend.algoDebugOctree().executePass(cmd_buf, view);
+	terrain_renderer.drawChunksInFrustum(cmd_buf);
+	terrain_renderer.drawDebugChunkBorders(cmd_buf);
+	//backend.algoTerrainSimple().executePass(cmd_buf, state, view);
+	//backend.algoDebugOctree().executePass(cmd_buf, view);
 
 	backend.vkCmdEndRenderPass(cmd_buf);
 

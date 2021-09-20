@@ -3,8 +3,7 @@
 #include <util/dither.glsl>
 
 layout(push_constant, std140) uniform PushConstants {
-	vec4 chunk_base_scale;
-	vec3 sun_direction; float _pad0;
+	vec3 sun_direction;
 } g_push_const;
 
 layout(set = 0, binding = 0, std140) uniform CameraParameters {

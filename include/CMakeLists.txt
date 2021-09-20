@@ -15,6 +15,7 @@ set(EXTRAS_HEADERS
 
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/algo/debug_octree.hpp
+	include/voxen/client/vulkan/algo/terrain_renderer.hpp
 	include/voxen/client/vulkan/algo/terrain_simple.hpp
 	include/voxen/client/vulkan/high/main_loop.hpp
 	include/voxen/client/vulkan/high/mesh.hpp

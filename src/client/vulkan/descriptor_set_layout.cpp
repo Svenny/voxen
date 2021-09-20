@@ -103,7 +103,7 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.bindingCount = 3,
+		.bindingCount = std::size(bindings),
 		.pBindings = bindings,
 	};
 

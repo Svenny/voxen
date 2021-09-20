@@ -12,56 +12,103 @@
 namespace voxen::client::vulkan
 {
 
-struct VertexFormatPositionOnly {
-	VertexFormatPositionOnly() noexcept
+struct VertexFormatPositionOnlyTerrain {
+	VertexFormatPositionOnlyTerrain() noexcept
 	{
-		vertex_input_binding.binding = 0;
-		vertex_input_binding.stride = sizeof(float) * 3;
-		vertex_input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		// Per-vertex data
+		vertex_input_binding[0] = VkVertexInputBindingDescription {
+			.binding = 0,
+			.stride = sizeof(float) * 3,
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+		};
+		// Per-chunk data
+		vertex_input_binding[1] = VkVertexInputBindingDescription {
+			.binding = 1,
+			.stride = sizeof(float) * 4,
+			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+		};
 
-		vertex_input_attrib.binding = 0;
-		vertex_input_attrib.location = 0;
-		vertex_input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_input_attrib.offset = 0;
+		// Position
+		vertex_input_attrib[0] = VkVertexInputAttributeDescription {
+			.location = 0,
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = 0
+		};
+		// Chunk base/scale data
+		vertex_input_attrib[1] = VkVertexInputAttributeDescription {
+			.location = 1,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			.offset = 0
+		};
 
 		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertex_input_info.vertexBindingDescriptionCount = 1;
-		vertex_input_info.pVertexBindingDescriptions = &vertex_input_binding;
-		vertex_input_info.vertexAttributeDescriptionCount = 1;
-		vertex_input_info.pVertexAttributeDescriptions = &vertex_input_attrib;
-	}
-
-	VkVertexInputBindingDescription vertex_input_binding = {};
-	VkVertexInputAttributeDescription vertex_input_attrib = {};
-	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
-};
-
-struct VertexFormatPositionAndNormal {
-	VertexFormatPositionAndNormal() noexcept
-	{
-		vertex_input_binding.binding = 0;
-		vertex_input_binding.stride = sizeof(float) * 6;
-		vertex_input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		vertex_input_attrib[0].binding = 0;
-		vertex_input_attrib[0].location = 0;
-		vertex_input_attrib[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_input_attrib[0].offset = 0;
-
-		vertex_input_attrib[1].binding = 0;
-		vertex_input_attrib[1].location = 1;
-		vertex_input_attrib[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_input_attrib[1].offset = sizeof(float) * 3;
-
-		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertex_input_info.vertexBindingDescriptionCount = 1;
-		vertex_input_info.pVertexBindingDescriptions = &vertex_input_binding;
-		vertex_input_info.vertexAttributeDescriptionCount = 2;
+		vertex_input_info.vertexBindingDescriptionCount = std::size(vertex_input_binding);
+		vertex_input_info.pVertexBindingDescriptions = vertex_input_binding;
+		vertex_input_info.vertexAttributeDescriptionCount = std::size(vertex_input_attrib);
 		vertex_input_info.pVertexAttributeDescriptions = vertex_input_attrib;
 	}
 
-	VkVertexInputBindingDescription vertex_input_binding = {};
+	VkVertexInputBindingDescription vertex_input_binding[2] = {};
 	VkVertexInputAttributeDescription vertex_input_attrib[2] = {};
+	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+};
+
+struct VertexFormatBasicTerrain {
+	VertexFormatBasicTerrain() noexcept
+	{
+		// Per-vertex data
+		vertex_input_binding[0] = VkVertexInputBindingDescription {
+			.binding = 0,
+			.stride = sizeof(float) * 6,
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+		};
+		// Per-chunk data
+		vertex_input_binding[1] = VkVertexInputBindingDescription {
+			.binding = 1,
+			.stride = sizeof(float) * 4,
+			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+		};
+
+		// Position
+		vertex_input_attrib[0] = VkVertexInputAttributeDescription {
+			.location = 0,
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = 0
+		};
+		// Normal
+		vertex_input_attrib[1] = VkVertexInputAttributeDescription {
+			.location = 1,
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = sizeof(float) * 3
+		};
+		// Material ID
+		vertex_input_attrib[2] = VkVertexInputAttributeDescription {
+			.location = 2,
+			.binding = 0,
+			.format = VK_FORMAT_R32_SFLOAT,
+			.offset = sizeof(float) * 6
+		};
+		// Chunk base/scale data
+		vertex_input_attrib[3] = VkVertexInputAttributeDescription {
+			.location = 3,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
+			.offset = 0
+		};
+
+		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertex_input_info.vertexBindingDescriptionCount = std::size(vertex_input_binding);
+		vertex_input_info.pVertexBindingDescriptions = vertex_input_binding;
+		vertex_input_info.vertexAttributeDescriptionCount = std::size(vertex_input_attrib);
+		vertex_input_info.pVertexAttributeDescriptions = vertex_input_attrib;
+	}
+
+	VkVertexInputBindingDescription vertex_input_binding[2] = {};
+	VkVertexInputAttributeDescription vertex_input_attrib[4] = {};
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
 };
 
@@ -178,8 +225,8 @@ struct GraphicsPipelineParts {
 
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
 
-	const VertexFormatPositionOnly vert_fmt_pos_only;
-	const VertexFormatPositionAndNormal vert_fmt_pos_and_normal;
+	const VertexFormatPositionOnlyTerrain vert_fmt_pos_only_terrain;
+	const VertexFormatBasicTerrain vert_fmt_basic_terrain;
 	const DefaultInputAssemblyState default_input_assembly_state;
 	const DefaultViewportState default_viewport_state;
 	const DefaultRasterizationState default_rasterization_state;
@@ -231,7 +278,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 
 	my_create_info.stageCount = 2;
 	my_create_info.pStages = my_parts.stages;
-	my_create_info.pVertexInputState = &parts.vert_fmt_pos_only.vertex_input_info;
+	my_create_info.pVertexInputState = &parts.vert_fmt_pos_only_terrain.vertex_input_info;
 	my_create_info.pInputAssemblyState = &input_assembly_info;
 	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
 	my_create_info.pRasterizationState = &rasterization_info;
@@ -265,7 +312,7 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 
 	my_create_info.stageCount = 2;
 	my_create_info.pStages = my_parts.stages;
-	my_create_info.pVertexInputState = &parts.vert_fmt_pos_and_normal.vertex_input_info;
+	my_create_info.pVertexInputState = &parts.vert_fmt_basic_terrain.vertex_input_info;
 	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
 	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
 	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;

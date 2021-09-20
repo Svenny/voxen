@@ -28,6 +28,7 @@ class RenderPassCollection;
 class ShaderModuleCollection;
 class Surface;
 class Swapchain;
+class TerrainRenderer;
 class TerrainSynchronizer;
 class TransferManager;
 
@@ -100,6 +101,8 @@ public:
 	const AlgoDebugOctree &algoDebugOctree() const noexcept { return *m_algo_debug_octree; }
 	AlgoTerrainSimple &algoTerrainSimple() noexcept { return *m_algo_terrain_simple; }
 	const AlgoTerrainSimple &algoTerrainSimple() const noexcept { return *m_algo_terrain_simple; }
+	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
+	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
 
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
 	void unloadInstanceLevelApi() noexcept;
@@ -148,6 +151,7 @@ private:
 	MainLoop *m_main_loop = nullptr;
 	AlgoDebugOctree *m_algo_debug_octree = nullptr;
 	AlgoTerrainSimple *m_algo_terrain_simple = nullptr;
+	TerrainRenderer *m_terrain_renderer = nullptr;
 
 	static constinit Backend s_instance;
 

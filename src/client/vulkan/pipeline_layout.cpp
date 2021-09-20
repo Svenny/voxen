@@ -36,9 +36,9 @@ PipelineLayout PipelineLayoutCollection::createTerrainBasicLayout()
 	VkDescriptorSetLayout layout = ds_collection.mainSceneLayout();
 
 	constexpr VkPushConstantRange range {
-		.stageFlags = VK_SHADER_STAGE_ALL,
+		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.offset = 0,
-		.size = 2 * sizeof(glm::vec4)
+		.size = sizeof(glm::vec4)
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
@@ -64,7 +64,7 @@ PipelineLayout PipelineLayoutCollection::createTerrainFrustumCullLayout()
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.setLayoutCount = 2,
+		.setLayoutCount = std::size(layouts),
 		.pSetLayouts = layouts,
 		.pushConstantRangeCount = 0,
 		.pPushConstantRanges = nullptr

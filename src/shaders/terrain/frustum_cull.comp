@@ -27,16 +27,13 @@ layout(set = 1, binding = 2, scalar) readonly buffer AabbSsbo {
 void main()
 {
 	vec4 base_scale = g_ssboBaseScale.value[gl_GlobalInvocationID.x];
-	vec3 offset = base_scale.xyz - g_uboCameraParams.world_position;
+	vec3 offset = base_scale.xyz;
 	vec3 scale = base_scale.www;
 
 	Aabb aabb = g_ssboAabb.value[gl_GlobalInvocationID.x];
 	aabb.min = fma(aabb.min, scale, offset);
 	aabb.max = fma(aabb.max, scale, offset);
 
-	if (!isAabbInFrustum(aabb, g_uboCameraParams.translated_world_to_clip)) {
-		// Either one of these stores will effectively disable drawing this chunk
-		g_ssboDrawCommand.value[gl_GlobalInvocationID.x].indexCount = 0;
-		g_ssboDrawCommand.value[gl_GlobalInvocationID.x].instanceCount = 0;
-	}
+	g_ssboDrawCommand.value[gl_GlobalInvocationID.x].instanceCount =
+		isAabbInFrustum(aabb, g_uboCameraParams.translated_world_to_clip) ? 1u : 0u;
 }

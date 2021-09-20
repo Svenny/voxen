@@ -1,7 +1,6 @@
 #version 460 core
 
 layout(push_constant, std140) uniform PushConstants {
-	vec4 chunk_base_scale;
 	vec4 debug_color;
 } g_push_const;
 
