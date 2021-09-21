@@ -10,8 +10,6 @@
 namespace voxen::client::vulkan
 {
 
-class AlgoDebugOctree;
-class AlgoTerrainSimple;
 class Capabilities;
 class DescriptorManager;
 class DescriptorSetLayoutCollection;
@@ -97,10 +95,6 @@ public:
 
 	MainLoop &mainLoop() noexcept { return *m_main_loop; }
 	const MainLoop &mainLoop() const noexcept { return *m_main_loop; }
-	AlgoDebugOctree &algoDebugOctree() noexcept { return *m_algo_debug_octree; }
-	const AlgoDebugOctree &algoDebugOctree() const noexcept { return *m_algo_debug_octree; }
-	AlgoTerrainSimple &algoTerrainSimple() noexcept { return *m_algo_terrain_simple; }
-	const AlgoTerrainSimple &algoTerrainSimple() const noexcept { return *m_algo_terrain_simple; }
 	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
 	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
 
@@ -149,8 +143,6 @@ private:
 	FramebufferCollection *m_framebuffer_collection = nullptr;
 
 	MainLoop *m_main_loop = nullptr;
-	AlgoDebugOctree *m_algo_debug_octree = nullptr;
-	AlgoTerrainSimple *m_algo_terrain_simple = nullptr;
 	TerrainRenderer *m_terrain_renderer = nullptr;
 
 	static constinit Backend s_instance;

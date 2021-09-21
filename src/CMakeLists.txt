@@ -3,9 +3,7 @@ set(EXTRAS_SOURCES
 )
 
 set(VOXEN_SOURCES
-	src/client/vulkan/algo/debug_octree.cpp
 	src/client/vulkan/algo/terrain_renderer.cpp
-	src/client/vulkan/algo/terrain_simple.cpp
 	src/client/vulkan/high/main_loop.cpp
 	src/client/vulkan/high/mesh.cpp
 	src/client/vulkan/high/terrain_synchronizer.cpp
