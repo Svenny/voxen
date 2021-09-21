@@ -1,12 +1,10 @@
 #version 460 core
 
-layout(push_constant, std140) uniform PushConstants {
-	vec4 debug_color;
-} g_push_const;
+layout(location = 0) in vec3 in_color;
 
 layout(location = 0) out vec4 out_color;
 
 void main()
 {
-	out_color = g_push_const.debug_color;
+	out_color = vec4(in_color, 1.0);
 }

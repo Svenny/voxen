@@ -98,6 +98,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	auto &terrain_renderer = backend.terrainRenderer();
 	terrain_renderer.onNewWorldState(state);
 	terrain_renderer.onFrameBegin(view);
+	terrain_renderer.prepareResources(cmd_buf);
 	terrain_renderer.launchFrustumCull(cmd_buf);
 
 	VkRenderPassAttachmentBeginInfo attachment_info = {};

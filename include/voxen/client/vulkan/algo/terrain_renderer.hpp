@@ -42,6 +42,7 @@ public:
 	void onNewWorldState(const WorldState &state);
 	void onFrameBegin(const GameView &view);
 
+	void prepareResources(VkCommandBuffer cmdbuf);
 	void launchFrustumCull(VkCommandBuffer cmdbuf);
 	void drawChunksInFrustum(VkCommandBuffer cmdbuf);
 	void drawDebugChunkBorders(VkCommandBuffer cmdbuf);
@@ -75,6 +76,7 @@ private:
 
 	std::vector<FatVkBuffer> m_vertex_arenas;
 	std::vector<FatVkBuffer> m_index_arenas;
+	FatVkBuffer m_debug_octree_mesh_buffer;
 	// Stores N copies of:
 	// - Chunk transform (base+scale) instance buffer
 	// - Indirect draw commands buffer
