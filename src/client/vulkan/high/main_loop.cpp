@@ -1,8 +1,6 @@
 #include <voxen/client/vulkan/high/main_loop.hpp>
 
-#include <voxen/client/vulkan/algo/debug_octree.hpp>
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
-#include <voxen/client/vulkan/algo/terrain_simple.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/device.hpp>
@@ -138,8 +136,6 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	terrain_renderer.drawChunksInFrustum(cmd_buf);
 	terrain_renderer.drawDebugChunkBorders(cmd_buf);
-	//backend.algoTerrainSimple().executePass(cmd_buf, state, view);
-	//backend.algoDebugOctree().executePass(cmd_buf, view);
 
 	backend.vkCmdEndRenderPass(cmd_buf);
 

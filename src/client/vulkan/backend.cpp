@@ -1,5 +1,9 @@
 #include <voxen/client/vulkan/backend.hpp>
 
+#include <voxen/client/vulkan/algo/terrain_renderer.hpp>
+#include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
+#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
@@ -15,14 +19,6 @@
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
-
-#include <voxen/client/vulkan/algo/debug_octree.hpp>
-#include <voxen/client/vulkan/algo/terrain_renderer.hpp>
-#include <voxen/client/vulkan/algo/terrain_simple.hpp>
-
-#include <voxen/client/vulkan/high/main_loop.hpp>
-#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -63,8 +59,6 @@ struct Backend::Impl {
 		Storage<TerrainSynchronizer>,
 
 		Storage<MainLoop>,
-		Storage<AlgoDebugOctree>,
-		Storage<AlgoTerrainSimple>,
 		Storage<TerrainRenderer>
 	> storage;
 
@@ -244,8 +238,6 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 			m_impl.constructModule(m_framebuffer_collection);
 
 			m_impl.constructModule(m_main_loop);
-			m_impl.constructModule(m_algo_debug_octree);
-			m_impl.constructModule(m_algo_terrain_simple);
 			m_impl.constructModule(m_terrain_renderer);
 		}
 
@@ -287,8 +279,6 @@ void Backend::doStop(StartStopMode mode) noexcept
 
 	if (stop_swapchain_dep) {
 		m_impl.destructModule(m_terrain_renderer);
-		m_impl.destructModule(m_algo_terrain_simple);
-		m_impl.destructModule(m_algo_debug_octree);
 		m_impl.destructModule(m_main_loop);
 
 		m_impl.destructModule(m_framebuffer_collection);
