@@ -28,6 +28,27 @@ constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * MAX_RENDERED_CHUN
 constexpr VkDeviceSize VERTEX_ARENA_SIZE = sizeof(terrain::SurfaceVertex) * MAX_PER_ARENA_VERTICES;
 constexpr VkDeviceSize INDEX_ARENA_SIZE = sizeof(uint16_t) * MAX_PER_ARENA_INDICES;
 
+constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
+#define LO 0.0f
+#define HI float(terrain::Config::CHUNK_SIZE)
+	LO, LO, LO,
+	LO, LO, HI,
+	LO, HI, LO,
+	LO, HI, HI,
+	HI, LO, LO,
+	HI, LO, HI,
+	HI, HI, LO,
+	HI, HI, HI
+#undef LO
+#undef HI
+};
+
+constexpr static uint16_t DEBUG_OCTREE_INDEX_BUFFER_DATA[] = {
+	0, 1, 1, 5, 4, 5, 0, 4,
+	2, 3, 3, 7, 6, 7, 2, 6,
+	0, 2, 1, 3, 4, 6, 5, 7
+};
+
 TerrainRenderer::TerrainRenderer()
 {
 	constexpr VkDeviceSize per_frame_size =
@@ -176,6 +197,33 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 	terrain_sync.endSyncSession();
 }
 
+void TerrainRenderer::prepareResources(VkCommandBuffer cmdbuf)
+{
+	auto &backend = Backend::backend();
+
+	// TODO: check some debug flag to avoid creating this buffer when it's not needed?
+	if (m_debug_octree_mesh_buffer.handle() == VK_NULL_HANDLE) {
+		constexpr VkDeviceSize size = sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA) + sizeof(DEBUG_OCTREE_INDEX_BUFFER_DATA);
+		// TODO: Not efficient and generally looks so GL-ish
+		m_debug_octree_mesh_buffer = FatVkBuffer(VkBufferCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.size = size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = nullptr
+		}, DeviceMemoryUseCase::GpuOnly);
+
+		backend.vkCmdUpdateBuffer(cmdbuf, m_debug_octree_mesh_buffer, 0,
+			sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA), DEBUG_OCTREE_VERTEX_BUFFER_DATA);
+		backend.vkCmdUpdateBuffer(cmdbuf, m_debug_octree_mesh_buffer, sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA),
+			sizeof(DEBUG_OCTREE_INDEX_BUFFER_DATA), DEBUG_OCTREE_INDEX_BUFFER_DATA);
+	}
+}
+
 void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 {
 	auto &backend = Backend::backend();
@@ -246,7 +294,30 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 
 void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 {
-	(void)cmdbuf;
+	auto &backend = Backend::backend();
+	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
+	auto &pipeline_collection = backend.pipelineCollection();
+
+	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_OCTREE_PIPELINE];
+	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
+	VkDescriptorSet descriptor_set = backend.descriptorManager().mainSceneSet();
+
+	backend.vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+		0, 1, &descriptor_set, 0, nullptr);
+
+	const uint32_t set_id = backend.descriptorManager().setId();
+	VkBuffer vtx_buffers[2];
+	vtx_buffers[0] = m_debug_octree_mesh_buffer;
+	vtx_buffers[1] = m_combo_buffer;
+	VkDeviceSize vtx_offsets[2];
+	vtx_offsets[0] = 0;
+	vtx_offsets[1] = uintptr_t(m_chunk_transform_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr);
+
+	backend.vkCmdBindVertexBuffers(cmdbuf, 0, std::size(vtx_buffers), vtx_buffers, vtx_offsets);
+	backend.vkCmdBindIndexBuffer(cmdbuf, m_debug_octree_mesh_buffer,
+		sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA), VK_INDEX_TYPE_UINT16);
+	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), m_num_active_chunks, 0, 0, 0);
 }
 
 void TerrainRenderer::addVertexArena()
