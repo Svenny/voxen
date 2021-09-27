@@ -7,6 +7,8 @@
 
 #include <extras/refcnt_ptr.hpp>
 
+#include <glm/vec4.hpp>
+
 #include <memory>
 #include <unordered_map>
 #include <vector>

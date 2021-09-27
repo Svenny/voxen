@@ -82,6 +82,9 @@ public:
 	// NOTE: returns undefined data if the latest `selectPhysicalDevice()` call returned `false`.
 	const OptionalCaps &optionalCaps() const noexcept { return m_optional_caps; }
 
+	// Get Vulkan 1.0 physical device properties queried by the latest `selectPhysicalDevice()` call
+	const VkPhysicalDeviceProperties &props10() const noexcept { return m_phys_dev_caps.props10.properties; }
+
 private:
 	OptionalCaps m_optional_caps;
 

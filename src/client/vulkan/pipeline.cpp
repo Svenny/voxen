@@ -9,6 +9,8 @@
 
 #include <voxen/util/log.hpp>
 
+#include <extras/defer.hpp>
+
 namespace voxen::client::vulkan
 {
 
