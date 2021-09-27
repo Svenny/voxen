@@ -90,6 +90,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 		return false;
 	}
 
+	if (!Backend::backend().capabilities().selectPhysicalDevice(device)) {
+		Log::debug("'{}' is skipped because it doesn't pass minimal system requirements", props.deviceName);
+		return false;
+	}
+
 	// TODO: remove it when saving the selected GPU is available
 	if constexpr (BuildConfig::kUseIntegratedGpu) {
 		if (props.deviceType != VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {

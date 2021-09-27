@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
@@ -26,11 +27,14 @@ MainLoop::MainLoop()
 	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
 	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
 {
+	const VkDeviceSize align = Backend::backend().capabilities().props10().limits.minUniformBufferOffsetAlignment;
+	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
+
 	m_main_scene_ubo = FatVkBuffer(VkBufferCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.size = sizeof(MainSceneUbo) * Config::NUM_CPU_PENDING_FRAMES,
+		.size = ubo_size * Config::NUM_CPU_PENDING_FRAMES,
 		.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
@@ -168,8 +172,11 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 {
 	auto &backend = Backend::backend();
 
+	const VkDeviceSize align = backend.capabilities().props10().limits.minUniformBufferOffsetAlignment;
+	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
+
 	const uint32_t set_id = backend.descriptorManager().setId();
-	const uintptr_t ubo_data_offset = set_id * sizeof(MainSceneUbo);
+	const uintptr_t ubo_data_offset = set_id * ubo_size;
 
 	MainSceneUbo *ubo_data = reinterpret_cast<MainSceneUbo *>
 		(uintptr_t(m_main_scene_ubo.allocation().hostPointer()) + ubo_data_offset);
