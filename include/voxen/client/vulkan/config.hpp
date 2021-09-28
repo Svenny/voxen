@@ -48,6 +48,28 @@ public:
 	// Each allocation arena size is aligned up to the multiple of this value.
 	// This is just a minor performance tunable and does not affect functionality.
 	constexpr static VkDeviceSize ARENA_SIZE_ALIGNMENT = 4096;
+
+	// --- Terrain rendering parameters ---
+
+	// This is a hard limit on the number of chunks which can be rendered during one frame.
+	// Having this limit significantly simplifies some parts of data synchronization logic.
+	// Exceeding it should be treated as a bug and fixed simply by raising the value.
+	// Though it is not at all expected any sane scene setup can reach this number.
+	constexpr static size_t MAX_RENDERED_CHUNKS = 2048;
+	// The maximal number of vertices which can fit in a single terrain mesh arena.
+	// Increasing it will allow using fewer arenas (and therefore render the whole
+	// terrain in less drawcalls) at the cost of possibly increased VRAM waste.
+	// It's theoretically possible that a chunk with extremely complex surface can exceed
+	// arena size alone. This should be treated as a bug and fixed by raising the value.
+	// Though it is not at all expected any sane surface can reach this number.
+	constexpr static size_t MAX_TERRAIN_ARENA_VERTICES = 1024 * 1024;
+	// The maximal number of UINT16 indices which can fit in a single terrain mesh arena.
+	// Increasing it will allow using fewer arenas (and therefore render the whole
+	// terrain in less drawcalls) at the cost of possibly increased VRAM waste.
+	// It's theoretically possible that a chunk with extremely complex surface can exceed
+	// arena size alone. This should be treated as a bug and fixed by raising the value.
+	// Though it is not at all expected any sane surface can reach this number.
+	constexpr static size_t MAX_TERRAIN_ARENA_INDICES = 6 * MAX_TERRAIN_ARENA_VERTICES;
 };
 
 }
