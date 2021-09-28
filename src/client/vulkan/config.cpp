@@ -1,5 +1,7 @@
 #include <voxen/client/vulkan/config.hpp>
 
+#include <voxen/common/terrain/config.hpp>
+
 #include <bit>
 
 namespace voxen::client::vulkan
@@ -21,5 +23,17 @@ static_assert(Config::ARENA_GROW_FACTOR_NUMERATOR > Config::ARENA_GROW_FACTOR_DE
 
 static_assert(std::has_single_bit(Config::ALLOCATION_GRANULARITY), "Allocation granularity must be a power of two");
 static_assert(std::has_single_bit(Config::ARENA_SIZE_ALIGNMENT), "Arena size alignment must be a power of two");
+
+static_assert(Config::MAX_RENDERED_CHUNKS >= 2048, "It's too dangerous to set low rendered chunks counts");
+
+// NOTE: it's actually not the theoretical maximum - seam vertices are not taken into account.
+// Anyway even this number is entirely not expected to ever happen in a real gameplay.
+constexpr static size_t MAX_EXPECTED_VERTICES =
+	terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE;
+// NOTE: it's an approximation based on the fact that classical Dual Contouring builds 6 triangles per vertex.
+constexpr static size_t MAX_EXPECTED_INDICES = 6 * MAX_EXPECTED_VERTICES;
+
+static_assert(Config::MAX_TERRAIN_ARENA_VERTICES >= MAX_EXPECTED_VERTICES, "Arena size is dangerously low");
+static_assert(Config::MAX_TERRAIN_ARENA_INDICES >= MAX_EXPECTED_INDICES, "Arena size is dangerously low");
 
 }

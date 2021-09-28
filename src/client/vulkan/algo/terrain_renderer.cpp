@@ -18,15 +18,11 @@
 namespace voxen::client::vulkan
 {
 
-constexpr static size_t MAX_PER_ARENA_VERTICES = 1024 * 1024;
-constexpr static size_t MAX_PER_ARENA_INDICES = 6 * MAX_PER_ARENA_VERTICES;
-constexpr static size_t MAX_RENDERED_CHUNKS = 2048;
-
-constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize VERTEX_ARENA_SIZE = sizeof(terrain::SurfaceVertex) * MAX_PER_ARENA_VERTICES;
-constexpr VkDeviceSize INDEX_ARENA_SIZE = sizeof(uint16_t) * MAX_PER_ARENA_INDICES;
+constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * Config::MAX_RENDERED_CHUNKS;
+constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * Config::MAX_RENDERED_CHUNKS;
+constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * Config::MAX_RENDERED_CHUNKS;
+constexpr VkDeviceSize VERTEX_ARENA_SIZE = sizeof(terrain::SurfaceVertex) * Config::MAX_TERRAIN_ARENA_VERTICES;
+constexpr VkDeviceSize INDEX_ARENA_SIZE = sizeof(uint16_t) * Config::MAX_TERRAIN_ARENA_INDICES;
 
 constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #define LO 0.0f
@@ -77,7 +73,7 @@ TerrainRenderer::TerrainRenderer()
 	assert(m_combo_buffer_host_ptr);
 
 	for (uint32_t i = 0; i < Config::NUM_CPU_PENDING_FRAMES; i++) {
-		uintptr_t base = uintptr_t(m_combo_buffer_host_ptr) + per_frame_size * i;
+		std::byte *base = reinterpret_cast<std::byte *>(m_combo_buffer_host_ptr) + per_frame_size * i;
 
 		m_chunk_transform_ptr[i] = reinterpret_cast<glm::vec4 *>(base);
 		m_draw_command_ptr[i] = reinterpret_cast<VkDrawIndexedIndirectCommand *>(base + CHUNK_TRANSFORM_BUFFER_SIZE);
