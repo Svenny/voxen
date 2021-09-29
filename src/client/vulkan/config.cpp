@@ -25,6 +25,8 @@ static_assert(std::has_single_bit(Config::ALLOCATION_GRANULARITY), "Allocation g
 static_assert(std::has_single_bit(Config::ARENA_SIZE_ALIGNMENT), "Arena size alignment must be a power of two");
 
 static_assert(Config::MAX_RENDERED_CHUNKS >= 2048, "It's too dangerous to set low rendered chunks counts");
+// Arbitrary value. This is to not bother with the last SIMD line possibly going out of bounds.
+static_assert(Config::MAX_RENDERED_CHUNKS % 128 == 0, "Rendered chunks count should be a multiple of 128");
 
 // NOTE: it's actually not the theoretical maximum - seam vertices are not taken into account.
 // Anyway even this number is entirely not expected to ever happen in a real gameplay.
