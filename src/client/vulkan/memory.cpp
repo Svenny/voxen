@@ -4,10 +4,9 @@
 #include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
-
 #include <voxen/util/log.hpp>
 
-#include <vector>
+#include <extras/linear_allocator.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -23,26 +22,21 @@ static double toMegabytes(VkDeviceSize size) noexcept
 
 // --- DeviceAllocationArena ---
 
-class DeviceAllocationArena final {
+class DeviceAllocationArena final :
+	private extras::linear_allocator<DeviceAllocationArena, uint32_t, Config::ALLOCATION_GRANULARITY> {
 public:
-	using Range = std::pair<uint32_t, uint32_t>;
+	using Base = extras::linear_allocator<DeviceAllocationArena, uint32_t, Config::ALLOCATION_GRANULARITY>;
+	using Range = typename Base::range_type;
 
 	explicit DeviceAllocationArena(VkDeviceSize size, uint32_t memory_type,
 	                               const VkMemoryDedicatedAllocateInfo *dedicated_info)
-		: m_full_size(static_cast<uint32_t>(size)), m_memory_type(memory_type), m_dedicated(dedicated_info != nullptr)
+		: Base(static_cast<uint32_t>(size), dedicated_info ? 1 : Config::EXPECTED_PER_ARENA_ALLOCATIONS),
+		m_memory_type(memory_type), m_dedicated(dedicated_info != nullptr)
 	{
 		// We use 32-bit offsets in free blocks for more compact storage.
 		// Limit to 2^31 (2 GB) for extra safety margin in offset arithmetic.
 		// Arenas shouldn't be that big anyway (generally around 32-128 MB).
 		assert(size <= 1u << 31u);
-
-		if (!m_dedicated) {
-			// Reserving this for dedicated arenas would be just a waste of memory
-			m_free_ranges.reserve(Config::EXPECTED_PER_ARENA_ALLOCATIONS);
-		}
-
-		// Initially we have all arena covered by a single free block
-		m_free_ranges.emplace_back(0, m_full_size);
 
 		auto &backend = Backend::backend();
 
@@ -61,25 +55,9 @@ public:
 		}
 	}
 
-	DeviceAllocationArena(DeviceAllocationArena &&other) noexcept
-	{
-		*this = std::move(other);
-	}
-
+	DeviceAllocationArena(DeviceAllocationArena &&other) = delete;
 	DeviceAllocationArena(const DeviceAllocationArena &) = delete;
-
-	DeviceAllocationArena &operator = (DeviceAllocationArena &&other) noexcept
-	{
-		std::swap(m_handle, other.m_handle);
-		std::swap(m_host_pointer, other.m_host_pointer);
-		std::swap(m_free_ranges, other.m_free_ranges);
-		std::swap(m_full_size, other.m_full_size);
-		std::swap(m_memory_type, other.m_memory_type);
-		std::swap(m_host_mappable, other.m_host_mappable);
-		std::swap(m_dedicated, other.m_dedicated);
-		return *this;
-	}
-
+	DeviceAllocationArena &operator = (DeviceAllocationArena &&other) = delete;
 	DeviceAllocationArena &operator = (const DeviceAllocationArena &) = delete;
 
 	~DeviceAllocationArena() noexcept
@@ -119,133 +97,52 @@ public:
 		m_host_pointer = nullptr;
 	}
 
-	DeviceAllocation allocateDedicated() noexcept
+	[[nodiscard]] DeviceAllocation allocateDedicated() noexcept
 	{
 		assert(m_dedicated);
 		assert(isFree());
 
-		m_free_ranges.clear();
-		return DeviceAllocation(this, 0, m_full_size);
+		auto range = Base::allocate_all();
+		return DeviceAllocation(this, range.first, range.second);
 	}
 
-	std::optional<DeviceAllocation> allocate(VkDeviceSize size, VkDeviceSize align)
+	[[nodiscard]] std::optional<DeviceAllocation> allocate(VkDeviceSize size, VkDeviceSize align)
 	{
-		align = std::max(align, Config::ALLOCATION_GRANULARITY);
-		size = VulkanUtils::alignUp(size, Config::ALLOCATION_GRANULARITY);
-
-		if (size > m_full_size) [[unlikely]] {
-			// Outright reject unfeasibly big requests
+		auto range = Base::allocate(size, align);
+		if (!range) {
 			return std::nullopt;
 		}
 
-		const auto size_u32 = static_cast<uint32_t>(size);
-		const auto align_u32 = static_cast<uint32_t>(align);
-
-		for (size_t i = 0; i < m_free_ranges.size(); i++) {
-			const uint32_t begin = m_free_ranges[i].first;
-			const uint32_t end = m_free_ranges[i].second;
-
-			const uint32_t adjusted_begin = VulkanUtils::alignUp(begin, align_u32);
-			const uint32_t adjusted_end = adjusted_begin + size_u32;
-
-			if (adjusted_end > end) {
-				continue;
-			}
-
-			// Ensure there is room for at least two more objects.
-			// First one can be emplaced down the code. If allocation fails here,
-			// we won't modify the vector, thus ensuring strong exception safety.
-			// Second one can be emplaced during `free(adjusted_begin, adjusted_end)`,
-			// so this reservation guarantees that `free()` is actually noexcept.
-			// TODO (Svenny): but it seems to force linear (not exponential) capacity growth.
-			m_free_ranges.reserve(m_free_ranges.size() + 2);
-
-			bool used_inplace = false;
-
-			if (adjusted_end < end) {
-				m_free_ranges[i] = Range(adjusted_end, end);
-				used_inplace = true;
-			}
-
-			if (adjusted_begin > begin) {
-				if (!used_inplace) {
-					m_free_ranges[i] = Range(begin, adjusted_begin);
-					used_inplace = true;
-				} else {
-					m_free_ranges.emplace(m_free_ranges.begin() + i, begin, adjusted_begin);
-				}
-			}
-
-			if (!used_inplace) {
-				m_free_ranges.erase(m_free_ranges.begin() + i);
-			}
-
-			return DeviceAllocation(this, adjusted_begin, adjusted_end);
-		}
-
-		return std::nullopt;
+		return DeviceAllocation(this, range->first, range->second);
 	}
 
 	void free(Range range) noexcept
 	{
-		const uint32_t begin = range.first;
-		const uint32_t end = range.second;
-		assert(begin < end);
-
-		// Find the first "higher" free block and insert a new one right before it
-		auto iter = std::upper_bound(m_free_ranges.begin(), m_free_ranges.end(), std::make_pair(begin, end));
-		// This can't throw as `allocate` has reserved space for this block in advance
-		iter = m_free_ranges.emplace(iter, begin, end);
-
-		if (auto next = iter + 1; next != m_free_ranges.end()) {
-			assert(next->first >= end);
-			if (next->first == end) {
-				// The next free range starts right at the end of just added one - merge them
-				iter->second = next->second;
-				// This can't invalidate `iter`, as well as all iterators before it
-				m_free_ranges.erase(next);
-			}
-		}
-
-		if (iter != m_free_ranges.begin()) {
-			auto prev = iter - 1;
-			assert(prev->second <= begin);
-			if (prev->second == begin) {
-				// The previous free range ends right at the start of just added one - merge them
-				iter->first = prev->first;
-				// This will invalidate `iter`, but we are not going to use it anymore
-				m_free_ranges.erase(prev);
-			}
-		}
-
-		if (isFree()) [[unlikely]] {
-			// Don't do anything after this call, `this` is probably destroyed in it
-			Backend::backend().deviceAllocator().arenaFreeCallback(this);
-		}
+		Base::free(range);
 	}
 
-	bool isFree() const noexcept
+	[[nodiscard]] bool isFree() const noexcept
 	{
-		return m_free_ranges.size() == 1 && m_free_ranges[0] == Range(0, m_full_size);
+		return Base::is_free();
 	}
 
-	VkDeviceMemory handle() const noexcept { return m_handle; }
-	void *hostPointer() const noexcept { return m_host_pointer; }
-	VkDeviceSize fullSize() const noexcept { return m_full_size; }
-	uint32_t memoryType() const noexcept { return m_memory_type; }
-	bool isDedicated() const noexcept { return m_dedicated; }
+	[[nodiscard]] VkDeviceMemory handle() const noexcept { return m_handle; }
+	[[nodiscard]] void *hostPointer() const noexcept { return m_host_pointer; }
+	[[nodiscard]] VkDeviceSize fullSize() const noexcept { return m_full_size; }
+	[[nodiscard]] uint32_t memoryType() const noexcept { return m_memory_type; }
+	[[nodiscard]] bool isDedicated() const noexcept { return m_dedicated; }
+
+	static void on_allocator_freed(Base &base) noexcept
+	{
+		Backend::backend().deviceAllocator().arenaFreeCallback(static_cast<DeviceAllocationArena *>(&base));
+	}
 
 private:
 	VkDeviceMemory m_handle = VK_NULL_HANDLE;
 	void *m_host_pointer = nullptr;
-	// Holds [begin; end) pairs of offsets into the allocation.
-	// This vector is always ordered by both fields of its elements, that is,
-	// i+1'th element has both `.first` and `.second` greater than in i'th.
-	std::vector<Range> m_free_ranges;
-	uint32_t m_full_size = 0;
-	uint32_t m_memory_type = 0;
+	const uint32_t m_memory_type = 0;
 	bool m_host_mappable = false;
-	bool m_dedicated = false;
+	const bool m_dedicated = false;
 };
 
 // --- DeviceAllocation ---
