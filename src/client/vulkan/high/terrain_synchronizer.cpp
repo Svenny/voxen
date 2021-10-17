@@ -1,11 +1,69 @@
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/config.hpp>
+#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/util/log.hpp>
+
+#include <extras/linear_allocator.hpp>
 
 namespace voxen::client::vulkan
 {
+
+constexpr static VkDeviceSize VERTEX_ARENA_SIZE = sizeof(terrain::SurfaceVertex) * Config::MAX_TERRAIN_ARENA_VERTICES;
+constexpr static VkDeviceSize INDEX_ARENA_SIZE = sizeof(uint16_t) * Config::MAX_TERRAIN_ARENA_INDICES;
+constexpr static uint32_t ALIGNMENT = static_cast<uint32_t>(Config::TERRAIN_SUBALLOCATION_ALIGNMENT);
+
+class TerrainDataArena final : private extras::linear_allocator<TerrainDataArena, uint32_t, ALIGNMENT> {
+public:
+	using Base = extras::linear_allocator<TerrainDataArena, uint32_t, ALIGNMENT>;
+	using Range = std::pair<uint32_t, uint32_t>;
+
+	explicit TerrainDataArena(const VkBufferCreateInfo &info) : Base(static_cast<uint32_t>(info.size)),
+		m_buffer(info, DeviceMemoryUseCase::GpuOnly)
+	{}
+
+	TerrainDataArena(TerrainDataArena &&) = delete;
+	TerrainDataArena(const TerrainDataArena &) = delete;
+	TerrainDataArena &operator = (TerrainDataArena &&) = delete;
+	TerrainDataArena &operator = (const TerrainDataArena &) = delete;
+	~TerrainDataArena() = default;
+
+	bool tryHostMap()
+	{
+		return !!m_buffer.allocation().tryHostMap();
+	}
+
+	[[nodiscard]] std::optional<Range> allocate(uint32_t size)
+	{
+		return Base::allocate(size, ALIGNMENT);
+	}
+
+	static void on_allocator_freed(Base &base) noexcept
+	{
+		Backend::backend().terrainSynchronizer().arenaFreeCallback(static_cast<TerrainDataArena *>(&base));
+	}
+
+private:
+	FatVkBuffer m_buffer;
+};
+
+TerrainSynchronizer::TerrainSynchronizer()
+{
+	auto &dev = Backend::backend().physicalDevice();
+	m_queue_families[0] = dev.graphicsQueueFamily();
+	m_queue_families[1] = dev.transferQueueFamily();
+
+	if (m_queue_families[0] != m_queue_families[1]) {
+		Log::info("GPU has DMA queue, surface transfers will go through it");
+	}
+
+	Log::debug("TerrainSynchronizer created successfully");
+}
+
+TerrainSynchronizer::~TerrainSynchronizer() noexcept = default;
 
 void TerrainSynchronizer::beginSyncSession()
 {
@@ -108,6 +166,29 @@ void TerrainSynchronizer::walkActiveChunks(std::function<void(terrain::ChunkId, 
 		m_chunk_gpu_data.erase(id);
 }
 
+void TerrainSynchronizer::arenaFreeCallback(TerrainDataArena *arena) noexcept
+{
+	assert(arena);
+
+	for (auto iter = m_vertex_arenas.begin(); iter != m_vertex_arenas.end(); ++iter) {
+		if (&(*iter) == arena) {
+			m_vertex_arenas.erase(iter);
+			return;
+		}
+	}
+
+	for (auto iter = m_index_arenas.begin(); iter != m_index_arenas.end(); ++iter) {
+		if (&(*iter) == arena) {
+			m_index_arenas.erase(iter);
+			return;
+		}
+	}
+
+	// Arena must be in one of the lists
+	assert(false);
+	__builtin_unreachable();
+}
+
 void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &own_surface,
                                                  const terrain::ChunkSeamSurface &seam_surface, ChunkGpuData &data)
 {
@@ -133,6 +214,40 @@ void TerrainSynchronizer::enqueueSurfaceTransfer(const terrain::ChunkOwnSurface 
 	if (seam_indices_size > 0) {
 		transfer.uploadToBuffer(data.idx_buffer, own_indices_size, seam_surface.indices(), seam_indices_size);
 	}
+}
+
+void TerrainSynchronizer::addVertexArena()
+{
+	const bool has_dma = m_queue_families[0] != m_queue_families[1];
+
+	const VkBufferCreateInfo info {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.size = VERTEX_ARENA_SIZE,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharingMode = has_dma ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 2,
+		.pQueueFamilyIndices = m_queue_families
+	};
+	m_vertex_arenas.emplace_back(info);
+}
+
+void TerrainSynchronizer::addIndexArena()
+{
+	const bool has_dma = m_queue_families[0] != m_queue_families[1];
+
+	const VkBufferCreateInfo info {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.size = INDEX_ARENA_SIZE,
+		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		.sharingMode = has_dma ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 2,
+		.pQueueFamilyIndices = m_queue_families
+	};
+	m_index_arenas.emplace_back(info);
 }
 
 }

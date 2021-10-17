@@ -76,8 +76,6 @@ private:
 	std::unordered_map<terrain::ChunkId, ChunkSyncData> m_chunk_sync_data;
 	std::unordered_map<terrain::ChunkId, uint32_t> m_kek_tmp;
 
-	std::vector<FatVkBuffer> m_vertex_arenas;
-	std::vector<FatVkBuffer> m_index_arenas;
 	FatVkBuffer m_debug_octree_mesh_buffer;
 	// Stores N copies of:
 	// - Chunk transform (base+scale) instance buffer
@@ -92,9 +90,6 @@ private:
 	Aabb *m_chunk_aabb_ptr[Config::NUM_CPU_PENDING_FRAMES];
 
 	uint32_t m_num_active_chunks = 0;
-
-	void addVertexArena();
-	void addIndexArena();
 };
 
 }
