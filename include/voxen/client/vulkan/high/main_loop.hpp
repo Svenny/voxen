@@ -29,7 +29,7 @@ private:
 		PendingFrameSyncs();
 		Semaphore frame_acquired_semaphore;
 		Semaphore render_done_semaphore;
-		Fence render_done_fence;
+		Fence render_done_fence { true };
 	};
 
 	size_t m_frame_id = 0;

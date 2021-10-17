@@ -24,12 +24,13 @@ Semaphore::~Semaphore() noexcept {
 	backend.vkDestroySemaphore(device, m_semaphore, HostAllocator::callbacks());
 }
 
-Fence::Fence(bool create_signaled) {
-	VkFenceCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	if (create_signaled) {
-		info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	}
+Fence::Fence(bool create_signaled)
+{
+	const VkFenceCreateInfo info {
+		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = create_signaled ? VK_FENCE_CREATE_SIGNALED_BIT : VkFenceCreateFlags(0),
+	};
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
@@ -39,7 +40,8 @@ Fence::Fence(bool create_signaled) {
 	}
 }
 
-Fence::~Fence() noexcept {
+Fence::~Fence() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkDestroyFence(device, m_fence, HostAllocator::callbacks());
