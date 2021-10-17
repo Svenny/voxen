@@ -55,9 +55,9 @@ public:
 		}
 	}
 
-	DeviceAllocationArena(DeviceAllocationArena &&other) = delete;
+	DeviceAllocationArena(DeviceAllocationArena &&) = delete;
 	DeviceAllocationArena(const DeviceAllocationArena &) = delete;
-	DeviceAllocationArena &operator = (DeviceAllocationArena &&other) = delete;
+	DeviceAllocationArena &operator = (DeviceAllocationArena &&) = delete;
 	DeviceAllocationArena &operator = (const DeviceAllocationArena &) = delete;
 
 	~DeviceAllocationArena() noexcept

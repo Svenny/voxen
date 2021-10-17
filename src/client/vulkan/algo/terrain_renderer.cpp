@@ -21,8 +21,6 @@ namespace voxen::client::vulkan
 constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * Config::MAX_RENDERED_CHUNKS;
 constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * Config::MAX_RENDERED_CHUNKS;
 constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * Config::MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize VERTEX_ARENA_SIZE = sizeof(terrain::SurfaceVertex) * Config::MAX_TERRAIN_ARENA_VERTICES;
-constexpr VkDeviceSize INDEX_ARENA_SIZE = sizeof(uint16_t) * Config::MAX_TERRAIN_ARENA_INDICES;
 
 constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #define LO 0.0f
@@ -316,34 +314,6 @@ void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), m_num_active_chunks, 0, 0, 0);
 }
 
-void TerrainRenderer::addVertexArena()
-{
-	constexpr VkBufferCreateInfo info {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.size = VERTEX_ARENA_SIZE,
-		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = nullptr
-	};
-	m_vertex_arenas.emplace_back(FatVkBuffer(info, DeviceMemoryUseCase::GpuOnly));
-}
 
-void TerrainRenderer::addIndexArena()
-{
-	constexpr VkBufferCreateInfo info {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.size = INDEX_ARENA_SIZE,
-		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = nullptr
-	};
-	m_index_arenas.emplace_back(FatVkBuffer(info, DeviceMemoryUseCase::GpuOnly));
-}
 
 }
