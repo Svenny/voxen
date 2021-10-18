@@ -9,7 +9,7 @@ namespace extras
 {
 
 template<typename T>
-class dyn_array_iterator : public std::random_access_iterator_tag {
+class dyn_array_iterator : public std::contiguous_iterator_tag {
 public:
 	using value_type = T;
 	using difference_type = ptrdiff_t;
@@ -21,10 +21,15 @@ public:
 	constexpr T &operator *() const noexcept { return *m_ptr; }
 	constexpr T *operator ->() const noexcept { return m_ptr; }
 
-	constexpr bool operator ==(const dyn_array_iterator &other) const noexcept { return m_ptr == other.m_ptr; }
-	constexpr bool operator !=(const dyn_array_iterator &other) const noexcept { return m_ptr != other.m_ptr; }
+	constexpr bool operator == (const dyn_array_iterator &other) const noexcept { return m_ptr == other.m_ptr; }
+	constexpr bool operator != (const dyn_array_iterator &other) const noexcept { return m_ptr != other.m_ptr; }
+	constexpr bool operator < (const dyn_array_iterator &other) const noexcept { return m_ptr < other.m_ptr; }
+	constexpr bool operator > (const dyn_array_iterator &other) const noexcept { return m_ptr > other.m_ptr; }
+	constexpr bool operator <= (const dyn_array_iterator &other) const noexcept { return m_ptr <= other.m_ptr; }
+	constexpr bool operator >= (const dyn_array_iterator &other) const noexcept { return m_ptr >= other.m_ptr; }
 
 	constexpr ptrdiff_t operator -(const dyn_array_iterator &other) const noexcept { return m_ptr - other.m_ptr; }
+	constexpr dyn_array_iterator operator -(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr - diff); }
 	constexpr dyn_array_iterator operator +(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr + diff); }
 
 	constexpr dyn_array_iterator &operator +=(ptrdiff_t diff) noexcept {
