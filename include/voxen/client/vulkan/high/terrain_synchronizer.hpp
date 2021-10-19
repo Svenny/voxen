@@ -13,12 +13,6 @@
 namespace voxen::client::vulkan
 {
 
-struct TerrainChunkGpuData {
-	uint32_t index_count;
-	uint32_t first_index;
-	int32_t vertex_offset;
-};
-
 // NOTE: this class is internal to `TerrainSynchronizer` implementation and is not used in any public API
 class TerrainDataArena;
 
@@ -43,12 +37,9 @@ public:
 	~TerrainSynchronizer() noexcept;
 
 	void beginSyncSession();
-	void syncChunk(const terrain::Chunk &chunk);
+	// It's not allowed to sync empty chunks (which have `hasSurfaceStrict() == false`)
 	ChunkRenderInfo syncChunk(const extras::refcnt_ptr<terrain::Chunk> &chunk);
 	void endSyncSession();
-
-	void walkActiveChunks(std::function<void(terrain::ChunkId, const TerrainChunkGpuData &)> chunk_callback,
-	                      std::function<void(VkBuffer, VkBuffer)> buffers_switch_callback);
 
 	// This method is called by `TerrainDataArena` when it is completely free.
 	// Arena is deleted after calling this, so in some sense it's similar to `delete this`.
@@ -56,27 +47,48 @@ public:
 	void arenaFreeCallback(TerrainDataArena *arena) noexcept;
 
 private:
-	struct ChunkGpuData {
-		FatVkBuffer vtx_buffer;
-		FatVkBuffer idx_buffer;
-		uint32_t index_count;
-		uint32_t version;
-		uint32_t seam_version;
-		uint32_t age;
+	struct ChunkSlotSyncData {
+		uint16_t vertex_arena_id = UINT16_MAX;
+		uint16_t index_arena_id = UINT16_MAX;
+
+		VkIndexType index_type = VK_INDEX_TYPE_NONE_KHR;
+		uint32_t vertex_arena_offset = 0;
+		uint32_t vertex_arena_range = 0;
+		uint32_t index_arena_offset = 0;
+		uint32_t index_arena_range = 0;
+
+		uint32_t num_vertices = 0;
+		uint32_t num_indices = 0;
 	};
 
-	std::unordered_map<terrain::ChunkId, ChunkGpuData> m_chunk_gpu_data;
+	struct PerChunkData {
+		ChunkSlotSyncData slot_active;
+		ChunkSlotSyncData slot_loading;
+		extras::refcnt_ptr<terrain::Chunk> last_chunk;
+		uint32_t loading_request_id = UINT32_MAX;
+		uint32_t slot_switch_age = UINT32_MAX;
+	};
+
 	uint32_t m_sync_age = 0;
 
 	uint32_t m_queue_families[2];
+	bool m_vertex_uma = false;
+	bool m_index_uma = false;
 	std::list<TerrainDataArena> m_vertex_arenas;
 	std::list<TerrainDataArena> m_index_arenas;
+	std::unordered_map<terrain::ChunkId, PerChunkData> m_per_chunk_data;
 
-	void enqueueSurfaceTransfer(const terrain::ChunkOwnSurface &own_surface,
-	                            const terrain::ChunkSeamSurface &seam_surface, ChunkGpuData &data);
+	void clearSlot(ChunkSlotSyncData &slot) noexcept;
+	void allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx_size, VkDeviceSize idx_size);
+	void makeSurfaceTransfer(ChunkSlotSyncData &slot, const terrain::Chunk &chunk);
+	ChunkRenderInfo slotToRenderInfo(const ChunkSlotSyncData &slot) const noexcept;
 
 	void addVertexArena();
 	void addIndexArena();
+
+	static TerrainDataArena &selectArena(std::list<TerrainDataArena> &list, uint32_t id) noexcept;
+	static VkBuffer arenaHandle(const std::list<TerrainDataArena> &list, uint32_t id) noexcept;
+
 };
 
 }

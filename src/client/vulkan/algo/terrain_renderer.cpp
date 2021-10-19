@@ -102,13 +102,14 @@ static glm::vec4 calcChunkBaseScale(terrain::ChunkId id, const GameView &view) n
 	return glm::vec4(base_pos - view.cameraPosition(), size);
 }
 
-static bool renderInfoComparator(const TerrainSynchronizer::ChunkRenderInfo &a,
-                                 const TerrainSynchronizer::ChunkRenderInfo &b) noexcept
+static bool renderInfoComparator(const TerrainSynchronizer::ChunkRenderInfo &a, uint32_t lod_a,
+                                 const TerrainSynchronizer::ChunkRenderInfo &b, uint32_t lod_b) noexcept
 {
 	// Using the following composite ordering:
 	// - First compare index types (to minimize index stream type switching)
 	// - Then compare vertex buffer handles (to minimize vertex streams switching)
 	// - Then compare index buffer handles (to minimize index stream switching)
+	// - Then sort by chunk LODs, smaller going first (to hopefully minimize overdraw by drawing near to far)
 	// - Finally sort by first index to make ordering consistent (they can't be equal)
 
 	const VkIndexType type_a = a.index_type;
@@ -133,6 +134,10 @@ static bool renderInfoComparator(const TerrainSynchronizer::ChunkRenderInfo &a,
 
 	if (a.index_buffer != b.index_buffer) {
 		return a.index_buffer < b.index_buffer;
+	}
+
+	if (lod_a != lod_b) {
+		return lod_a < lod_b;
 	}
 
 	return a.first_index < b.first_index;
@@ -225,7 +230,8 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 	// Initially fill reorder buffer with 0, 1, 2, 3...
 	std::iota(first_chunk, last_chunk, 0);
 	std::sort(first_chunk, last_chunk, [&](uint32_t id_a, uint32_t id_b) {
-		return renderInfoComparator(render_infos[id_a].second, render_infos[id_b].second);
+		return renderInfoComparator(render_infos[id_a].second, render_infos[id_a].first->id().lod,
+		                            render_infos[id_b].second, render_infos[id_b].first->id().lod);
 	});
 
 	m_draw_setups.clear();
@@ -241,8 +247,8 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 
 		const auto &last_draw_setup = m_draw_setups.back();
 		if (std::get<1>(last_draw_setup) != render_info.vertex_buffer ||
-			std::get<2>(last_draw_setup) != render_info.index_buffer ||
-			std::get<3>(last_draw_setup) != render_info.index_type) {
+		    std::get<2>(last_draw_setup) != render_info.index_buffer ||
+		    std::get<3>(last_draw_setup) != render_info.index_type) {
 			m_draw_setups.emplace_back(i, render_info.vertex_buffer, render_info.index_buffer, render_info.index_type);
 		}
 

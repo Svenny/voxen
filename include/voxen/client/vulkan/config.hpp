@@ -70,10 +70,6 @@ public:
 	// arena size alone. This should be treated as a bug and fixed by raising the value.
 	// Though it is not at all expected any sane surface can reach this number.
 	constexpr static size_t MAX_TERRAIN_ARENA_INDICES = 6 * MAX_TERRAIN_ARENA_VERTICES;
-	// Alignment of terrain "megabuffers" suballocations for per-chunk meshes.
-	// It can be unsafe to set this lower than 4 bytes (for GPU alignment requirements).
-	// This is just a minor performance tunable and does not affect functionality.
-	constexpr static VkDeviceSize TERRAIN_SUBALLOCATION_ALIGNMENT = 4;
 };
 
 }
