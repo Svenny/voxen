@@ -97,6 +97,7 @@ void Device::createDevice()
 	VkPhysicalDeviceFeatures2 features = {};
 	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	features.pNext = &sbl_features;
+	features.features.multiDrawIndirect = VK_TRUE; // For chunk rendering
 	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
 
 	auto &backend = Backend::backend();

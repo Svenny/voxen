@@ -37,6 +37,5 @@ constexpr static size_t MAX_EXPECTED_INDICES = 6 * MAX_EXPECTED_VERTICES;
 
 static_assert(Config::MAX_TERRAIN_ARENA_VERTICES >= MAX_EXPECTED_VERTICES, "Arena size is dangerously low");
 static_assert(Config::MAX_TERRAIN_ARENA_INDICES >= MAX_EXPECTED_INDICES, "Arena size is dangerously low");
-static_assert(Config::TERRAIN_SUBALLOCATION_ALIGNMENT >= 4, "Alignment is dangerously low");
 
 }
