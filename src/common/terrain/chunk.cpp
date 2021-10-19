@@ -104,4 +104,12 @@ bool Chunk::hasSurface() const noexcept
 	return octree().root() != ChunkOctree::INVALID_NODE_ID;
 }
 
+bool Chunk::hasSurfaceStrict() const noexcept
+{
+	bool result = m_own_surface->numIndices() != 0 || m_seam_surface->numIndices() != 0;
+	// `hasSurface() == false && hasSurfaceStrict() == true` is impossible
+	assert(hasSurface() || !result);
+	return result;
+}
+
 }

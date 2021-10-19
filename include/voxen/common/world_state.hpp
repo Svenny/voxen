@@ -29,6 +29,8 @@ struct DebugQueueRtW {
 class WorldState {
 public:
 	using ChunkPtrVector = std::vector<extras::refcnt_ptr<terrain::Chunk>>;
+	using ChunkVisitor = extras::function_ref<void(const terrain::Chunk &)>;
+	using ChunkPtrVisitor = extras::function_ref<void(const extras::refcnt_ptr<terrain::Chunk> &)>;
 
 	WorldState() = default;
 	WorldState(WorldState &&other) noexcept;
@@ -45,7 +47,10 @@ public:
 	uint64_t tickId() const noexcept { return m_tick_id; }
 	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
 
-	void walkActiveChunks(extras::function_ref<void(const terrain::Chunk &)> visitor) const;
+	void walkActiveChunks(ChunkVisitor visitor) const;
+	// Same as `walkActiveChunks()`, but callback takes refcounted pointer to chunk instead of a reference.
+	// This slightly increases risk of accidental copy, but allows to hold a chunk for more than one frame.
+	void walkActiveChunksPointers(ChunkPtrVisitor visitor) const;
 
 private:
 	Player m_player;

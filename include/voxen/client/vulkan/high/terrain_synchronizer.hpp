@@ -2,8 +2,9 @@
 
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/vulkan/buffer.hpp>
-
 #include <voxen/common/terrain/chunk.hpp>
+
+#include <extras/refcnt_ptr.hpp>
 
 #include <functional>
 #include <list>
@@ -23,6 +24,17 @@ class TerrainDataArena;
 
 class TerrainSynchronizer {
 public:
+	struct ChunkRenderInfo {
+		VkBuffer vertex_buffer;
+		VkBuffer index_buffer;
+		VkIndexType index_type;
+		// Using `int32_t` to match `VkDrawIndexedIndirectCommand`
+		int32_t first_vertex;
+		uint32_t first_index;
+		uint32_t num_vertices;
+		uint32_t num_indices;
+	};
+
 	TerrainSynchronizer();
 	TerrainSynchronizer(TerrainSynchronizer &&) = delete;
 	TerrainSynchronizer(const TerrainSynchronizer &) = delete;
@@ -32,6 +44,7 @@ public:
 
 	void beginSyncSession();
 	void syncChunk(const terrain::Chunk &chunk);
+	ChunkRenderInfo syncChunk(const extras::refcnt_ptr<terrain::Chunk> &chunk);
 	void endSyncSession();
 
 	void walkActiveChunks(std::function<void(terrain::ChunkId, const TerrainChunkGpuData &)> chunk_callback,

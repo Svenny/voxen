@@ -136,6 +136,22 @@ void TerrainSynchronizer::syncChunk(const terrain::Chunk &chunk)
 	enqueueSurfaceTransfer(own_surface, seam_surface, iter->second);
 }
 
+TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::syncChunk(const extras::refcnt_ptr<terrain::Chunk> &chunk)
+{
+	syncChunk(*chunk);
+
+	auto iter = m_chunk_gpu_data.find(chunk->id());
+	return {
+		.vertex_buffer = iter->second.vtx_buffer.handle(),
+		.index_buffer = iter->second.idx_buffer.handle(),
+		.index_type = VK_INDEX_TYPE_UINT32,
+		.first_vertex = 0,
+		.first_index = 0,
+		.num_vertices = chunk->seamSurface().numAllVertices(),
+		.num_indices = iter->second.index_count
+	};
+}
+
 void TerrainSynchronizer::endSyncSession()
 {
 	Backend::backend().transferManager().ensureUploadsDone();
