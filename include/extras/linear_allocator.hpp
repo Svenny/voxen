@@ -18,6 +18,7 @@ namespace extras
 // Base class (`B` template argument) must have public method
 // `static void on_allocator_freed(linear_allocator<...> &) noexcept`
 // This is informational callback called when the last object was freed.
+// NOTE: this callback is never called from object's destructor.
 template<typename B, typename S, S G = 64>
 class linear_allocator {
 public:
@@ -41,10 +42,7 @@ public:
 	linear_allocator &operator = (linear_allocator &&) = delete;
 	linear_allocator &operator = (const linear_allocator &) = delete;
 
-	~linear_allocator() noexcept
-	{
-		reset();
-	}
+	~linear_allocator() = default;
 
 	[[nodiscard]] std::optional<range_type> allocate(size_type size, size_type align)
 	{

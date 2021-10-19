@@ -2,6 +2,9 @@
 
 #include <catch2/catch.hpp>
 
+namespace
+{
+
 template<typename T>
 class TestAllocator final : public extras::linear_allocator<TestAllocator<T>, T, 32> {
 public:
@@ -21,6 +24,24 @@ public:
 
 private:
 	bool m_about_to_free = false;
+};
+
+class TestAllocator2 final : public extras::linear_allocator<TestAllocator2, uint32_t, 4> {
+public:
+	using Base = extras::linear_allocator<TestAllocator2, uint32_t, 4>;
+
+	TestAllocator2() : Base(1024) {}
+
+	void setAboutToDestroy() noexcept { m_about_to_destroy = true; }
+
+	static void on_allocator_freed(Base &base)
+	{
+		auto &me = static_cast<TestAllocator2 &>(base);
+		REQUIRE(!me.m_about_to_destroy);
+	}
+
+private:
+	bool m_about_to_destroy = false;
 };
 
 using TestAllocator32 = TestAllocator<uint32_t>;
@@ -80,4 +101,33 @@ TEST_CASE("'linear_allocator' works properly with 64-bit addresses", "[extras::l
 	REQUIRE(range2->second - range2->first >= SZ);
 
 	alloc.setAboutToFree();
+}
+
+TEST_CASE("'linear_allocator' doesn't call free callback from destructor", "[extras::linear_allocator]")
+{
+	{
+		// Not allocated anything
+		TestAllocator2 alloc;
+		alloc.setAboutToDestroy();
+	}
+	{
+		// Allocated but then freed
+		TestAllocator2 alloc;
+
+		auto range = alloc.allocate(40, 16);
+		alloc.free(*range);
+
+		alloc.setAboutToDestroy();
+	}
+	{
+		// Allocated but not freed
+		TestAllocator2 alloc;
+
+		auto range = alloc.allocate(40, 16);
+		(void)range;
+
+		alloc.setAboutToDestroy();
+	}
+}
+
 }
