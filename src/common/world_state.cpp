@@ -19,10 +19,17 @@ WorldState::WorldState(const WorldState &other)
 {
 }
 
-void WorldState::walkActiveChunks(extras::function_ref<void(const terrain::Chunk &)> visitor) const
+void WorldState::walkActiveChunks(ChunkVisitor visitor) const
 {
 	for (const auto &ptr : m_active_chunks) {
 		visitor(*ptr);
+	}
+}
+
+void WorldState::walkActiveChunksPointers(ChunkPtrVisitor visitor) const
+{
+	for (const auto &ptr : m_active_chunks) {
+		visitor(ptr);
 	}
 }
 

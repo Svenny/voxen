@@ -34,6 +34,8 @@ namespace voxen::client::vulkan
 
 class TerrainRenderer final {
 public:
+	using ChunkPtr = extras::refcnt_ptr<terrain::Chunk>;
+
 	TerrainRenderer();
 	TerrainRenderer(TerrainRenderer &&) = delete;
 	TerrainRenderer(const TerrainRenderer &) = delete;
@@ -50,31 +52,7 @@ public:
 	void drawDebugChunkBorders(VkCommandBuffer cmdbuf);
 
 private:
-	struct ChunkSlotSyncData {
-		uint32_t version;
-		uint32_t seam_version;
-
-		uint16_t vertex_arena_id;
-		uint16_t index_arena_id;
-
-		VkIndexType index_type;
-		uint32_t vertex_arena_offset;
-		uint32_t index_arena_offset;
-
-		uint32_t num_vertices;
-		uint32_t num_indices;
-	};
-
-	struct ChunkSyncData {
-		extras::refcnt_ptr<terrain::Chunk> upload_ptr;
-		uint32_t idle_age;
-		ChunkSlotSyncData slot_a;
-		ChunkSlotSyncData slot_b;
-	};
-
 	const WorldState *m_last_state = nullptr;
-	std::unordered_map<terrain::ChunkId, ChunkSyncData> m_chunk_sync_data;
-	std::unordered_map<terrain::ChunkId, uint32_t> m_kek_tmp;
 
 	FatVkBuffer m_debug_octree_mesh_buffer;
 	// Stores N copies of:
@@ -89,6 +67,7 @@ private:
 	VkDrawIndexedIndirectCommand *m_draw_command_ptr[Config::NUM_CPU_PENDING_FRAMES];
 	Aabb *m_chunk_aabb_ptr[Config::NUM_CPU_PENDING_FRAMES];
 
+	std::vector<std::tuple<uint32_t, VkBuffer, VkBuffer, VkIndexType>> m_draw_setups;
 	uint32_t m_num_active_chunks = 0;
 };
 

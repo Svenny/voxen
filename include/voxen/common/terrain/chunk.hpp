@@ -56,7 +56,13 @@ public:
 	// Returns `true` if this chunk does not cross the terrain surface.
 	// NOTE: this method checks octree, not surface meshes. It's possible
 	// and valid to return `true` even when meshes contain no indices.
+	// This method can be used during (and after) contouring, right after the octree is built.
 	bool hasSurface() const noexcept;
+	// Returns `true` if neither own nor seam surfaces contain any indices.
+	// This condition is stricter than `hasSurface()` - this means it's
+	// impossible to have `hasSurface() == false && hasSurfaceStrict() == true`.
+	// This method is intended to be used on fully constructed chunks (i.e. not during contouring).
+	bool hasSurfaceStrict() const noexcept;
 
 	const ChunkId &id() const noexcept { return m_id; }
 	chunk_ver_t version() const noexcept { return m_version; }
