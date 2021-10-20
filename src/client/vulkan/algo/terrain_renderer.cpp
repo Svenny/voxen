@@ -213,7 +213,6 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 	terrain_sync.beginSyncSession();
 
 	extras::dyn_array<std::pair<const terrain::Chunk *, RenderInfo>> render_infos(Config::MAX_RENDERED_CHUNKS);
-	extras::dyn_array<uint32_t> chunk_order(Config::MAX_RENDERED_CHUNKS);
 
 	m_num_active_chunks = 0;
 	m_last_state->walkActiveChunksPointers([&](const ChunkPtr &chunk) {
@@ -225,25 +224,20 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 		m_num_active_chunks++;
 	});
 
-	auto first_chunk = chunk_order.begin();
-	auto last_chunk = first_chunk + m_num_active_chunks;
-	// Initially fill reorder buffer with 0, 1, 2, 3...
-	std::iota(first_chunk, last_chunk, 0);
-	std::sort(first_chunk, last_chunk, [&](uint32_t id_a, uint32_t id_b) {
-		return renderInfoComparator(render_infos[id_a].second, render_infos[id_a].first->id().lod,
-		                            render_infos[id_b].second, render_infos[id_b].first->id().lod);
+	auto last_info = render_infos.begin() + m_num_active_chunks;
+	std::sort(render_infos.begin(), last_info, [&](const auto &a, const auto &b) {
+		return renderInfoComparator(a.second, a.first->id().lod, b.second, b.first->id().lod);
 	});
 
 	m_draw_setups.clear();
 	if (m_num_active_chunks != 0) {
-		const auto &first_info = render_infos[chunk_order[0]].second;
+		const auto &first_info = render_infos[0].second;
 		m_draw_setups.emplace_back(0, first_info.vertex_buffer, first_info.index_buffer, first_info.index_type);
 	}
 
 	for (uint32_t i = 0; i < m_num_active_chunks; i++) {
-		const uint32_t idx = chunk_order[i];
-		const terrain::Chunk &chunk = *render_infos[idx].first;
-		const auto &render_info = render_infos[idx].second;
+		const terrain::Chunk &chunk = *render_infos[i].first;
+		const auto &render_info = render_infos[i].second;
 
 		const auto &last_draw_setup = m_draw_setups.back();
 		if (std::get<1>(last_draw_setup) != render_info.vertex_buffer ||
@@ -252,6 +246,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 			m_draw_setups.emplace_back(i, render_info.vertex_buffer, render_info.index_buffer, render_info.index_type);
 		}
 
+		// TODO (Svenny): base/scale calculations can be easily vectorized
 		m_chunk_transform_ptr[set_id][i] = calcChunkBaseScale(chunk.id(), view);
 		m_draw_command_ptr[set_id][i] = VkDrawIndexedIndirectCommand {
 			.indexCount = render_info.num_indices,
@@ -402,7 +397,5 @@ void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 		sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA), VK_INDEX_TYPE_UINT16);
 	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), m_num_active_chunks, 0, 0, 0);
 }
-
-
 
 }
