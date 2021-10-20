@@ -69,7 +69,7 @@ private:
 		uint32_t slot_switch_age = UINT32_MAX;
 	};
 
-	uint32_t m_sync_age = 0;
+	terrain::ChunkId m_gc_pointer = {};
 
 	uint32_t m_queue_families[2];
 	bool m_vertex_uma = false;
