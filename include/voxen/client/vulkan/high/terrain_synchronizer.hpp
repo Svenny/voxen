@@ -88,7 +88,6 @@ private:
 
 	static TerrainDataArena &selectArena(std::list<TerrainDataArena> &list, uint32_t id) noexcept;
 	static VkBuffer arenaHandle(const std::list<TerrainDataArena> &list, uint32_t id) noexcept;
-
 };
 
 }
