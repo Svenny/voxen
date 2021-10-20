@@ -70,6 +70,16 @@ public:
 	// arena size alone. This should be treated as a bug and fixed by raising the value.
 	// Though it is not at all expected any sane surface can reach this number.
 	constexpr static size_t MAX_TERRAIN_ARENA_INDICES = 6 * MAX_TERRAIN_ARENA_VERTICES;
+	// Number of chunks checked for being outdated in a single frame (single sync session specifically).
+	// Each visited chunk gets its "age" counter incremented. This counter is reset when
+	// chunk is requested to synchronize with CPU data. When counter value reaches
+	// certain threshold, a chunk is considered unused and gets removed from GPU storage.
+	// This is just a minor performance tunable and does not affect functionality.
+	constexpr static uint32_t TERRAIN_PER_FRAME_GC_STEPS = 4;
+	// Threshold for counter value to consider chunks unused.
+	// For some kind of safety it should be larger than number of CPU frames.
+	// This is just a minor performance tunable and does not affect functionality.
+	constexpr static uint32_t TERRAIN_GC_AGE_THRESHOLD = 16;
 };
 
 }

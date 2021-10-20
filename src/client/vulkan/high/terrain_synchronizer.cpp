@@ -86,7 +86,39 @@ TerrainSynchronizer::~TerrainSynchronizer() noexcept = default;
 
 void TerrainSynchronizer::beginSyncSession()
 {
-	m_sync_age++;
+	auto iter = m_per_chunk_data.find(m_gc_pointer);
+	if (iter == m_per_chunk_data.end()) {
+		// Pointed object has gone, start a new GC cycle
+		iter = m_per_chunk_data.begin();
+	}
+
+	for (uint32_t i = 0; i < Config::TERRAIN_PER_FRAME_GC_STEPS; i++) {
+		if (iter == m_per_chunk_data.end()) {
+			break;
+		}
+
+		iter->second.slot_switch_age++;
+
+		if (iter->second.slot_switch_age >= Config::TERRAIN_GC_AGE_THRESHOLD) {
+			// Chunk unused for too long, drop it
+			clearSlot(iter->second.slot_active);
+			clearSlot(iter->second.slot_loading);
+			iter = m_per_chunk_data.erase(iter);
+		} else {
+			++iter;
+		}
+	}
+
+	if (iter == m_per_chunk_data.end()) {
+		// Reached end of map, start a new GC cycle
+		if (!m_per_chunk_data.empty()) {
+			m_gc_pointer = m_per_chunk_data.begin()->first;
+		} else {
+			m_gc_pointer = {};
+		}
+	} else {
+		m_gc_pointer = iter->first;
+	}
 }
 
 TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::syncChunk(const extras::refcnt_ptr<terrain::Chunk> &chunk)
@@ -103,8 +135,8 @@ TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::syncChunk(const extras
 	const auto &seam_surface = chunk->seamSurface();
 
 	auto &data = m_per_chunk_data[id];
-	// Update age in any case
-	data.slot_switch_age = m_sync_age;
+	// Reset age in any case
+	data.slot_switch_age = 0;
 
 	if (data.last_chunk && data.last_chunk->version() == chunk->version() &&
 	    data.last_chunk->seamVersion() == chunk->seamVersion()) {
