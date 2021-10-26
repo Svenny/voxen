@@ -1,6 +1,8 @@
 #pragma once
 
-#if __has_include(<source_location>)
+#include <version>
+
+#if __cpp_lib_source_location >= 201907L
 
 #include <source_location>
 // Just alias (assume it's stable enough when it becomes part of `std`)
@@ -8,11 +10,7 @@ namespace extras { using source_location = std::source_location; }
 
 #else
 
-#if __has_include(<experimental/source_location>)
-#include <experimental/source_location>
-#endif
-
-#ifdef __clang__
+#if __clang_major__ < 13
 #include <string_view>
 #endif
 
@@ -22,8 +20,8 @@ namespace extras { using source_location = std::source_location; }
 namespace extras
 {
 
-#ifdef __clang__
-consteval inline size_t findBaseDirOffset(std::string_view str) noexcept
+#if __clang_major__ < 13
+consteval size_t findBaseDirOffset(std::string_view str) noexcept
 {
 	// Assuming there is only one "include" directory in the path
 	for (size_t i = 0; i + 6 < str.length(); i++) {
@@ -59,26 +57,11 @@ public:
 		loc.m_col = col;
 		return loc;
 	}
-
-#elif __has_include(<experimental/source_location>)
-
-	// Fallback implementation by almost aliasing `std::experimental::source_location`
-	constexpr static source_location current(std::experimental::source_location where =
-	                                         std::experimental::source_location::current()) noexcept
-	{
-		source_location loc;
-		loc.m_file = where.file_name() + FILE_BASE_DIR_OFFSET;
-		loc.m_func = where.function_name();
-		loc.m_line = where.line();
-		loc.m_col = where.column();
-		return loc;
-	}
-
 #else
 
 #error source_location is not supported in this environment
 
-#endif
+#endif // __has_builtin(*) stuff
 
 	constexpr const char *file_name() const noexcept { return m_file; }
 	constexpr const char *function_name() const noexcept { return m_func; }
@@ -86,11 +69,11 @@ public:
 	constexpr uint_least32_t column() const noexcept { return m_col; }
 
 private:
-#ifdef __clang__
-	// Clang (as of 12.0.0) does not apply `-fmacro-prefix-map` to `__builtin_FILE`
-	constexpr inline static size_t FILE_BASE_DIR_OFFSET = findBaseDirOffset(__builtin_FILE());
+#if __clang_major__ < 13
+	// Clang did not apply `-fmacro-prefix-map` to `__builtin_FILE` until 13.x
+	constexpr static size_t FILE_BASE_DIR_OFFSET = findBaseDirOffset(__builtin_FILE());
 #else
-	constexpr inline static size_t FILE_BASE_DIR_OFFSET = 0;
+	constexpr static size_t FILE_BASE_DIR_OFFSET = 0;
 #endif
 
 	const char *m_file = "unknown";
@@ -101,4 +84,4 @@ private:
 
 }
 
-#endif
+#endif // __cpp_lib_source_location >= 201907L
