@@ -13,6 +13,7 @@
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/log.hpp>
 
+#include <extras/dyn_array.hpp>
 #include <extras/math.hpp>
 
 namespace voxen::client::vulkan

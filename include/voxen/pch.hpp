@@ -8,6 +8,7 @@
 #include <extras/enum_utils.hpp>
 #include <extras/fixed_pool.hpp>
 #include <extras/function_ref.hpp>
+#include <extras/linear_allocator.hpp>
 #include <extras/math.hpp>
 #include <extras/pimpl.hpp>
 #include <extras/refcnt_ptr.hpp>
