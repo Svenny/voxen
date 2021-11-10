@@ -121,7 +121,6 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 	const uint32_t scale = (1u << id.lod);
 
 	// TODO: this is a temporary stub, add real land generator
-	Log::trace("Generating chunk at ({}, {}, {})(x{})", base_x, base_y, base_z, scale);
 
 	auto &grid = output.voxel_grid;
 	// Temporary storage for SDF values, we will need it to find zero crossings

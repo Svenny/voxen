@@ -17,7 +17,7 @@ void Log::doLog(Level level, extras::source_location where,
 {
 	try {
 		t_message_buffer.clear();
-		fmt::vformat_to(t_message_buffer, format_str, format_args);
+		fmt::vformat_to(std::back_inserter(t_message_buffer), format_str, format_args);
 		std::string_view text(t_message_buffer.data(), t_message_buffer.size());
 
 		FILE *sink = stdout;
