@@ -95,7 +95,9 @@ public:
 			throw;
 		}
 
-		m_usage_counts[pos].store(1, std::memory_order_acquire);
+		// Relaxed ordering here since the operation doesn't even need
+		// to be atomic - spinlock unlocking has the needed release semantics
+		m_usage_counts[pos].store(1, std::memory_order_relaxed);
 		return pointer(object, function_ref(*this));
 	}
 
@@ -113,8 +115,11 @@ public:
 			return pointer();
 		}
 
+		// Relaxed ordering here since the operation doesn't even need
+		// to be atomic - spinlock unlocking has the needed release semantics
+		m_usage_counts[pos].store(1, std::memory_order_relaxed);
+
 		T *object = std::launder(reinterpret_cast<T *>(&m_objects[pos]));
-		m_usage_counts[pos].store(1, std::memory_order_acquire);
 		return pointer(object, function_ref(*this));
 	}
 
