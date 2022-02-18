@@ -27,7 +27,8 @@ string(APPEND CMAKE_SHARED_LINKER_FLAGS " -fuse-ld=lld")
 
 option(VOXEN_FASTER_MATH_FLAGS "Speed up math at the of cost strict standard compliance" OFF)
 if(VOXEN_FASTER_MATH_FLAGS)
-	string(APPEND CMAKE_CXX_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math")
+	string(APPEND CMAKE_C_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math -ffp-contract=fast-honor-pragmas")
+	string(APPEND CMAKE_CXX_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math -ffp-contract=fast-honor-pragmas")
 endif()
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
@@ -41,6 +42,9 @@ endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
 	string(APPEND CMAKE_CXX_FLAGS " -lstdc++fs")
 endif()
+
+# Always link with libc++ because why not
+string(APPEND CMAKE_CXX_FLAGS " -stdlib=libc++")
 
 # This will teach the built binary to load .so's from its own directory
 set(CMAKE_INSTALL_RPATH "\$ORIGIN")
