@@ -13,6 +13,9 @@ class dyn_array_iterator : public std::contiguous_iterator_tag {
 public:
 	using value_type = T;
 	using difference_type = ptrdiff_t;
+	using pointer = T *;
+	using reference = T &;
+	using iterator_category = std::contiguous_iterator_tag;
 
 	constexpr dyn_array_iterator() noexcept : m_ptr(nullptr) {}
 	constexpr dyn_array_iterator(std::add_const_t<T> *ptr) noexcept : m_ptr(ptr) {}
