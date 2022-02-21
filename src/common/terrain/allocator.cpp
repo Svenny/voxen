@@ -10,7 +10,6 @@
 #include <voxen/util/log.hpp>
 
 #include <extras/fixed_pool.hpp>
-#include <extras/spinlock.hpp>
 
 #include <list>
 
