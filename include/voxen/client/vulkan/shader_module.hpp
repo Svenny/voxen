@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/common.hpp>
 
+#include <array>
+
 namespace voxen::client::vulkan
 {
 
