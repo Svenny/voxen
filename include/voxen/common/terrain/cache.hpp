@@ -6,6 +6,8 @@
 
 #include <extras/dyn_array.hpp>
 
+#include <array>
+
 namespace voxen::terrain
 {
 
