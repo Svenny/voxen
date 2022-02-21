@@ -1,5 +1,5 @@
 add_executable(test-extras
-	${CMAKE_SOURCE_DIR}/src/extras/spinlock.cpp
+	${CMAKE_SOURCE_DIR}/src/extras/futex.cpp
 
 	extras/bitset.cpp
 	extras/defer.cpp

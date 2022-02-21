@@ -1,8 +1,8 @@
 #pragma once
 
 #include <extras/bitset.hpp>
+#include <extras/futex.hpp>
 #include <extras/refcnt_ptr.hpp>
-#include <extras/spinlock.hpp>
 
 #include <cassert>
 #include <array>
@@ -80,7 +80,7 @@ public:
 	template<typename... Args> requires(!R)
 	pointer allocate(Args&&... args)
 	{
-		std::lock_guard<spinlock> lock(m_lock);
+		std::lock_guard lock(m_lock);
 
 		size_t pos = m_used_bitmap.occupy_zero();
 		if (pos == SIZE_MAX) {
@@ -96,7 +96,7 @@ public:
 		}
 
 		// Relaxed ordering here since the operation doesn't even need
-		// to be atomic - spinlock unlocking has the needed release semantics
+		// to be atomic - unlocking has the needed release semantics
 		m_usage_counts[pos].store(1, std::memory_order_relaxed);
 		return pointer(object, function_ref(*this));
 	}
@@ -108,7 +108,7 @@ public:
 	template<typename = void> requires(R)
 	pointer allocate() noexcept
 	{
-		std::lock_guard<spinlock> lock(m_lock);
+		std::lock_guard lock(m_lock);
 
 		size_t pos = m_used_bitmap.occupy_zero();
 		if (pos == SIZE_MAX) {
@@ -116,7 +116,7 @@ public:
 		}
 
 		// Relaxed ordering here since the operation doesn't even need
-		// to be atomic - spinlock unlocking has the needed release semantics
+		// to be atomic - unlocking has the needed release semantics
 		m_usage_counts[pos].store(1, std::memory_order_relaxed);
 
 		T *object = std::launder(reinterpret_cast<T *>(&m_objects[pos]));
@@ -127,7 +127,7 @@ public:
 	// NOTE: this value is only an estimate when using pool from multiple threads.
 	uint32_t free_space() noexcept
 	{
-		std::lock_guard<spinlock> lock(m_lock);
+		std::lock_guard lock(m_lock);
 		return N - m_used_bitmap.popcount();
 	}
 
@@ -158,13 +158,13 @@ public:
 				object->clear();
 			}
 
-			std::lock_guard<spinlock> lock(m_lock);
+			std::lock_guard lock(m_lock);
 			m_used_bitmap.clear(id);
 		}
 	}
 
 private:
-	spinlock m_lock;
+	futex m_lock;
 	bitset<N> m_used_bitmap;
 	std::array<std::atomic_uint8_t, N> m_usage_counts;
 	typename detail::fixed_pool_storage<T, N, R>::type m_objects;

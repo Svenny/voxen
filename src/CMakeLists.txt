@@ -1,5 +1,5 @@
 set(EXTRAS_SOURCES
-	src/extras/spinlock.cpp
+	src/extras/futex.cpp
 )
 
 set(VOXEN_SOURCES

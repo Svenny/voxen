@@ -5,12 +5,12 @@ set(EXTRAS_HEADERS
 	include/extras/enum_utils.hpp
 	include/extras/fixed_pool.hpp
 	include/extras/function_ref.hpp
+	include/extras/futex.hpp
 	include/extras/linear_allocator.hpp
 	include/extras/math.hpp
 	include/extras/pimpl.hpp
 	include/extras/refcnt_ptr.hpp
 	include/extras/source_location.hpp
-	include/extras/spinlock.hpp
 	include/extras/string_utils.hpp
 )
 
