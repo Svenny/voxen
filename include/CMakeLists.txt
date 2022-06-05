@@ -53,6 +53,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/msg/config.hpp
 	include/voxen/common/msg/message.hpp
+	include/voxen/common/msg/queue.hpp
 	include/voxen/common/terrain/allocator.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
