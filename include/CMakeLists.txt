@@ -6,6 +6,7 @@ set(EXTRAS_HEADERS
 	include/extras/fixed_pool.hpp
 	include/extras/function_ref.hpp
 	include/extras/futex.hpp
+	include/extras/hardware_params.hpp
 	include/extras/linear_allocator.hpp
 	include/extras/math.hpp
 	include/extras/pimpl.hpp
