@@ -1,0 +1,31 @@
+diff --git a/3rdparty/vulkan-headers/vulkan/vk_platform.h b/3rdparty/vulkan-headers/vulkan/vk_platform.h
+index 3ff8c5d..ed6211b 100644
+--- a/3rdparty/vulkan-headers/vulkan/vk_platform.h
++++ b/3rdparty/vulkan-headers/vulkan/vk_platform.h
+@@ -32,9 +32,11 @@ extern "C"
+  * VKAPI_CALL - Placed after the return type in function declarations.
+  *              Useful for MSVC-style calling convention syntax.
+  * VKAPI_PTR  - Placed between the '(' and '*' in function pointer types.
++ * VKAPI_NOEXCEPT - Svenny's addition to make compiler treat all Vulkan API entry
++ *              points as noexcept (it's C API so they are indeed noexcept).
+  *
+- * Function declaration:  VKAPI_ATTR void VKAPI_CALL vkCommand(void);
+- * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void);
++ * Function declaration:  VKAPI_ATTR void VKAPI_CALL vkCommand(void) VKAPI_NOEXCEPT;
++ * Function pointer type: typedef void (VKAPI_PTR *PFN_vkCommand)(void) VKAPI_NOEXCEPT;
+  */
+ #if defined(_WIN32)
+     // On Windows, Vulkan commands use the stdcall convention
+@@ -58,6 +60,12 @@ extern "C"
+     #define VKAPI_PTR
+ #endif
+ 
++#ifdef __cplusplus
++    #define VKAPI_NOEXCEPT noexcept
++#else
++    #define VKAPI_NOEXCEPT
++#endif
++
+ #if !defined(VK_NO_STDDEF_H)
+     #include <stddef.h>
+ #endif // !defined(VK_NO_STDDEF_H)
