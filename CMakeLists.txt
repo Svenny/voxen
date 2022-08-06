@@ -77,7 +77,7 @@ find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PRIVATE
 	glfw
-	cxxopts
+	3rdparty::cxxopts
 	3rdparty::fmt
 	3rdparty::platform-folders
 	3rdparty::simpleini

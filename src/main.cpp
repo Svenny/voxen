@@ -10,8 +10,7 @@
 #include <voxen/common/filemanager.hpp>
 #include <voxen/common/threadpool.hpp>
 
-#define CXXOPTS_NO_RTTI
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include <atomic>
 #include <chrono>
