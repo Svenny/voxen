@@ -12,12 +12,12 @@ add_executable(test-extras
 )
 
 target_include_directories(test-extras PUBLIC
-	${CMAKE_SOURCE_DIR}/3rdparty/glm
 	${CMAKE_SOURCE_DIR}/include
 )
 
 target_link_libraries(test-extras PRIVATE
 	3rdparty::catch2
+	3rdparty::glm
 )
 
 add_test(NAME extras-bitset COMMAND test-extras "[extras::bitset]")
