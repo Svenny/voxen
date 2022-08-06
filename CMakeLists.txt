@@ -80,7 +80,7 @@ target_link_libraries(voxen PRIVATE
 	cxxopts
 	3rdparty::fmt
 	PlatformFolders
-	SimpleIni
+	3rdparty::simpleini
 	Threads::Threads
 	stdc++fs
 )

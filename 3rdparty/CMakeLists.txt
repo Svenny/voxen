@@ -1,7 +1,7 @@
-# This cmake file are managing embedded 3party Voxen dependencies
+# This directory manages embedded third-party Voxen dependencies
 
-## fmt dependency
 include(fmt.cmake)
+include(simpleini.cmake)
 
 ## PlatformFolders dependency
 add_subdirectory(PlatformFolders)
@@ -11,6 +11,3 @@ add_subdirectory(catch)
 
 ## cxxopts dependency
 add_subdirectory(cxxopts)
-
-## SimpleInit dependency
-add_subdirectory(simpleini-4.17)
