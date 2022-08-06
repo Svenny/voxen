@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.21)
 # include file with some cmake utils
 include(CMakeUtils.cmake)
 
+# Can't use `if(GENERATOR_IS_MULTI_CONFIG)` without this line
+get_cmake_property(GENERATOR_IS_MULTI_CONFIG GENERATOR_IS_MULTI_CONFIG)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
@@ -10,6 +13,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX " pre-alpha")
 set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
+
+include(tools/cmake/toolchain_setup.cmake)
 
 # Enforce good coding standards to at least some extent
 string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
@@ -70,7 +75,15 @@ target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
-target_link_libraries(voxen PUBLIC glfw fmt::fmt stdc++fs cxxopts SimpleIni Threads::Threads PlatformFolders)
+target_link_libraries(voxen PRIVATE
+	glfw
+	cxxopts
+	3rdparty::fmt
+	PlatformFolders
+	SimpleIni
+	Threads::Threads
+	stdc++fs
+)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
