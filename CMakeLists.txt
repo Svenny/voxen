@@ -79,7 +79,7 @@ target_link_libraries(voxen PRIVATE
 	glfw
 	cxxopts
 	3rdparty::fmt
-	PlatformFolders
+	3rdparty::platform-folders
 	3rdparty::simpleini
 	Threads::Threads
 	stdc++fs
