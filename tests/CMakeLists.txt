@@ -16,7 +16,9 @@ target_include_directories(test-extras PUBLIC
 	${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(test-extras PUBLIC Catch2)
+target_link_libraries(test-extras PRIVATE
+	3rdparty::catch2
+)
 
 add_test(NAME extras-bitset COMMAND test-extras "[extras::bitset]")
 add_test(NAME extras-defer COMMAND test-extras "[extras::defer]")
