@@ -68,6 +68,7 @@ bool_option(DEPLOY_BUILD "Build for creating installable version of Voxen" OFF)
 add_subdirectory(3rdparty)
 
 # CMake target setup
+voxen_add_library(extras STATIC)
 add_executable(voxen "")
 
 target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
@@ -75,6 +76,7 @@ target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PRIVATE
+	extras
 	glfw
 	3rdparty::cxxopts
 	3rdparty::fmt
