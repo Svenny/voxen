@@ -318,7 +318,7 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 			return { true, ParentCommand::Nothing };
 		}
 
-		for (uint32_t i = 0; i < 8; i++) {
+		for (size_t i = 0; i < 8; i++) {
 			const ChunkControlBlock *child_cb = cb.child(i);
 			assert(child_cb);
 
@@ -356,7 +356,7 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 
 	// Try to unload this node if it's not over active, has no
 	// children and is not expected to be used in LOD changing soon
-	for (unsigned i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (cb.child(i)) {
 			return { true, ParentCommand::Nothing };
 		}

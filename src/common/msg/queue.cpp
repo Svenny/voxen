@@ -123,7 +123,7 @@ private:
 	// if there is no next consumable segment.
 	// Returns `true` if consume head segment is not fully consumed.
 	// If `false` is returned it is guaranteed there are no messages.
-	bool resetFullyConsumedSegment()
+	bool resetFullyConsumedSegment() noexcept
 	{
 		if (m_consume_pos == Config::QUEUE_SEGMENT_SIZE) {
 			std::lock_guard lock(m_lock);
