@@ -81,7 +81,7 @@ public:
 	{
 		size_t result = 0;
 		for (uint64_t item : m_data) {
-			result += std::popcount(item);
+			result += size_t(std::popcount(item));
 		}
 		return result;
 	}
@@ -91,14 +91,14 @@ public:
 	{
 		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
 		for (size_t i = 0; i < limit; i++) {
-			size_t cnt = std::countr_one(m_data[i]);
+			auto cnt = size_t(std::countr_one(m_data[i]));
 			if (cnt < 64) {
 				return i * 64 + cnt;
 			}
 		}
 
 		if constexpr (!ALL_BITS_USED) {
-			size_t cnt = std::countr_one(m_data[NUM_INTS - 1]);
+			auto cnt = size_t(std::countr_one(m_data[NUM_INTS - 1]));
 			if (cnt < LAST_USED_BITS) {
 				return (NUM_INTS - 1) * 64 + cnt;
 			}
@@ -113,7 +113,7 @@ public:
 	{
 		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
 		for (size_t i = 0; i < limit; i++) {
-			size_t cnt = std::countr_one(m_data[i]);
+			auto cnt = size_t(std::countr_one(m_data[i]));
 			if (cnt < 64) {
 				m_data[i] |= (uint64_t(1) << cnt);
 				return i * 64 + cnt;
@@ -121,7 +121,7 @@ public:
 		}
 
 		if constexpr (!ALL_BITS_USED) {
-			size_t cnt = std::countr_one(m_data[NUM_INTS - 1]);
+			auto cnt = size_t(std::countr_one(m_data[NUM_INTS - 1]));
 			if (cnt < LAST_USED_BITS) {
 				m_data[NUM_INTS - 1] |= (uint64_t(1) << cnt);
 				return (NUM_INTS - 1) * 64 + cnt;

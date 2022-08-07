@@ -128,14 +128,16 @@ public:
 	uint32_t free_space() noexcept
 	{
 		std::lock_guard lock(m_lock);
-		return N - m_used_bitmap.popcount();
+		return N - uint32_t(m_used_bitmap.popcount());
 	}
 
 	// Object lifecycle management function, do not call it directly
 	void operator ()(T *object, refcnt_ptr_action action) noexcept
 	{
 		assert(object);
-		const size_t id = object - reinterpret_cast<T *>(&m_objects[0]);
+		const ptrdiff_t pos_diff = object - reinterpret_cast<T *>(&m_objects[0]);
+		assert(pos_diff >= 0);
+		const auto id = size_t(pos_diff);
 
 		if (action == refcnt_ptr_action::acquire_ref) {
 			// Using relaxed ordering here as increasing refcount does not synchronize with anything
