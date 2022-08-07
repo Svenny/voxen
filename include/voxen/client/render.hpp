@@ -17,7 +17,7 @@ public:
 	Render &operator = (const Render &) = delete;
 	~Render();
 
-	void drawFrame(const WorldState &state, const GameView &view);
+	void drawFrame(const WorldState &world_state, const GameView &view);
 private:
 	Window &m_window;
 };

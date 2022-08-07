@@ -15,7 +15,7 @@
 using namespace voxen;
 
 GameView::GameView (client::Window& window):
-	m_previous_tick_id(-1), m_window(window),
+	m_previous_tick_id(UINT64_MAX), m_window(window),
 	m_is_pause(true), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
 	m_height = window.height();

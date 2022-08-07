@@ -7,7 +7,7 @@
 namespace voxen::terrain
 {
 
-using RecursionTable = int[8][2];
+using RecursionTable = uint32_t[8][2];
 
 template<size_t N>
 static bool canProceedPhase1(const std::array<ChunkControlBlock *, N> &nodes) noexcept
@@ -46,7 +46,7 @@ static bool getSubNodes(const std::array<ChunkControlBlock *, N> &nodes,
 {
 	bool has_children = false;
 
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		auto *node = nodes[table[i][0]];
 		auto *child = node->child(table[i][1]);
 
@@ -87,15 +87,15 @@ void Controller::seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes)
 		return;
 	}
 
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D][i][3];
 		seamEdgeProcPhase1<D>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (sub[i] && sub[i]->isInducedSeamDirty()) {
 			nodes[EDGE_PROC_RECURSION_TABLE[D][i][0]]->setInducedSeamDirty(true);
 		}
@@ -119,30 +119,30 @@ void Controller::seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes)
 		return;
 	}
 
-	for (int i = 0; i < 4; i++) {
-		int i1 = SUBFACE_SHARING_TABLE[D][i][0];
-		int i2 = SUBFACE_SHARING_TABLE[D][i][1];
+	for (size_t i = 0; i < 4; i++) {
+		uint32_t i1 = SUBFACE_SHARING_TABLE[D][i][0];
+		uint32_t i2 = SUBFACE_SHARING_TABLE[D][i][1];
 		seamFaceProcPhase1<D>({ sub[i1], sub[i2] });
 	}
 
 	constexpr int D1 = (D + 1) % 3;
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D1][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D1][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D1][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D1][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D1][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D1][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D1][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D1][i][3];
 		seamEdgeProcPhase1<D1>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 	constexpr int D2 = (D + 2) % 3;
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D2][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D2][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D2][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D2][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D2][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D2][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D2][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D2][i][3];
 		seamEdgeProcPhase1<D2>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (sub[i] && sub[i]->isInducedSeamDirty()) {
 			nodes[FACE_PROC_RECURSION_TABLE[D][i][0]]->setInducedSeamDirty(true);
 		}
@@ -156,13 +156,13 @@ void Controller::seamCellProcPhase1(ChunkControlBlock *node)
 	}
 
 	std::array<ChunkControlBlock *, 8> sub;
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		sub[i] = node->child(i);
 	}
 
 	// Recursively apply `seamFaceProc` to pairs of face-sharing children
 	for (int i = 0; i < 4; i++) {
-		int i1, i2;
+		uint32_t i1, i2;
 
 		i1 = SUBFACE_SHARING_TABLE[0][i][0];
 		i2 = SUBFACE_SHARING_TABLE[0][i][1];
@@ -179,7 +179,7 @@ void Controller::seamCellProcPhase1(ChunkControlBlock *node)
 
 	// Recursively apply `seamEdgeProc` to quads of edge-sharing children
 	for (int i = 0; i < 2; i++) {
-		int i1, i2, i3, i4;
+		uint32_t i1, i2, i3, i4;
 
 		i1 = SUBEDGE_SHARING_TABLE[0][i][0];
 		i2 = SUBEDGE_SHARING_TABLE[0][i][1];
@@ -201,7 +201,7 @@ void Controller::seamCellProcPhase1(ChunkControlBlock *node)
 	}
 
 	// Recursively apply `seamCellProc` to children
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		seamCellProcPhase1(sub[i]);
 
 		if (sub[i] && sub[i]->isInducedSeamDirty()) {
@@ -230,11 +230,11 @@ void Controller::seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes)
 		return;
 	}
 
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D][i][3];
 		seamEdgeProcPhase2<D>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 }
@@ -257,26 +257,26 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 		return;
 	}
 
-	for (int i = 0; i < 4; i++) {
-		int i1 = SUBFACE_SHARING_TABLE[D][i][0];
-		int i2 = SUBFACE_SHARING_TABLE[D][i][1];
+	for (size_t i = 0; i < 4; i++) {
+		uint32_t i1 = SUBFACE_SHARING_TABLE[D][i][0];
+		uint32_t i2 = SUBFACE_SHARING_TABLE[D][i][1];
 		seamFaceProcPhase2<D>({ sub[i1], sub[i2] });
 	}
 
 	constexpr int D1 = (D + 1) % 3;
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D1][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D1][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D1][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D1][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D1][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D1][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D1][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D1][i][3];
 		seamEdgeProcPhase2<D1>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 	constexpr int D2 = (D + 2) % 3;
-	for (int i = 0; i < 2; i++) {
-		int i1 = SUBEDGE_SHARING_TABLE[D2][i][0];
-		int i2 = SUBEDGE_SHARING_TABLE[D2][i][1];
-		int i3 = SUBEDGE_SHARING_TABLE[D2][i][2];
-		int i4 = SUBEDGE_SHARING_TABLE[D2][i][3];
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1 = SUBEDGE_SHARING_TABLE[D2][i][0];
+		uint32_t i2 = SUBEDGE_SHARING_TABLE[D2][i][1];
+		uint32_t i3 = SUBEDGE_SHARING_TABLE[D2][i][2];
+		uint32_t i4 = SUBEDGE_SHARING_TABLE[D2][i][3];
 		seamEdgeProcPhase2<D2>({ sub[i1], sub[i2], sub[i3], sub[i4] });
 	}
 }
@@ -284,7 +284,7 @@ void Controller::seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes)
 static void resetTemporaryFlags(ChunkControlBlock *node)
 {
 	node->clearTemporaryFlags();
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		ChunkControlBlock *child = node->child(i);
 		if (child && child->isInducedSeamDirty()) {
 			resetTemporaryFlags(child);
@@ -306,12 +306,12 @@ void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 	}
 
 	std::array<ChunkControlBlock *, 8> sub;
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		sub[i] = node->child(i);
 	}
 
-	for (int i = 0; i < 4; i++) {
-		int i1, i2;
+	for (size_t i = 0; i < 4; i++) {
+		uint32_t i1, i2;
 
 		i1 = SUBFACE_SHARING_TABLE[0][i][0];
 		i2 = SUBFACE_SHARING_TABLE[0][i][1];
@@ -326,8 +326,8 @@ void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 		seamFaceProcPhase2<2>({ sub[i1], sub[i2] });
 	}
 
-	for (int i = 0; i < 2; i++) {
-		int i1, i2, i3, i4;
+	for (size_t i = 0; i < 2; i++) {
+		uint32_t i1, i2, i3, i4;
 
 		i1 = SUBEDGE_SHARING_TABLE[0][i][0];
 		i2 = SUBEDGE_SHARING_TABLE[0][i][1];
@@ -350,7 +350,7 @@ void Controller::seamCellProcPhase2(ChunkControlBlock *node)
 
 	// Recursively apply `seamCellProc` to children. Note it's applied after
 	// face and edge functions to avoid resetting "seam dirty" flag too early.
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		seamCellProcPhase2(sub[i]);
 	}
 

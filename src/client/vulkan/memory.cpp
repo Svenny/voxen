@@ -108,7 +108,9 @@ public:
 
 	[[nodiscard]] std::optional<DeviceAllocation> allocate(VkDeviceSize size, VkDeviceSize align)
 	{
-		auto range = Base::allocate(size, align);
+		assert(size <= UINT32_MAX && align <= UINT32_MAX);
+
+		auto range = Base::allocate(uint32_t(size), uint32_t(align));
 		if (!range) {
 			return std::nullopt;
 		}

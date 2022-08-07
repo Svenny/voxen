@@ -6,54 +6,12 @@ include(CMakeUtils.cmake)
 # Can't use `if(GENERATOR_IS_MULTI_CONFIG)` without this line
 get_cmake_property(GENERATOR_IS_MULTI_CONFIG GENERATOR_IS_MULTI_CONFIG)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
 # Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX " pre-alpha")
 set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
 
 include(tools/cmake/toolchain_setup.cmake)
-
-# Enforce good coding standards to at least some extent
-string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Werror")
-string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Werror")
-
-# Clang's IPO uses ThinLTO which does not slow down build times as severely as usual -flto
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON)
-endif()
-
-# Always use LLD because why not
-string(APPEND CMAKE_EXE_LINKER_FLAGS " -fuse-ld=lld")
-string(APPEND CMAKE_SHARED_LINKER_FLAGS " -fuse-ld=lld")
-
-option(VOXEN_FASTER_MATH_FLAGS "Speed up math at the of cost strict standard compliance" OFF)
-if(VOXEN_FASTER_MATH_FLAGS)
-	string(APPEND CMAKE_C_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math -ffp-contract=fast-honor-pragmas")
-	string(APPEND CMAKE_CXX_FLAGS " -fno-math-errno -fno-signed-zeros -fno-trapping-math -ffp-contract=fast-honor-pragmas")
-endif()
-
-if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0) OR
-   (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0))
-	# Remap /path/to/voxen/src/file.cpp -> /src/file.cpp in __FILE__ and co.
-	string(APPEND CMAKE_C_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=''")
-	string(APPEND CMAKE_CXX_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=''")
-endif()
-
-# Enable filesystem, if needed
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-	string(APPEND CMAKE_CXX_FLAGS " -lstdc++fs")
-endif()
-
-# Always link with libc++ because why not
-string(APPEND CMAKE_CXX_FLAGS " -stdlib=libc++")
-
-# This will teach the built binary to load .so's from its own directory
-set(CMAKE_INSTALL_RPATH "\$ORIGIN")
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
 	message(WARNING "Build type not set, defaulting to Release")
@@ -69,9 +27,9 @@ add_subdirectory(3rdparty)
 
 # CMake target setup
 voxen_add_library(extras STATIC)
-add_executable(voxen "")
+voxen_add_executable(voxen)
 
-target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
+target_compile_definitions(voxen PRIVATE VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
@@ -85,7 +43,6 @@ target_link_libraries(voxen PRIVATE
 	3rdparty::simpleini
 	3rdparty::vulkan-headers
 	Threads::Threads
-	stdc++fs
 )
 
 include(include/CMakeLists.txt)

@@ -37,7 +37,7 @@ ChunkId ChunkId::toParent() const noexcept
 	};
 }
 
-ChunkId ChunkId::toChild(unsigned id) const noexcept
+ChunkId ChunkId::toChild(size_t id) const noexcept
 {
 	assert(id < 8u);
 	assert(this->lod > 0u);

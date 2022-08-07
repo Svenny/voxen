@@ -9,10 +9,16 @@
 namespace voxen
 {
 
-
 Exception::Exception(extras::source_location loc) noexcept : m_where(loc)
 {
 	// TODO: this is the best place to print stack trace
+}
+
+Exception::~Exception() = default;
+
+const char *MessageException::what() const noexcept
+{
+	return m_what;
 }
 
 FormattedMessageException::FormattedMessageException(std::string_view format_str, const fmt::format_args &format_args,

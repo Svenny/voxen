@@ -23,10 +23,10 @@ Render::~Render()
 	vulkan::Backend::backend().stop();
 }
 
-void Render::drawFrame(const WorldState &state, const GameView &view)
+void Render::drawFrame(const WorldState &world_state, const GameView &view)
 {
 	auto &backend = vulkan::Backend::backend();
-	if (!backend.drawFrame(state, view)) {
+	if (!backend.drawFrame(world_state, view)) {
 		auto state = backend.state();
 
 		if (state == vulkan::Backend::State::Broken) {

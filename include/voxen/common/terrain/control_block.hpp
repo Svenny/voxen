@@ -36,7 +36,7 @@ public:
 
 	void copyChunk();
 	void setChunk(extras::refcnt_ptr<Chunk> ptr);
-	void setChild(int id, std::unique_ptr<ChunkControlBlock> ptr) noexcept { m_children[id] = std::move(ptr); }
+	void setChild(size_t id, std::unique_ptr<ChunkControlBlock> ptr) noexcept { m_children[id] = std::move(ptr); }
 
 	// Go DFS over this chunk and its children and assert some invariants about their state.
 	// NOTE: this function consists only of asserts so it has no effect in release builds.
@@ -50,11 +50,11 @@ public:
 
 	extras::refcnt_ptr<Chunk> chunkPtr() const noexcept { return m_chunk; }
 
-	ChunkControlBlock *child(int id) noexcept { return m_children[id].get(); }
+	ChunkControlBlock *child(size_t id) noexcept { return m_children[id].get(); }
 	Chunk *chunk() noexcept { return m_chunk.get(); }
 	SurfaceBuilder &surfaceBuilder() noexcept { return m_surface_builder; }
 
-	const ChunkControlBlock *child(int id) const noexcept { return m_children[id].get(); }
+	const ChunkControlBlock *child(size_t id) const noexcept { return m_children[id].get(); }
 	const Chunk *chunk() const noexcept { return m_chunk.get(); }
 	const SurfaceBuilder &surfaceBuilder() const noexcept { return m_surface_builder; }
 

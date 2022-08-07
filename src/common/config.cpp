@@ -31,7 +31,7 @@ Config::Config(path path, Config::Scheme scheme): m_path(path) {
 			m_ini.SetValue(entry.section.c_str(), entry.parameter_name.c_str(), value_str.c_str(), comment.c_str());
 			value = entry.default_value;
 		} else {
-			int type = entry.default_value.index();
+			size_t type = entry.default_value.index();
 			value = Config::optionFromString(string_view(value_ptr), type);
 		}
 
@@ -83,7 +83,6 @@ bool Config::optionBool(string_view section, string_view parameter_name) const
 	}
 
 	throw FormattedMessageException("Bool option {}/{} not found", fmt::make_format_args(section, parameter_name));
-	return false;
 }
 
 double Config::optionDouble(string_view section, string_view parameter_name) const
@@ -97,10 +96,9 @@ double Config::optionDouble(string_view section, string_view parameter_name) con
 	}
 
 	throw FormattedMessageException("Double option {}/{} not found", fmt::make_format_args(section, parameter_name));
-	return 0.0;
 }
 
-int64_t Config::optionInt(string_view section, string_view parameter_name) const
+int64_t Config::optionInt64(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -110,7 +108,14 @@ int64_t Config::optionInt(string_view section, string_view parameter_name) const
 	}
 
 	throw FormattedMessageException("Int option {}/{} not found", fmt::make_format_args(section, parameter_name));
-	return 0;
+}
+
+int32_t Config::optionInt32(string_view section, string_view parameter_name) const
+{
+	int64_t value = optionInt64(section, parameter_name);
+
+	assert(value >= INT32_MIN && value <= INT32_MAX);
+	return static_cast<int32_t>(value);
 }
 
 std::string Config::optionString(string_view section, string_view parameter_name) const
@@ -123,10 +128,9 @@ std::string Config::optionString(string_view section, string_view parameter_name
 	}
 
 	throw FormattedMessageException("String option {}/{} not found", fmt::make_format_args(section, parameter_name));
-	return std::string();
 }
 
-int Config::optionType(string_view section, string_view parameter_name) const
+size_t Config::optionType(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -136,7 +140,6 @@ int Config::optionType(string_view section, string_view parameter_name) const
 	}
 
 	throw FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
-	return 0;
 }
 
 void Config::patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile)
@@ -167,7 +170,7 @@ std::string Config::optionToString(option_t value)
 {
 	using namespace std;
 
-	int type_idx = value.index();
+	size_t type_idx = value.index();
 	switch(type_idx) {
 		case 0:
 			static_assert(is_same_v<string, variant_alternative_t<0, Config::option_t>>);
@@ -191,7 +194,7 @@ std::string Config::optionToString(option_t value)
 	}
 }
 
-Config::option_t Config::optionFromString(string_view s, int type)
+Config::option_t Config::optionFromString(string_view s, size_t type)
 {
 	switch(type) {
 		case 0:

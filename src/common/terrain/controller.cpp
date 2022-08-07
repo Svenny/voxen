@@ -94,7 +94,7 @@ std::vector<Controller::ChunkPtr> Controller::doTick()
 				continue;
 			}
 
-			for (int i = 0; i < 8; i++) {
+			for (size_t i = 0; i < 8; i++) {
 				const ChunkControlBlock *child = cb->child(i);
 				if (child) {
 					stack.emplace_back(child);
@@ -231,7 +231,7 @@ bool Controller::updateChunk(ChunkControlBlock &cb, ParentCommand parent_cmd)
 {
 	if (parent_cmd == ParentCommand::Unload) {
 		m_loader.unload(cb.chunkPtr());
-		for (int i = 0; i < 8; i++) {
+		for (size_t i = 0; i < 8; i++) {
 			if (cb.child(i)) {
 				updateChunk(*cb.child(i), parent_cmd);
 			}
@@ -259,7 +259,7 @@ bool Controller::updateChunk(ChunkControlBlock &cb, ParentCommand parent_cmd)
 		return false;
 	}
 
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		ChunkControlBlock *child = cb.child(i);
 		if (child) {
 			bool res = updateChunk(*child, self_update_result.second);
@@ -318,7 +318,7 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 			return { true, ParentCommand::Nothing };
 		}
 
-		for (unsigned i = 0; i < 8; i++) {
+		for (uint32_t i = 0; i < 8; i++) {
 			const ChunkControlBlock *child_cb = cb.child(i);
 			assert(child_cb);
 
@@ -392,7 +392,7 @@ Controller::InnerUpdateResult Controller::updateChunkActive(ChunkControlBlock &c
 		ControlBlockPtr new_children[8];
 		bool can_improve = true;
 
-		for (int i = 0; i < 8; i++) {
+		for (size_t i = 0; i < 8; i++) {
 			const ChunkControlBlock *child_cb = cb.child(i);
 			if (!child_cb) {
 				// Child is not present - request loading it immediately

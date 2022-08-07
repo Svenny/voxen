@@ -46,9 +46,9 @@ struct VertexFormatPositionOnlyTerrain {
 		};
 
 		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertex_input_info.vertexBindingDescriptionCount = std::size(vertex_input_binding);
+		vertex_input_info.vertexBindingDescriptionCount = uint32_t(std::size(vertex_input_binding));
 		vertex_input_info.pVertexBindingDescriptions = vertex_input_binding;
-		vertex_input_info.vertexAttributeDescriptionCount = std::size(vertex_input_attrib);
+		vertex_input_info.vertexAttributeDescriptionCount = uint32_t(std::size(vertex_input_attrib));
 		vertex_input_info.pVertexAttributeDescriptions = vertex_input_attrib;
 	}
 
@@ -103,9 +103,9 @@ struct VertexFormatBasicTerrain {
 		};
 
 		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertex_input_info.vertexBindingDescriptionCount = std::size(vertex_input_binding);
+		vertex_input_info.vertexBindingDescriptionCount = uint32_t(std::size(vertex_input_binding));
 		vertex_input_info.pVertexBindingDescriptions = vertex_input_binding;
-		vertex_input_info.vertexAttributeDescriptionCount = std::size(vertex_input_attrib);
+		vertex_input_info.vertexAttributeDescriptionCount = uint32_t(std::size(vertex_input_attrib));
 		vertex_input_info.pVertexAttributeDescriptions = vertex_input_attrib;
 	}
 

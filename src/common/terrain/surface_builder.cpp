@@ -89,7 +89,7 @@ using EdgeProcArgs = std::conditional_t<S, EdgeProcSeamArgs, EdgeProcOwnArgs>;
 template<int D, bool S>
 void edgeProc(EdgeProcArgs<S> args)
 {
-	constexpr int CORNERS_TABLE[3][4][2] = {
+	constexpr uint32_t CORNERS_TABLE[3][4][2] = {
 		{ { 5, 7 }, { 1, 3 }, { 0, 2 }, { 4, 6 } }, // X
 		{ { 3, 7 }, { 2, 6 }, { 0, 4 }, { 1, 5 } }, // Y
 		{ { 6, 7 }, { 4, 5 }, { 0, 1 }, { 2, 3 } }  // Z
@@ -105,8 +105,8 @@ void edgeProc(EdgeProcArgs<S> args)
 
 	const ChunkOctreeNodeBase *sub[8];
 	bool all_leaves = true;
-	for (int i = 0; i < 8; i++) {
-		const int node_id = EDGE_PROC_RECURSION_TABLE[D][i][0];
+	for (size_t i = 0; i < 8; i++) {
+		const uint32_t node_id = EDGE_PROC_RECURSION_TABLE[D][i][0];
 		const ChunkOctreeNodeBase *n = nodes[node_id];
 
 		if (!n->is_leaf) {
@@ -126,7 +126,7 @@ void edgeProc(EdgeProcArgs<S> args)
 	}
 
 	if (!all_leaves) {
-		for (int i = 0; i < 2; i++) {
+		for (size_t i = 0; i < 2; i++) {
 			args.nodes[0] = sub[SUBEDGE_SHARING_TABLE[D][i][0]];
 			args.nodes[1] = sub[SUBEDGE_SHARING_TABLE[D][i][1]];
 			args.nodes[2] = sub[SUBEDGE_SHARING_TABLE[D][i][2]];
@@ -138,7 +138,7 @@ void edgeProc(EdgeProcArgs<S> args)
 
 	// All four entries in `nodes` are leaves, guaranteed by above `if`
 	const ChunkOctreeLeaf *leaves[4];
-	for (int i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 4; i++) {
 		leaves[i] = nodes[i]->castToLeaf();
 	}
 
@@ -153,7 +153,7 @@ void edgeProc(EdgeProcArgs<S> args)
 	 materials on endpoints of this edge we may know whether the edge is surface-crossing
 	 and if we need to flip the triangles winding order. */
 	int32_t max_depth = INT32_MIN;
-	for (int i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 4; i++) {
 		auto depth = static_cast<int32_t>(leaves[i]->depth);
 		if constexpr (S) {
 			// Offset depths of bigger chunks into negative values, equalizing different LODs
@@ -174,7 +174,7 @@ void edgeProc(EdgeProcArgs<S> args)
 	 winding order should be flipped to remain facing outside of the surface. */
 	const bool flip = (mat1 == 0);
 
-	auto get_index = [&args](const ChunkOctreeLeaf *leaf, int id) {
+	auto get_index = [&args](const ChunkOctreeLeaf *leaf, uint32_t id) {
 		if constexpr (!S) {
 			(void) args;
 			(void) id;
@@ -255,7 +255,7 @@ void faceProc(FaceProcArgs<S> args)
 
 	bool has_cells = false;
 	for (int i = 0; i < 8; i++) {
-		const int node_id = FACE_PROC_RECURSION_TABLE[D][i][0];
+		const uint32_t node_id = FACE_PROC_RECURSION_TABLE[D][i][0];
 		const ChunkOctreeNodeBase *n = nodes[node_id];
 
 		if constexpr (S) {
@@ -293,9 +293,9 @@ void faceProc(FaceProcArgs<S> args)
 	EdgeProcArgs<S> edge_args = args.toEdgeProcArgs();
 
 	constexpr int D1 = (D + 1) % 3;
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 4; j++) {
-			int idx = SUBEDGE_SHARING_TABLE[D1][i][j];
+	for (size_t i = 0; i < 2; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			uint32_t idx = SUBEDGE_SHARING_TABLE[D1][i][j];
 			edge_args.nodes[j] = sub[idx];
 			if constexpr (S) {
 				edge_args.octrees[j] = sub_octrees[idx];
@@ -307,9 +307,9 @@ void faceProc(FaceProcArgs<S> args)
 	}
 
 	constexpr int D2 = (D + 2) % 3;
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 4; j++) {
-			int idx = SUBEDGE_SHARING_TABLE[D2][i][j];
+	for (size_t i = 0; i < 2; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			uint32_t idx = SUBEDGE_SHARING_TABLE[D2][i][j];
 			edge_args.nodes[j] = sub[idx];
 			if constexpr (S) {
 				edge_args.octrees[j] = sub_octrees[idx];
@@ -400,6 +400,7 @@ const HermiteDataStorage &selectHermiteStorage(const ChunkPrimaryData &data, int
 	case 2:
 		return data.hermite_data_z;
 	default:
+		assert(false);
 		__builtin_unreachable();
 	}
 }
@@ -411,8 +412,10 @@ struct DcBuildArgs {
 	const float epsilon;
 };
 
-std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::ivec3 min_corner, int32_t size, int8_t depth, DcBuildArgs &args)
+std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::uvec3 min_corner, uint32_t size, int8_t depth, DcBuildArgs &args)
 {
+	using coord_t = HermiteDataStorage::coord_t;
+
 	QefSolver3D &solver = args.solver;
 
 	solver.reset();
@@ -423,7 +426,7 @@ std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::ivec3 min_corner, int32_t 
 
 	bool has_edges = false;
 
-	constexpr int edge_table[3][4][2] = {
+	constexpr uint32_t edge_table[3][4][2] = {
 		{ { 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 } }, // X
 		{ { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 } }, // Y
 		{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 } }  // Z
@@ -441,7 +444,7 @@ std::pair<uint32_t, ChunkOctreeLeaf *> buildLeaf(glm::ivec3 min_corner, int32_t 
 
 			has_edges = true;
 			auto edge_pos = min_corner + CELL_CORNER_OFFSET_TABLE[edge_table[dim][i][0]];
-			const auto iter = storage.find(edge_pos.x, edge_pos.y, edge_pos.z);
+			const auto iter = storage.find(coord_t(edge_pos.x), coord_t(edge_pos.y), coord_t(edge_pos.z));
 			assert(iter != storage.cend());
 
 			glm::vec3 vertex = iter->surfacePoint();
@@ -475,7 +478,7 @@ using CubeMaterials = std::array<std::array<std::array<voxel_t, 3>, 3>, 3>;
 bool checkTopoSafety(const CubeMaterials &mats) noexcept
 {
 	// Maps DC cell vertices ordering to MC one
-	constexpr int DC_TO_MC[8] = { 0, 3, 1, 2, 4, 7, 5, 6 };
+	constexpr uint32_t DC_TO_MC[8] = { 0, 3, 1, 2, 4, 7, 5, 6 };
 	// Indicates whether a given vertex sign configuration
 	// (in MC ordering) is manifold (i.e. non-ambiguous)
 	constexpr bool IS_MANIFOLD[256] = {
@@ -499,11 +502,11 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 
 	// Construct corners sign mask in MC vertex ordering
 	uint32_t mask = 0;
-	for (int i = 0; i < 8; i++) {
-		auto pos = 2 * CELL_CORNER_OFFSET_TABLE[i];
+	for (size_t i = 0; i < 8; i++) {
+		auto pos = 2u * CELL_CORNER_OFFSET_TABLE[i];
 		voxel_t mat = mats[pos.y][pos.x][pos.z];
 		if (mat != 0)
-			mask |= uint32_t(1 << DC_TO_MC[i]);
+			mask |= 1u << DC_TO_MC[i];
 	}
 	if (!IS_MANIFOLD[mask]) {
 		// Collapsing nodes will yield an ambiguous sign configuration
@@ -518,7 +521,7 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 			auto pos = CELL_CORNER_OFFSET_TABLE[i] + CELL_CORNER_OFFSET_TABLE[j];
 			voxel_t mat = mats[pos.y][pos.x][pos.z];
 			if (mat != 0)
-				submask |= uint32_t(1 << DC_TO_MC[j]);
+				submask |= 1u << DC_TO_MC[j];
 		}
 		if (!IS_MANIFOLD[submask]) {
 			// Node already has ambiguous configuration
@@ -527,8 +530,8 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 	}
 
 	// Check edge midpoint signs (they must be equal to either edge endpoint)
-	for (int c1 = 0; c1 < 3; c1++) {
-		for (int c2 = 0; c2 < 3; c2++) {
+	for (size_t c1 = 0; c1 < 3; c1++) {
+		for (size_t c2 = 0; c2 < 3; c2++) {
 			if (mats[1][c1][c2] != mats[0][c1][c2] && mats[1][c1][c2] != mats[2][c1][c2])
 				return false;
 			if (mats[c1][1][c2] != mats[c1][0][c2] && mats[c1][1][c2] != mats[c1][2][c2])
@@ -539,7 +542,7 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 	}
 
 	// Check face midpoint signs (they must be equal to either face corner)
-	for (int c1 = 0; c1 < 3; c1++) {
+	for (size_t c1 = 0; c1 < 3; c1++) {
 		voxel_t mat;
 		mat = mats[1][1][c1];
 		if (mat != mats[0][0][c1] && mat != mats[0][2][c1] && mat != mats[2][0][c1] && mat != mats[2][2][c1])
@@ -554,8 +557,8 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 
 	// Check cube midpoint sign (it must be equal to either cube corner)
 	voxel_t mat = mats[1][1][1];
-	for (int i = 0; i < 8; i++) {
-		auto pos = 2 * CELL_CORNER_OFFSET_TABLE[i];
+	for (size_t i = 0; i < 8; i++) {
+		auto pos = 2u * CELL_CORNER_OFFSET_TABLE[i];
 		if (mat == mats[pos.y][pos.x][pos.z]) {
 			// All checks passed, this topology is safe to collapse
 			return true;
@@ -566,8 +569,8 @@ bool checkTopoSafety(const CubeMaterials &mats) noexcept
 	return false;
 }
 
-std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32_t size,
-                                                    int8_t depth, DcBuildArgs &args)
+std::pair<uint32_t, ChunkOctreeNodeBase *> buildNode(glm::uvec3 min_corner, uint32_t size,
+                                                     int8_t depth, DcBuildArgs &args)
 {
 	assert(size > 0);
 	if (size == 1) {
@@ -578,9 +581,9 @@ std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32
 	bool has_children = false;
 	bool has_child_cell = false;
 
-	const int32_t child_size = size / 2;
-	for (int i = 0; i < 8; i++) {
-		glm::ivec3 child_min_corner = min_corner + child_size * CELL_CORNER_OFFSET_TABLE[i];
+	const uint32_t child_size = size / 2u;
+	for (size_t i = 0; i < 8; i++) {
+		glm::uvec3 child_min_corner = min_corner + child_size * CELL_CORNER_OFFSET_TABLE[i];
 		auto[child_id, child_ptr] = buildNode(child_min_corner, child_size, depth + 1, args);
 
 		children_ids[i] = child_id;
@@ -628,29 +631,29 @@ std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32
 	// using center material is the safest way for topological check.
 	voxel_t center_mat = 0;
 	// At least one leaf is guaranteed to be found
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (children_ptrs[i]) {
 			ChunkOctreeLeaf *leaf = children_ptrs[i]->castToLeaf();
 			// `i` is a bitmask of per-axis offsets, i.e. 5 -> 101 means offset in Y and Z axes.
 			// `i ^ 7` is an inverse mask, i.e. 5 ^ 7 = 2 -> 010 means offset in X axis.
 			// `i`-th children's `i ^ 7`-th corner will always be in the center of parent cell.
-			center_mat = leaf->corners[i ^ 7];
+			center_mat = leaf->corners[i ^ 7u];
 			break;
 		}
 	}
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (size_t i = 0; i < 3; i++) {
+		for (size_t j = 0; j < 3; j++) {
 			mats[i][j].fill(center_mat);
 		}
 	}
 
 	// Now fill the rest
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (!children_ptrs[i]) {
 			continue;
 		}
 		ChunkOctreeLeaf *leaf = children_ptrs[i]->castToLeaf();
-		for (int j = 0; j < 8; j++) {
+		for (size_t j = 0; j < 8; j++) {
 			auto offset = CELL_CORNER_OFFSET_TABLE[i] + CELL_CORNER_OFFSET_TABLE[j];
 			mats[offset.y][offset.x][offset.z] = leaf->corners[j];
 		}
@@ -663,8 +666,8 @@ std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32
 	// Extract corners from full cube materials. This will
 	// be needed if we finally decide to collapse children.
 	std::array<voxel_t, 8> corners;
-	for (int i = 0; i < 8; i++) {
-		auto offset = 2 * CELL_CORNER_OFFSET_TABLE[i];
+	for (size_t i = 0; i < 8; i++) {
+		auto offset = 2u * CELL_CORNER_OFFSET_TABLE[i];
 		corners[i] = mats[offset.y][offset.x][offset.z];
 	}
 
@@ -673,7 +676,7 @@ std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32
 	// Now try to combine childrens' QEF's
 	solver.reset();
 	glm::vec3 avg_normal { 0 };
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		if (!children_ptrs[i]) {
 			continue;
 		}
@@ -695,7 +698,7 @@ std::pair<uint32_t, ChunkOctreeNodeBase *>buildNode(glm::ivec3 min_corner, int32
 	// All collapse safety checks passed, this node is now definitely leaf
 
 	// Free children which are not needed anymore
-	for (int i = 0; i < 8; i++) {
+	for (size_t i = 0; i < 8; i++) {
 		args.octree.freeNode(children_ids[i]);
 	}
 
@@ -811,7 +814,7 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 	glm::ivec3 min_chunk_base;
 	glm::ivec2 contact_point;
 
-	for (int i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 4; i++) {
 		ids[i] = chunks[i]->id();
 		octrees[i] = &chunks[i]->octree();
 
@@ -824,7 +827,7 @@ void doBuildEdgeSeam(Chunk &my, const Chunk &his_a, const Chunk &his_ab,
 	}
 
 	std::array<const ChunkOctreeNodeBase *, 4> roots;
-	for (int i = 0; i < 4; i++) {
+	for (size_t i = 0; i < 4; i++) {
 		uint32_t root_id = octrees[i]->root();
 
 		if (ids[i].lod > min_chunk_lod) {
@@ -887,7 +890,7 @@ void SurfaceBuilder::buildOctree(Chunk &chunk)
 		.epsilon = 0.12f
 	};
 
-	auto[root_id, root] = buildNode(glm::ivec3(0), Config::CHUNK_SIZE, 0, args);
+	auto[root_id, root] = buildNode(glm::uvec3(0), Config::CHUNK_SIZE, 0, args);
 	octree.setRoot(root_id);
 }
 
