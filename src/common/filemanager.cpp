@@ -224,7 +224,7 @@ private:
 		while(!state->is_exit.load())
 		{
 			state->state_mutex.lock();
-			if (state->tasks_queue.size() == 1)
+			if (state->tasks_queue.size() >= 1)
 			{
 				packaged_task<void()> task = std::move(state->tasks_queue.front());
 				state->tasks_queue.pop();
