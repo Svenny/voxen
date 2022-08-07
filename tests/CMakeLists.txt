@@ -1,6 +1,4 @@
 add_executable(test-extras
-	${CMAKE_SOURCE_DIR}/src/extras/futex.cpp
-
 	extras/bitset.cpp
 	extras/defer.cpp
 	extras/fixed_pool.cpp
@@ -11,11 +9,8 @@ add_executable(test-extras
 	extras/source_location.cpp
 )
 
-target_include_directories(test-extras PUBLIC
-	${CMAKE_SOURCE_DIR}/include
-)
-
 target_link_libraries(test-extras PRIVATE
+	extras
 	3rdparty::catch2
 	3rdparty::glm
 )

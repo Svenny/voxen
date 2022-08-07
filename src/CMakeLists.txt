@@ -2,6 +2,9 @@ set(EXTRAS_SOURCES
 	src/extras/futex.cpp
 )
 
+target_sources(extras PRIVATE ${EXTRAS_SOURCES})
+source_group(TREE ${CMAKE_SOURCE_DIR}/src/extras PREFIX Sources FILES ${EXTRAS_SOURCES})
+
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
 	src/client/vulkan/high/main_loop.cpp
@@ -74,9 +77,8 @@ set(VOXEN_SOURCES
 	src/main.cpp
 )
 
-target_sources(voxen PRIVATE ${VOXEN_SOURCES} ${EXTRAS_SOURCES})
+target_sources(voxen PRIVATE ${VOXEN_SOURCES})
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})
-source_group(TREE ${CMAKE_SOURCE_DIR}/src/extras PREFIX Sources FILES ${EXTRAS_SOURCES})
 
 find_program(GLSL_COMPILER glslc)
 if(${GLSL_COMPILER} STREQUAL "GLSL_COMPILER-NOTFOUND")
