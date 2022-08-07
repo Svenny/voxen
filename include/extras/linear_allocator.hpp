@@ -90,12 +90,12 @@ public:
 					m_free_ranges[i] = range_type(begin, adjusted_begin);
 					used_inplace = true;
 				} else {
-					m_free_ranges.emplace(m_free_ranges.begin() + i, begin, adjusted_begin);
+					m_free_ranges.emplace(m_free_ranges.begin() + ptrdiff_t(i), begin, adjusted_begin);
 				}
 			}
 
 			if (!used_inplace) {
-				m_free_ranges.erase(m_free_ranges.begin() + i);
+				m_free_ranges.erase(m_free_ranges.begin() + ptrdiff_t(i));
 			}
 
 			return range_type(adjusted_begin, adjusted_end);
@@ -136,7 +136,7 @@ public:
 			return std::nullopt;
 		}
 
-		const size_t desired_end = end + align_up(addendum, G);
+		const size_type desired_end = end + align_up(addendum, G);
 		if (iter->second < desired_end) {
 			// "Higher" block is not enough to satisfy the request
 			return std::nullopt;

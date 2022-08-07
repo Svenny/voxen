@@ -2,7 +2,7 @@
 
 #include <version>
 
-#if __cpp_lib_source_location >= 201907L
+#if defined(__cpp_lib_source_location) && __cpp_lib_source_location >= 201907L
 
 #include <source_location>
 // Just alias (assume it's stable enough when it becomes part of `std`)
