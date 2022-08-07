@@ -301,15 +301,17 @@ namespace voxen
 path FileManager::user_data_path;
 path FileManager::game_data_path;
 
-void FileManager::setProfileName(std::string profile_name)
+void FileManager::setProfileName(const std::string &path_to_binary, const std::string &profile_name)
 {
 	if constexpr (BuildConfig::kIsDeployBuild) {
 		assert(false);
 		user_data_path = std::filesystem::path(sago::getDataHome()) / "voxen/";
 	} else {
-		user_data_path = std::filesystem::current_path() / "data/user" / profile_name;
-		game_data_path = std::filesystem::current_path() / "data/game";
+		// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
+		auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
 
+		user_data_path = install_root / "data/user" / profile_name;
+		game_data_path = install_root / "data";
 	}
 }
 
