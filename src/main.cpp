@@ -75,11 +75,11 @@ void patchConfig(const cxxopts::ParseResult &result, voxen::Config* config) {
 			continue;
 		}
 
-		int sep_idx = keyvalue.key().find(kCliSectionSeparator);
+		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
 		std::string section = keyvalue.key().substr(0, sep_idx);
 		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
 
-		int type_idx = config->optionType(section, parameter);
+		size_t type_idx = config->optionType(section, parameter);
 		voxen::Config::option_t value = voxen::Config::optionFromString(keyvalue.value(), type_idx);
 		config->patch(section, parameter, value);
 	}
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		bool isLoggingFPSEnable = main_voxen_config->optionBool("dev", "fps_logging");
 
 		auto &wnd = voxen::client::Window::instance();
-		wnd.start(main_voxen_config->optionInt("window", "width"), main_voxen_config->optionInt("window", "height"));
+		wnd.start(main_voxen_config->optionInt32("window", "width"), main_voxen_config->optionInt32("window", "height"));
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
 		voxen::server::World world;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 				double elapsed = dur.count();
 				if (elapsed > 2) {
 					int64_t ups_counter = g_ups_counter.exchange(0, std::memory_order_relaxed);
-					Log::info("FPS: {:.1f} UPS: {:.1f}", fps_counter / elapsed, ups_counter / elapsed);
+					Log::info("FPS: {:.1f} UPS: {:.1f}", double(fps_counter) / elapsed, double(ups_counter) / elapsed);
 					fps_counter = 0;
 					time_point_counter = high_resolution_clock::now();
 				}

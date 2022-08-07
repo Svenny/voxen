@@ -12,9 +12,9 @@ static uint32_t doubleTo24Unorm(double value) noexcept
 	return uint32_t(value * 16777215.0);
 }
 
-static double unorm24ToDouble(uint32_t value) noexcept
+static float unorm24ToFloat(uint32_t value) noexcept
 {
-	return double(value) / 16777215.0;
+	return float(value) / 16777215.0f;
 }
 
 // --- HermiteDataEntry ---
@@ -48,7 +48,7 @@ glm::vec3 HermiteDataEntry::surfaceNormal() const noexcept
 glm::vec3 HermiteDataEntry::surfacePoint() const noexcept
 {
 	glm::vec3 point(m_lesser_x, m_lesser_y, m_lesser_z);
-	point[m_axis] += unorm24ToDouble(m_offset);
+	point[m_axis] += unorm24ToFloat(m_offset);
 	return point;
 }
 

@@ -32,11 +32,12 @@ public:
 
 	// Throws std::bad_variant_access, voxen::Exception("Option not found")
 	std::string optionString(std::string_view section, std::string_view parameter_name) const;
-	int64_t optionInt(std::string_view section, std::string_view parameter_name) const;
+	int64_t optionInt64(std::string_view section, std::string_view parameter_name) const;
+	int32_t optionInt32(std::string_view section, std::string_view parameter_name) const;
 	double optionDouble(std::string_view section, std::string_view  parameter_name) const;
 	bool optionBool(std::string_view section, std::string_view parameter_name) const;
 
-	int optionType(std::string_view section, std::string_view parameter_name) const;
+	size_t optionType(std::string_view section, std::string_view parameter_name) const;
 
 public:
 
@@ -48,8 +49,8 @@ public:
 
 	static std::string optionToString(option_t value);
 
-	// Trhows std::invalid_argument, std::out_of_range
-	static option_t optionFromString(std::string_view s, int type);
+	// Throws std::invalid_argument, std::out_of_range
+	static option_t optionFromString(std::string_view s, size_t type);
 
 private:
 	std::map<std::string, std::map<std::string, option_t, std::less<>>, std::less<>> m_data;

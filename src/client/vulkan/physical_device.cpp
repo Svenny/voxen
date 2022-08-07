@@ -11,6 +11,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <bit>
+
 namespace voxen::client::vulkan
 {
 
@@ -128,9 +130,9 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 	extras::dyn_array<VkQueueFamilyProperties> families(num_families);
 	backend.vkGetPhysicalDeviceQueueFamilyProperties(device, &num_families, families.data());
 
-	uint32_t graphics_score = UINT32_MAX;
-	uint32_t compute_score = UINT32_MAX;
-	uint32_t transfer_score = UINT32_MAX;
+	int graphics_score = INT_MAX;
+	int compute_score = INT_MAX;
+	int transfer_score = INT_MAX;
 
 	for (uint32_t i = 0; i < num_families; i++) {
 		// Here we use "queue specialization score" heuristic. We assume that the lesser
@@ -138,8 +140,7 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 		// At first time we'll pick any queue family with the desired capability.
 		// Then we change our choice only if a new one is more specialized.
 
-		// TODO: replace with std::popcount when it is supported
-		uint32_t score = __builtin_popcount(families[i].queueFlags);
+		int score = std::popcount(families[i].queueFlags);
 
 		if (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			if (score < graphics_score) {
@@ -163,21 +164,21 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 		}
 	}
 
-	if (graphics_score == UINT32_MAX) {
+	if (graphics_score == INT_MAX) {
 		Log::debug("Graphics queue family not found");
 		return false;
 	} else {
 		Log::debug("Preferred graphics queue family index: {}", m_graphics_queue_family);
 	}
 
-	if (compute_score == UINT32_MAX) {
+	if (compute_score == INT_MAX) {
 		Log::debug("Compute queue family not found");
 		return false;
 	} else {
 		Log::debug("Preferred compute queue family index: {}", m_compute_queue_family);
 	}
 
-	if (transfer_score == UINT32_MAX) {
+	if (transfer_score == INT_MAX) {
 		Log::debug("Transfer queue family not found");
 		return false;
 	} else {

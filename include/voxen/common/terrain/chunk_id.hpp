@@ -30,7 +30,7 @@ struct alignas(uint64_t) ChunkId {
 	ChunkId toParent() const noexcept;
 	// Returns ID of the given child chunk. Results are undefined if
 	// `lod` is zero or `id` is greater than or equal to 8.
-	ChunkId toChild(unsigned id) const noexcept;
+	ChunkId toChild(size_t id) const noexcept;
 };
 
 }

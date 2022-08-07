@@ -217,11 +217,13 @@ void TerrainSynchronizer::clearSlot(ChunkSlotSyncData &slot) noexcept
 
 void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx_size, VkDeviceSize idx_size)
 {
+	assert(vtx_size <= UINT32_MAX && idx_size <= UINT32_MAX);
+
 	uint16_t vertex_arena_id = 0;
 	bool found_vertex_arena = false;
 
 	for (auto iter = m_vertex_arenas.begin(); iter != m_vertex_arenas.end(); ++iter) {
-		auto result = iter->allocate(vtx_size);
+		auto result = iter->allocate(uint32_t(vtx_size));
 		if (result) {
 			slot.vertex_arena_id = vertex_arena_id;
 			slot.vertex_arena_offset = result->first;
@@ -236,7 +238,7 @@ void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx
 		addVertexArena();
 		Log::debug("Vertex arenas are full, adding new one ({} now)", m_vertex_arenas.size());
 
-		auto result = m_vertex_arenas.back().allocate(vtx_size);
+		auto result = m_vertex_arenas.back().allocate(uint32_t(vtx_size));
 		// Can't fail on newly created arena
 		assert(result.has_value());
 		slot.vertex_arena_id = vertex_arena_id;
@@ -248,7 +250,7 @@ void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx
 	bool found_index_arena = false;
 
 	for (auto iter = m_index_arenas.begin(); iter != m_index_arenas.end(); ++iter) {
-		auto result = iter->allocate(idx_size);
+		auto result = iter->allocate(uint32_t(idx_size));
 		if (result) {
 			slot.index_arena_id = index_arena_id;
 			slot.index_arena_offset = result->first;
@@ -263,7 +265,7 @@ void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx
 		addIndexArena();
 		Log::debug("Index arenas are full, adding new one ({} now)", m_index_arenas.size());
 
-		auto result = m_index_arenas.back().allocate(idx_size);
+		auto result = m_index_arenas.back().allocate(uint32_t(idx_size));
 		// Can't fail on newly created arena
 		assert(result.has_value());
 		slot.index_arena_id = index_arena_id;

@@ -13,7 +13,7 @@ namespace voxen
 class Exception : public std::exception {
 public:
 	explicit Exception(extras::source_location loc = extras::source_location::current()) noexcept;
-	virtual ~Exception() = default;
+	virtual ~Exception();
 
 	extras::source_location where() const noexcept { return m_where; }
 
@@ -27,7 +27,7 @@ public:
 		noexcept : Exception(loc), m_what(msg) {}
 	virtual ~MessageException() = default;
 
-	virtual const char *what() const noexcept override { return m_what; }
+	virtual const char *what() const noexcept override;
 
 protected:
 	const char *m_what;

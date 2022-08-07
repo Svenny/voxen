@@ -113,6 +113,7 @@ static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 {
 	constexpr uint32_t GRID_SIZE = VoxelGrid::GRID_SIZE;
+	using coord_t = HermiteDataEntry::coord_t;
 	using ValuesArray = std::array<std::array<std::array<double, GRID_SIZE>, GRID_SIZE>, GRID_SIZE>;
 
 	const int64_t base_x = id.base_x * int64_t(Config::CHUNK_SIZE);
@@ -153,15 +154,15 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 	const auto &voxels = grid.voxels();
 
 	for (uint32_t i = 0; i < GRID_SIZE; i++) {
-		ctx.store_y = i;
+		ctx.store_y = coord_t(i);
 		ctx.edge_world_min.y = double(base_y + i * scale);
 
 		for (uint32_t j = 0; j < GRID_SIZE; j++) {
-			ctx.store_x = j;
+			ctx.store_x = coord_t(j);
 			ctx.edge_world_min.x = double(base_x + j * scale);
 
 			for (uint32_t k = 0; k < GRID_SIZE; k++) {
-				ctx.store_z = k;
+				ctx.store_z = coord_t(k);
 				ctx.edge_world_min.z = double(base_z + k * scale);
 
 				ctx.value_lesser = values[i][j][k];
