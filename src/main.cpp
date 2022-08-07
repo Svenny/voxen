@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 		//TODO(sirgienko) add profile option for threads count in profile scheme?
 		voxen::ThreadPool::initGlobalVoxenPool();
 
-		voxen::FileManager::setProfileName(result["profile"].as<std::string>());
+		voxen::FileManager::setProfileName(argv[0], result["profile"].as<std::string>());
 
 		voxen::Config* main_voxen_config = voxen::Config::mainConfig();
 		patchConfig(result, main_voxen_config);
