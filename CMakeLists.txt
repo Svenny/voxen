@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
 
-# include file with some cmake utils
-include(CMakeUtils.cmake)
-
 # Can't use `if(GENERATOR_IS_MULTI_CONFIG)` without this line
 get_cmake_property(GENERATOR_IS_MULTI_CONFIG GENERATOR_IS_MULTI_CONFIG)
 
@@ -11,6 +8,7 @@ project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX " pre-alpha")
 set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
 
+include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)
 
 if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
