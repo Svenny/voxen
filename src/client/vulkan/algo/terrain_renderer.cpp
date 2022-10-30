@@ -256,7 +256,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 			.vertexOffset = render_info.first_vertex,
 			.firstInstance = i
 		};
-		m_chunk_aabb_ptr[set_id][i] = chunk.seamSurface().aabb();
+		m_chunk_aabb_ptr[set_id][i] = chunk.surface().aabb();
 	}
 
 	terrain_sync.endSyncSession();

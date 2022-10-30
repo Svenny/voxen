@@ -131,23 +131,21 @@ TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::syncChunk(const extras
 	// - `slot_switch_age` is used more like `sync_age` (though because of p.2)
 	// - Going through arenas list every time to obtain reference/handle is not efficient
 	const auto &id = chunk->id();
-	const auto &own_surface = chunk->ownSurface();
-	const auto &seam_surface = chunk->seamSurface();
+	const auto &surface = chunk->surface();
 
 	auto &data = m_per_chunk_data[id];
 	// Reset age in any case
 	data.slot_switch_age = 0;
 
-	if (data.last_chunk && data.last_chunk->version() == chunk->version() &&
-	    data.last_chunk->seamVersion() == chunk->seamVersion()) {
+	if (data.last_chunk && data.last_chunk->version() == chunk->version()) {
 		// Chunk does not need updating
 		return slotToRenderInfo(data.slot_active);
 	}
 
 	data.last_chunk = chunk;
 
-	const uint32_t num_vertices = seam_surface.numAllVertices();
-	const uint32_t num_indices = own_surface.numIndices() + seam_surface.numIndices();
+	const uint32_t num_vertices = surface.numVertices();
+	const uint32_t num_indices = surface.numIndices();
 
 	VkDeviceSize needed_vtx_size = num_vertices * sizeof(terrain::SurfaceVertex);
 	VkDeviceSize needed_idx_size = num_indices * sizeof(uint32_t);
@@ -277,13 +275,10 @@ void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx
 void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const terrain::Chunk &chunk)
 {
 	auto &transfer = Backend::backend().transferManager();
-	const auto &own_surface = chunk.ownSurface();
-	const auto &seam_surface = chunk.seamSurface();
+	const auto &surface = chunk.surface();
 
-	const VkDeviceSize own_vtx_size = own_surface.numVertices() * sizeof(terrain::SurfaceVertex);
-	const VkDeviceSize own_idx_size = own_surface.numIndices() * sizeof(uint32_t);
-	const VkDeviceSize seam_vtx_size = seam_surface.numExtraVertices() * sizeof(terrain::SurfaceVertex);
-	const VkDeviceSize seam_idx_size = seam_surface.numIndices() * sizeof(uint32_t);
+	const VkDeviceSize vtx_size = surface.numVertices() * sizeof(terrain::SurfaceVertex);
+	const VkDeviceSize idx_size = surface.numIndices() * sizeof(uint32_t);
 
 	// TODO (Svenny): obtaining arenas this way is not particularly efficient
 	auto &vtx_arena = selectArena(m_vertex_arenas, slot.vertex_arena_id);
@@ -291,16 +286,11 @@ void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const ter
 	if (m_vertex_uma) {
 		std::byte *vtx_buffer = reinterpret_cast<std::byte *>(vtx_arena.hostPointer());
 		vtx_buffer += vtx_offset;
-		memcpy(vtx_buffer, own_surface.vertices(), own_vtx_size);
-		vtx_buffer += own_vtx_size;
-		memcpy(vtx_buffer, seam_surface.extraVertices(), seam_vtx_size);
+		memcpy(vtx_buffer, surface.vertices(), vtx_size);
 	} else {
 		VkBuffer vtx_buffer = vtx_arena.bufferHandle();
-		if (own_vtx_size > 0) {
-			transfer.uploadToBuffer(vtx_buffer, vtx_offset, own_surface.vertices(), own_vtx_size);
-		}
-		if (seam_vtx_size > 0) {
-			transfer.uploadToBuffer(vtx_buffer, vtx_offset + own_vtx_size, seam_surface.extraVertices(), seam_vtx_size);
+		if (vtx_size > 0) {
+			transfer.uploadToBuffer(vtx_buffer, vtx_offset, surface.vertices(), vtx_size);
 		}
 	}
 
@@ -309,16 +299,11 @@ void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const ter
 	if (m_index_uma) {
 		std::byte *idx_buffer = reinterpret_cast<std::byte *>(idx_arena.hostPointer());
 		idx_buffer += idx_offset;
-		memcpy(idx_buffer, own_surface.indices(), own_idx_size);
-		idx_buffer += own_idx_size;
-		memcpy(idx_buffer, seam_surface.indices(), seam_idx_size);
+		memcpy(idx_buffer, surface.indices(), idx_size);
 	} else {
 		VkBuffer idx_buffer = idx_arena.bufferHandle();
-		if (own_idx_size > 0) {
-			transfer.uploadToBuffer(idx_buffer, idx_offset, own_surface.indices(), own_idx_size);
-		}
-		if (seam_idx_size > 0) {
-			transfer.uploadToBuffer(idx_buffer, idx_offset + own_idx_size, seam_surface.indices(), seam_idx_size);
+		if (idx_size > 0) {
+			transfer.uploadToBuffer(idx_buffer, idx_offset, surface.indices(), idx_size);
 		}
 	}
 }

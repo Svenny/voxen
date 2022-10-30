@@ -59,24 +59,14 @@ std::vector<Controller::ChunkPtr> Controller::doTick()
 			continue;
 		}
 
-		// Phase 1 - induce "seam dirty" flags to seam-dependent chunks
-		seamCellProcPhase1(&cb);
-
 		++iter;
 	}
-
-	updateCrossSuperchunkSeams();
 
 	std::vector<ChunkPtr> result;
 	std::vector<const ChunkControlBlock *> stack;
 	stack.reserve(8 * Config::CHUNK_MAX_LOD);
 
-	// Inner seams must be rebuilt strictly after cross-superchunk
-	// ones because "seam dirty" flags are reset in Phase 2 pass
 	for (auto &[_, info] : m_superchunks) {
-		// Phase 2 - rebuild seams and clear temporary flags
-		seamCellProcPhase2(info.ptr.get());
-
 		// Collect active list of this chunk.
 		// TODO (Svenny): this can be optimized by keeping old list and "patching" it.
 		stack.emplace_back(info.ptr.get());
@@ -209,9 +199,7 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 	// Chunk will be filled by `TerrainLoader`
 	auto chunk_ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
 		.id = id,
-		.version = 0,
-		.reuse_type = Chunk::ReuseType::Nothing,
-		.reuse_chunk = nullptr
+		.version = 0
 	});
 
 	assert(!m_async_chunk_loads.contains(id));
@@ -270,10 +258,6 @@ bool Controller::updateChunk(ChunkControlBlock &cb, ParentCommand parent_cmd)
 
 			if (child->isChunkChanged()) {
 				cb.setChunkChanged(true);
-			}
-
-			if (child->isInducedSeamDirty()) {
-				cb.setInducedSeamDirty(true);
 			}
 		}
 	}
@@ -340,7 +324,6 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 		cb.setState(ChunkControlBlock::State::Active);
 		cb.setOverActive(false);
 		cb.setChunkChanged(true);
-		cb.setInducedSeamDirty(true);
 		return { true, ParentCommand::BecomeStandby };
 	}
 
@@ -348,7 +331,6 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 		// Parent has improved LOD, this chunk becomes active
 		cb.setState(ChunkControlBlock::State::Active);
 		cb.setChunkChanged(true);
-		cb.setInducedSeamDirty(true);
 		return { true, ParentCommand::Nothing };
 	}
 

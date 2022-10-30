@@ -99,43 +99,15 @@ private:
 }
 
 static Superpool<Chunk, false, AllocationDomain::TerrainPrimary> g_chunk_superpool;
-static Superpool<ChunkPrimaryData, true, AllocationDomain::TerrainPrimary> g_primary_superpool;
-static Superpool<ChunkOctree, true, AllocationDomain::TerrainOctree> g_octree_superpool;
-static Superpool<ChunkOwnSurface, true, AllocationDomain::TerrainMesh> g_own_surface_superpool;
-static Superpool<ChunkSeamSurface, true, AllocationDomain::TerrainMesh> g_seam_surface_superpool;
 
 PoolAllocator::ChunkPtr PoolAllocator::allocateChunk(Chunk::CreationInfo info)
 {
 	return g_chunk_superpool.allocate(std::move(info));
 }
 
-PoolAllocator::PrimaryDataPtr PoolAllocator::allocatePrimaryData()
-{
-	return g_primary_superpool.allocate();
-}
-
-PoolAllocator::OctreePtr PoolAllocator::allocateOctree()
-{
-	return g_octree_superpool.allocate();
-}
-
-PoolAllocator::OwnSurfacePtr PoolAllocator::allocateOwnSurface()
-{
-	return g_own_surface_superpool.allocate();
-}
-
-PoolAllocator::SeamSurfacePtr PoolAllocator::allocateSeamSurface()
-{
-	return g_seam_surface_superpool.allocate();
-}
-
 void PoolAllocator::collectGarbage() noexcept
 {
 	g_chunk_superpool.gcFast();
-	g_primary_superpool.gcFast();
-	g_octree_superpool.gcFast();
-	g_own_surface_superpool.gcFast();
-	g_seam_surface_superpool.gcFast();
 }
 
 }
