@@ -80,22 +80,6 @@ private:
 	InnerUpdateResult updateChunkLoading(ChunkControlBlock &cb, ParentCommand parent_cmd);
 	InnerUpdateResult updateChunkStandby(ChunkControlBlock &cb, ParentCommand parent_cmd);
 	InnerUpdateResult updateChunkActive(ChunkControlBlock &cb, ParentCommand parent_cmd);
-
-	// Seam-related fucntions are implemented in `controller_seam_ops.cpp` due to their sheer size
-
-	template<int D>
-	void seamEdgeProcPhase1(std::array<ChunkControlBlock *, 4> nodes);
-	template<int D>
-	void seamFaceProcPhase1(std::array<ChunkControlBlock *, 2> nodes);
-	void seamCellProcPhase1(ChunkControlBlock *node);
-
-	template<int D>
-	void seamEdgeProcPhase2(std::array<ChunkControlBlock *, 4> nodes);
-	template<int D>
-	void seamFaceProcPhase2(std::array<ChunkControlBlock *, 2> nodes);
-	void seamCellProcPhase2(ChunkControlBlock *node);
-
-	void updateCrossSuperchunkSeams();
 };
 
 }

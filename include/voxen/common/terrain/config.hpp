@@ -35,7 +35,7 @@ public:
 	constexpr static uint32_t POINT_OF_INTEREST_MAX_AGE = 1000;
 	// Maximal time, in ticks, after which non-engaged superchunk will get unloaded
 	constexpr static uint32_t SUPERCHUNK_MAX_AGE = 1000;
-	// Maximal number of direct (non-seam) chunk changes which can happen during one tick.
+	// Maximal number of direct chunk changes which can happen during one tick.
 	// This limit is a tradeoff between upper bound on a signle tick latency and throughput.
 	constexpr static uint32_t TERRAIN_MAX_DIRECT_OP_COUNT = 64;
 	// Allocation of terrain-related entities is done through object pools,

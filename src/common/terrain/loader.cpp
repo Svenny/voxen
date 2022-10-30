@@ -41,7 +41,7 @@ void TerrainLoader::load(Chunk &chunk)
 	// TODO: support loading from disk
 	m_generator.generate(id, chunk.primaryData());
 	SurfaceBuilder::buildOctree(chunk);
-	SurfaceBuilder::buildOwnSurface(chunk);
+	SurfaceBuilder::buildSurface(chunk);
 }
 
 void TerrainLoader::unload(extras::refcnt_ptr<Chunk> chunk)

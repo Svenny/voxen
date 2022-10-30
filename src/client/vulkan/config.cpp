@@ -28,8 +28,7 @@ static_assert(Config::MAX_RENDERED_CHUNKS >= 2048, "It's too dangerous to set lo
 // Arbitrary value. This is to not bother with the last SIMD line possibly going out of bounds.
 static_assert(Config::MAX_RENDERED_CHUNKS % 128 == 0, "Rendered chunks count should be a multiple of 128");
 
-// NOTE: it's actually not the theoretical maximum - seam vertices are not taken into account.
-// Anyway even this number is entirely not expected to ever happen in a real gameplay.
+// This number is entirely not expected to ever happen in a real gameplay.
 constexpr static size_t MAX_EXPECTED_VERTICES =
 	terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE;
 // NOTE: it's an approximation based on the fact that classical Dual Contouring builds 6 triangles per vertex.
