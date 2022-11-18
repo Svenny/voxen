@@ -15,7 +15,6 @@ Chunk &Chunk::operator = (Chunk &&other) noexcept
 	m_version = other.m_version;
 
 	std::swap(m_primary_data, other.m_primary_data);
-	std::swap(m_octree, other.m_octree);
 	std::swap(m_surface, other.m_surface);
 
 	return *this;
@@ -23,16 +22,8 @@ Chunk &Chunk::operator = (Chunk &&other) noexcept
 
 bool Chunk::hasSurface() const noexcept
 {
-	// If no octree root then surface can't contain any vertices
-	return m_octree.root() != ChunkOctree::INVALID_NODE_ID;
-}
-
-bool Chunk::hasSurfaceStrict() const noexcept
-{
-	bool result = m_surface.numIndices() != 0;
-	// `hasSurface() == false && hasSurfaceStrict() == true` is impossible
-	assert(hasSurface() || !result);
-	return result;
+	return !m_primary_data.hermite_data_x.empty() || !m_primary_data.hermite_data_y.empty() ||
+	       !m_primary_data.hermite_data_z.empty();
 }
 
 }

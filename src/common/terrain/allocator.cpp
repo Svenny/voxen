@@ -1,9 +1,6 @@
 #include <voxen/common/terrain/allocator.hpp>
 
-#include <voxen/common/terrain/chunk_octree.hpp>
 #include <voxen/common/terrain/config.hpp>
-#include <voxen/common/terrain/primary_data.hpp>
-#include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/allocator.hpp>
 #include <voxen/util/debug.hpp>
 #include <voxen/util/exception.hpp>

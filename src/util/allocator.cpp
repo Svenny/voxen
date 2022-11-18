@@ -25,7 +25,6 @@ void AllocationTracker<D>::decreaseMemoryUsage(size_t value) noexcept
 }
 
 template class AllocationTracker<AllocationDomain::TerrainMesh>;
-template class AllocationTracker<AllocationDomain::TerrainOctree>;
 template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 template class AllocationTracker<AllocationDomain::StandbyCache>;
 
