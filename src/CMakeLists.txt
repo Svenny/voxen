@@ -47,7 +47,6 @@ set(VOXEN_SOURCES
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
 	src/common/terrain/chunk_id.cpp
-	src/common/terrain/chunk_octree.cpp
 	src/common/terrain/controller.cpp
 	src/common/terrain/control_block.cpp
 	src/common/terrain/coord.cpp

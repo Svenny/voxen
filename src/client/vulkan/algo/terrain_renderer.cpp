@@ -217,7 +217,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 
 	m_num_active_chunks = 0;
 	m_last_state->walkActiveChunksPointers([&](const ChunkPtr &chunk) {
-		if (!chunk->hasSurfaceStrict()) {
+		if (!chunk->hasSurface()) {
 			return;
 		}
 

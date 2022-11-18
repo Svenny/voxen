@@ -11,8 +11,6 @@ namespace voxen
 enum class AllocationDomain {
 	// Vertices and indices storage of terrain chunks
 	TerrainMesh,
-	// Octree nodes storage of terrain chunks secondary data
-	TerrainOctree,
 	// Primary data storage of chunks and chunks themselves
 	TerrainPrimary,
 	// Caches which may be safely discarded when there is memory demand
@@ -75,7 +73,6 @@ public:
 };
 
 extern template class AllocationTracker<AllocationDomain::TerrainMesh>;
-extern template class AllocationTracker<AllocationDomain::TerrainOctree>;
 extern template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 extern template class AllocationTracker<AllocationDomain::StandbyCache>;
 

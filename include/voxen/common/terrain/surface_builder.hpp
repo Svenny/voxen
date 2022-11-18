@@ -14,7 +14,6 @@ public:
 	SurfaceBuilder &operator = (const SurfaceBuilder &) = delete;
 	~SurfaceBuilder() = default;
 
-	static void buildOctree(Chunk &chunk);
 	static void buildSurface(Chunk &chunk);
 };
 
