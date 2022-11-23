@@ -23,11 +23,11 @@ public:
 
 	// The target angular diameter of a single chunk, LODs will be adjusted to
 	// reach it. Decreasing this parameter will yield finer overall LODs.
-	constexpr static double CHUNK_OPTIMAL_ANGULAR_SIZE_DEGREES = 50.0;
+	constexpr static double CHUNK_OPTIMAL_ANGULAR_SIZE_DEGREES = 65.0;
 	// Maximal distance (measured in superchunks) from point of interest
 	// to superchunk center which will trigger loading this superchunk.
 	// The bigger it is, the more superchunks are loaded around POI.
-	constexpr static double SUPERCHUNK_ENGAGE_FACTOR = 0.75;
+	constexpr static double SUPERCHUNK_ENGAGE_FACTOR = 0.6;
 
 	// --- Performance-tuning parameters ---
 
