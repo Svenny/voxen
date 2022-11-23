@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/terrain/config.hpp>
 #include <voxen/util/aabb.hpp>
 #include <voxen/util/allocator.hpp>
 
@@ -15,9 +16,27 @@ namespace voxen::terrain
 struct SurfaceVertex final {
 	// Position in chunk-local coordinates
 	glm::vec3 position;
-	// Need not be normalized (despite its name lol)
+	// Surface normal (unit vector)
 	glm::vec3 normal;
+	// Primary surface material (the only one in single-material parts)
+	voxel_t primary_mat;
+	// Properties of this vertex:
+	// - bit 0: 'is joint/flange vertex' flag
+	uint8_t flags;
+	// Weight of secondary materials pair, normalized value from 0.0 to 1.0.
+	// If 0 then this vertex belongs to a single-material part.
+	uint8_t secondary_mats_weight;
+	// Ratio of secondary materials pair, normalized value from 0.0 to 1.0.
+	// 0.0 is 100% `secondary_mat_a`, 1.0 is 100% `secondary_mat_b`, 0.5 is 50% both.
+	uint8_t secondary_mats_ratio;
+	// Secondary material A (ingored if `secondary_mats_weight == 0 || secondary_mats_ratio == 255`)
+	voxel_t secondary_mat_a;
+	// Secondary material B (ignored if `secondary_mats_weight == 0 || secondary_mats_ratio == 0`)
+	voxel_t secondary_mat_b;
+	// Unused padding bits
+	uint16_t reserved;
 };
+static_assert(sizeof(SurfaceVertex) == 32, "32-byte SurfaceVertex packing is broken");
 
 class ChunkSurface final {
 public:
@@ -47,7 +66,7 @@ public:
 	// by vertices, not triangles (so unused vertices also contribute to AABB)
 	const Aabb &aabb() const noexcept { return m_aabb; }
 
-protected:
+private:
 	std::vector<SurfaceVertex, DomainAllocator<SurfaceVertex, AllocationDomain::TerrainMesh>> m_vertices;
 	std::vector<uint32_t, DomainAllocator<uint32_t, AllocationDomain::TerrainMesh>> m_indices;
 	Aabb m_aabb;
