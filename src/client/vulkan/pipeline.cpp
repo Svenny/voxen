@@ -6,6 +6,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
+#include <voxen/common/terrain/surface.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -63,7 +64,7 @@ struct VertexFormatBasicTerrain {
 		// Per-vertex data
 		vertex_input_binding[0] = VkVertexInputBindingDescription {
 			.binding = 0,
-			.stride = sizeof(float) * 6,
+			.stride = sizeof(terrain::SurfaceVertex),
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		};
 		// Per-chunk data
@@ -73,30 +74,67 @@ struct VertexFormatBasicTerrain {
 			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
 		};
 
+		static_assert(std::is_same_v<terrain::voxel_t, uint8_t>, "Vertex attribute binding assumes 8-bit voxel ID");
+
 		// Position
 		vertex_input_attrib[0] = VkVertexInputAttributeDescription {
 			.location = 0,
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = 0
+			.offset = offsetof(terrain::SurfaceVertex, position)
 		};
 		// Normal
 		vertex_input_attrib[1] = VkVertexInputAttributeDescription {
 			.location = 1,
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = sizeof(float) * 3
+			.offset = offsetof(terrain::SurfaceVertex, normal)
 		};
-		// Material ID
+		// Primary material ID
 		vertex_input_attrib[2] = VkVertexInputAttributeDescription {
 			.location = 2,
 			.binding = 0,
-			.format = VK_FORMAT_R32_SFLOAT,
-			.offset = sizeof(float) * 6
+			.format = VK_FORMAT_R8_USCALED,
+			.offset = offsetof(terrain::SurfaceVertex, primary_mat)
 		};
-		// Chunk base/scale data
+		// Vertex properties (flags)
 		vertex_input_attrib[3] = VkVertexInputAttributeDescription {
 			.location = 3,
+			.binding = 0,
+			.format = VK_FORMAT_R8_UINT,
+			.offset = offsetof(terrain::SurfaceVertex, flags)
+		};
+		// Secondary materials pair weight
+		vertex_input_attrib[4] = VkVertexInputAttributeDescription {
+			.location = 4,
+			.binding = 0,
+			.format = VK_FORMAT_R8_UNORM,
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_weight)
+		};
+		// Secondary materials A/B ratio
+		vertex_input_attrib[5] = VkVertexInputAttributeDescription {
+			.location = 5,
+			.binding = 0,
+			.format = VK_FORMAT_R8_UNORM,
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_ratio)
+		};
+		// Secondary material A
+		vertex_input_attrib[6] = VkVertexInputAttributeDescription {
+			.location = 6,
+			.binding = 0,
+			.format = VK_FORMAT_R8_USCALED,
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_a)
+		};
+		// Secondary material B
+		vertex_input_attrib[7] = VkVertexInputAttributeDescription {
+			.location = 7,
+			.binding = 0,
+			.format = VK_FORMAT_R8_USCALED,
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_b)
+		};
+		// Chunk base/scale data
+		vertex_input_attrib[8] = VkVertexInputAttributeDescription {
+			.location = 8,
 			.binding = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 			.offset = 0
@@ -110,7 +148,7 @@ struct VertexFormatBasicTerrain {
 	}
 
 	VkVertexInputBindingDescription vertex_input_binding[2] = {};
-	VkVertexInputAttributeDescription vertex_input_attrib[4] = {};
+	VkVertexInputAttributeDescription vertex_input_attrib[9] = {};
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
 };
 
@@ -300,11 +338,27 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	auto &my_create_info = parts.create_infos[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
 	auto &module_collection = backend.shaderModuleCollection();
 
+	constexpr static uint32_t vert_shader_spec_data = terrain::Config::CHUNK_SIZE;
+
+	constexpr static VkSpecializationMapEntry vert_shader_spec_map = {
+		.constantID = 0,
+		.offset = 0,
+		.size = sizeof(uint32_t)
+	};
+
+	constexpr static VkSpecializationInfo vert_shader_spec_info = {
+		.mapEntryCount = 1,
+		.pMapEntries = &vert_shader_spec_map,
+		.dataSize = sizeof(vert_shader_spec_data),
+		.pData = &vert_shader_spec_data
+	};
+
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vert_stage_info.module = module_collection[ShaderModuleCollection::TERRAIN_SIMPLE_VERTEX];
 	vert_stage_info.pName = "main";
+	vert_stage_info.pSpecializationInfo = &vert_shader_spec_info;
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
