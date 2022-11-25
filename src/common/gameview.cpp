@@ -16,7 +16,7 @@ using namespace voxen;
 
 GameView::GameView (client::Window& window):
 	m_previous_tick_id(UINT64_MAX), m_window(window),
-	m_is_pause(true), m_is_used_orientation_cursor(false) {
+	m_is_pause(true), m_is_chunk_loading_point_locked(false), m_is_used_orientation_cursor(false) {
 	m_width = window.width();
 	m_height = window.height();
 	std::pair<double, double> pos = window.cursorPos();
@@ -103,6 +103,12 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 			}
 			return true;
 
+		case client::PlayerActionEvent::LockChunkLoadingPoint:
+			if (is_activate) {
+				m_is_chunk_loading_point_locked = !m_is_chunk_loading_point_locked;
+			}
+			return true;
+
 		default:
 			return false;
 	}
@@ -135,6 +141,8 @@ void GameView::resetKeyState() noexcept {
 
 void GameView::update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept {
 	std::lock_guard<std::mutex> lock { queue.mutex };
+
+	queue.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
 
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {

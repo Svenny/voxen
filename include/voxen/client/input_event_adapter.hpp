@@ -44,7 +44,7 @@ private:
 	static const std::array<std::pair<int, std::string>, 94> KEYCODE_2_STRING;
 	static const std::array<std::pair<int, std::string>, 8> MOUSEKEY_2_STRING;
 	static const std::array<std::pair<int, std::string>, 6> MODS_2_STRING;
-	static const std::array<std::pair<PlayerActionEvent, std::string>, 11> PLAYERACTIONS_2_STRINGS;
+	static const std::array<std::pair<PlayerActionEvent, std::string>, 12> PLAYERACTIONS_2_STRINGS;
 
 	static void parseToken(std::string_view string, PlayerActionEvent event, std::string_view parameter_name, std::string_view default_value);
 	static void parseComplexToken(std::string_view string, int& key, int& mods, int& key_type, bool& fully_parsed);

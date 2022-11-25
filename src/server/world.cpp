@@ -47,7 +47,11 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	}
 
 	// Update chunks
-	m_terrain_controller.setPointOfInterest(0, pos);
+	if (!queue.lock_chunk_loading_position) {
+		m_chunk_loading_position = pos;
+	}
+
+	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());
 
 	std::lock_guard lock(m_last_state_ptr_lock);
