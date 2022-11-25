@@ -63,7 +63,7 @@ void Window::createWindow(int width, int height)
 {
 	using namespace std::literals;
 
-	glfwWindowHint (GLFW_RESIZABLE, GLFW_TRUE); // for windowed
+	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE); // for windowed
 	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
 	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
 	glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
