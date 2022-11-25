@@ -15,7 +15,8 @@ enum class PlayerActionEvent {
 	RollRight,
 	PauseGame,
 	IncreaseSpeed,
-	DecreaseSpeed
+	DecreaseSpeed,
+	LockChunkLoadingPoint
 };
 
 }

@@ -78,6 +78,7 @@ private:
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_pause;
+	bool m_is_chunk_loading_point_locked;
 	bool m_is_used_orientation_cursor;
 
 	bool m_state[Direction::Count];

@@ -24,6 +24,7 @@ struct DebugQueueRtW {
 	glm::dquat player_orientation = glm::identity<glm::dquat>();
 	double strafe_speed{50};
 	double forward_speed{25};
+	bool lock_chunk_loading_position;
 };
 
 class WorldState {

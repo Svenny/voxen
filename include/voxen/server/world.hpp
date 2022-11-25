@@ -34,6 +34,8 @@ private:
 	mutable std::mutex m_last_state_ptr_lock;
 	std::shared_ptr<WorldState> m_next_state_ptr;
 	std::shared_ptr<WorldState> m_last_state_ptr;
+
+	glm::dvec3 m_chunk_loading_position;
 };
 
 }
