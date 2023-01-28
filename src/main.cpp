@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		Log::fatal("Unchaught voxen::Exception instance");
 		Log::fatal("what(): {}", e.what());
 		auto loc = e.where();
-		Log::fatal("where(): {}:{} ({})", loc.file_name(), loc.line(), loc.function_name());
+		Log::fatal("where(): {}:{}", loc.file_name(), loc.line());
 		Log::fatal("Aborting the program");
 		return EXIT_FAILURE;
 	}

@@ -35,26 +35,20 @@ consteval size_t findBaseDirOffset(std::string_view str) noexcept
 }
 #endif
 
-// Almost exact copy of `std::source_location` from C++20.
-// Provides consistent behaviour until standard one is properly implemented.
+// Own implementation of `std::source_location` from C++20 (with file/line only).
+// Provides consistent behaviour until standard one is stable and widely available.
 class source_location final {
 public:
 
-#if defined(__has_builtin) && \
-	__has_builtin(__builtin_FILE) && __has_builtin(__builtin_FUNCTION) && \
-	__has_builtin(__builtin_LINE) && __has_builtin(__builtin_COLUMN)
+#if defined(__has_builtin) && __has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE)
 
 	// GCC/Clang-specific implementation. Not using `std::experimental` one even if it is available.
 	constexpr static source_location current(const char *file = __builtin_FILE(),
-	                                         const char *func = __builtin_FUNCTION(),
-	                                         uint_least32_t line = __builtin_LINE(),
-	                                         uint_least32_t col = __builtin_COLUMN()) noexcept
+	                                         uint_least32_t line = __builtin_LINE()) noexcept
 	{
 		source_location loc;
 		loc.m_file = file + FILE_BASE_DIR_OFFSET;
-		loc.m_func = func;
 		loc.m_line = line;
-		loc.m_col = col;
 		return loc;
 	}
 #else
@@ -64,9 +58,7 @@ public:
 #endif // __has_builtin(*) stuff
 
 	constexpr const char *file_name() const noexcept { return m_file; }
-	constexpr const char *function_name() const noexcept { return m_func; }
 	constexpr uint_least32_t line() const noexcept { return m_line; }
-	constexpr uint_least32_t column() const noexcept { return m_col; }
 
 private:
 #if __clang_major__ < 13
@@ -77,9 +69,7 @@ private:
 #endif
 
 	const char *m_file = "unknown";
-	const char *m_func = "unknown";
 	uint_least32_t m_line = 0;
-	uint_least32_t m_col = 0;
 };
 
 }

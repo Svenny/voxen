@@ -152,13 +152,13 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 		}
 		Log::error("what(): {}", e.what());
 		auto loc = e.where();
-		Log::error("where(): {}:{} ({})", loc.file_name(), loc.line(), loc.function_name());
+		Log::error("where(): {}:{}", loc.file_name(), loc.line());
 	}
 	catch (const Exception &e) {
 		Log::error("voxen::Exception during rendering a frame");
 		Log::error("what(): {}", e.what());
 		auto loc = e.where();
-		Log::error("where(): {}:{} ({})", loc.file_name(), loc.line(), loc.function_name());
+		Log::error("where(): {}:{}", loc.file_name(), loc.line());
 	}
 	catch (const std::exception &e) {
 		Log::error("std::exception during rendering a frame");
@@ -247,7 +247,7 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 		Log::error("voxen::Exception was catched during starting Vulkan backend");
 		Log::error("what(): {}", e.what());
 		auto loc = e.where();
-		Log::error("where(): {}:{} ({})", loc.file_name(), loc.line(), loc.function_name());
+		Log::error("where(): {}:{}", loc.file_name(), loc.line());
 	}
 	catch (const std::exception &e) {
 		Log::error("std::exception was catched during starting Vulkan backend");
