@@ -33,19 +33,6 @@ protected:
 	const char *m_what;
 };
 
-class FormattedMessageException : public Exception {
-public:
-	explicit FormattedMessageException(std::string_view format_str, const fmt::format_args &format_args,
-		extras::source_location loc = extras::source_location::current()) noexcept;
-	virtual ~FormattedMessageException() = default;
-
-	virtual const char *what() const noexcept override;
-
-protected:
-	std::string m_what;
-	bool m_exception_occured = false;
-};
-
 class ErrnoException : public Exception {
 public:
 	explicit ErrnoException(int code, const char *api = nullptr, extras::source_location loc =

@@ -21,28 +21,6 @@ const char *MessageException::what() const noexcept
 	return m_what;
 }
 
-FormattedMessageException::FormattedMessageException(std::string_view format_str, const fmt::format_args &format_args,
-	extras::source_location loc) noexcept : Exception(loc)
-{
-	try {
-		m_what = fmt::vformat(format_str, format_args);
-	} catch (...) {
-		m_exception_occured = true;
-	}
-}
-
-const char *FormattedMessageException::what() const noexcept
-{
-	constexpr static char EXCEPTION_OCCURED_MSG[] =
-		"Exception occured during creating FormattedMessageException, message is lost";
-
-	if (m_exception_occured) {
-		return EXCEPTION_OCCURED_MSG;
-	}
-
-	return m_what.c_str();
-}
-
 ErrnoException::ErrnoException(int code, const char *api, extras::source_location loc) noexcept
 	: Exception(loc), m_code(code)
 {
