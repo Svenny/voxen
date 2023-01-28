@@ -1,10 +1,12 @@
 #include <voxen/common/config.hpp>
 
-#include <voxen/util/exception.hpp>
 #include <voxen/common/filemanager.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <fmt/format.h>
+
+#include <cassert>
 
 using namespace std::filesystem;
 using std::string_view;
@@ -82,7 +84,8 @@ bool Config::optionBool(string_view section, string_view parameter_name) const
 		}
 	}
 
-	throw FormattedMessageException("Bool option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("Bool option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 double Config::optionDouble(string_view section, string_view parameter_name) const
@@ -95,7 +98,8 @@ double Config::optionDouble(string_view section, string_view parameter_name) con
 		}
 	}
 
-	throw FormattedMessageException("Double option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("Double option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 int64_t Config::optionInt64(string_view section, string_view parameter_name) const
@@ -107,7 +111,8 @@ int64_t Config::optionInt64(string_view section, string_view parameter_name) con
 			return std::get<int64_t>(it_inter->second);
 	}
 
-	throw FormattedMessageException("Int option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("Int option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 int32_t Config::optionInt32(string_view section, string_view parameter_name) const
@@ -127,7 +132,8 @@ std::string Config::optionString(string_view section, string_view parameter_name
 			return std::get<std::string>(it_inter->second);
 	}
 
-	throw FormattedMessageException("String option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("String option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 size_t Config::optionType(string_view section, string_view parameter_name) const
@@ -139,7 +145,8 @@ size_t Config::optionType(string_view section, string_view parameter_name) const
 			return it_inter->second.index();
 	}
 
-	throw FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("Option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 void Config::patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile)
@@ -155,15 +162,16 @@ void Config::patch(string_view section, string_view parameter_name, option_t val
 					m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
 				}
 				return;
-			} else {
-				throw FormattedMessageException(
-					"Inconsistent types for option {}/{}: try replace {} with {}", fmt::make_format_args(section, parameter_name, it_inter->second.index(), value.index())
-				);
 			}
+
+			Log::error("Inconsistent types for option {}/{}: try replacing {} with {}",
+			           section, parameter_name, it_inter->second.index(), value.index());
+			throw MessageException("inconsistent option types");
 		}
 	}
 
-	throw FormattedMessageException("Option {}/{} not found", fmt::make_format_args(section, parameter_name));
+	Log::error("Option {}/{} not found", section, parameter_name);
+	throw MessageException("option not found");
 }
 
 std::string Config::optionToString(option_t value)
