@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <string>
+#include <string_view>
 
 namespace voxen::client::vulkan
 {
@@ -16,9 +17,8 @@ class VulkanUtils final {
 public:
 	VulkanUtils() = delete;
 
-	static const char *getVkResultString(VkResult result) noexcept;
-	static const char *getVkResultDescription(VkResult result) noexcept;
-	static const char *getVkFormatString(VkFormat format) noexcept;
+	static std::string_view getVkResultString(VkResult result) noexcept;
+	static std::string_view getVkFormatString(VkFormat format) noexcept;
 
 	// Returns minimal integer multiple of `alignment` not less than `size`. `alignment` must be a power of two.
 	static uint32_t alignUp(uint32_t size, uint32_t alignment) noexcept;
