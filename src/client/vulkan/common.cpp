@@ -6,6 +6,35 @@
 #include <cstddef>
 #include <malloc.h>
 
+namespace
+{
+
+struct VulkanErrorCategory : std::error_category {
+	const char *name() const noexcept override
+	{
+		return "Vulkan error";
+	}
+
+	std::string message(int code) const override
+	{
+		return std::string(voxen::client::vulkan::VulkanUtils::getVkResultString(VkResult(code)));
+	}
+};
+
+const VulkanErrorCategory g_category;
+
+} // anonymous namespace
+
+namespace std
+{
+
+error_condition make_error_condition(VkResult result) noexcept
+{
+	return { static_cast<int>(result), g_category };
+}
+
+}
+
 namespace voxen::client::vulkan
 {
 

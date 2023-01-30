@@ -8,6 +8,19 @@
 #include <atomic>
 #include <string>
 #include <string_view>
+#include <system_error>
+
+namespace std
+{
+
+// Mark `VkResult` as eligible for `std::error_condition`
+template<>
+struct is_error_condition_enum<VkResult> : true_type {};
+
+// Factory for `std::error_condition { VkResult }`
+error_condition make_error_condition(VkResult result) noexcept;
+
+}
 
 namespace voxen::client::vulkan
 {
