@@ -9,19 +9,14 @@
 namespace voxen::client::vulkan
 {
 
-ShaderModule::ShaderModule(const char *relative_path)
+ShaderModule::ShaderModule(std::string_view relative_path)
 {
 	load(relative_path);
 }
 
-void ShaderModule::load(const char *relative_path)
+void ShaderModule::load(std::string_view relative_path)
 {
 	unload();
-
-	if (!relative_path) {
-		Log::error("Null pointer passed as path");
-		throw MessageException("null pointer");
-	}
 
 	Log::debug("Loading shader module `{}`", relative_path);
 	auto code = FileManager::readFile(relative_path);

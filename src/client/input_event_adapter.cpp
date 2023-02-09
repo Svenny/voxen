@@ -206,7 +206,6 @@ void InputEventAdapter::init() {
 	assert(actionSettingsConfig == nullptr);
 	actionSettingsConfig = new Config(FileManager::userDataPath() / actionSettingsPath, actionSettingConfigScheme);
 
-	std::function<void(string_view, voxen::client::PlayerActionEvent, string_view, string_view)> functor = InputEventAdapter::parseToken;
 	for (const Config::SchemeEntry& entry : actionSettingConfigScheme) {
 		const string& value_string = actionSettingsConfig->optionString(entry.section, entry.parameter_name);
 

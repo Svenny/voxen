@@ -75,11 +75,10 @@ ThreadPool::~ThreadPool() noexcept
 	}
 }
 
-void ThreadPool::doEnqueueTask(TaskType type, std::packaged_task<void()> task)
+void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_task<void()> task)
 {
-	if (type != TaskType::Standard) {
-		throw MessageException("non-standard tasks are not supported yet");
-	}
+	// non-standard tasks are not supported yet
+	assert(type == TaskType::Standard);
 
 	size_t min_job_count = SIZE_MAX;
 	ReportableWorker *min_job_thread = nullptr;

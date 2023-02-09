@@ -4,7 +4,6 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/util/log.hpp>
-#include <voxen/config.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -18,9 +17,7 @@ VkDeviceSize getVertexElementSize(VertexFormat fmt) noexcept
 		return 3 * 4;
 	case VertexFormat::Pos3D_Norm3D:
 		return 3 * 4 + 3 * 4;
-	default:
-		Log::error("Unknown vertex format");
-		return 0;
+	// No `default` to make `-Werror -Wswitch` protection work
 	}
 }
 
@@ -35,9 +32,7 @@ VkDeviceSize getIndexElementSize(IndexFormat fmt) noexcept
 		return 2;
 	case IndexFormat::Index32:
 		return 4;
-	default:
-		Log::error("Unknown index format");
-		return 0;
+	// No `default` to make `-Werror -Wswitch` protection work
 	}
 }
 
@@ -52,35 +47,16 @@ VkIndexType getIndexType(IndexFormat fmt) noexcept
 		return VK_INDEX_TYPE_UINT16;
 	case IndexFormat::Index32:
 		return VK_INDEX_TYPE_UINT32;
-	default:
-		Log::error("Unknown index format");
-		return VK_INDEX_TYPE_NONE_KHR;
+	// No `default` to make `-Werror -Wswitch` protection work
 	}
 }
 
 Mesh::Mesh(const MeshCreateInfo &create_info)
 	: m_vertex_format(create_info.vertex_format), m_index_format(create_info.index_format)
 {
-	// These are just sanity checks
-	if constexpr (BuildConfig::kIsDebugBuild) {
-		constexpr const char *EXCEPTION_TEXT = "refusing to make zero-sized buffer";
-		if (m_vertex_format == VertexFormat::Nothing && create_info.num_vertices > 0) {
-			Log::error("Vertex format is 'Nothing' but there are {} vertices", create_info.num_vertices);
-			throw MessageException(EXCEPTION_TEXT);
-		}
-		if (m_vertex_format != VertexFormat::Nothing && create_info.num_vertices == 0) {
-			Log::error("Vertex format is not 'Nothing' but there are 0 vertices");
-			throw MessageException(EXCEPTION_TEXT);
-		}
-		if (m_index_format == IndexFormat::Nothing && create_info.num_indices > 0) {
-			Log::error("Index format is 'Nothing' but there are {} indices", create_info.num_indices);
-			throw MessageException(EXCEPTION_TEXT);
-		}
-		if (m_index_format != IndexFormat::Nothing && create_info.num_indices == 0) {
-			Log::error("Index format is not 'Nothing' but there are 0 indices");
-			throw MessageException(EXCEPTION_TEXT);
-		}
-	}
+	// Sanity checks - there must be no vertices/indices with Nothing format and non-zero otherwise
+	assert(m_vertex_format == VertexFormat::Nothing ? create_info.num_vertices == 0 : create_info.num_vertices > 0);
+	assert(m_index_format == IndexFormat::Nothing ? create_info.num_indices == 0 : create_info.num_indices > 0);
 
 	TransferManager &transfer = Backend::backend().transferManager();
 
