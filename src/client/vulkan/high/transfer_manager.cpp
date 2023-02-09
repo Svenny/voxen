@@ -35,15 +35,20 @@ void TransferManager::uploadToBuffer(VkBuffer buffer, const void *data, VkDevice
 
 void TransferManager::uploadToBuffer(VkBuffer buffer, VkDeviceSize offset, const void *data, VkDeviceSize size)
 {
-	if (size == 0) {
+	if (size == 0) [[unlikely]] {
 		Log::warn("Empty upload requested");
 		return;
 	}
 
-	// TODO: handle the case when no staging buffer is needed (integrated GPUs)
-	if (size > MAX_UPLOAD_SIZE) {
-		Log::error("Upload size is {} bytes which exceeds the limit ({} bytes)", size, MAX_UPLOAD_SIZE);
-		throw MessageException("upload size limit exceeded");
+	// TODO: handle the case when no staging buffer is needed (iGPU/UMA or PCI BAR mappings)
+
+	// Split large requests into smaller ones, simplifying logic after this loop
+	while (size > MAX_UPLOAD_SIZE) {
+		uploadToBuffer(buffer, offset, data, MAX_UPLOAD_SIZE);
+
+		offset += MAX_UPLOAD_SIZE;
+		data = reinterpret_cast<const std::byte *>(data) + MAX_UPLOAD_SIZE;
+		size -= MAX_UPLOAD_SIZE;
 	}
 
 	if (m_staging_written + size > MAX_UPLOAD_SIZE) {

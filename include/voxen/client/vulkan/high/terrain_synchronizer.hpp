@@ -71,6 +71,8 @@ private:
 
 	terrain::ChunkId m_gc_pointer = {};
 
+	// Indices of used Vulkan queues: { graphics, transfer }.
+	// If they are different then GPU has a dedicated DMA engine.
 	uint32_t m_queue_families[2];
 	bool m_vertex_uma = false;
 	bool m_index_uma = false;
