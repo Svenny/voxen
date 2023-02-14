@@ -3,7 +3,7 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/instance.hpp>
-
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -29,7 +29,7 @@ PhysicalDevice::PhysicalDevice()
 		throw VulkanException(result, "vkEnumeratePhysicalDevices");
 	if (num_devices == 0) {
 		Log::error("No Vulkan physical devices are present in the system");
-		throw MessageException("no Vulkan devices found");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no Vulkan devices found");
 	}
 
 	extras::dyn_array<VkPhysicalDevice> devices(num_devices);
@@ -53,7 +53,7 @@ PhysicalDevice::PhysicalDevice()
 
 	if (m_device == VK_NULL_HANDLE) {
 		Log::error("No suitable Vulkan physical device found in the system");
-		throw MessageException("not suitable Vulkan devices found");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no suitable Vulkan devices found");
 	}
 
 	Log::debug("PhysicalDevice created successfully");

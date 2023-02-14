@@ -4,6 +4,7 @@
 #include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/linear_allocator.hpp>
@@ -338,7 +339,7 @@ DeviceAllocation DeviceAllocator::allocateInternal(const AllocationInfo &info,
 	if (info.size >= size_limit) [[unlikely]] {
 		Log::error("Requested allocation of size {:.1f} MB is too big for memory type #{} (limit is {:.1f} MB)",
 			toMegabytes(info.size), memory_type, toMegabytes(size_limit));
-		throw MessageException("refusing too big allocation");
+		throw Exception::fromError(VoxenErrc::OutOfResource, "refusing too big allocation");
 	}
 
 	if (dedicated_info) {
@@ -411,7 +412,7 @@ uint32_t DeviceAllocator::selectMemoryType(const AllocationInfo &info) const
 	if (best_type == UINT32_MAX) {
 		Log::error("Suitable memory type not found for request with memtype mask 0b{:b}, use case '{}'",
 			info.acceptable_memory_types, extras::enum_name(info.use_case));
-		throw MessageException("no suitable Vulkan memory type found");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no suitable Vulkan memory type found");
 	}
 
 	return best_type;

@@ -2,7 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
-
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -22,7 +22,7 @@ Device::Device()
 	auto &backend = Backend::backend();
 	if (!backend.loadDeviceLevelApi(m_device)) {
 		destroyDevice();
-		throw MessageException("failed to load device-level Vulkan API");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing required device-level Vulkan API");
 	}
 
 	obtainQueueHandles();

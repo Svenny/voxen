@@ -5,7 +5,6 @@
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
-
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
@@ -145,11 +144,8 @@ void Swapchain::destroySwapchain() noexcept
 VkExtent2D Swapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
 {
 	VkExtent2D result;
-	if (caps.currentExtent.width == 0 && caps.currentExtent.height == 0) {
-		// TODO: should it be merged with the second case instead?
-		Log::error("Current surface extent is (0, 0), can't create swapchain now (window is minimized?)");
-		throw MessageException("can't create swapchain now");
-	} else if (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX) {
+	if ((caps.currentExtent.width == 0 && caps.currentExtent.height == 0) ||
+	    (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX)) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
 		auto[width, height] = Backend::backend().surface().window().framebufferSize();
 		result.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);

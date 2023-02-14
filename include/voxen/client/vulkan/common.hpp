@@ -40,19 +40,13 @@ public:
 	static uint64_t calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept;
 };
 
-class VulkanException : public Exception {
+class VulkanException final : public Exception {
 public:
-	explicit VulkanException(VkResult result, const char *api = nullptr, extras::source_location loc =
-		extras::source_location::current()) noexcept;
-	virtual ~VulkanException() = default;
+	explicit VulkanException(VkResult result, std::string_view api, extras::source_location loc =
+		extras::source_location::current());
+	~VulkanException() noexcept override;
 
-	virtual const char *what() const noexcept override;
-	VkResult result() const noexcept { return m_result; }
-
-protected:
-	std::string m_message;
-	VkResult m_result;
-	bool m_exception_occured = false;
+	VkResult result() const noexcept;
 };
 
 class HostAllocator {

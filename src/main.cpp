@@ -79,9 +79,7 @@ void patchConfig(const cxxopts::ParseResult &result, voxen::Config* config) {
 		std::string section = keyvalue.key().substr(0, sep_idx);
 		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
 
-		size_t type_idx = config->optionType(section, parameter);
-		voxen::Config::option_t value = voxen::Config::optionFromString(keyvalue.value(), type_idx);
-		config->patch(section, parameter, value);
+		config->patch(section, parameter, keyvalue.value());
 	}
 }
 
@@ -134,10 +132,10 @@ int main(int argc, char *argv[])
 		voxen::Config* main_voxen_config = voxen::Config::mainConfig();
 		patchConfig(result, main_voxen_config);
 
-		bool isLoggingFPSEnable = main_voxen_config->optionBool("dev", "fps_logging");
+		bool isLoggingFPSEnable = main_voxen_config->getBool("dev", "fps_logging");
 
 		auto &wnd = voxen::client::Window::instance();
-		wnd.start(main_voxen_config->optionInt32("window", "width"), main_voxen_config->optionInt32("window", "height"));
+		wnd.start(main_voxen_config->getInt32("window", "width"), main_voxen_config->getInt32("window", "height"));
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
 		voxen::server::World world;

@@ -71,7 +71,7 @@ void Window::createWindow(int width, int height)
 
 	Config *cfg = Config::mainConfig();
 	GLFWmonitor *monitor = nullptr;
-	if (cfg->optionBool("window"sv, "fullscreen"sv)) {
+	if (cfg->getBool("window"sv, "fullscreen"sv)) {
 		// TODO: add possibility select non-primary monitor?
 		monitor = glfwGetPrimaryMonitor();
 	}

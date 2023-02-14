@@ -1,11 +1,14 @@
 #pragma once
 
+#include <extras/source_location.hpp>
+
 #include <filesystem>
-#include <variant>
+#include <map>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
-#include <map>
 
 #define SI_CONVERT_GENERIC
 #include <simpleini/SimpleIni.h>
@@ -15,7 +18,9 @@ namespace voxen
 
 class Config {
 public:
+	using Location = extras::source_location;
 	using option_t = std::variant<std::string, int64_t, double, bool>;
+
 	struct SchemeEntry {
 		std::string section;
 		std::string parameter_name;
@@ -28,16 +33,21 @@ public:
 	~Config() noexcept;
 
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
-	void patch(std::string_view section, std::string_view parameter_name, option_t value, bool saveToConfigFile = false);
+	void patch(std::string_view section, std::string_view parameter_name, std::string_view value_string,
+	           bool saveToConfigFile = false, Location loc = Location::current());
 
-	// Throws std::bad_variant_access, voxen::Exception("Option not found")
-	std::string optionString(std::string_view section, std::string_view parameter_name) const;
-	int64_t optionInt64(std::string_view section, std::string_view parameter_name) const;
-	int32_t optionInt32(std::string_view section, std::string_view parameter_name) const;
-	double optionDouble(std::string_view section, std::string_view  parameter_name) const;
-	bool optionBool(std::string_view section, std::string_view parameter_name) const;
+	std::optional<std::string> optionString(std::string_view section, std::string_view parameter_name) const;
+	std::optional<int64_t> optionInt64(std::string_view section, std::string_view parameter_name) const;
+	std::optional<int32_t> optionInt32(std::string_view section, std::string_view parameter_name) const;
+	std::optional<double> optionDouble(std::string_view section, std::string_view parameter_name) const;
+	std::optional<bool> optionBool(std::string_view section, std::string_view parameter_name) const;
 
-	size_t optionType(std::string_view section, std::string_view parameter_name) const;
+	int32_t getInt32(std::string_view section, std::string_view parameter_name,
+	                 Location loc = Location::current()) const;
+	double getDouble(std::string_view section, std::string_view parameter_name,
+	                 Location loc = Location::current()) const;
+	bool getBool(std::string_view section, std::string_view parameter_name,
+	             Location loc = Location::current()) const;
 
 public:
 
