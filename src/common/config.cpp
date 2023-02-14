@@ -1,6 +1,7 @@
 #include <voxen/common/config.hpp>
 
 #include <voxen/common/filemanager.hpp>
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
@@ -74,7 +75,7 @@ Config::Scheme Config::mainConfigScheme()
 	return s;
 }
 
-bool Config::optionBool(string_view section, string_view parameter_name) const
+std::optional<bool> Config::optionBool(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -84,11 +85,10 @@ bool Config::optionBool(string_view section, string_view parameter_name) const
 		}
 	}
 
-	Log::error("Bool option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	return std::nullopt;
 }
 
-double Config::optionDouble(string_view section, string_view parameter_name) const
+std::optional<double> Config::optionDouble(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -98,11 +98,10 @@ double Config::optionDouble(string_view section, string_view parameter_name) con
 		}
 	}
 
-	Log::error("Double option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	return std::nullopt;
 }
 
-int64_t Config::optionInt64(string_view section, string_view parameter_name) const
+std::optional<int64_t> Config::optionInt64(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -111,19 +110,22 @@ int64_t Config::optionInt64(string_view section, string_view parameter_name) con
 			return std::get<int64_t>(it_inter->second);
 	}
 
-	Log::error("Int option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	return std::nullopt;
 }
 
-int32_t Config::optionInt32(string_view section, string_view parameter_name) const
+std::optional<int32_t> Config::optionInt32(string_view section, string_view parameter_name) const
 {
-	int64_t value = optionInt64(section, parameter_name);
+	std::optional<int64_t> opt = optionInt64(section, parameter_name);
+	if (!opt.has_value()) {
+		return std::nullopt;
+	}
 
+	int64_t value = *opt;
 	assert(value >= INT32_MIN && value <= INT32_MAX);
 	return static_cast<int32_t>(value);
 }
 
-std::string Config::optionString(string_view section, string_view parameter_name) const
+std::optional<std::string> Config::optionString(string_view section, string_view parameter_name) const
 {
 	auto it_ext = m_data.find(section);
 	if (it_ext != m_data.end()) {
@@ -132,46 +134,55 @@ std::string Config::optionString(string_view section, string_view parameter_name
 			return std::get<std::string>(it_inter->second);
 	}
 
-	Log::error("String option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	return std::nullopt;
 }
 
-size_t Config::optionType(string_view section, string_view parameter_name) const
+int32_t Config::getInt32(string_view section, string_view parameter_name, Location loc) const
 {
-	auto it_ext = m_data.find(section);
-	if (it_ext != m_data.end()) {
-		auto it_inter = it_ext->second.find(parameter_name);
-		if (it_inter != it_ext->second.end())
-			return it_inter->second.index();
+	if (auto opt = optionInt32(section, parameter_name); opt.has_value()) {
+		return *opt;
 	}
 
-	Log::error("Option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	Log::error("Option {}/{} (int32) not found", section, parameter_name);
+	throw Exception::fromError(VoxenErrc::OptionMissing, "missing config option assumed existing", loc);
 }
 
-void Config::patch(string_view section, string_view parameter_name, option_t value, bool saveToConfigFile)
+double Config::getDouble(string_view section, string_view parameter_name, Location loc) const
 {
-	auto it_ext = m_data.find(section);
-	if (it_ext != m_data.end()) {
-		auto it_inter = it_ext->second.find(parameter_name);
-		if (it_inter != it_ext->second.end()) {
-			if (value.index() == it_inter->second.index()) {
-				it_inter->second = value;
-				if (saveToConfigFile) {
-					const std::string& str = Config::optionToString(value);
-					m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
-				}
-				return;
-			}
+	if (auto opt = optionDouble(section, parameter_name); opt.has_value()) {
+		return *opt;
+	}
 
-			Log::error("Inconsistent types for option {}/{}: try replacing {} with {}",
-			           section, parameter_name, it_inter->second.index(), value.index());
-			throw MessageException("inconsistent option types");
+	Log::error("Option {}/{} (double) not found", section, parameter_name);
+	throw Exception::fromError(VoxenErrc::OptionMissing, "missing config option assumed existing", loc);
+}
+
+bool Config::getBool(string_view section, string_view parameter_name, Location loc) const
+{
+	if (auto opt = optionBool(section, parameter_name); opt.has_value()) {
+		return *opt;
+	}
+
+	Log::error("Option {}/{} (bool) not found", section, parameter_name);
+	throw Exception::fromError(VoxenErrc::OptionMissing, "missing config option assumed existing", loc);
+}
+
+void Config::patch(string_view section, string_view parameter_name, string_view value_string, bool saveToConfigFile,
+                   Location loc)
+{
+	if (auto it_ext = m_data.find(section); it_ext != m_data.end()) {
+		if (auto it_inter = it_ext->second.find(parameter_name); it_inter != it_ext->second.end()) {
+			it_inter->second = optionFromString(value_string, it_inter->second.index());
+
+			if (saveToConfigFile) {
+				const std::string &str = Config::optionToString(it_inter->second);
+				m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
+			}
 		}
 	}
 
-	Log::error("Option {}/{} not found", section, parameter_name);
-	throw MessageException("option not found");
+	Log::error("Option {}/{} not found for patching", section, parameter_name);
+	throw Exception::fromError(VoxenErrc::OptionMissing, "missing config option for patching", loc);
 }
 
 std::string Config::optionToString(option_t value)

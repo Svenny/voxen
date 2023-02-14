@@ -53,33 +53,20 @@ uint64_t VulkanUtils::calcFraction(uint64_t size, uint64_t numerator, uint64_t d
 	return (size * numerator + denomenator - 1u) / denomenator;
 }
 
-VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc) noexcept
-	: Exception(loc), m_result(result)
+VulkanException::VulkanException(VkResult result, std::string_view api, extras::source_location loc)
+	: Exception(fmt::format("call to '{}' failed", api), std::make_error_condition(result), loc)
 {
-	try {
-		std::string_view err = VulkanUtils::getVkResultString(result);
-		if (api) {
-			Log::error("{} failed with error code {}", api, err, loc);
-			m_message = fmt::format("{} failed: {}", api, err);
-		} else {
-			Log::error("Vulkan API call failed with error code {}", err, loc);
-			m_message = fmt::format("Vulkan error: {}", err);
-		}
-	} catch (...) {
-		m_exception_occured = true;
-	}
+	assert(api.length() > 0);
+	Log::error("{} failed with error code {}", api, VulkanUtils::getVkResultString(result));
 }
 
-const char *VulkanException::what() const noexcept
+// Not defining inline to satisfy -Wweak-vtables
+VulkanException::~VulkanException() noexcept = default;
+
+VkResult VulkanException::result() const noexcept
 {
-	constexpr static char EXCEPTION_OCCURED_MSG[] =
-		"Exception occured during creating VulkanException, message is lost";
-
-	if (m_exception_occured) {
-		return EXCEPTION_OCCURED_MSG;
-	}
-
-	return m_message.c_str();
+	// We know the error category can only be vulkan one
+	return static_cast<VkResult>(error().value());
 }
 
 static void *VKAPI_PTR vulkanMalloc(void *user_data, size_t size, size_t align,

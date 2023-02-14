@@ -5,6 +5,7 @@
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/linear_allocator.hpp>
@@ -348,7 +349,7 @@ void TerrainSynchronizer::addVertexArena()
 		if (!res) {
 			m_vertex_arenas.pop_back();
 			Log::error("Inconsistent vertex arena host visibility!");
-			throw MessageException("inconsistent host visibility for same objects");
+			throw Exception::fromError(VoxenErrc::GfxFailure, "inconsistent host visibility for same objects");
 		}
 	}
 
@@ -382,7 +383,7 @@ void TerrainSynchronizer::addIndexArena()
 		if (!res) {
 			m_index_arenas.pop_back();
 			Log::info("Inconsistent index arena host visibility!");
-			throw MessageException("inconsistent host visibility for same objects");
+			throw Exception::fromError(VoxenErrc::GfxFailure, "inconsistent host visibility for same objects");
 		}
 	}
 

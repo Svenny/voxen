@@ -2,10 +2,10 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
-
-#include <voxen/config.hpp>
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/config.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -17,7 +17,7 @@ Instance::Instance()
 	Log::debug("Creating Instance");
 
 	if (!checkVulkanSupport()) {
-		throw MessageException("unsupported or missing Vulkan driver");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "unsupported or missing Vulkan driver");
 	}
 
 	createInstance();
@@ -26,7 +26,7 @@ Instance::Instance()
 	if (!backend.loadInstanceLevelApi(m_handle)) {
 		// Assuming at least vkDestroyInstance was found...
 		destroyInstance();
-		throw MessageException("failed to load instance-level Vulkan API");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing required instance-level Vulkan API");
 	}
 
 	Log::debug("Instance created successfully");

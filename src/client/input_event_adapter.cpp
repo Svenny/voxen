@@ -207,12 +207,13 @@ void InputEventAdapter::init() {
 	actionSettingsConfig = new Config(FileManager::userDataPath() / actionSettingsPath, actionSettingConfigScheme);
 
 	for (const Config::SchemeEntry& entry : actionSettingConfigScheme) {
-		const string& value_string = actionSettingsConfig->optionString(entry.section, entry.parameter_name);
+		const string &default_value = std::get<string>(entry.default_value);
+		const string &value_string = actionSettingsConfig->optionString(entry.section,
+		                                                                entry.parameter_name).value_or(default_value);
 
 		string_view value(value_string);
 		PlayerActionEvent event = stringToAction(entry.parameter_name);
 
-		const string& default_value = std::get<string>(entry.default_value);
 		string_view parameter_name(entry.parameter_name);
 
 		if (event != PlayerActionEvent::None) {

@@ -4,7 +4,7 @@
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
-
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
@@ -58,7 +58,7 @@ void Surface::checkPresentSupport()
 	if (!supported) {
 		Log::error("Selected GPU can't present to this window surface");
 		Log::error("Earlier checks passed - most probably it's a bug in Voxen or GLFW");
-		throw MessageException("physical device can't present to window surface");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "Vulkan device can't present to window");
 	}
 }
 
@@ -88,7 +88,7 @@ void Surface::pickSurfaceFormat()
 		}
 	}
 	Log::error("Surface format BGRA8_SRGB not found");
-	throw MessageException("failed to find suitable surface format");
+	throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "failed to find suitable surface format");
 }
 
 void Surface::pickPresentMode()
@@ -118,7 +118,7 @@ void Surface::pickPresentMode()
 		}
 	}
 	Log::error("Present mode VK_PRESENT_MODE_FIFO_KHR not found");
-	throw MessageException("failed to find suitable present mode");
+	throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "failed to find suitable present mode");
 }
 
 }

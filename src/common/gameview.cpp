@@ -27,10 +27,10 @@ GameView::GameView (client::Window& window):
 	m_fov_y = 1.5 * (double)window.height() / (double)window.width();
 
 	Config* main_config = Config::mainConfig();
-	m_mouse_sensitivity = main_config->optionDouble("controller", "mouse_sensitivity");
-	m_forward_speed = main_config->optionDouble("controller", "forward_speed");
-	m_strafe_speed = main_config->optionDouble("controller", "strafe_speed");
-	m_roll_speed = main_config->optionDouble("controller", "roll_speed");
+	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");
+	m_forward_speed = main_config->getDouble("controller", "forward_speed");
+	m_strafe_speed = main_config->getDouble("controller", "strafe_speed");
+	m_roll_speed = main_config->getDouble("controller", "roll_speed");
 
 	resetKeyState();
 }
