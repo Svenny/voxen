@@ -69,6 +69,7 @@ set(VOXEN_SOURCES
 	src/util/allocator.cpp
 	src/util/debug.cpp
 	src/util/elapsed_timer.cpp
+	src/util/error_condition.cpp
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
