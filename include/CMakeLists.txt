@@ -89,6 +89,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/exception.hpp
 	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
+	include/voxen/util/resolution.hpp
 )
 
 target_include_directories(voxen PRIVATE include)
