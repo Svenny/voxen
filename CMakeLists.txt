@@ -20,7 +20,7 @@ bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation l
 bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
 bool_option(DEPLOY_BUILD "Build for creating installable version of Voxen" OFF)
 
-# Build external dependencies
+# Build third-party dependencies
 add_subdirectory(3rdparty)
 
 # CMake target setup
@@ -40,6 +40,7 @@ target_link_libraries(voxen PRIVATE
 	3rdparty::platform-folders
 	3rdparty::simpleini
 	3rdparty::vulkan-headers
+	3rdparty::zlib
 	Threads::Threads
 )
 
