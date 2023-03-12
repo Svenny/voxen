@@ -20,6 +20,10 @@ enum class VoxenErrc : int {
 	OutOfResource = 5,
 	// A config object has no requested option but user assumes it exists
 	OptionMissing = 6,
+	// Input data exceeds the processible limit
+	DataTooLarge = 7,
+	// Call to external library failed for library-specific reasons
+	ExternalLibFailure = 8,
 };
 
 // ADL-accessible factory for `std::error_condition { VoxenErrc }`

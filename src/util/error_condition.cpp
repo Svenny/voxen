@@ -21,6 +21,8 @@ struct VoxenErrorCategory : std::error_category {
 		case VoxenErrc::InvalidData: return "Input data is invalid/corrupt and can't be used";
 		case VoxenErrc::OutOfResource: return "A finite resource was exhausted";
 		case VoxenErrc::OptionMissing: return "A config object has no requested option but user assumes it exists";
+		case VoxenErrc::DataTooLarge: return "Input data exceeds the processible limit";
+		case VoxenErrc::ExternalLibFailure: return "Call to external library failed for library-specific reasons";
 		// No `default` to make `-Werror -Wswitch` protection work
 		}
 
