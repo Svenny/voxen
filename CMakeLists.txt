@@ -29,13 +29,12 @@ voxen_add_executable(voxen)
 
 target_compile_definitions(voxen PRIVATE VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
-find_package(glfw3 3.3.2 REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PRIVATE
 	extras
-	glfw
 	3rdparty::cxxopts
 	3rdparty::fmt
+	3rdparty::glfw
 	3rdparty::glm
 	3rdparty::platform-folders
 	3rdparty::simpleini
