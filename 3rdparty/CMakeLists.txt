@@ -4,6 +4,11 @@
 # Imported targets created by `find_package` are not visible in
 # parent directory so use an additional `-wrapper` pseudo target
 
+find_package(glfw3 3.3.2 REQUIRED CONFIG)
+add_library(glfw-wrapper INTERFACE)
+target_link_libraries(glfw-wrapper INTERFACE glfw)
+add_library(3rdparty::glfw ALIAS glfw-wrapper)
+
 find_package(ZLIB 1.2.11 REQUIRED)
 add_library(zlib-wrapper INTERFACE)
 target_link_libraries(zlib-wrapper INTERFACE ZLIB::ZLIB)
