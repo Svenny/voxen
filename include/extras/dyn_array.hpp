@@ -23,6 +23,7 @@ public:
 
 	constexpr T &operator *() const noexcept { return *m_ptr; }
 	constexpr T *operator ->() const noexcept { return m_ptr; }
+	constexpr T &operator [](ptrdiff_t diff) const noexcept { return m_ptr[diff]; }
 
 	constexpr bool operator == (const dyn_array_iterator &other) const noexcept { return m_ptr == other.m_ptr; }
 	constexpr bool operator != (const dyn_array_iterator &other) const noexcept { return m_ptr != other.m_ptr; }
@@ -34,6 +35,11 @@ public:
 	constexpr ptrdiff_t operator -(const dyn_array_iterator &other) const noexcept { return m_ptr - other.m_ptr; }
 	constexpr dyn_array_iterator operator -(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr - diff); }
 	constexpr dyn_array_iterator operator +(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr + diff); }
+
+	constexpr friend dyn_array_iterator operator +(ptrdiff_t diff, const dyn_array_iterator &iter) noexcept
+	{
+		return iter + diff;
+	}
 
 	constexpr dyn_array_iterator &operator +=(ptrdiff_t diff) noexcept {
 		m_ptr += diff;
