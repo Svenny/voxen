@@ -19,8 +19,13 @@ function(voxen_setup_target target is_executable)
 		-Wall -Wextra -Wpedantic -Werror
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
+
+		# Prefix maps ensure more reproducible and environment-independent builds
 		# Remap /path/to/voxen/src/file.cpp -> src/file.cpp in __FILE__ and co.
 		"-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/="
+		# Same for debug info. To access sources during debugging
+		# set source prefix map to `/ => ${CMAKE_SOURCE_DIR}/`.
+		"-fdebug-prefix-map=${CMAKE_SOURCE_DIR}/=/"
 
 		# Speed up math at the cost of strict standard compliance
 		-fno-math-errno # Stdlib math functions do not change errno
@@ -28,9 +33,14 @@ function(voxen_setup_target target is_executable)
 		-fno-trapping-math # Assume there are no floating point exceptions
 		-ffp-contract=fast # Allow fusing multiply+add to FMA
 
-		# Don't use PLT stubs for dynamically linked function calls.
+		# We need more potentially-obscure-bugs-inducing optimizations...
+		# Don't use PLT thunks for dynamically linked function calls.
 		# This prevents lazy binding but we don't need it anyway.
 		-fno-plt
+		# This allows interprocedural optimization for exported functions
+		# when calling them from the same library (a frequent case for us).
+		# Might be enabled in Clang by default but let's be sure.
+		-fno-semantic-interposition
 
 		# These flags will only be applied when compiling C++ code
 		$<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++> # Always use libc++ as a runtime
@@ -41,13 +51,13 @@ function(voxen_setup_target target is_executable)
 		-fuse-ld=lld
 		# Always use libc++ as a runtime
 		-stdlib=libc++
-	)
 
-	if(is_executable)
-		# Disable any possiblity to generate position-independent code for exectuables
-		target_compile_options(${target} PRIVATE -fno-pie -fno-pic)
-		target_link_options(${target} PRIVATE -no-pie -fno-pic)
-	endif()
+		# Directly bind locally defined function symbols. Similar to
+		# `-fno-semantic-interposition` but works at link time.
+		# Possible side effect: inline functions can have different
+		# addresses across binary boundaries (but who cares?).
+		-Bsymbolic-functions
+	)
 
 	set_target_properties(${target} PROPERTIES
 		# Require C17 and C++20
@@ -62,6 +72,13 @@ function(voxen_setup_target target is_executable)
 		C_VISIBILITY_PRESET hidden
 		CXX_VISIBILITY_PRESET hidden
 
+		# Enable PIC for everything (executables, static and shared libs).
+		# Shared libs must be PIC anyways. Static libs are almost always linked into
+		# shared ones, consequently they must be PIC too. As the vast majority of
+		# hot code paths is going to be in shared libs (libvoxen, probably plugins)
+		# we should not lose any measurable perf from making executables PIE too.
+		POSITION_INDEPENDENT_CODE ON
+
 		# Use LTO for release builds (this is ThinLTO on Clang)
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF
 		INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON
@@ -75,6 +92,8 @@ function(voxen_setup_target target is_executable)
 		PCH_WARN_INVALID ON
 	)
 
+	# Use predefined binary output directories
+	# XXX: shouldn't we do this at install stage?
 	if(GENERATOR_IS_MULTI_CONFIG)
 		set_target_properties(${target} PROPERTIES
 			ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/lib
