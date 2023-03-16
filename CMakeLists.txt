@@ -25,23 +25,27 @@ add_subdirectory(3rdparty)
 
 # CMake target setup
 voxen_add_library(extras STATIC)
-voxen_add_executable(voxen)
+voxen_add_library(voxen SHARED)
+voxen_add_executable(game)
 
-target_compile_definitions(voxen PRIVATE VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
+target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(Threads REQUIRED)
-target_link_libraries(voxen PRIVATE
+target_link_libraries(voxen PUBLIC
 	extras
 	3rdparty::cxxopts
 	3rdparty::fmt
-	3rdparty::glfw
 	3rdparty::glm
-	3rdparty::platform-folders
 	3rdparty::simpleini
-	3rdparty::vulkan-headers
-	3rdparty::zlib
 	Threads::Threads
 )
+target_link_libraries(voxen PRIVATE
+	3rdparty::glfw
+	3rdparty::platform-folders
+	3rdparty::vulkan-headers
+	3rdparty::zlib
+)
+target_link_libraries(game PRIVATE voxen)
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
