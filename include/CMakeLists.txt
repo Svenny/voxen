@@ -94,7 +94,7 @@ set(VOXEN_HEADERS
 	include/voxen/visibility.hpp
 )
 
-target_include_directories(voxen PRIVATE include)
+target_include_directories(voxen PUBLIC include)
 target_sources(voxen PRIVATE ${VOXEN_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
 
