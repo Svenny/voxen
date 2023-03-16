@@ -91,6 +91,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
 	include/voxen/util/resolution.hpp
+	include/voxen/visibility.hpp
 )
 
 target_include_directories(voxen PRIVATE include)
