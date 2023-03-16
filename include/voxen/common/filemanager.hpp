@@ -1,16 +1,18 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
+#include <extras/dyn_array.hpp>
+
 #include <cstring>
 #include <optional>
 #include <future>
 #include <filesystem>
 
-#include <extras/dyn_array.hpp>
-
 namespace voxen
 {
 
-class FileManager {
+class VOXEN_API FileManager {
 public:
 	static void setProfileName(const std::string &path_to_binary, const std::string &profile_name = "default");
 

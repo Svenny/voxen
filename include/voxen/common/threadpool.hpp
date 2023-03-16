@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <mutex>
 #include <queue>
 #include <memory>
@@ -54,7 +56,7 @@ private:
 	std::mutex m_mutex;
 };
 
-class ThreadPool {
+class VOXEN_API ThreadPool {
 public:
 	enum class TaskType {
 		// This is a CPU-bound task without particular timing restrictions

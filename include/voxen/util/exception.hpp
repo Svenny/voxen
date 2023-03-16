@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <extras/source_location.hpp>
 
 #include <exception>
@@ -11,7 +13,7 @@
 namespace voxen
 {
 
-class Exception : public std::exception {
+class VOXEN_API Exception : public std::exception {
 public:
 	using Location = extras::source_location;
 

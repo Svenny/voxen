@@ -1,14 +1,14 @@
 #pragma once
 
 #include <voxen/client/window.hpp>
-
 #include <voxen/common/world_state.hpp>
 #include <voxen/common/gameview.hpp>
+#include <voxen/visibility.hpp>
 
 namespace voxen::client
 {
 
-class Render {
+class VOXEN_API Render {
 public:
 	explicit Render(Window &window);
 	Render(Render &&) = delete;

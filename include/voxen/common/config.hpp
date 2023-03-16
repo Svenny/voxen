@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <extras/source_location.hpp>
 
 #include <filesystem>
@@ -16,7 +18,7 @@
 namespace voxen
 {
 
-class Config {
+class VOXEN_API Config {
 public:
 	using Location = extras::source_location;
 	using option_t = std::variant<std::string, int64_t, double, bool>;

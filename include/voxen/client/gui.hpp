@@ -1,15 +1,16 @@
 #pragma once
 
+#include <voxen/client/window.hpp>
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
-#include <voxen/client/window.hpp>
+#include <voxen/visibility.hpp>
 
 struct GLFWwindow;
 
 namespace voxen::client
 {
 
-class Gui {
+class VOXEN_API Gui {
 public:
 	Gui(Window& window);
 	~Gui() noexcept;
