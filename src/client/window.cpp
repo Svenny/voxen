@@ -10,13 +10,23 @@ namespace voxen::client
 
 Window Window::gInstance;
 
+static void logGlfwVersion()
+{
+	Log::debug("Voxen is compiled against GLFW {}.{}.{} ({})",
+		GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION, glfwGetVersionString());
+
+	int major, minor, revision;
+	glfwGetVersion(&major, &minor, &revision);
+	Log::debug("Voxen is running against GLFW {}.{}.{}", major, minor, revision);
+}
+
 void Window::start(int width, int height)
 {
 	if (mIsStarted) {
 		return;
 	}
 	Log::info("Starting window and GLFW library");
-	logGlfwVersion ();
+	logGlfwVersion();
 	glfwSetErrorCallback (&Window::glfwErrorCallback);
 	if (glfwInit () != GLFW_TRUE) {
 		Log::fatal("Couldn't init GLFW!");
@@ -48,15 +58,6 @@ bool Window::shouldClose() const
 void Window::pollEvents()
 {
 	glfwPollEvents ();
-}
-
-void Window::logGlfwVersion() const
-{
-	Log::debug("Voxen is compiled against GLFW {}.{}.{} ({})",
-		GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION, glfwGetVersionString ());
-	int major, minor, revision;
-	glfwGetVersion (&major, &minor, &revision);
-	Log::debug("Voxen is running against GLFW {}.{}.{}", major, minor, revision);
 }
 
 void Window::createWindow(int width, int height)

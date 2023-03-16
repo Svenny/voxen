@@ -40,7 +40,7 @@ public:
 	static uint64_t calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept;
 };
 
-class VulkanException final : public Exception {
+class VOXEN_API VulkanException final : public Exception {
 public:
 	explicit VulkanException(VkResult result, std::string_view api, extras::source_location loc =
 		extras::source_location::current());

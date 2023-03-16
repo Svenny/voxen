@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <cstdint>
 #include <utility>
 
@@ -12,7 +14,7 @@ namespace voxen::client
 
 class Gui;
 
-class Window {
+class VOXEN_API Window {
 public:
 	bool shouldClose() const;
 	void pollEvents();
@@ -52,15 +54,14 @@ private:
 	GLFWwindow *mWindow;
 	Gui* m_attached_gui = nullptr;
 
-	void logGlfwVersion() const;
-	void createWindow(int width, int height);
+	VOXEN_LOCAL void createWindow(int width, int height);
 
-	static void globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
-	static void globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept;
-	static void globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept;
-	static void globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept;
+	VOXEN_LOCAL static void globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
+	VOXEN_LOCAL static void globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept;
+	VOXEN_LOCAL static void globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept;
+	VOXEN_LOCAL static void globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept;
 
-	static void glfwErrorCallback(int code, const char *message) noexcept;
+	VOXEN_LOCAL static void glfwErrorCallback(int code, const char *message) noexcept;
 };
 
 }

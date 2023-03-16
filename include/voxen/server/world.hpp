@@ -2,6 +2,7 @@
 
 #include <voxen/common/terrain/controller.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/visibility.hpp>
 
 #include <memory>
 #include <mutex>
@@ -9,7 +10,7 @@
 namespace voxen::server
 {
 
-class World {
+class VOXEN_API World {
 public:
 	World();
 	World(World &&) = delete;

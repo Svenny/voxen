@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/config.hpp>
+#include <voxen/visibility.hpp>
 
 #include <extras/enum_utils.hpp>
 #include <extras/source_location.hpp>
@@ -10,7 +11,7 @@
 namespace voxen
 {
 
-class Log {
+class VOXEN_API Log {
 public:
 	enum class Level : int {
 		/* Information about implementation details of some specific action (e.g. values of variables on each
