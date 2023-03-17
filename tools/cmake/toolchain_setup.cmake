@@ -94,19 +94,11 @@ function(voxen_setup_target target is_executable)
 
 	# Use predefined binary output directories
 	# XXX: shouldn't we do this at install stage?
-	if(GENERATOR_IS_MULTI_CONFIG)
-		set_target_properties(${target} PROPERTIES
-			ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/lib
-			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
-			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
-		)
-	else()
-		set_target_properties(${target} PROPERTIES
-			ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-		)
-	endif()
+	set_target_properties(${target} PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/lib
+		LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
+		RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
+	)
 endfunction()
 
 # All executable targets should be created via this function

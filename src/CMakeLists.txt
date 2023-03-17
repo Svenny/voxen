@@ -96,8 +96,6 @@ set(VOXEN_SHADERS
 	terrain/simple.frag
 )
 
-set(VOXEN_SHADER_BINARIES)
-
 set(VOXEN_SHADER_COMPILER_OPTIONS
 	-O --target-env=vulkan1.2 -Werror
 	-I${CMAKE_SOURCE_DIR}/src/shaders/include
@@ -108,49 +106,27 @@ if (USE_VULKAN_DEBUGGING)
 	set(VOXEN_SHADER_COMPILER_OPTIONS ${VOXEN_SHADER_COMPILER_OPTIONS} -g)
 endif()
 
+add_custom_target(voxen-shaders)
+
 foreach(SHADER ${VOXEN_SHADERS})
 	# Input GLSL file
 	set(SHADER_SOURCE ${CMAKE_SOURCE_DIR}/src/shaders/${SHADER})
 	# Output SPIR-V file
-	set(SHADER_BIN_RELATIVE data/assets/shaders/${SHADER}.spv)
-	set(SHADER_BIN ${CMAKE_BINARY_DIR}/${SHADER_BIN_RELATIVE})
+	set(SHADER_BIN data/assets/shaders/${SHADER}.spv)
 	# Output .d file to account for changed `#include`s
-	set(SHADER_DEPFILE ${CMAKE_BINARY_DIR}/shader_depfiles/${SHADER}.d)
+	set(SHADER_DEPFILE shader_depfiles/${SHADER}.d)
 
-	# Create output directories if needed
-	get_filename_component(SHADER_DIR ${SHADER_BIN} DIRECTORY)
-	file(MAKE_DIRECTORY ${SHADER_DIR})
-	get_filename_component(SHADER_DIR ${SHADER_DEPFILE} DIRECTORY)
-	file(MAKE_DIRECTORY ${SHADER_DIR})
-
-	add_custom_command(OUTPUT ${SHADER_BIN} BYPRODUCTS ${SHADER_DEPFILE}
-		MAIN_DEPENDENCY ${SHADER_SOURCE} DEPFILE ${SHADER_DEPFILE}
+	add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
+		BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
+		MAIN_DEPENDENCY ${SHADER_SOURCE}
+		DEPFILE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
 		COMMENT "Building SPIR-V for shader ${SHADER}"
 		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS}
-			${SHADER_SOURCE} -o ${SHADER_BIN} -MD -MF ${SHADER_DEPFILE} -MT ${SHADER_BIN_RELATIVE}
+			${SHADER_SOURCE} -o ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
+			-MD -MF ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE} -MT $<CONFIG>/${SHADER_BIN}
 	)
 
-	list(APPEND VOXEN_SHADER_BINARIES ${SHADER_BIN})
-
-	file(RELATIVE_PATH SHADER_DIR ${CMAKE_BINARY_DIR} ${SHADER_BIN})
-	message(STATUS "Adding compile GLSL shader '${SHADER}' to SPIR-V binary '${SHADER_DIR}'")
+	target_sources(voxen-shaders PRIVATE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN})
 endforeach()
-
-add_custom_target(voxen-shaders DEPENDS ${VOXEN_SHADER_BINARIES})
-
-if(GENERATOR_IS_MULTI_CONFIG)
-	add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/$<CONFIG>/data"
-		COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/$<CONFIG>/data"
-	)
-
-	add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/$<CONFIG>/data/assets"
-		COMMAND ${CMAKE_COMMAND} -E create_symlink "${CMAKE_BINARY_DIR}/data/assets" "${CMAKE_BINARY_DIR}/$<CONFIG>/data/assets"
-	)
-
-	target_sources(voxen-shaders PRIVATE
-		"${CMAKE_BINARY_DIR}/$<CONFIG>/data"
-		"${CMAKE_BINARY_DIR}/$<CONFIG>/data/assets"
-	)
-endif()
 
 add_dependencies(voxen voxen-shaders)
