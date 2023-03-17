@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.21)
 
 # Can't use `if(GENERATOR_IS_MULTI_CONFIG)` without this line
 get_cmake_property(GENERATOR_IS_MULTI_CONFIG GENERATOR_IS_MULTI_CONFIG)
+if(GENERATOR_IS_MULTI_CONFIG)
+	if(CMAKE_CONFIGURATION_TYPES STREQUAL "")
+		message(WARNING "Build types not set, defaulting to Release")
+		set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING FORCE)
+	endif()
+else()
+	if(CMAKE_BUILD_TYPE STREQUAL "")
+		message(WARNING "Build type not set, defaulting to Release")
+		set(CMAKE_BUILD_TYPE Release CACHE STRING FORCE)
+	endif()
+endif()
 
 # Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
@@ -10,11 +21,6 @@ set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_
 
 include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)
-
-if(CMAKE_BUILD_TYPE STREQUAL "" AND NOT GENERATOR_IS_MULTI_CONFIG)
-	message(WARNING "Build type not set, defaulting to Release")
-	set(CMAKE_BUILD_TYPE Release CACHE STRING FORCE)
-endif()
 
 bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation layers, debug extensions)" OFF)
 bool_option(USE_INTEGRATED_GPU "Target integrated GPU instead of discrete one" OFF)
