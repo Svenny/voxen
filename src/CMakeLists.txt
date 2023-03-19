@@ -101,11 +101,6 @@ set(VOXEN_SHADER_COMPILER_OPTIONS
 	-I${CMAKE_SOURCE_DIR}/src/shaders/include
 )
 
-if (USE_VULKAN_DEBUGGING)
-	# Enable debug information generation
-	set(VOXEN_SHADER_COMPILER_OPTIONS ${VOXEN_SHADER_COMPILER_OPTIONS} -g)
-endif()
-
 add_custom_target(voxen-shaders)
 
 foreach(SHADER ${VOXEN_SHADERS})
@@ -122,6 +117,8 @@ foreach(SHADER ${VOXEN_SHADERS})
 		DEPFILE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
 		COMMENT "Building SPIR-V for shader ${SHADER}"
 		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS}
+			# Enable debug information generation for debuggable builds
+			$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:-g>
 			${SHADER_SOURCE} -o ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
 			-MD -MF ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE} -MT $<CONFIG>/${SHADER_BIN}
 	)
