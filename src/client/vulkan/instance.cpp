@@ -5,7 +5,7 @@
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/config.hpp>
+#include <voxen/version.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -150,7 +150,7 @@ static std::vector<const char *> getRequiredLayers()
 void Instance::createInstance()
 {
 	// Fill VkApplicationInfo
-	auto version = VK_MAKE_VERSION(BuildConfig::kVersionMajor, BuildConfig::kVersionMinor, BuildConfig::kVersionPatch);
+	auto version = VK_MAKE_VERSION(Version::MAJOR, Version::MINOR, Version::PATCH);
 	VkApplicationInfo app_info = {};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pApplicationName = "Voxen";

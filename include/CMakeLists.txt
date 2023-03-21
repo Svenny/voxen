@@ -98,5 +98,18 @@ target_include_directories(voxen PUBLIC include)
 target_sources(voxen PRIVATE ${VOXEN_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
 
+# Generate build-config header
 configure_file(include/voxen/config.hpp.cmake ${CMAKE_CURRENT_BINARY_DIR}/configs/voxen/config.hpp)
+
+# Generate version header
+add_custom_target(voxen-version-file
+	COMMAND Python3::Interpreter ${CMAKE_SOURCE_DIR}/tools/cmake/gen-version-header.py
+		${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
+		${VOXEN_VERSION_MAJOR} ${VOXEN_VERSION_MINOR} ${VOXEN_VERSION_PATCH} ${VOXEN_VERSION_SUFFIX}
+	BYPRODUCTS ${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
+	COMMENT "Generating version.hpp file"
+)
+add_dependencies(voxen voxen-version-file)
+
+# Include directory with generated headers
 target_include_directories(voxen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/configs)
