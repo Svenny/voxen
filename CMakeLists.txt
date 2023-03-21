@@ -16,8 +16,10 @@ endif()
 
 # Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
-set(VOXEN_VERSION_SUFFIX " pre-alpha")
-set(VOXEN_VERSION_STRING "${VOXEN_VERSION_MAJOR}.${VOXEN_VERSION_MINOR}.${VOXEN_VERSION_PATCH}${VOXEN_VERSION_SUFFIX}")
+set(VOXEN_VERSION_SUFFIX "pre-alpha")
+
+# Python is used in buildsystem parts where CMake is too ugly
+find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
 
 include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)

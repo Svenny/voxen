@@ -1,14 +1,14 @@
-#include <voxen/config.hpp>
 #include <voxen/client/gui.hpp>
 #include <voxen/client/render.hpp>
 #include <voxen/client/window.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/common/config.hpp>
+#include <voxen/common/filemanager.hpp>
+#include <voxen/common/threadpool.hpp>
+#include <voxen/common/world_state.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/common/filemanager.hpp>
-#include <voxen/common/threadpool.hpp>
+#include <voxen/version.hpp>
 
 #include <cxxopts/cxxopts.hpp>
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	using voxen::Log;
 	using namespace std::chrono;
 
-	Log::info("Starting Voxen {}", voxen::BuildConfig::kVersionString);
+	Log::info("Starting Voxen {}", voxen::Version::STRING);
 
 	try {
 		cxxopts::Options options = initCli();
