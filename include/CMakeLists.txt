@@ -50,6 +50,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/swapchain.hpp
 	include/voxen/client/vulkan/sync.hpp
 	include/voxen/client/vulkan/texture_manager.hpp
+	include/voxen/client/gfx_runtime_config.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/window.hpp
@@ -75,12 +76,13 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
 	include/voxen/common/terrain/voxel_grid.hpp
-	include/voxen/common/player.hpp
-	include/voxen/common/threadpool.hpp
-	include/voxen/common/world_state.hpp
-	include/voxen/common/gameview.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
+	include/voxen/common/gameview.hpp
+	include/voxen/common/player.hpp
+	include/voxen/common/runtime_config.hpp
+	include/voxen/common/threadpool.hpp
+	include/voxen/common/world_state.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

@@ -35,6 +35,8 @@ private:
 
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalDeviceProperties &props);
 	bool populateQueueFamilies(VkPhysicalDevice device);
+	// Calculate score to select the "best" GPU if several are available (bigger is better)
+	static uint32_t calcDeviceScore(VkPhysicalDevice device, const VkPhysicalDeviceProperties &props);
 };
 
 }
