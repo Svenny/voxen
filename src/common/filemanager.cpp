@@ -10,7 +10,6 @@
 #include <functional>
 
 #include <voxen/util/log.hpp>
-#include <voxen/config.hpp>
 #include <extras/defer.hpp>
 
 #include <sys/stat.h>
@@ -291,7 +290,7 @@ private:
 	constexpr static size_t START_THREAD_COUNT = FileIoThreadPool::ETERNAL_THREAD_COUNT;
 };
 
-}
+} // anonymous namespace
 
 static FileIoThreadPool file_manager_threadpool;
 
@@ -303,16 +302,11 @@ path FileManager::game_data_path;
 
 void FileManager::setProfileName(const std::string &path_to_binary, const std::string &profile_name)
 {
-	if constexpr (BuildConfig::kIsDeployBuild) {
-		assert(false);
-		user_data_path = std::filesystem::path(sago::getDataHome()) / "voxen/";
-	} else {
-		// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
-		auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
+	// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
+	auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
 
-		user_data_path = install_root / "data/user" / profile_name;
-		game_data_path = install_root / "data";
-	}
+	user_data_path = install_root / "data/user" / profile_name;
+	game_data_path = install_root / "data";
 }
 
 optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_path) noexcept

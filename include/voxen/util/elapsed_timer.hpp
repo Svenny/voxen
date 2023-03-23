@@ -1,7 +1,5 @@
 #pragma once
 
-#include <voxen/config.hpp>
-
 #include <fmt/format.h>
 
 #include <chrono>

@@ -9,12 +9,6 @@ namespace voxen
 
 ElapsedTimer::ElapsedTimer(std::string section_name, std::string format): m_section_name(std::move(section_name)), m_format(std::move(format))
 {
-    // ElapsedTimer for dev propouse only, so this shouldn't be used in Deploy Builds
-    if constexpr (BuildConfig::kIsDeployBuild) {
-        Log::fatal("Elapsed timers mustn't used in deploy builds, but timer for \"{}\" have been created", m_section_name);
-        assert(false);
-    }
-
     m_start = std::chrono::high_resolution_clock::now();
 }
 

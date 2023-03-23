@@ -47,7 +47,6 @@ jobs:
           mkdir -p $BUILD_DIR
           rm -rf $BUILD_DIR/*
           cmake -S . -B $BUILD_DIR -GNinja             \
-              -DDEPLOY_BUILD=ON                        \
               -DCMAKE_C_COMPILER=${{ matrix.cc }}      \
               -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}   \
               -DCMAKE_BUILD_TYPE=${{ matrix.type }}    \
