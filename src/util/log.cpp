@@ -8,7 +8,7 @@
 namespace voxen
 {
 
-Log::Level Log::m_current_level = BuildConfig::kIsDebugBuild ? Log::Level::Debug : Log::Level::Info;
+Log::Level Log::m_current_level = Log::Level::Trace;
 
 static thread_local fmt::memory_buffer t_message_buffer;
 
@@ -68,15 +68,14 @@ std::string_view enum_name(Log::Level value) noexcept
 	using namespace std::string_view_literals;
 
 	switch (value) {
-		case Log::Level::Trace: return "TRACE"sv;
-		case Log::Level::Debug: return "DEBUG"sv;
-		case Log::Level::Info: return "INFO"sv;
-		case Log::Level::Warn: return "WARN"sv;
-		case Log::Level::Error: return "ERROR"sv;
-		case Log::Level::Fatal: return "FATAL"sv;
-		default:
-			assert(false);
-			return "UNKNOWN"sv;
+	case Log::Level::Trace: return "TRACE"sv;
+	case Log::Level::Debug: return "DEBUG"sv;
+	case Log::Level::Info: return "INFO"sv;
+	case Log::Level::Warn: return "WARN"sv;
+	case Log::Level::Error: return "ERROR"sv;
+	case Log::Level::Fatal: return "FATAL"sv;
+	case Log::Level::Off: return "OFF"sv;
+	// No `default` to make `-Werror -Wswitch` protection work
 	}
 }
 

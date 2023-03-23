@@ -15,14 +15,9 @@ void ChunkControlBlock::setChunk(extras::refcnt_ptr<Chunk> ptr)
 
 void ChunkControlBlock::validateState(bool has_active_parent, bool can_chunk_changed) const
 {
-	if constexpr (BuildConfig::kIsReleaseBuild) {
-		(void) has_active_parent;
-		(void) can_chunk_changed;
-		// This code consists only of asserts, hothing to do here in release
-		return;
+	if (!can_chunk_changed) {
+		assert(!m_chunk_changed);
 	}
-
-	assert(can_chunk_changed || !m_chunk_changed);
 
 	const bool is_active = m_state == ChunkControlBlock::State::Active;
 
