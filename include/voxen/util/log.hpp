@@ -52,7 +52,8 @@ public:
 		doLog(level, where, format_str, fmt::make_format_args(std::forward<Args>(args)...));
 	}
 
-	// Returns the current logging level
+	// Returns the current logging level.
+	// Initially it is set to `Trace` regardless of build type (i.e. everything is logged).
 	static Level level() noexcept { return m_current_level; }
 	// Changes the current logging level
 	static void setLevel(Level level) noexcept;
