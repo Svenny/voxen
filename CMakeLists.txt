@@ -25,7 +25,6 @@ include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)
 
 bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation layers, debug extensions)" OFF)
-bool_option(DEPLOY_BUILD "Build for creating installable version of Voxen" OFF)
 
 # Build third-party dependencies
 add_subdirectory(3rdparty)
