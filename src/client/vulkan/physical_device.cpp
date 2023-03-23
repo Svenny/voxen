@@ -25,8 +25,10 @@ PhysicalDevice::PhysicalDevice()
 
 	uint32_t num_devices = 0;
 	VkResult result = backend.vkEnumeratePhysicalDevices(instance, &num_devices, nullptr);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkEnumeratePhysicalDevices");
+	}
+
 	if (num_devices == 0) {
 		Log::error("No Vulkan physical devices are present in the system");
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no Vulkan devices found");
@@ -34,27 +36,45 @@ PhysicalDevice::PhysicalDevice()
 
 	extras::dyn_array<VkPhysicalDevice> devices(num_devices);
 	result = backend.vkEnumeratePhysicalDevices(instance, &num_devices, devices.data());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkEnumeratePhysicalDevices");
+	}
+
+	VkPhysicalDevice best_device = VK_NULL_HANDLE;
+	VkPhysicalDeviceProperties best_props;
+	uint32_t best_score = 0;
 
 	// TODO: check config first to remember the last selected GPU
 	for (const auto &dev : devices) {
 		VkPhysicalDeviceProperties props;
 		backend.vkGetPhysicalDeviceProperties(dev, &props);
 
-		if (isDeviceSuitable(dev, props)) {
-			m_device = dev;
-			Log::info("Selected GPU is '{}'", props.deviceName);
-			uint32_t api = props.apiVersion;
-			Log::info("It supports Vulkan {}.{}.{}", VK_VERSION_MAJOR(api), VK_VERSION_MINOR(api), VK_VERSION_PATCH(api));
-			break;
+		if (!isDeviceSuitable(dev, props)) {
+			continue;
+		}
+
+		uint32_t score = calcDeviceScore(dev, props);
+
+		if (best_device == VK_NULL_HANDLE || score > best_score) {
+			best_device = dev;
+			best_props = props;
+			best_score = score;
 		}
 	}
 
-	if (m_device == VK_NULL_HANDLE) {
+	if (best_device == VK_NULL_HANDLE) {
 		Log::error("No suitable Vulkan physical device found in the system");
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no suitable Vulkan devices found");
 	}
+
+	m_device = best_device;
+	Log::info("Selected GPU is '{}'", best_props.deviceName);
+	uint32_t api = best_props.apiVersion;
+	Log::info("It supports Vulkan {}.{}.{}", VK_VERSION_MAJOR(api), VK_VERSION_MINOR(api), VK_VERSION_PATCH(api));
+
+	[[maybe_unused]] bool populated = populateQueueFamilies(m_device);
+	// Queues support must be already checked by above per-device loop
+	assert(populated);
 
 	Log::debug("PhysicalDevice created successfully");
 }
@@ -97,19 +117,6 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 		return false;
 	}
 
-	// TODO: remove it when saving the selected GPU is available
-	if constexpr (BuildConfig::kUseIntegratedGpu) {
-		if (props.deviceType != VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-			Log::debug("'{}' is skipped because it's not an integrated GPU", props.deviceName);
-			return false;
-		}
-	} else {
-		if (props.deviceType != VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-			Log::debug("'{}' is skipped because it's not a discrete GPU", props.deviceName);
-			return false;
-		}
-	}
-
 	if (!populateQueueFamilies(device)) {
 		Log::debug("'{}' is skipped because it lacks some queue family capabilities");
 		return false;
@@ -120,8 +127,11 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 
 bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 {
-	// This shouldn't be called in already constructed object
-	assert(m_device == VK_NULL_HANDLE);
+	// This can be called several times when trying different devices, reset queus each time
+	m_graphics_queue_family = UINT32_MAX;
+	m_compute_queue_family = UINT32_MAX;
+	m_transfer_queue_family = UINT32_MAX;
+	m_present_queue_family = UINT32_MAX;
 
 	auto &backend = Backend::backend();
 
@@ -205,6 +215,19 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 
 	Log::debug("Present queue family not found");
 	return false;
+}
+
+uint32_t PhysicalDevice::calcDeviceScore(VkPhysicalDevice /*device*/, const VkPhysicalDeviceProperties &props)
+{
+	// This should be enough for most basic setups
+	switch (props.deviceType) {
+	case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+		return 1;
+	case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+		return 2;
+	default:
+		return 0;
+	}
 }
 
 }

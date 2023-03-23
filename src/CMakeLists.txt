@@ -36,6 +36,7 @@ set(VOXEN_SOURCES
 	src/client/vulkan/swapchain.cpp
 	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
+	src/client/gfx_runtime_config.cpp
 	src/client/gui.cpp
 	src/client/render.cpp
 	src/client/window.cpp
@@ -59,12 +60,13 @@ set(VOXEN_SOURCES
 	src/common/terrain/surface.cpp
 	src/common/terrain/surface_builder.cpp
 	src/common/terrain/voxel_grid.cpp
-	src/common/player.cpp
-	src/common/threadpool.cpp
-	src/common/world_state.cpp
-	src/common/gameview.cpp
 	src/common/config.cpp
 	src/common/filemanager.cpp
+	src/common/gameview.cpp
+	src/common/player.cpp
+	src/common/runtime_config.cpp
+	src/common/threadpool.cpp
+	src/common/world_state.cpp
 	src/server/world.cpp
 	src/util/aabb.cpp
 	src/util/allocator.cpp
