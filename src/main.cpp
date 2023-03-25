@@ -12,13 +12,14 @@
 
 #include <cxxopts/cxxopts.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <iostream>
 #include <string>
 #include <set>
-#include <algorithm>
-#include <variant>
 #include <thread>
+#include <variant>
 
 static const std::string kCliSectionSeparator = "__";
 
