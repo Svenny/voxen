@@ -1,6 +1,5 @@
 #pragma once
 
-#include <voxen/config.hpp>
 #include <voxen/visibility.hpp>
 
 #include <extras/enum_utils.hpp>
