@@ -1,5 +1,6 @@
 #include <voxen/util/log.hpp>
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <cassert>
@@ -11,6 +12,37 @@ namespace voxen
 Log::Level Log::m_current_level = Log::Level::Trace;
 
 static thread_local fmt::memory_buffer t_message_buffer;
+
+static fmt::text_style styleForLevel(Log::Level level) noexcept
+{
+	fmt::text_style style;
+
+	switch (level) {
+	case Log::Level::Trace:
+		style |= fmt::fg(fmt::color::wheat);
+		break;
+	case Log::Level::Debug:
+		style |= fmt::fg(fmt::color::light_sea_green);
+		break;
+	case Log::Level::Info:
+		style |= fmt::fg(fmt::color::green);
+		break;
+	case Log::Level::Warn:
+		style |= fmt::fg(fmt::color::yellow);
+		break;
+	case Log::Level::Error:
+		style |= fmt::fg(fmt::color::red);
+		break;
+	case Log::Level::Fatal:
+		style = fmt::emphasis::bold | fmt::fg(fmt::color::white) | fmt::bg(fmt::color::red);
+		break;
+	case Log::Level::Off:
+		break;
+	// No `default` to make `-Werror -Wswitch` protection work
+	}
+
+	return style;
+}
 
 void Log::doLog(Level level, extras::source_location where,
                 std::string_view format_str, fmt::format_args format_args) noexcept
@@ -29,7 +61,7 @@ void Log::doLog(Level level, extras::source_location where,
 
 		fmt::print(sink, FMT_STRING("[{:s}:{:d}][{:s}] {:s}\n"),
 		           where.file_name(), where.line(),
-		           extras::enum_name(level), text);
+		           fmt::styled(extras::enum_name(level), styleForLevel(level)), text);
 	} catch (const fmt::format_error &err) {
 		fflush(stdout);
 		fprintf(stderr, "[%s:%u][WARN] Caught fmt::format_error when trying to log: %s\n",
