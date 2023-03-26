@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
+#include <voxen/client/gfx_runtime_config.hpp>
+#include <voxen/common/runtime_config.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -89,7 +91,7 @@ static std::vector<const char *> getRequiredInstanceExtensions()
 		ext_list.emplace_back(name);
 	};
 
-	if constexpr (BuildConfig::kUseVulkanDebugging) {
+	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
 		addToList(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
@@ -103,8 +105,10 @@ static std::vector<const char *> getRequiredInstanceExtensions()
 
 static std::vector<const char *> getRequiredLayers()
 {
-	if constexpr (!BuildConfig::kUseVulkanDebugging)
+	// Add nothing if validation is not enabled
+	if (!RuntimeConfig::instance().gfxConfig().useValidation()) {
 		return {};
+	}
 
 	auto &backend = Backend::backend();
 	uint32_t available_count;

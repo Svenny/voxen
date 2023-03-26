@@ -1,6 +1,5 @@
 #include <voxen/common/terrain/control_block.hpp>
 
-#include <voxen/config.hpp>
 #include <voxen/common/terrain/allocator.hpp>
 
 #include <cassert>

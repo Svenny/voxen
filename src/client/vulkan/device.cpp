@@ -46,7 +46,7 @@ void Device::waitIdle()
 		}
 	};
 
-	if (BuildConfig::kUseVulkanDebugging && Log::willBeLogged(Log::Level::Debug)) {
+	if (Log::willBeLogged(Log::Level::Debug)) {
 		auto t1 = std::chrono::steady_clock::now();
 		wait();
 		auto t2 = std::chrono::steady_clock::now();

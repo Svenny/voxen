@@ -24,8 +24,6 @@ find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
 include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)
 
-bool_option(USE_VULKAN_DEBUGGING "Enable Vulkan debugging features (validation layers, debug extensions)" OFF)
-
 # Build third-party dependencies
 add_subdirectory(3rdparty)
 

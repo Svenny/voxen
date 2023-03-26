@@ -1,6 +1,5 @@
 #include <voxen/common/terrain/controller.hpp>
 
-#include <voxen/config.hpp>
 #include <voxen/common/threadpool.hpp>
 #include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk.hpp>
