@@ -3,6 +3,7 @@
 #include <voxen/client/window.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
+#include <voxen/common/runtime_config.hpp>
 #include <voxen/common/threadpool.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/server/world.hpp>
@@ -66,17 +67,19 @@ cxxopts::Options initCli() {
 	options.add_options()
 		("h,help", "Display help information")
 		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
+
+	voxen::RuntimeConfig::addOptions(options);
+
 	return options;
 }
 
-static std::set<std::string> ignorable_keys = {"profile"};
 void patchConfig(const cxxopts::ParseResult &result, voxen::Config* config) {
 	for (const auto& keyvalue : result.arguments()) {
-		if (ignorable_keys.count(keyvalue.key())) {
+		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
+		if (sep_idx == std::string::npos) {
 			continue;
 		}
 
-		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
 		std::string section = keyvalue.key().substr(0, sep_idx);
 		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
 
@@ -124,6 +127,8 @@ int main(int argc, char *argv[])
 			std::cout << options.help() << std::endl;
 			return 0;
 		}
+
+		voxen::RuntimeConfig::instance().fill(result);
 
 		//TODO(sirgienko) add profile option for threads count in profile scheme?
 		voxen::ThreadPool::initGlobalVoxenPool();
