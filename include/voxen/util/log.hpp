@@ -12,6 +12,7 @@ namespace voxen
 
 class VOXEN_API Log {
 public:
+	// Log levels are defined by increasing severity - it's valid to compare them as integers
 	enum class Level : int {
 		/* Information about implementation details of some specific action (e.g. values of variables on each
 		 * iteration of a loop in some algorithm). There should generally be no logging of this level in the
