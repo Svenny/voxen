@@ -32,14 +32,13 @@ bool isAabbInFrustum(in Aabb aabb, in mat4 mtx)
 		ndc = fma(mtx[1], vec4(((i & 2u) == 0u) ? aabb.min.y : aabb.max.y), ndc);
 		ndc = fma(mtx[2], vec4(((i & 4u) == 0u) ? aabb.min.z : aabb.max.z), ndc);
 #endif // AABB_FRUSTUM_CULL_IMPL == 0
-		vec3 point = ndc.xyz / ndc.w;
 
-		inside[0] = inside[0] || (point.z >= 0.0);
-		inside[1] = inside[1] || (point.z <= 1.0);
-		inside[2] = inside[2] || (point.x >= -1.0);
-		inside[3] = inside[3] || (point.x <= 1.0);
-		inside[4] = inside[4] || (point.y >= -1.0);
-		inside[5] = inside[5] || (point.y <= 1.0);
+		inside[0] = inside[0] || (ndc.z >= 0.0);
+		inside[1] = inside[1] || (ndc.z <= ndc.w);
+		inside[2] = inside[2] || (ndc.x >= -ndc.w);
+		inside[3] = inside[3] || (ndc.x <= ndc.w);
+		inside[4] = inside[4] || (ndc.y >= -ndc.w);
+		inside[5] = inside[5] || (ndc.y <= ndc.w);
 	}
 
 	return inside[0] && inside[1] && inside[2] && inside[3] && inside[4] && inside[5];
