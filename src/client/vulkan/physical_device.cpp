@@ -67,6 +67,10 @@ PhysicalDevice::PhysicalDevice()
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no suitable Vulkan devices found");
 	}
 
+	// Fill capabilities information with the correct device
+	[[maybe_unused]] bool still_suitable = backend.capabilities().selectPhysicalDevice(best_device);
+	assert(still_suitable);
+
 	m_device = best_device;
 	Log::info("Selected GPU is '{}'", best_props.deviceName);
 	uint32_t api = best_props.apiVersion;
