@@ -194,7 +194,9 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	render_info.colorAttachmentCount = 1;
 	render_info.pColorAttachments = &color_rt_info;
 	render_info.pDepthAttachment = &depth_rt_info;
-	render_info.pStencilAttachment = &stencil_rt_info;
+	if (VulkanUtils::hasStencilComponent(SCENE_DEPTH_STENCIL_BUFFER_FORMAT)) {
+		render_info.pStencilAttachment = &stencil_rt_info;
+	}
 
 	backend.vkCmdBeginRendering(cmd_buf, &render_info);
 

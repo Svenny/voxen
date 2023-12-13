@@ -286,7 +286,8 @@ struct GraphicsPipelineParts {
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,
 		.depthAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT,
-		.stencilAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT
+		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(SCENE_DEPTH_STENCIL_BUFFER_FORMAT) ?
+			SCENE_DEPTH_STENCIL_BUFFER_FORMAT : VK_FORMAT_UNDEFINED
 	};
 
 	struct {

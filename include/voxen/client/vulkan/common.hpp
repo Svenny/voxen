@@ -33,6 +33,9 @@ public:
 	static std::string_view getVkResultString(VkResult result) noexcept;
 	static std::string_view getVkFormatString(VkFormat format) noexcept;
 
+	// Returns true for depth-stencil formats with non-zero stencil part
+	static bool hasStencilComponent(VkFormat format) noexcept;
+
 	// Returns minimal integer multiple of `alignment` not less than `size`. `alignment` must be a power of two.
 	static uint32_t alignUp(uint32_t size, uint32_t alignment) noexcept;
 	static uint64_t alignUp(uint64_t size, uint64_t alignment) noexcept;
