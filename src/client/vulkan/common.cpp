@@ -330,4 +330,10 @@ std::string_view VulkanUtils::getVkFormatString(VkFormat format) noexcept
 #undef FORMAT_ENTRY
 }
 
+bool VulkanUtils::hasStencilComponent(VkFormat format) noexcept
+{
+	return format == VK_FORMAT_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT ||
+		format == VK_FORMAT_D24_UNORM_S8_UINT || format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+}
+
 }
