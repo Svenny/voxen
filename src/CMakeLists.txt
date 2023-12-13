@@ -99,7 +99,7 @@ set(VOXEN_SHADERS
 )
 
 set(VOXEN_SHADER_COMPILER_OPTIONS
-	-O --target-env=vulkan1.2 -Werror
+	-O --target-env=vulkan1.3 -Werror
 	-I${CMAKE_SOURCE_DIR}/src/shaders/include
 )
 

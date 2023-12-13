@@ -47,7 +47,7 @@ public:
 	// - No fallback paths for earlier API versions are allowed
 	// - No optional paths for later API versions are allowed
 	// - Using an extension is allowed only if it's not deprecated/obsolete in this version
-	constexpr inline static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_2;
+	constexpr inline static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_3;
 
 	Capabilities() = default;
 	Capabilities(Capabilities &&) = delete;
@@ -92,10 +92,12 @@ private:
 		VkPhysicalDeviceFeatures2 features10;
 		VkPhysicalDeviceVulkan11Features features11;
 		VkPhysicalDeviceVulkan12Features features12;
+		VkPhysicalDeviceVulkan13Features features13;
 
 		VkPhysicalDeviceProperties2 props10;
 		VkPhysicalDeviceVulkan11Properties props11;
 		VkPhysicalDeviceVulkan12Properties props12;
+		VkPhysicalDeviceVulkan13Properties props13;
 		VkPhysicalDeviceSampleLocationsPropertiesEXT props_sample_locations;
 
 		std::vector<VkExtensionProperties> extensions;
@@ -105,6 +107,7 @@ private:
 		VkPhysicalDeviceFeatures2 features10;
 		VkPhysicalDeviceVulkan11Features features11;
 		VkPhysicalDeviceVulkan12Features features12;
+		VkPhysicalDeviceVulkan13Features features13;
 
 		std::vector<const char *> extensions;
 	} m_dev_creation_request;

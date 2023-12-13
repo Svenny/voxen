@@ -88,6 +88,12 @@ bool Capabilities::checkMandatoryProperties()
 	CHECK_MANDATORY_FEATURE(features12, uniformBufferStandardLayout);
 	// TODO: is it really needed?
 	CHECK_MANDATORY_FEATURE(features12, timelineSemaphore);
+	// Needed to greatly simplify single-pass renderings
+	CHECK_MANDATORY_FEATURE(features13, dynamicRendering);
+	// Use more modern API
+	CHECK_MANDATORY_FEATURE(features13, synchronization2);
+	// For `LocalSizeId` SPIR-V capability
+	CHECK_MANDATORY_FEATURE(features13, maintenance4);
 
 #undef CHECK_MANDATORY_FEATURE
 	return true;
@@ -240,8 +246,12 @@ void Capabilities::fillPhysicalDeviceCaps(VkPhysicalDevice device)
 {
 	auto &c = m_phys_dev_caps;
 
+	c.features13 = {};
+	c.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+
 	c.features12 = {};
 	c.features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	c.features12.pNext = &c.features13;
 
 	c.features11 = {};
 	c.features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -254,9 +264,13 @@ void Capabilities::fillPhysicalDeviceCaps(VkPhysicalDevice device)
 	c.props_sample_locations = {};
 	c.props_sample_locations.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT;
 
+	c.props13 = {};
+	c.props13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
+	c.props13.pNext = &c.props_sample_locations;
+
 	c.props12 = {};
 	c.props12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
-	c.props12.pNext = &c.props_sample_locations;
+	c.props12.pNext = &c.props13;
 
 	c.props11 = {};
 	c.props11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
@@ -292,8 +306,12 @@ void Capabilities::prepareDeviceCreationRequest() noexcept
 {
 	auto &c = m_dev_creation_request;
 
+	c.features13 = {};
+	c.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+
 	c.features12 = {};
 	c.features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	c.features12.pNext = &c.features13;
 
 	c.features11 = {};
 	c.features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;

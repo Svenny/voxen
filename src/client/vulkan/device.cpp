@@ -85,18 +85,21 @@ void Device::createDevice()
 	assert(m_device == VK_NULL_HANDLE);
 
 	// Fill VkPhysicalDevice*Features
-	VkPhysicalDeviceImagelessFramebufferFeatures imageless_features = {};
-	imageless_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
-	imageless_features.imagelessFramebuffer = VK_TRUE;
+	VkPhysicalDeviceVulkan13Features features13 = {};
+	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	features13.dynamicRendering = VK_TRUE;
+	features13.synchronization2 = VK_TRUE;
+	features13.maintenance4 = VK_TRUE;
 
-	VkPhysicalDeviceScalarBlockLayoutFeatures sbl_features = {};
-	sbl_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
-	sbl_features.pNext = &imageless_features;
-	sbl_features.scalarBlockLayout = VK_TRUE;
+	VkPhysicalDeviceVulkan12Features features12 = {};
+	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.pNext = &features13;
+	features12.scalarBlockLayout = VK_TRUE;
+	features12.imagelessFramebuffer = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 features = {};
 	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	features.pNext = &sbl_features;
+	features.pNext = &features12;
 	features.features.multiDrawIndirect = VK_TRUE; // For chunk rendering
 	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
 
