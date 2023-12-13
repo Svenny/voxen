@@ -7,19 +7,11 @@
 namespace voxen::client::vulkan
 {
 
-class Framebuffer {
-public:
-	explicit Framebuffer(const VkFramebufferCreateInfo &info);
-	Framebuffer(Framebuffer &&) = delete;
-	Framebuffer(const Framebuffer &) = delete;
-	Framebuffer &operator = (Framebuffer &&) = delete;
-	Framebuffer &operator = (const Framebuffer &) = delete;
-	~Framebuffer() noexcept;
-
-	operator VkFramebuffer() const noexcept { return m_framebuffer; }
-private:
-	VkFramebuffer m_framebuffer = VK_NULL_HANDLE;
-};
+// TODO: check for physical device support (tiling/usage bits)
+// TODO: factor it out to attachments collection?
+// TODO: use extended depth range? (currently it's 0..1, effectively losing
+// advantage of 32-bit buffer) or use D24 when supported?
+inline constexpr VkFormat SCENE_DEPTH_STENCIL_BUFFER_FORMAT = VK_FORMAT_D32_SFLOAT;
 
 class FramebufferCollection {
 public:
@@ -32,17 +24,12 @@ public:
 
 	Image &sceneDepthStencilBuffer() noexcept { return m_scene_depth_stencil_buffer; }
 	ImageView &sceneDepthStencilBufferView() noexcept { return m_scene_depth_stencil_buffer_view; }
-
-	Framebuffer &sceneFramebuffer() noexcept { return m_scene_framebuffer; }
 private:
 	Image m_scene_depth_stencil_buffer;
 	ImageView m_scene_depth_stencil_buffer_view;
 
-	Framebuffer m_scene_framebuffer;
-
 	Image createSceneDepthStencilBuffer();
 	ImageView createSceneDepthStencilBufferView();
-	Framebuffer createSceneFramebuffer();
 };
 
 }

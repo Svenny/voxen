@@ -307,19 +307,27 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 	backend.vkCmdDispatch(cmdbuf, (m_num_active_chunks + 63) / 64, 1, 1);
 
 	uint32_t set_id = backend.descriptorManager().setId();
-	const VkBufferMemoryBarrier barrier {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-		.pNext = nullptr,
-		.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-		.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.buffer = m_combo_buffer,
-		.offset = uintptr_t(m_draw_command_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
-		.size = DRAW_COMMAND_BUFFER_SIZE
+	const VkBufferMemoryBarrier2 barrier {
+		 .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		 .pNext = nullptr,
+		 .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		 .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+		 .dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+		 .dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+		 .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		 .buffer = m_combo_buffer,
+		 .offset = uintptr_t(m_draw_command_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
+		 .size = DRAW_COMMAND_BUFFER_SIZE
 	};
-	backend.vkCmdPipelineBarrier(cmdbuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-		0, 0, nullptr, 1, &barrier, 0, nullptr);
+
+	const VkDependencyInfo depInfo {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.bufferMemoryBarrierCount = 1,
+		.pBufferMemoryBarriers = &barrier
+	};
+
+	backend.vkCmdPipelineBarrier2(cmdbuf, &depInfo);
 }
 
 void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)

@@ -44,7 +44,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp
-	include/voxen/client/vulkan/render_pass.hpp
 	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/vulkan/surface.hpp
 	include/voxen/client/vulkan/swapchain.hpp

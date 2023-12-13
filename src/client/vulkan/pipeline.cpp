@@ -2,10 +2,11 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
+#include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
-#include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
+#include <voxen/client/vulkan/surface.hpp>
 #include <voxen/common/terrain/surface.hpp>
 
 #include <voxen/util/log.hpp>
@@ -261,6 +262,9 @@ struct GraphicsPipelineParts {
 			info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 			info.basePipelineIndex = -1;
 		}
+
+		auto &backend = Backend::backend();
+		default_surface_format = backend.surface().format().format;
 	}
 
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
@@ -273,6 +277,17 @@ struct GraphicsPipelineParts {
 	const DisabledMsaaState disabled_msaa_state;
 	const DefaultDepthStencilState default_depth_stencil_state;
 	const DisabledBlendState disabled_blend_state;
+
+	VkFormat default_surface_format = VK_FORMAT_UNDEFINED;
+
+	const VkPipelineRenderingCreateInfo default_rendering_info {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.viewMask = 0,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &default_surface_format,
+		.depthAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT,
+		.stencilAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT
+	};
 
 	struct {
 		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
@@ -327,8 +342,9 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
-	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
+	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 template<>
@@ -377,8 +393,9 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
-	my_create_info.renderPass = backend.renderPassCollection().mainRenderPass();
+	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 struct ComputePipelineParts {

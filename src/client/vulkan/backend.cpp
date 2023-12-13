@@ -15,7 +15,6 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
-#include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
@@ -51,7 +50,6 @@ struct Backend::Impl {
 		Storage<DescriptorManager>,
 
 		Storage<Surface>,
-		Storage<RenderPassCollection>,
 		Storage<Swapchain>,
 		Storage<FramebufferCollection>,
 		Storage<PipelineCollection>,
@@ -229,7 +227,6 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 
 		if (start_surface_dep) {
 			m_impl.constructModule(m_surface, window);
-			m_impl.constructModule(m_render_pass_collection);
 			m_impl.constructModule(m_pipeline_collection);
 		}
 
@@ -287,7 +284,6 @@ void Backend::doStop(StartStopMode mode) noexcept
 
 	if (stop_surface_dep) {
 		m_impl.destructModule(m_pipeline_collection);
-		m_impl.destructModule(m_render_pass_collection);
 		m_impl.destructModule(m_surface);
 	}
 

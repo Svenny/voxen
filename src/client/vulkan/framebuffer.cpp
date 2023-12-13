@@ -3,7 +3,6 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/render_pass.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
 
@@ -12,27 +11,9 @@
 namespace voxen::client::vulkan
 {
 
-Framebuffer::Framebuffer(const VkFramebufferCreateInfo &info)
-{
-	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
-	VkResult result = backend.vkCreateFramebuffer(device, &info, HostAllocator::callbacks(), &m_framebuffer);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreateFramebuffer");
-	}
-}
-
-Framebuffer::~Framebuffer() noexcept
-{
-	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
-	backend.vkDestroyFramebuffer(device, m_framebuffer, HostAllocator::callbacks());
-}
-
 FramebufferCollection::FramebufferCollection() :
 	m_scene_depth_stencil_buffer(createSceneDepthStencilBuffer()),
-	m_scene_depth_stencil_buffer_view(createSceneDepthStencilBufferView()),
-	m_scene_framebuffer(createSceneFramebuffer())
+	m_scene_depth_stencil_buffer_view(createSceneDepthStencilBufferView())
 {
 	// To allow multiple frames we need to keep N copies of render targets
 	static_assert(Config::NUM_GPU_PENDING_FRAMES == 1, "A single pending GPU frame is currently assumed");
@@ -81,54 +62,6 @@ ImageView FramebufferCollection::createSceneDepthStencilBufferView()
 	info.subresourceRange.baseArrayLayer = 0;
 	info.subresourceRange.layerCount = 1;
 	return ImageView(info);
-}
-
-Framebuffer FramebufferCollection::createSceneFramebuffer()
-{
-	Log::debug("Creating scene framebuffer");
-
-	auto &backend = Backend::backend();
-	auto &surface = backend.surface();
-	auto &swapchain = backend.swapchain();
-
-	VkExtent2D frame_size = swapchain.imageExtent();
-	VkFormat color_buffer_format = surface.format().format;
-
-	VkFramebufferAttachmentImageInfo attachment_infos[2] = { {}, {} };
-
-	VkFramebufferAttachmentImageInfo &color_buffer_info = attachment_infos[0];
-	color_buffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
-	color_buffer_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	color_buffer_info.width = frame_size.width;
-	color_buffer_info.height = frame_size.height;
-	color_buffer_info.layerCount = 1;
-	color_buffer_info.viewFormatCount = 1;
-	color_buffer_info.pViewFormats = &color_buffer_format;
-
-	VkFramebufferAttachmentImageInfo &depth_stencil_buffer_info = attachment_infos[1];
-	depth_stencil_buffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
-	depth_stencil_buffer_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	depth_stencil_buffer_info.width = frame_size.width;
-	depth_stencil_buffer_info.height = frame_size.height;
-	depth_stencil_buffer_info.layerCount = 1;
-	depth_stencil_buffer_info.viewFormatCount = 1;
-	depth_stencil_buffer_info.pViewFormats = &SCENE_DEPTH_STENCIL_BUFFER_FORMAT;
-
-	VkFramebufferAttachmentsCreateInfo attachments_info = {};
-	attachments_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
-	attachments_info.attachmentImageInfoCount = 2;
-	attachments_info.pAttachmentImageInfos = attachment_infos;
-
-	VkFramebufferCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	info.pNext = &attachments_info;
-	info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-	info.renderPass = backend.renderPassCollection().mainRenderPass();
-	info.attachmentCount = 2;
-	info.width = frame_size.width;
-	info.height = frame_size.height;
-	info.layers = 1;
-	return Framebuffer(info);
 }
 
 }
