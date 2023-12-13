@@ -30,7 +30,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
-	src/client/vulkan/render_pass.cpp
 	src/client/vulkan/shader_module.cpp
 	src/client/vulkan/surface.cpp
 	src/client/vulkan/swapchain.cpp

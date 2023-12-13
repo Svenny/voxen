@@ -22,7 +22,6 @@ class PhysicalDevice;
 class PipelineCache;
 class PipelineCollection;
 class PipelineLayoutCollection;
-class RenderPassCollection;
 class ShaderModuleCollection;
 class Surface;
 class Swapchain;
@@ -83,8 +82,6 @@ public:
 
 	Surface &surface() noexcept { return *m_surface; }
 	const Surface &surface() const noexcept { return *m_surface; }
-	RenderPassCollection &renderPassCollection() noexcept { return *m_render_pass_collection; }
-	const RenderPassCollection &renderPassCollection() const noexcept { return *m_render_pass_collection; }
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
@@ -136,7 +133,6 @@ private:
 	DescriptorManager *m_descriptor_manager = nullptr;
 
 	Surface *m_surface = nullptr;
-	RenderPassCollection *m_render_pass_collection = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
 
 	Swapchain *m_swapchain = nullptr;
