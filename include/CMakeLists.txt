@@ -81,6 +81,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/player.hpp
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/threadpool.hpp
+	include/voxen/common/uid.hpp
 	include/voxen/common/world_state.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
