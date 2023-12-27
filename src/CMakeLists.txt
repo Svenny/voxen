@@ -75,6 +75,7 @@ set(VOXEN_SOURCES
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
+	src/voxen/common/uid.cpp
 )
 
 target_sources(game PRIVATE
