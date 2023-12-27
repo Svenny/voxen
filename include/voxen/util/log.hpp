@@ -49,7 +49,7 @@ public:
 		if (!willBeLogged(level)) {
 			return;
 		}
-		doLog(level, where, format_str, fmt::make_format_args(std::forward<Args>(args)...));
+		doLog(level, where, format_str, fmt::make_format_args(args...));
 	}
 
 	// Returns the current logging level.
