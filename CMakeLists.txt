@@ -30,7 +30,7 @@ add_subdirectory(3rdparty)
 # CMake target setup
 voxen_add_library(extras STATIC)
 voxen_add_library(voxen SHARED)
-voxen_add_executable(game)
+voxen_add_executable(game "")
 
 target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 

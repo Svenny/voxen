@@ -1,4 +1,4 @@
-voxen_add_executable(test-extras)
+voxen_add_executable(test-extras "")
 
 target_sources(test-extras PRIVATE
 	extras/bitset.cpp

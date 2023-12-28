@@ -129,3 +129,5 @@ foreach(SHADER ${VOXEN_SHADERS})
 endforeach()
 
 add_dependencies(voxen voxen-shaders)
+
+add_subdirectory(src/tools)

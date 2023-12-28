@@ -102,8 +102,8 @@ function(voxen_setup_target target is_executable)
 endfunction()
 
 # All executable targets should be created via this function
-function(voxen_add_executable name)
-	add_executable(${name} "")
+function(voxen_add_executable name sources)
+	add_executable(${name} ${sources})
 	voxen_setup_target(${name} true)
 endfunction()
 
