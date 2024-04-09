@@ -6,14 +6,13 @@ namespace cxxopts
 class Options;
 class ParseResult;
 
-}
+} // namespace cxxopts
 
 namespace voxen::client
 {
 
 class GfxRuntimeConfig final {
 public:
-
 	// Whether to enable graphics API debugging extensions
 	// (debug callbacks, object naming, cmdstream labels etc.).
 	bool useDebugging() const noexcept { return m_use_debugging; }
@@ -30,4 +29,4 @@ private:
 	bool m_use_validation = false;
 };
 
-}
+} // namespace voxen::client

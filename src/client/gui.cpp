@@ -9,11 +9,13 @@
 namespace voxen::client
 {
 
-Gui::Gui(Window& window): m_gameview(window) {
+Gui::Gui(Window& window) : m_gameview(window)
+{
 	window.attachGUI(*this);
 }
 
-Gui::~Gui() noexcept {
+Gui::~Gui() noexcept
+{
 	InputEventAdapter::release();
 }
 
@@ -68,4 +70,4 @@ void Gui::update(const WorldState& lastState, DebugQueueRtW& queue)
 	m_gameview.update(lastState.player(), queue, lastState.tickId());
 }
 
-}
+} // namespace voxen::client

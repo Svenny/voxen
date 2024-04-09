@@ -19,4 +19,4 @@ enum class PlayerActionEvent {
 	LockChunkLoadingPoint
 };
 
-}
+} // namespace voxen::client
