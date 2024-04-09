@@ -25,13 +25,12 @@ public:
 		\param[in] is_lesser_endpoint_solid Self-descriptive
 		\param[in] solid_voxel Voxel ID of the solid endpoint
 	*/
-	explicit HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z,
-	                          const glm::vec3 &normal, double offset,
-	                          int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept;
+	explicit HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z, const glm::vec3 &normal,
+		double offset, int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept;
 	HermiteDataEntry(HermiteDataEntry &&) = default;
 	HermiteDataEntry(const HermiteDataEntry &) = default;
-	HermiteDataEntry &operator = (HermiteDataEntry &&) = default;
-	HermiteDataEntry &operator = (const HermiteDataEntry &) = default;
+	HermiteDataEntry &operator=(HermiteDataEntry &&) = default;
+	HermiteDataEntry &operator=(const HermiteDataEntry &) = default;
 	~HermiteDataEntry() = default;
 
 	/// Returns surface normal in the surface-crossing point on this edge
@@ -84,7 +83,10 @@ public:
 	using coord_t = HermiteDataEntry::coord_t;
 
 	template<typename... Args>
-	void emplace(Args &&... args) { m_storage.emplace_back(std::forward<Args>(args)...); }
+	void emplace(Args &&...args)
+	{
+		m_storage.emplace_back(std::forward<Args>(args)...);
+	}
 	/** \brief Sorts stored edges by lesser endpoints (in YXZ order)
 
 		Using \ref findEdge is possible only when edges are sorted. Instead of calling this
@@ -118,4 +120,4 @@ private:
 	static bool entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept;
 };
 
-}
+} // namespace voxen::terrain

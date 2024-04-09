@@ -2,8 +2,8 @@
 
 #include <voxen/util/log.hpp>
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 
 namespace voxen::terrain
 {
@@ -20,7 +20,7 @@ ChunkCache::ChunkCache() : m_sets(NUM_SETS)
 
 bool ChunkCache::tryLoad(Chunk &chunk) noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(chunk.id());
+	auto [set_id, chunk_pos_in_set] = findSetAndIndex(chunk.id());
 	if (chunk_pos_in_set == SET_SIZE) {
 		// Not found
 		return false;
@@ -70,7 +70,7 @@ void ChunkCache::insert(extras::refcnt_ptr<Chunk> ptr) noexcept
 
 void ChunkCache::invalidate(ChunkId id) noexcept
 {
-	auto[set_id, chunk_pos_in_set] = findSetAndIndex(id);
+	auto [set_id, chunk_pos_in_set] = findSetAndIndex(id);
 
 	if (chunk_pos_in_set != SET_SIZE) {
 		m_sets[set_id][chunk_pos_in_set].reset();
@@ -92,4 +92,4 @@ std::pair<size_t, size_t> ChunkCache::findSetAndIndex(ChunkId id) const noexcept
 	return { set_id, SET_SIZE };
 }
 
-}
+} // namespace voxen::terrain

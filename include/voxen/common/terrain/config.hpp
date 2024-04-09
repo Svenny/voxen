@@ -62,4 +62,4 @@ using voxel_t = uint8_t;
 // runtime to ever reach values that large (more than 4 billion edits of a single chunk).
 using chunk_ver_t = uint32_t;
 
-}
+} // namespace voxen::terrain

@@ -29,7 +29,7 @@ struct IhdrChunk {
 	constexpr static uint8_t CHANNELS_RGBA = 6;
 
 	uint8_t chunk_length[4] = { 0x00, 0x00, 0x00, 0x0D }; // Always 13 bytes
-	uint8_t chunk_type[4] = { 0x49, 0x48, 0x44, 0x52 }; // Letters IHDR
+	uint8_t chunk_type[4] = { 0x49, 0x48, 0x44, 0x52 };   // Letters IHDR
 
 	uint8_t width[4];
 	uint8_t height[4];
@@ -43,9 +43,9 @@ struct IhdrChunk {
 };
 
 struct IendChunk {
-	uint8_t chunk_length[4] = {}; // No data
+	uint8_t chunk_length[4] = {};                       // No data
 	uint8_t chunk_type[4] = { 0x49, 0x45, 0x4E, 0x44 }; // Letters IEND
-	uint8_t chunk_crc[4] = { 0xAE, 0x42, 0x60, 0x82 }; // Precomputed CRC
+	uint8_t chunk_crc[4] = { 0xAE, 0x42, 0x60, 0x82 };  // Precomputed CRC
 };
 #pragma pack(pop)
 
@@ -220,4 +220,4 @@ extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, co
 	return output;
 }
 
-}
+} // namespace voxen::assets

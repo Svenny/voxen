@@ -17,71 +17,70 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
-#include <string>
 #include <set>
+#include <string>
 #include <thread>
 #include <variant>
 
 static const std::string kCliSectionSeparator = "__";
 
-cxxopts::Options initCli() {
+cxxopts::Options initCli()
+{
 	using namespace voxen;
 
 	cxxopts::Options options("voxen", "VOXEN - avesome VOXel ENgine and game");
 	Config::Scheme scheme = Config::mainConfigScheme();
 
-	for(Config::SchemeEntry& entry : scheme) {
-		const std::string& arg_name = entry.section + kCliSectionSeparator + entry.parameter_name;
+	for (Config::SchemeEntry &entry : scheme) {
+		const std::string &arg_name = entry.section + kCliSectionSeparator + entry.parameter_name;
 
 		std::shared_ptr<cxxopts::Value> default_cli_value;
-		switch(entry.default_value.index())
-		{
-			case 0:
-				static_assert(std::is_same_v<std::string,   std::variant_alternative_t<0, voxen::Config::option_t>>);
-				default_cli_value = cxxopts::value<std::string>();
-				break;
+		switch (entry.default_value.index()) {
+		case 0:
+			static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, voxen::Config::option_t>>);
+			default_cli_value = cxxopts::value<std::string>();
+			break;
 
-			case 1:
-				static_assert(std::is_same_v<int64_t,   std::variant_alternative_t<1, voxen::Config::option_t>>);
-				default_cli_value = cxxopts::value<int>();
-				break;
+		case 1:
+			static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, voxen::Config::option_t>>);
+			default_cli_value = cxxopts::value<int>();
+			break;
 
-			case 2:
-				static_assert(std::is_same_v<double,   std::variant_alternative_t<2, voxen::Config::option_t>>);
-				default_cli_value = cxxopts::value<double>();
-				break;
+		case 2:
+			static_assert(std::is_same_v<double, std::variant_alternative_t<2, voxen::Config::option_t>>);
+			default_cli_value = cxxopts::value<double>();
+			break;
 
-			case 3:
-				static_assert(std::is_same_v<bool,   std::variant_alternative_t<3, voxen::Config::option_t>>);
-				// Minor UX convenience. This allows use bool flag like `--dev__fps_logging` instead of strict `--dev__fps_loggin=true` form
-				default_cli_value = cxxopts::value<bool>()->default_value("true");
-				break;
+		case 3:
+			static_assert(std::is_same_v<bool, std::variant_alternative_t<3, voxen::Config::option_t>>);
+			// Minor UX convenience. This allows use bool flag like `--dev__fps_logging` instead of strict `--dev__fps_loggin=true` form
+			default_cli_value = cxxopts::value<bool>()->default_value("true");
+			break;
 
-			default:
-				static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
-				break;
+		default:
+			static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
+			break;
 		}
-		options.add_options(entry.section)
-			(arg_name, entry.description, default_cli_value);
+		options.add_options(entry.section)(arg_name, entry.description, default_cli_value);
 	}
-	options.add_options()
-		("h,help", "Display help information")
-		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
+	options.add_options()("h,help", "Display help information")("p,profile", "Profile name",
+		cxxopts::value<std::string>()->default_value("default"));
 
 	voxen::RuntimeConfig::addOptions(options);
 
 	return options;
 }
 
-void patchConfig(const cxxopts::ParseResult &result, voxen::Config* config) {
-	for (const auto& keyvalue : result.arguments()) {
+void patchConfig(const cxxopts::ParseResult &result, voxen::Config *config)
+{
+	for (const auto &keyvalue : result.arguments()) {
 		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
 		if (sep_idx == std::string::npos) {
 			continue;
 		}
 
 		std::string section = keyvalue.key().substr(0, sep_idx);
-		std::string parameter = keyvalue.key().substr(sep_idx+kCliSectionSeparator.size());
+		std::string parameter = keyvalue.key().substr(sep_idx + kCliSectionSeparator.size());
 
 		config->patch(section, parameter, keyvalue.value());
 	}
@@ -135,7 +134,7 @@ int main(int argc, char *argv[])
 
 		voxen::FileManager::setProfileName(argv[0], result["profile"].as<std::string>());
 
-		voxen::Config* main_voxen_config = voxen::Config::mainConfig();
+		voxen::Config *main_voxen_config = voxen::Config::mainConfig();
 		patchConfig(result, main_voxen_config);
 
 		bool isLoggingFPSEnable = main_voxen_config->getBool("dev", "fps_logging");

@@ -51,4 +51,4 @@ void ChunkControlBlock::validateState(bool has_active_parent, bool can_chunk_cha
 	}
 }
 
-}
+} // namespace voxen::terrain

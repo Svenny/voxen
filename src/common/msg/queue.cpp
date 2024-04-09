@@ -20,8 +20,8 @@ public:
 
 	Shard(Shard &&) = delete;
 	Shard(const Shard &) = delete;
-	Shard &operator = (Shard &&) = delete;
-	Shard &operator = (const Shard &) = delete;
+	Shard &operator=(Shard &&) = delete;
+	Shard &operator=(const Shard &) = delete;
 
 	~Shard() noexcept
 	{
@@ -190,4 +190,4 @@ uint32_t Queue::thisThreadShard() noexcept
 	return hash % Config::NUM_QUEUE_SHARDS;
 }
 
-}
+} // namespace voxen::msg

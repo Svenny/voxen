@@ -8,4 +8,4 @@ static_assert(sizeof(MessagePayloadStore) >= sizeof(void *), "Payload store is t
 static_assert(sizeof(Message) == Config::MESSAGE_SIZE, "MESSAGE_SIZE is not respected");
 static_assert(std::is_trivially_copyable_v<Message>, "Message type must be trivially copyable");
 
-}
+} // namespace voxen::msg

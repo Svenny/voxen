@@ -37,4 +37,4 @@ public:
 	static extras::dyn_array<std::byte> pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y);
 };
 
-}
+} // namespace voxen::assets

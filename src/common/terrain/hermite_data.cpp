@@ -1,8 +1,8 @@
 #include <voxen/common/terrain/hermite_data.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 
 namespace voxen::terrain
 {
@@ -19,11 +19,13 @@ static float unorm24ToFloat(uint32_t value) noexcept
 
 // --- HermiteDataEntry ---
 
-HermiteDataEntry::HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z,
-                                   const glm::vec3 &normal, double offset,
-                                   int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept
-	: m_axis(uint32_t(axis)), m_solid_voxel(solid_voxel),
-	  m_lesser_x(lesser_x), m_lesser_y(lesser_y), m_lesser_z(lesser_z)
+HermiteDataEntry::HermiteDataEntry(coord_t lesser_x, coord_t lesser_y, coord_t lesser_z, const glm::vec3 &normal,
+	double offset, int axis, bool is_lesser_endpoint_solid, voxel_t solid_voxel) noexcept
+	: m_axis(uint32_t(axis))
+	, m_solid_voxel(solid_voxel)
+	, m_lesser_x(lesser_x)
+	, m_lesser_y(lesser_y)
+	, m_lesser_z(lesser_z)
 {
 	assert(offset >= 0.0 && offset <= 1.0);
 	assert(axis >= 0 && axis <= 2);
@@ -40,8 +42,9 @@ glm::vec3 HermiteDataEntry::surfaceNormal() const noexcept
 {
 	float y_squared = 1.0f - m_normal_x * m_normal_x - m_normal_z * m_normal_z;
 	float normal_y = std::sqrt(std::max(0.0f, y_squared));
-	if (m_normal_y_sign)
+	if (m_normal_y_sign) {
 		normal_y = -normal_y;
+	}
 	return { m_normal_x, normal_y, m_normal_z };
 }
 
@@ -69,8 +72,8 @@ glm::ivec3 HermiteDataEntry::biggerEndpoint() const noexcept
 bool HermiteDataStorage::entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept
 {
 	// Compare as (Y, X, Z) tuples
-	return std::make_tuple(a.m_lesser_y, a.m_lesser_x, a.m_lesser_z) <
-	       std::make_tuple(b.m_lesser_y, b.m_lesser_x, b.m_lesser_z);
+	return std::make_tuple(a.m_lesser_y, a.m_lesser_x, a.m_lesser_z)
+		< std::make_tuple(b.m_lesser_y, b.m_lesser_x, b.m_lesser_z);
 }
 
 void HermiteDataStorage::sort() noexcept
@@ -85,8 +88,9 @@ HermiteDataStorage::iterator HermiteDataStorage::find(coord_t x, coord_t y, coor
 	sample.m_lesser_y = y;
 	sample.m_lesser_z = z;
 	auto iter = std::lower_bound(m_storage.begin(), m_storage.end(), sample, entryLess);
-	if (iter == m_storage.end())
+	if (iter == m_storage.end()) {
 		return iter;
+	}
 	if (iter->m_lesser_x != x || iter->m_lesser_y != y || iter->m_lesser_z != z) {
 		// `lower_bound` found wrong value, this means there is no `sample` in the container
 		return end();
@@ -111,4 +115,4 @@ HermiteDataStorage::const_iterator HermiteDataStorage::find(coord_t x, coord_t y
 	return iter;
 }
 
-}
+} // namespace voxen::terrain

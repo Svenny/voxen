@@ -33,4 +33,4 @@ public:
 	constexpr static uint32_t QUEUE_SEGMENT_SIZE = 32;
 };
 
-}
+} // namespace voxen::msg

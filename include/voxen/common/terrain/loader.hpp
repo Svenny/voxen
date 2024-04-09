@@ -7,7 +7,7 @@
 #include <mutex>
 
 #if VOXEN_DEBUG_BUILD == 1
-#include <unordered_set>
+	#include <unordered_set>
 #endif /* VOXEN_DEBUG_BUILD */
 
 namespace voxen::terrain
@@ -29,4 +29,4 @@ private:
 #endif /* VOXEN_DEBUG_BUILD */
 };
 
-}
+} // namespace voxen::terrain

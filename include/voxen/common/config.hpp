@@ -36,7 +36,7 @@ public:
 
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
 	void patch(std::string_view section, std::string_view parameter_name, std::string_view value_string,
-	           bool saveToConfigFile = false, Location loc = Location::current());
+		bool saveToConfigFile = false, Location loc = Location::current());
 
 	std::optional<std::string> optionString(std::string_view section, std::string_view parameter_name) const;
 	std::optional<int64_t> optionInt64(std::string_view section, std::string_view parameter_name) const;
@@ -45,14 +45,12 @@ public:
 	std::optional<bool> optionBool(std::string_view section, std::string_view parameter_name) const;
 
 	int32_t getInt32(std::string_view section, std::string_view parameter_name,
-	                 Location loc = Location::current()) const;
+		Location loc = Location::current()) const;
 	double getDouble(std::string_view section, std::string_view parameter_name,
-	                 Location loc = Location::current()) const;
-	bool getBool(std::string_view section, std::string_view parameter_name,
-	             Location loc = Location::current()) const;
+		Location loc = Location::current()) const;
+	bool getBool(std::string_view section, std::string_view parameter_name, Location loc = Location::current()) const;
 
 public:
-
 	// Global config scheme
 	static Scheme mainConfigScheme();
 
@@ -74,4 +72,4 @@ private:
 	static const std::filesystem::path kMainConfigRelPath;
 };
 
-}
+} // namespace voxen

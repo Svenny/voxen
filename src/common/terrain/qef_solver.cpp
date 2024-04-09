@@ -30,12 +30,13 @@ static std::pair<T, T> calcSinCosAccurate(T tan_twophi)
 template<typename T>
 static void rotate(glm::mat<3, 3, T> &A, glm::mat<3, 3, T> &H, T c, T s, int i, int j)
 {
-#define jacobiRotate(i, j, k) { \
-	float aik = A[glm::min(i, k)][glm::max(i, k)]; \
-	float ajk = A[glm::min(j, k)][glm::max(j, k)]; \
-	A[glm::min(i, k)][glm::max(i, k)] = c * aik + s * ajk; \
-	A[glm::min(j, k)][glm::max(j, k)] = -s * aik + c * ajk; \
-}
+#define jacobiRotate(i, j, k) \
+	{ \
+		float aik = A[glm::min(i, k)][glm::max(i, k)]; \
+		float ajk = A[glm::min(j, k)][glm::max(j, k)]; \
+		A[glm::min(i, k)][glm::max(i, k)] = c * aik + s * ajk; \
+		A[glm::min(j, k)][glm::max(j, k)] = -s * aik + c * ajk; \
+	}
 	if (i == 0 && j == 1) {
 		jacobiRotate(0, 1, 2);
 	} else if (i == 0 && j == 2) {
@@ -61,12 +62,13 @@ static void rotate(glm::mat<3, 3, T> &A, glm::mat<3, 3, T> &H, T c, T s, int i, 
 template<typename T>
 static void rotate(glm::mat<4, 4, T> &A, glm::mat<4, 4, T> &H, T c, T s, int i, int j)
 {
-#define jacobiRotate(i, j, k) { \
-	float aik = A[glm::min(i, k)][glm::max(i, k)]; \
-	float ajk = A[glm::min(j, k)][glm::max(j, k)]; \
-	A[glm::min(i, k)][glm::max(i, k)] = c * aik + s * ajk; \
-	A[glm::min(j, k)][glm::max(j, k)] = -s * aik + c * ajk; \
-}
+#define jacobiRotate(i, j, k) \
+	{ \
+		float aik = A[glm::min(i, k)][glm::max(i, k)]; \
+		float ajk = A[glm::min(j, k)][glm::max(j, k)]; \
+		A[glm::min(i, k)][glm::max(i, k)] = c * aik + s * ajk; \
+		A[glm::min(j, k)][glm::max(j, k)] = -s * aik + c * ajk; \
+	}
 	if (i == 0 && j == 1) {
 		jacobiRotate(0, 1, 2);
 		jacobiRotate(0, 1, 3);
@@ -101,11 +103,11 @@ static void rotate(glm::mat<4, 4, T> &A, glm::mat<4, 4, T> &H, T c, T s, int i, 
 	}
 }
 
-}
+} // namespace jacobi_detail
 
 template<typename T, int D>
-static std::pair<glm::vec<D, T>, glm::mat<D, D, T> > jacobi(glm::mat<D, D, T> A, T tolerance,
-                                                            int max_iters, bool use_fast_sincos)
+static std::pair<glm::vec<D, T>, glm::mat<D, D, T> > jacobi(glm::mat<D, D, T> A, T tolerance, int max_iters,
+	bool use_fast_sincos)
 {
 	using namespace jacobi_detail;
 	glm::mat<D, D, T> E { T(1) };
@@ -170,8 +172,7 @@ static void householder(T A[N][M], int used_rows)
 		if (norm < std::numeric_limits<T>::min()) {
 			v[i] = T(1);
 			invgamma = T(2);
-		}
-		else {
+		} else {
 			T mult = T(1) / glm::sqrt(norm);
 			for (int j = i; j < used_rows; j++) {
 				v[j] = A[i][j] * mult;
@@ -238,6 +239,7 @@ void QefSolver3D::merge(const State &data) noexcept
 	}
 
 	int id = m_usedRows;
+	// clang-format off
 	A[0][id] = data.a_11; A[1][id] = data.a_12; A[2][id] = data.a_13; A[3][id] = data.b_1;
 	id++;
 	A[0][id] =         0; A[1][id] = data.a_22; A[2][id] = data.a_23; A[3][id] = data.b_2;
@@ -245,6 +247,7 @@ void QefSolver3D::merge(const State &data) noexcept
 	A[0][id] =         0; A[1][id] =         0; A[2][id] = data.a_33; A[3][id] = data.b_3;
 	id++;
 	A[0][id] =         0; A[1][id] =         0; A[2][id] =         0; A[3][id] =  data.r2;
+	// clang-format on
 	m_usedRows += 4;
 }
 
@@ -253,18 +256,20 @@ QefSolver3D::State QefSolver3D::state() noexcept
 	compressMatrix();
 
 	// Is it really safe to assume nobody will ever add 2^30 points? :P
-	assert (m_pointsCount < (1u << 30u));
+	assert(m_pointsCount < (1u << 30u));
 
 	return State {
+		// clang-format off
 		.a_11 = A[0][0], .a_12 = A[1][0], .a_13 = A[2][0], .b_1 = A[3][0],
 		                 .a_22 = A[1][1], .a_23 = A[2][1], .b_2 = A[3][1],
 		                                  .a_33 = A[2][2], .b_3 = A[3][2],
 		                                                   .r2  = A[3][3],
+		// clang-format on
 		.mpx = m_pointsSum.x,
 		.mpy = m_pointsSum.y,
 		.mpz = m_pointsSum.z,
 		.mp_cnt = m_pointsCount,
-		.dim = m_featureDim
+		.dim = m_featureDim,
 	};
 }
 
@@ -308,13 +313,15 @@ glm::vec3 QefSolver3D::solve(glm::vec3 min_point, glm::vec3 max_point)
 		AT = glm::transpose(M);
 		ATA = AT * M;
 	}
-	auto[e, E] = jacobi(ATA, m_jacobiTolerance, m_maxJacobiIters, m_useFastFormulas);
+	auto [e, E] = jacobi(ATA, m_jacobiTolerance, m_maxJacobiIters, m_useFastFormulas);
 	glm::mat3 sigma { 0.0f };
 	m_featureDim = 3;
 	for (int i = 0; i < 3; i++) {
-		if (std::abs(e[i]) >= m_pinvTolerance)
+		if (std::abs(e[i]) >= m_pinvTolerance) {
 			sigma[i][i] = 1.0f / e[i];
-		else m_featureDim--;
+		} else {
+			m_featureDim--;
+		}
 	}
 	glm::mat3 ATAp = E * sigma * glm::transpose(E);
 	glm::vec3 p = m_pointsSum / float(m_pointsCount);
@@ -330,4 +337,4 @@ void QefSolver3D::compressMatrix() noexcept
 	m_usedRows = 4;
 }
 
-}
+} // namespace voxen

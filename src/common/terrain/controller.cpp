@@ -1,16 +1,16 @@
 #include <voxen/common/terrain/controller.hpp>
 
-#include <voxen/common/threadpool.hpp>
 #include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/coord.hpp>
+#include <voxen/common/threadpool.hpp>
 #include <voxen/util/hash.hpp>
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/trigonometric.hpp>
 
 #include <algorithm>
 
@@ -108,7 +108,7 @@ void Controller::setPointOfInterest(uint32_t id, const glm::dvec3 &position)
 	m_points_of_interest.emplace_back(PointOfInterest {
 		.id = id,
 		.age = 0,
-		.position = position
+		.position = position,
 	});
 }
 
@@ -150,9 +150,8 @@ void Controller::garbageCollectPointsOfInterest()
 		point.age++;
 	}
 
-	points.erase(std::remove_if(points.begin(), points.end(), [](const PointOfInterest &point) {
-		return point.age > Config::POINT_OF_INTEREST_MAX_AGE;
-	}), points.end());
+	auto eraser = [](const PointOfInterest &point) { return point.age > Config::POINT_OF_INTEREST_MAX_AGE; };
+	points.erase(std::remove_if(points.begin(), points.end(), eraser), points.end());
 }
 
 void Controller::engageSuperchunks()
@@ -189,7 +188,10 @@ Controller::ControlBlockPtr Controller::loadSuperchunk(glm::ivec3 base)
 {
 	base <<= Config::CHUNK_MAX_LOD;
 	return enqueueLoadingChunk(ChunkId {
-		.lod = Config::CHUNK_MAX_LOD, .base_x = base.x, .base_y = base.y, .base_z = base.z
+		.lod = Config::CHUNK_MAX_LOD,
+		.base_x = base.x,
+		.base_y = base.y,
+		.base_z = base.z,
 	});
 }
 
@@ -198,15 +200,12 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 	// Chunk will be filled by `TerrainLoader`
 	auto chunk_ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
 		.id = id,
-		.version = 0
+		.version = 0,
 	});
 
 	assert(!m_async_chunk_loads.contains(id));
 	m_async_chunk_loads[id] = ThreadPool::globalVoxenPool().enqueueTask(ThreadPool::TaskType::Standard,
-		[this, chunk_ptr]() {
-			m_loader.load(*chunk_ptr);
-		}
-	);
+		[this, chunk_ptr]() { m_loader.load(*chunk_ptr); });
 
 	auto cb_ptr = std::make_unique<ChunkControlBlock>();
 	cb_ptr->setState(ChunkControlBlock::State::Loading);
@@ -404,4 +403,4 @@ size_t Controller::VecHasher::operator()(const glm::ivec3 &v) const noexcept
 	return hashXorshift32(reinterpret_cast<const uint32_t *>(glm::value_ptr(v)), 3);
 }
 
-}
+} // namespace voxen::terrain

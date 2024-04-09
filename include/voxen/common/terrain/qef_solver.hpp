@@ -18,10 +18,12 @@ public:
 	*/
 	struct State {
 		// Compressed matrix, only nonzero elements
+		// clang-format off
 		float a_11, a_12, a_13, b_1;
 		float       a_22, a_23, b_2;
 		float             a_33, b_3;
 		float                    r2;
+		// clang-format on
 		// Sum of added points
 		float mpx, mpy, mpz;
 		// Added points count and feature dimension
@@ -77,9 +79,9 @@ public:
 	int maxJacobiIters() const noexcept { return m_maxJacobiIters; }
 	bool fastFormulasUsed() const noexcept { return m_useFastFormulas; }
 
-	void setPinvTolerance(float value) noexcept { m_pinvTolerance = glm::max (0.0f, value); }
-	void setJacobiTolerance(float value) noexcept { m_jacobiTolerance = glm::max (0.0f, value); }
-	void setMaxJacobiIters(int value) noexcept { m_maxJacobiIters = glm::max (1, value); }
+	void setPinvTolerance(float value) noexcept { m_pinvTolerance = glm::max(0.0f, value); }
+	void setJacobiTolerance(float value) noexcept { m_jacobiTolerance = glm::max(0.0f, value); }
+	void setMaxJacobiIters(int value) noexcept { m_maxJacobiIters = glm::max(1, value); }
 	void useFastFormulas(bool value) noexcept { m_useFastFormulas = value; }
 
 private:
@@ -115,4 +117,4 @@ private:
 	void compressMatrix() noexcept;
 };
 
-}
+} // namespace voxen

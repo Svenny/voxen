@@ -64,4 +64,4 @@ void TerrainLoader::unload(extras::refcnt_ptr<Chunk> chunk)
 	// Currently chunks are just dropped
 }
 
-}
+} // namespace voxen::terrain

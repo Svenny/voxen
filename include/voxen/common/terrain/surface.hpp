@@ -43,8 +43,8 @@ public:
 	ChunkSurface() = default;
 	ChunkSurface(ChunkSurface &&) = default;
 	ChunkSurface(const ChunkSurface &) = default;
-	ChunkSurface &operator = (ChunkSurface &&) = default;
-	ChunkSurface &operator = (const ChunkSurface &) = default;
+	ChunkSurface &operator=(ChunkSurface &&) = default;
+	ChunkSurface &operator=(const ChunkSurface &) = default;
 	~ChunkSurface() = default;
 
 	// Remove all added vertices and indices and reset AABB
@@ -72,4 +72,4 @@ private:
 	Aabb m_aabb;
 };
 
-}
+} // namespace voxen::terrain

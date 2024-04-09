@@ -5,17 +5,20 @@
 namespace voxen
 {
 
-Player::Player() {
+Player::Player()
+{
 	updateSecondaryFactors();
 }
 
-void Player::updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept {
+void Player::updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept
+{
 	m_position = new_pos;
 	m_orientation = new_rot;
 	updateSecondaryFactors();
 }
 
-void Player::updateSecondaryFactors() noexcept {
+void Player::updateSecondaryFactors() noexcept
+{
 	glm::dmat3 rot_mat = glm::mat3_cast(m_orientation);
 
 	m_look_vector = extras::dirFromOrientation(rot_mat);
@@ -23,4 +26,4 @@ void Player::updateSecondaryFactors() noexcept {
 	m_up_vector = extras::upFromOrientation(rot_mat);
 }
 
-}
+} // namespace voxen

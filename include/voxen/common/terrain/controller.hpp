@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/terrain/loader.hpp>
 #include <voxen/common/terrain/control_block.hpp>
+#include <voxen/common/terrain/loader.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
@@ -29,8 +29,8 @@ public:
 	Controller() = default;
 	Controller(Controller &&) = delete;
 	Controller(const Controller &&) = delete;
-	Controller &operator = (Controller &&) = delete;
-	Controller &operator = (const Controller &) = delete;
+	Controller &operator=(Controller &&) = delete;
+	Controller &operator=(const Controller &) = delete;
 	~Controller() = default;
 
 	std::vector<ChunkPtr> doTick();
@@ -82,4 +82,4 @@ private:
 	InnerUpdateResult updateChunkActive(ChunkControlBlock &cb, ParentCommand parent_cmd);
 };
 
-}
+} // namespace voxen::terrain

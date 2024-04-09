@@ -17,4 +17,4 @@ struct ChunkPrimaryData final {
 	void clear() noexcept;
 };
 
-}
+} // namespace voxen::terrain

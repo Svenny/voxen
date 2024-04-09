@@ -32,4 +32,4 @@ RuntimeConfig &RuntimeConfig::instance() noexcept
 	return g_instance;
 }
 
-}
+} // namespace voxen

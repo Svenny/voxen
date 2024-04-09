@@ -19,11 +19,11 @@ class Chunk;
 //TODO actual real queue
 struct DebugQueueRtW {
 	std::mutex mutex;
-	glm::dvec3 player_forward_movement_direction{0.0f};
-	glm::dvec3 player_strafe_movement_direction{0.0f};
+	glm::dvec3 player_forward_movement_direction { 0.0f };
+	glm::dvec3 player_strafe_movement_direction { 0.0f };
 	glm::dquat player_orientation = glm::identity<glm::dquat>();
-	double strafe_speed{50};
-	double forward_speed{25};
+	double strafe_speed { 50 };
+	double forward_speed { 25 };
 	bool lock_chunk_loading_position;
 };
 
@@ -36,8 +36,8 @@ public:
 	WorldState() = default;
 	WorldState(WorldState &&other) noexcept;
 	WorldState(const WorldState &other);
-	WorldState &operator = (WorldState &&) = delete;
-	WorldState &operator = (const WorldState &) = delete;
+	WorldState &operator=(WorldState &&) = delete;
+	WorldState &operator=(const WorldState &) = delete;
 	~WorldState() = default;
 
 	Player &player() noexcept { return m_player; }
@@ -59,4 +59,4 @@ private:
 	uint64_t m_tick_id = 0;
 };
 
-}
+} // namespace voxen

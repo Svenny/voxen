@@ -1,11 +1,11 @@
 #pragma once
 
-#include <voxen/client/window.hpp>
 #include <voxen/client/player_action_events.hpp>
+#include <voxen/client/window.hpp>
 
+#include <chrono>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <chrono>
 
 namespace voxen
 {
@@ -18,7 +18,7 @@ public:
 	GameView(client::Window& window);
 
 	void init(const Player& player) noexcept;
-	void update (const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
+	void update(const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
@@ -26,10 +26,10 @@ public:
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
 
-	const glm::mat4 &viewToClip() const noexcept { return m_view_to_clip; }
-	const glm::mat4 &translatedWorldToView() const noexcept { return m_tr_world_to_view; }
-	const glm::mat4 &translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
-	const glm::dvec3 &cameraPosition() const noexcept { return m_cam_position; }
+	const glm::mat4& viewToClip() const noexcept { return m_view_to_clip; }
+	const glm::mat4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
+	const glm::mat4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
+	const glm::dvec3& cameraPosition() const noexcept { return m_cam_position; }
 
 private:
 	enum Direction : int {
@@ -87,4 +87,4 @@ private:
 	void resetKeyState() noexcept;
 };
 
-}
+} // namespace voxen

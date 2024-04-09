@@ -5,10 +5,9 @@
 namespace voxen::terrain
 {
 
-Chunk::Chunk(CreationInfo info) : m_id(info.id), m_version(info.version)
-{}
+Chunk::Chunk(CreationInfo info) : m_id(info.id), m_version(info.version) {}
 
-Chunk &Chunk::operator = (Chunk &&other) noexcept
+Chunk &Chunk::operator=(Chunk &&other) noexcept
 {
 	assert(m_id == other.m_id);
 
@@ -22,8 +21,8 @@ Chunk &Chunk::operator = (Chunk &&other) noexcept
 
 bool Chunk::hasSurface() const noexcept
 {
-	return !m_primary_data.hermite_data_x.empty() || !m_primary_data.hermite_data_y.empty() ||
-	       !m_primary_data.hermite_data_z.empty();
+	return !m_primary_data.hermite_data_x.empty() || !m_primary_data.hermite_data_y.empty()
+		|| !m_primary_data.hermite_data_z.empty();
 }
 
-}
+} // namespace voxen::terrain

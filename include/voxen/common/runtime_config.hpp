@@ -10,7 +10,7 @@ namespace cxxopts
 class Options;
 class ParseResult;
 
-}
+} // namespace cxxopts
 
 namespace voxen
 {
@@ -24,7 +24,6 @@ class GfxRuntimeConfig;
 
 class VOXEN_API RuntimeConfig final {
 public:
-
 	// Sub-config for graphics subsystem
 	const client::GfxRuntimeConfig &gfxConfig() const noexcept;
 
@@ -41,4 +40,4 @@ private:
 	extras::pimpl<Impl, 256, 8> m_impl;
 };
 
-}
+} // namespace voxen

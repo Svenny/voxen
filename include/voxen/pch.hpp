@@ -18,8 +18,8 @@
 #include <extras/string_utils.hpp>
 
 // `glm.hpp` and `ext.hpp` should include all non-experimental GLM
-#include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <glm/glm.hpp>
 
 // Not sure if there are headers not transitively included by these
 #include <fmt/compile.h>
