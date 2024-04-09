@@ -24,8 +24,7 @@ public:
 
 	refcnt_ptr() = default;
 
-	explicit refcnt_ptr(T *object, manager_type manager) noexcept : m_object(object), m_manager(manager)
-	{}
+	explicit refcnt_ptr(T *object, manager_type manager) noexcept : m_object(object), m_manager(manager) {}
 
 	refcnt_ptr(refcnt_ptr &&other) noexcept
 	{
@@ -38,14 +37,14 @@ public:
 		acquire_ref();
 	}
 
-	refcnt_ptr &operator = (refcnt_ptr &&other) noexcept
+	refcnt_ptr &operator=(refcnt_ptr &&other) noexcept
 	{
 		std::swap(m_object, other.m_object);
 		std::swap(m_manager, other.m_manager);
 		return *this;
 	}
 
-	refcnt_ptr &operator = (const refcnt_ptr &other) noexcept
+	refcnt_ptr &operator=(const refcnt_ptr &other) noexcept
 	{
 		if (m_object == other.m_object) {
 			// All refcnt logic is no-op if object is the same
@@ -70,9 +69,9 @@ public:
 
 	T *get() const noexcept { return m_object; }
 
-	explicit operator bool () const noexcept { return m_object != nullptr; }
-	std::add_lvalue_reference_t<T> operator * () const noexcept(noexcept(*m_object)) { return *m_object; }
-	T *operator -> () const noexcept { return m_object; }
+	explicit operator bool() const noexcept { return m_object != nullptr; }
+	std::add_lvalue_reference_t<T> operator*() const noexcept(noexcept(*m_object)) { return *m_object; }
+	T *operator->() const noexcept { return m_object; }
 
 private:
 	void acquire_ref() noexcept
@@ -93,4 +92,4 @@ private:
 	manager_type m_manager;
 };
 
-}
+} // namespace extras

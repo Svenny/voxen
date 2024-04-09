@@ -37,12 +37,13 @@ template<typename F, bool FAIL_ONLY = false>
 class defer_finalizer {
 public:
 	template<typename T>
-	defer_finalizer(T &&f_) noexcept : f(std::forward<T>(f_)) {}
+	defer_finalizer(T &&f_) noexcept : f(std::forward<T>(f_))
+	{}
 
 	defer_finalizer(defer_finalizer &&) = delete;
 	defer_finalizer(const defer_finalizer &) = delete;
-	defer_finalizer &operator = (defer_finalizer &&) = delete;
-	defer_finalizer &operator = (const defer_finalizer &) = delete;
+	defer_finalizer &operator=(defer_finalizer &&) = delete;
+	defer_finalizer &operator=(const defer_finalizer &) = delete;
 
 	~defer_finalizer() noexcept
 	{
@@ -54,27 +55,28 @@ public:
 
 		f();
 	}
+
 private:
 	F f;
 };
 
 [[maybe_unused]] static struct {
 	template<typename F>
-	defer_finalizer<F> operator << (F &&f) noexcept
+	defer_finalizer<F> operator<<(F &&f) noexcept
 	{
 		return defer_finalizer<F>(std::forward<F>(f));
 	}
 
 	template<typename F>
-	defer_finalizer<F, true> operator >> (F &&f) noexcept
+	defer_finalizer<F, true> operator>>(F &&f) noexcept
 	{
 		return defer_finalizer<F, true>(std::forward<F>(f));
 	}
 } deferrer;
 
-}
+} // namespace extras
 
-#define DEFER_TOKENPASTE(x, y) x ## y
+#define DEFER_TOKENPASTE(x, y) x##y
 #define DEFER_TOKENPASTE2(x, y) DEFER_TOKENPASTE(x, y)
 #define defer auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::deferrer << [&]() noexcept
 #define defer_fail auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::deferrer >> [&]() noexcept

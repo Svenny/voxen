@@ -13,7 +13,8 @@ TEST_CASE("'bitset' free-list features work properly", "[extras::bitset]")
 	REQUIRE(set.occupy_zero() == 1);
 
 	// Occupy all bits
-	while (set.occupy_zero() < 511) {}
+	while (set.occupy_zero() < 511) {
+	}
 
 	REQUIRE(set.popcount() == 512);
 	REQUIRE(set.first_zero() == SIZE_MAX);

@@ -4,9 +4,9 @@
 #include <version>
 
 // System-dependent includes
+#include <emmintrin.h>
 #include <linux/futex.h>
 #include <sys/syscall.h>
-#include <emmintrin.h>
 #include <unistd.h>
 
 namespace extras
@@ -39,15 +39,15 @@ void futex::lock() noexcept
 		// We are the first to arrive at taken lock, spin for a short time in case it unlocks soon
 		_mm_pause();
 		spin_count++;
-	} while(expected == 1 && spin_count < MAX_SPIN_COUNT);
+	} while (expected == 1 && spin_count < MAX_SPIN_COUNT);
 
 	// Spinning wait failed, we have to use futex
 	do {
 		// Store 2 in the payload to mark there is at least one thread waiting on it
 		if (expected == 2 || m_payload.compare_exchange_weak(expected, 2, std::memory_order_relaxed)) [[likely]] {
 			// We are not the first to wait for this lock, go straight to waiting
-			long r = syscall(SYS_futex,
-				reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAIT_PRIVATE, 2, nullptr, nullptr, 0);
+			long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAIT_PRIVATE, 2, nullptr, nullptr,
+				0);
 			if (r == -1) {
 				// Are other errors even possible?
 				assert(errno == EAGAIN || errno == EINTR);
@@ -72,11 +72,11 @@ void futex::unlock() noexcept
 		// At least one other thread is waiting on this lock, wake someone up
 		m_payload.store(0, std::memory_order_release);
 
-		[[maybe_unused]] long r = syscall(SYS_futex,
-			reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
+		[[maybe_unused]] long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAKE_PRIVATE, 1,
+			nullptr, nullptr, 0);
 		// Can FUTEX_WAKE even fail?
 		assert(r != -1);
 	}
 }
 
-}
+} // namespace extras

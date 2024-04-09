@@ -33,8 +33,7 @@ TEST_CASE("'function_ref' can be created from various objects", "[extras::functi
 	REQUIRE(fn4);
 }
 
-static void dummy() noexcept
-{}
+static void dummy() noexcept {}
 
 TEST_CASE("'function_ref' handles noexcept properly", "[extras::function_ref]")
 {

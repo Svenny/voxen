@@ -11,8 +11,8 @@ public:
 	futex() = default;
 	futex(futex &&) = delete;
 	futex(const futex &) = delete;
-	futex &operator = (futex &&) = delete;
-	futex &operator = (const futex &) = delete;
+	futex &operator=(futex &&) = delete;
+	futex &operator=(const futex &) = delete;
 	~futex() = default;
 
 	void lock() noexcept;
@@ -23,4 +23,4 @@ private:
 	std::atomic_uint32_t m_payload = 0;
 };
 
-}
+} // namespace extras

@@ -48,4 +48,4 @@ constexpr inline std::underlying_type_t<T> enum_size_v = enum_size<T>::value;
 template<typename T>
 std::string_view enum_name(T value) noexcept;
 
-}
+} // namespace extras
