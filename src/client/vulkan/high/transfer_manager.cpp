@@ -10,9 +10,9 @@ namespace voxen::client::vulkan
 {
 
 TransferManager::TransferManager()
-	: m_command_pool(Backend::backend().physicalDevice().transferQueueFamily()),
-	m_command_buffers(m_command_pool.allocateCommandBuffers(1)),
-	m_staging_buffer(createStagingBuffer())
+	: m_command_pool(Backend::backend().physicalDevice().transferQueueFamily())
+	, m_command_buffers(m_command_pool.allocateCommandBuffers(1))
+	, m_staging_buffer(createStagingBuffer())
 {
 	m_staging_mapped_data = m_staging_buffer.allocation().tryHostMap();
 	// Asserting because buffer is allocated with `Upload` use case which guarantees host visibility
@@ -80,8 +80,9 @@ void TransferManager::uploadToBuffer(VkBuffer buffer, VkDeviceSize offset, const
 
 void TransferManager::ensureUploadsDone()
 {
-	if (m_staging_written == 0)
+	if (m_staging_written == 0) {
 		return;
+	}
 	// TODO: call vkFlushMappedMemoryRanges if allocation is in non-coherent memory
 	m_command_buffers[0].end();
 	m_staging_written = 0;
@@ -109,4 +110,4 @@ FatVkBuffer TransferManager::createStagingBuffer()
 	return FatVkBuffer(info, DeviceMemoryUseCase::Upload);
 }
 
-}
+} // namespace voxen::client::vulkan

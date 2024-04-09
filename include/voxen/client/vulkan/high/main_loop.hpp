@@ -6,8 +6,8 @@
 #include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/sync.hpp>
 
-#include <voxen/common/world_state.hpp>
 #include <voxen/common/gameview.hpp>
+#include <voxen/common/world_state.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -19,11 +19,12 @@ public:
 	MainLoop();
 	MainLoop(MainLoop &&) = delete;
 	MainLoop(const MainLoop &) = delete;
-	MainLoop &operator = (MainLoop &&) = delete;
-	MainLoop &operator = (const MainLoop &) = delete;
+	MainLoop &operator=(MainLoop &&) = delete;
+	MainLoop &operator=(const MainLoop &) = delete;
 	~MainLoop() noexcept;
 
 	void drawFrame(const WorldState &state, const GameView &view);
+
 private:
 	struct PendingFrameSyncs {
 		PendingFrameSyncs();
@@ -44,4 +45,4 @@ private:
 	void updateMainSceneUbo(const GameView &view);
 };
 
-}
+} // namespace voxen::client::vulkan

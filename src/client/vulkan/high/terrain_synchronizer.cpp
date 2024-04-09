@@ -2,8 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
+#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
@@ -25,35 +25,23 @@ public:
 	using Base = extras::linear_allocator<TerrainDataArena, uint32_t, ALIGNMENT>;
 	using Range = std::pair<uint32_t, uint32_t>;
 
-	explicit TerrainDataArena(const VkBufferCreateInfo &info) : Base(static_cast<uint32_t>(info.size)),
-		m_buffer(info, DeviceMemoryUseCase::GpuOnly)
+	explicit TerrainDataArena(const VkBufferCreateInfo &info)
+		: Base(static_cast<uint32_t>(info.size)), m_buffer(info, DeviceMemoryUseCase::GpuOnly)
 	{}
 
 	TerrainDataArena(TerrainDataArena &&) = delete;
 	TerrainDataArena(const TerrainDataArena &) = delete;
-	TerrainDataArena &operator = (TerrainDataArena &&) = delete;
-	TerrainDataArena &operator = (const TerrainDataArena &) = delete;
+	TerrainDataArena &operator=(TerrainDataArena &&) = delete;
+	TerrainDataArena &operator=(const TerrainDataArena &) = delete;
 	~TerrainDataArena() = default;
 
-	bool tryHostMap()
-	{
-		return !!m_buffer.allocation().tryHostMap();
-	}
+	bool tryHostMap() { return !!m_buffer.allocation().tryHostMap(); }
 
-	void *hostPointer() const noexcept
-	{
-		return m_buffer.allocation().hostPointer();
-	}
+	void *hostPointer() const noexcept { return m_buffer.allocation().hostPointer(); }
 
-	[[nodiscard]] std::optional<Range> allocate(uint32_t size)
-	{
-		return Base::allocate(size, ALIGNMENT);
-	}
+	[[nodiscard]] std::optional<Range> allocate(uint32_t size) { return Base::allocate(size, ALIGNMENT); }
 
-	void free(Range range) noexcept
-	{
-		Base::free(range);
-	}
+	void free(Range range) noexcept { Base::free(range); }
 
 	VkBuffer bufferHandle() const noexcept { return m_buffer.handle(); }
 
@@ -319,7 +307,7 @@ TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::slotToRenderInfo(const
 		.first_vertex = int32_t(slot.vertex_arena_offset / sizeof(terrain::SurfaceVertex)),
 		.first_index = uint32_t(slot.index_arena_offset / sizeof(uint32_t)),
 		.num_vertices = slot.num_vertices,
-		.num_indices = slot.num_indices
+		.num_indices = slot.num_indices,
 	};
 }
 
@@ -335,7 +323,7 @@ void TerrainSynchronizer::addVertexArena()
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		.sharingMode = has_dma ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 2,
-		.pQueueFamilyIndices = m_queue_families
+		.pQueueFamilyIndices = m_queue_families,
 	};
 	m_vertex_arenas.emplace_back(info);
 
@@ -368,7 +356,7 @@ void TerrainSynchronizer::addIndexArena()
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		.sharingMode = has_dma ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 2,
-		.pQueueFamilyIndices = m_queue_families
+		.pQueueFamilyIndices = m_queue_families,
 	};
 	m_index_arenas.emplace_back(info);
 
@@ -414,4 +402,4 @@ VkBuffer TerrainSynchronizer::arenaHandle(const std::list<TerrainDataArena> &lis
 	return iter->bufferHandle();
 }
 
-}
+} // namespace voxen::client::vulkan

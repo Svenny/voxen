@@ -23,16 +23,17 @@ static double toMegabytes(VkDeviceSize size) noexcept
 
 // --- DeviceAllocationArena ---
 
-class DeviceAllocationArena final :
-	private extras::linear_allocator<DeviceAllocationArena, uint32_t, Config::ALLOCATION_GRANULARITY> {
+class DeviceAllocationArena final
+	: private extras::linear_allocator<DeviceAllocationArena, uint32_t, Config::ALLOCATION_GRANULARITY> {
 public:
 	using Base = extras::linear_allocator<DeviceAllocationArena, uint32_t, Config::ALLOCATION_GRANULARITY>;
 	using Range = typename Base::range_type;
 
 	explicit DeviceAllocationArena(VkDeviceSize size, uint32_t memory_type,
-	                               const VkMemoryDedicatedAllocateInfo *dedicated_info)
-		: Base(static_cast<uint32_t>(size), dedicated_info ? 1 : Config::EXPECTED_PER_ARENA_ALLOCATIONS),
-		m_memory_type(memory_type), m_dedicated(dedicated_info != nullptr)
+		const VkMemoryDedicatedAllocateInfo *dedicated_info)
+		: Base(static_cast<uint32_t>(size), dedicated_info ? 1 : Config::EXPECTED_PER_ARENA_ALLOCATIONS)
+		, m_memory_type(memory_type)
+		, m_dedicated(dedicated_info != nullptr)
 	{
 		// We use 32-bit offsets in free blocks for more compact storage.
 		// Limit to 2^31 (2 GB) for extra safety margin in offset arithmetic.
@@ -48,7 +49,7 @@ public:
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.pNext = dedicated_info,
 			.allocationSize = size,
-			.memoryTypeIndex = memory_type
+			.memoryTypeIndex = memory_type,
 		};
 		VkResult result = backend.vkAllocateMemory(backend.device(), &info, HostAllocator::callbacks(), &m_handle);
 		if (result != VK_SUCCESS) {
@@ -58,8 +59,8 @@ public:
 
 	DeviceAllocationArena(DeviceAllocationArena &&) = delete;
 	DeviceAllocationArena(const DeviceAllocationArena &) = delete;
-	DeviceAllocationArena &operator = (DeviceAllocationArena &&) = delete;
-	DeviceAllocationArena &operator = (const DeviceAllocationArena &) = delete;
+	DeviceAllocationArena &operator=(DeviceAllocationArena &&) = delete;
+	DeviceAllocationArena &operator=(const DeviceAllocationArena &) = delete;
 
 	~DeviceAllocationArena() noexcept
 	{
@@ -119,15 +120,9 @@ public:
 		return DeviceAllocation(this, range->first, range->second);
 	}
 
-	void free(Range range) noexcept
-	{
-		Base::free(range);
-	}
+	void free(Range range) noexcept { Base::free(range); }
 
-	[[nodiscard]] bool isFree() const noexcept
-	{
-		return Base::is_free();
-	}
+	[[nodiscard]] bool isFree() const noexcept { return Base::is_free(); }
 
 	[[nodiscard]] VkDeviceMemory handle() const noexcept { return m_handle; }
 	[[nodiscard]] void *hostPointer() const noexcept { return m_host_pointer; }
@@ -159,7 +154,7 @@ DeviceAllocation::DeviceAllocation(DeviceAllocation &&other) noexcept
 	*this = std::move(other);
 }
 
-DeviceAllocation &DeviceAllocation::operator = (DeviceAllocation &&other) noexcept
+DeviceAllocation &DeviceAllocation::operator=(DeviceAllocation &&other) noexcept
 {
 	std::swap(m_arena, other.m_arena);
 	std::swap(m_begin_offset, other.m_begin_offset);
@@ -218,17 +213,17 @@ DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase 
 	const VkBufferMemoryRequirementsInfo2 request {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
 		.pNext = nullptr,
-		.buffer = buffer
+		.buffer = buffer,
 	};
 
 	VkMemoryDedicatedRequirements dedicated_reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
-		.pNext = nullptr
+		.pNext = nullptr,
 	};
 
 	VkMemoryRequirements2 reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
-		.pNext = &dedicated_reqs
+		.pNext = &dedicated_reqs,
 	};
 	backend.vkGetBufferMemoryRequirements2(device, &request, &reqs);
 
@@ -237,7 +232,7 @@ DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase 
 		.alignment = reqs.memoryRequirements.alignment,
 		.acceptable_memory_types = reqs.memoryRequirements.memoryTypeBits,
 		.use_case = use_case,
-		.dedicated = dedicated_reqs.prefersDedicatedAllocation == VK_TRUE
+		.dedicated = dedicated_reqs.prefersDedicatedAllocation == VK_TRUE,
 	};
 
 	if (!alloc_info.dedicated) {
@@ -248,7 +243,7 @@ DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase 
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 		.pNext = nullptr,
 		.image = VK_NULL_HANDLE,
-		.buffer = buffer
+		.buffer = buffer,
 	};
 	return allocateInternal(alloc_info, &dedicated_info);
 }
@@ -261,17 +256,17 @@ DeviceAllocation DeviceAllocator::allocate(VkImage image, DeviceMemoryUseCase us
 	const VkImageMemoryRequirementsInfo2 request {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
 		.pNext = nullptr,
-		.image = image
+		.image = image,
 	};
 
 	VkMemoryDedicatedRequirements dedicated_reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
-		.pNext = nullptr
+		.pNext = nullptr,
 	};
 
 	VkMemoryRequirements2 reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
-		.pNext = &dedicated_reqs
+		.pNext = &dedicated_reqs,
 	};
 	backend.vkGetImageMemoryRequirements2(device, &request, &reqs);
 
@@ -280,7 +275,7 @@ DeviceAllocation DeviceAllocator::allocate(VkImage image, DeviceMemoryUseCase us
 		.alignment = reqs.memoryRequirements.alignment,
 		.acceptable_memory_types = reqs.memoryRequirements.memoryTypeBits,
 		.use_case = use_case,
-		.dedicated = dedicated_reqs.prefersDedicatedAllocation == VK_TRUE
+		.dedicated = dedicated_reqs.prefersDedicatedAllocation == VK_TRUE,
 	};
 
 	if (!alloc_info.dedicated) {
@@ -291,7 +286,7 @@ DeviceAllocation DeviceAllocator::allocate(VkImage image, DeviceMemoryUseCase us
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 		.pNext = nullptr,
 		.image = image,
-		.buffer = VK_NULL_HANDLE
+		.buffer = VK_NULL_HANDLE,
 	};
 	return allocateInternal(alloc_info, &dedicated_info);
 }
@@ -306,7 +301,7 @@ DeviceAllocation DeviceAllocator::allocate(const AllocationInfo &info)
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
 		.pNext = nullptr,
 		.image = VK_NULL_HANDLE,
-		.buffer = VK_NULL_HANDLE
+		.buffer = VK_NULL_HANDLE,
 	};
 	return allocateInternal(info, &dedicated_info);
 }
@@ -331,7 +326,7 @@ void DeviceAllocator::arenaFreeCallback(DeviceAllocationArena *arena) noexcept
 }
 
 DeviceAllocation DeviceAllocator::allocateInternal(const AllocationInfo &info,
-                                                   const VkMemoryDedicatedAllocateInfo *dedicated_info)
+	const VkMemoryDedicatedAllocateInfo *dedicated_info)
 {
 	const uint32_t memory_type = selectMemoryType(info);
 	const VkDeviceSize size_limit = getAllocSizeLimit(memory_type);
@@ -444,8 +439,8 @@ void DeviceAllocator::readMemoryProperties()
 	Log::debug("Device has the following memory types:");
 	for (uint32_t i = 0; i < m_mem_props.memoryTypeCount; i++) {
 		const auto &type = m_mem_props.memoryTypes[i];
-		Log::debug("#{} -> likely '{}' use case, heap #{}{}{}{}",
-			i, extras::enum_name(mostLikelyUseCase(type.propertyFlags)), type.heapIndex,
+		Log::debug("#{} -> likely '{}' use case, heap #{}{}{}{}", i,
+			extras::enum_name(mostLikelyUseCase(type.propertyFlags)), type.heapIndex,
 			(type.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ? " [device local]" : "",
 			(type.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) ? " [host visible]" : "",
 			(type.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) ? " [host cached]" : "");
@@ -474,8 +469,8 @@ DeviceMemoryUseCase DeviceAllocator::mostLikelyUseCase(VkMemoryPropertyFlags fla
 
 int32_t DeviceAllocator::scoreForUseCase(DeviceMemoryUseCase use_case, VkMemoryPropertyFlags flags) noexcept
 {
-	constexpr VkMemoryPropertyFlags HOST_FLAGS = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	constexpr VkMemoryPropertyFlags HOST_FLAGS = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		| VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	int32_t score;
 
@@ -530,7 +525,7 @@ int32_t DeviceAllocator::scoreForUseCase(DeviceMemoryUseCase use_case, VkMemoryP
 	return score;
 }
 
-}
+} // namespace voxen::client::vulkan
 
 namespace extras
 {
@@ -543,15 +538,20 @@ std::string_view enum_name(DeviceMemoryUseCase value) noexcept
 	using namespace std::string_view_literals;
 
 	switch (value) {
-		case DeviceMemoryUseCase::GpuOnly: return "GpuOnly"sv;
-		case DeviceMemoryUseCase::Upload: return "Upload"sv;
-		case DeviceMemoryUseCase::FastUpload: return "FastUpload"sv;
-		case DeviceMemoryUseCase::Readback: return "Readback"sv;
-		case DeviceMemoryUseCase::CpuSwap: return "CpuSwap"sv;
-		default:
-			assert(false);
-			return "[UNKNOWN]"sv;
+	case DeviceMemoryUseCase::GpuOnly:
+		return "GpuOnly"sv;
+	case DeviceMemoryUseCase::Upload:
+		return "Upload"sv;
+	case DeviceMemoryUseCase::FastUpload:
+		return "FastUpload"sv;
+	case DeviceMemoryUseCase::Readback:
+		return "Readback"sv;
+	case DeviceMemoryUseCase::CpuSwap:
+		return "CpuSwap"sv;
+	default:
+		assert(false);
+		return "[UNKNOWN]"sv;
 	}
 }
 
-}
+} // namespace extras

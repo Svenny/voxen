@@ -52,8 +52,8 @@ public:
 	Capabilities() = default;
 	Capabilities(Capabilities &&) = delete;
 	Capabilities(const Capabilities &) = delete;
-	Capabilities &operator = (Capabilities &&) = delete;
-	Capabilities &operator = (const Capabilities &) = delete;
+	Capabilities &operator=(Capabilities &&) = delete;
+	Capabilities &operator=(const Capabilities &) = delete;
 	~Capabilities() = default;
 
 	// Fully analyze a given physical device and check whether it is supported.
@@ -71,12 +71,16 @@ public:
 	// the physical device passed to the latest `selectPhysicalDevice()` call.
 	// NOTE: returns undefined data if the latest `selectPhysicalDevice()` call returned `false`.
 	const VkPhysicalDeviceFeatures2 &getDeviceFeaturesRequest() const noexcept
-		{ return m_dev_creation_request.features10; }
+	{
+		return m_dev_creation_request.features10;
+	}
 	// Get list of extensions to enable when creating logical device for
 	// the physical device passed to the latest `selectPhysicalDevice()` call.
 	// NOTE: returns undefined data if the latest `selectPhysicalDevice()` call returned `false`.
 	const std::vector<const char *> &getDeviceExtensionsRequest() const noexcept
-		{ return m_dev_creation_request.extensions; }
+	{
+		return m_dev_creation_request.extensions;
+	}
 
 	// Get optional capabilities queried by the latest `selectPhysicalDevice()` call.
 	// NOTE: returns undefined data if the latest `selectPhysicalDevice()` call returned `false`.
@@ -140,4 +144,4 @@ private:
 	static uint32_t maxSamplesCount(VkSampleCountFlags flags) noexcept;
 };
 
-}
+} // namespace voxen::client::vulkan

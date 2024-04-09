@@ -23,13 +23,13 @@ struct VertexFormatPositionOnlyTerrain {
 		vertex_input_binding[0] = VkVertexInputBindingDescription {
 			.binding = 0,
 			.stride = sizeof(float) * 3,
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 		};
 		// Per-chunk data
 		vertex_input_binding[1] = VkVertexInputBindingDescription {
 			.binding = 1,
 			.stride = sizeof(float) * 4,
-			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
 		};
 
 		// Position
@@ -37,14 +37,14 @@ struct VertexFormatPositionOnlyTerrain {
 			.location = 0,
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = 0
+			.offset = 0,
 		};
 		// Chunk base/scale data
 		vertex_input_attrib[1] = VkVertexInputAttributeDescription {
 			.location = 1,
 			.binding = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			.offset = 0
+			.offset = 0,
 		};
 
 		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -66,13 +66,13 @@ struct VertexFormatBasicTerrain {
 		vertex_input_binding[0] = VkVertexInputBindingDescription {
 			.binding = 0,
 			.stride = sizeof(terrain::SurfaceVertex),
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 		};
 		// Per-chunk data
 		vertex_input_binding[1] = VkVertexInputBindingDescription {
 			.binding = 1,
 			.stride = sizeof(float) * 4,
-			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
+			.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
 		};
 
 		static_assert(std::is_same_v<terrain::voxel_t, uint8_t>, "Vertex attribute binding assumes 8-bit voxel ID");
@@ -82,63 +82,63 @@ struct VertexFormatBasicTerrain {
 			.location = 0,
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(terrain::SurfaceVertex, position)
+			.offset = offsetof(terrain::SurfaceVertex, position),
 		};
 		// Normal
 		vertex_input_attrib[1] = VkVertexInputAttributeDescription {
 			.location = 1,
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(terrain::SurfaceVertex, normal)
+			.offset = offsetof(terrain::SurfaceVertex, normal),
 		};
 		// Primary material ID
 		vertex_input_attrib[2] = VkVertexInputAttributeDescription {
 			.location = 2,
 			.binding = 0,
 			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, primary_mat)
+			.offset = offsetof(terrain::SurfaceVertex, primary_mat),
 		};
 		// Vertex properties (flags)
 		vertex_input_attrib[3] = VkVertexInputAttributeDescription {
 			.location = 3,
 			.binding = 0,
 			.format = VK_FORMAT_R8_UINT,
-			.offset = offsetof(terrain::SurfaceVertex, flags)
+			.offset = offsetof(terrain::SurfaceVertex, flags),
 		};
 		// Secondary materials pair weight
 		vertex_input_attrib[4] = VkVertexInputAttributeDescription {
 			.location = 4,
 			.binding = 0,
 			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_weight)
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_weight),
 		};
 		// Secondary materials A/B ratio
 		vertex_input_attrib[5] = VkVertexInputAttributeDescription {
 			.location = 5,
 			.binding = 0,
 			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_ratio)
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_ratio),
 		};
 		// Secondary material A
 		vertex_input_attrib[6] = VkVertexInputAttributeDescription {
 			.location = 6,
 			.binding = 0,
 			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_a)
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_a),
 		};
 		// Secondary material B
 		vertex_input_attrib[7] = VkVertexInputAttributeDescription {
 			.location = 7,
 			.binding = 0,
 			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_b)
+			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_b),
 		};
 		// Chunk base/scale data
 		vertex_input_attrib[8] = VkVertexInputAttributeDescription {
 			.location = 8,
 			.binding = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
-			.offset = 0
+			.offset = 0,
 		};
 
 		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -190,7 +190,8 @@ struct DefaultViewportState {
 };
 
 struct DefaultRasterizationState {
-	DefaultRasterizationState() noexcept {
+	DefaultRasterizationState() noexcept
+	{
 		rasterization_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterization_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		rasterization_info.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -205,7 +206,8 @@ struct DefaultRasterizationState {
 };
 
 struct DisabledMsaaState {
-	DisabledMsaaState() noexcept {
+	DisabledMsaaState() noexcept
+	{
 		multisample_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		multisample_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		multisample_info.sampleShadingEnable = VK_FALSE;
@@ -218,7 +220,8 @@ struct DisabledMsaaState {
 };
 
 struct DefaultDepthStencilState {
-	DefaultDepthStencilState() noexcept {
+	DefaultDepthStencilState() noexcept
+	{
 		depth_stencil_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		depth_stencil_info.depthTestEnable = VK_TRUE;
 		depth_stencil_info.depthWriteEnable = VK_TRUE;
@@ -233,10 +236,11 @@ struct DefaultDepthStencilState {
 };
 
 struct DisabledBlendState {
-	DisabledBlendState() noexcept {
+	DisabledBlendState() noexcept
+	{
 		color_blend_state.blendEnable = VK_FALSE;
-		color_blend_state.colorWriteMask =
-		      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		color_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
+			| VK_COLOR_COMPONENT_A_BIT;
 		color_blend_state.colorBlendOp = VK_BLEND_OP_ADD;
 		color_blend_state.alphaBlendOp = VK_BLEND_OP_ADD;
 		color_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -286,8 +290,9 @@ struct GraphicsPipelineParts {
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,
 		.depthAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT,
-		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(SCENE_DEPTH_STENCIL_BUFFER_FORMAT) ?
-			SCENE_DEPTH_STENCIL_BUFFER_FORMAT : VK_FORMAT_UNDEFINED
+		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(SCENE_DEPTH_STENCIL_BUFFER_FORMAT)
+			? SCENE_DEPTH_STENCIL_BUFFER_FORMAT
+			: VK_FORMAT_UNDEFINED,
 	};
 
 	struct {
@@ -324,7 +329,7 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	frag_stage_info.pName = "main";
 
 	auto &input_assembly_info = my_parts.input_assembly_info;
-	input_assembly_info.sType =  VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	input_assembly_info.primitiveRestartEnable = VK_FALSE;
 
@@ -360,14 +365,14 @@ void addParts<PipelineCollection::TERRAIN_SIMPLE_PIPELINE>(GraphicsPipelineParts
 	constexpr static VkSpecializationMapEntry vert_shader_spec_map = {
 		.constantID = 0,
 		.offset = 0,
-		.size = sizeof(uint32_t)
+		.size = sizeof(uint32_t),
 	};
 
 	constexpr static VkSpecializationInfo vert_shader_spec_info = {
 		.mapEntryCount = 1,
 		.pMapEntries = &vert_shader_spec_map,
 		.dataSize = sizeof(vert_shader_spec_data),
-		.pData = &vert_shader_spec_data
+		.pData = &vert_shader_spec_data,
 	};
 
 	auto &vert_stage_info = my_parts.stages[0];
@@ -476,8 +481,8 @@ PipelineCollection::PipelineCollection()
 	auto compute_parts = std::make_unique<ComputePipelineParts>();
 	fillPipelineParts(*compute_parts, backend);
 
-	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES,
-		compute_parts->create_infos, allocator, m_compute_pipelines.data());
+	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES, compute_parts->create_infos,
+		allocator, m_compute_pipelines.data());
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateComputePipelines");
 	}
@@ -520,4 +525,4 @@ void PipelineCollection::destroyPipelines() noexcept
 	}
 }
 
-}
+} // namespace voxen::client::vulkan

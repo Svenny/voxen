@@ -20,7 +20,7 @@ struct is_error_condition_enum<VkResult> : true_type {};
 // Factory for `std::error_condition { VkResult }`
 error_condition make_error_condition(VkResult result) noexcept;
 
-}
+} // namespace std
 
 namespace voxen::client::vulkan
 {
@@ -45,8 +45,8 @@ public:
 
 class VOXEN_API VulkanException final : public Exception {
 public:
-	explicit VulkanException(VkResult result, std::string_view api, extras::source_location loc =
-		extras::source_location::current());
+	explicit VulkanException(VkResult result, std::string_view api,
+		extras::source_location loc = extras::source_location::current());
 	~VulkanException() noexcept override;
 
 	VkResult result() const noexcept;
@@ -57,8 +57,8 @@ public:
 	HostAllocator() noexcept;
 	HostAllocator(HostAllocator &&) = delete;
 	HostAllocator(const HostAllocator &) = delete;
-	HostAllocator &operator = (HostAllocator &&) = delete;
-	HostAllocator &operator = (const HostAllocator &) = delete;
+	HostAllocator &operator=(HostAllocator &&) = delete;
+	HostAllocator &operator=(const HostAllocator &) = delete;
 	~HostAllocator() noexcept;
 
 	static HostAllocator &instance() noexcept { return g_instance; }
@@ -72,4 +72,4 @@ private:
 	std::atomic_size_t m_allocated;
 };
 
-}
+} // namespace voxen::client::vulkan

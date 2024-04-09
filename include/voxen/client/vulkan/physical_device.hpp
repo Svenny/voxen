@@ -10,8 +10,8 @@ public:
 	PhysicalDevice();
 	PhysicalDevice(PhysicalDevice &&) = delete;
 	PhysicalDevice(const PhysicalDevice &) = delete;
-	PhysicalDevice &operator = (PhysicalDevice &&) = delete;
-	PhysicalDevice &operator = (const PhysicalDevice &) = delete;
+	PhysicalDevice &operator=(PhysicalDevice &&) = delete;
+	PhysicalDevice &operator=(const PhysicalDevice &) = delete;
 	~PhysicalDevice() = default;
 
 	void logDeviceMemoryStats() const;
@@ -26,6 +26,7 @@ public:
 	uint32_t presentQueueFamily() const noexcept { return m_present_queue_family; }
 
 	operator VkPhysicalDevice() const noexcept { return m_device; }
+
 private:
 	VkPhysicalDevice m_device = VK_NULL_HANDLE;
 	uint32_t m_graphics_queue_family = UINT32_MAX;
@@ -39,4 +40,4 @@ private:
 	static uint32_t calcDeviceScore(VkPhysicalDevice device, const VkPhysicalDeviceProperties &props);
 };
 
-}
+} // namespace voxen::client::vulkan

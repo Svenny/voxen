@@ -30,14 +30,16 @@ void ShaderModule::load(std::string_view relative_path)
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateShaderModule(device, &info, HostAllocator::callbacks(), &m_shader_module);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateShaderModule");
+	}
 }
 
 void ShaderModule::unload() noexcept
 {
-	if (!isLoaded())
+	if (!isLoaded()) {
 		return;
+	}
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
@@ -55,7 +57,8 @@ ShaderModule::~ShaderModule() noexcept
 template<uint32_t ID>
 extern const char *SHADER_MODULE_PATH;
 #define ADD_SHADER_PATH(name, path) \
-	template<> inline const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
+	template<> \
+	inline const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
 
 ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "assets/shaders/debug/octree.vert.spv")
 ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
@@ -85,4 +88,4 @@ const ShaderModule &ShaderModuleCollection::operator[](ShaderId idx) const
 	return m_shader_modules.at(idx);
 }
 
-}
+} // namespace voxen::client::vulkan

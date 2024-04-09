@@ -6,7 +6,8 @@
 namespace voxen::client::vulkan
 {
 
-CommandPool::CommandPool(uint32_t queue_family) {
+CommandPool::CommandPool(uint32_t queue_family)
+{
 	VkCommandPoolCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	// Currently we don't use pre-recorded buffers. They
@@ -22,7 +23,8 @@ CommandPool::CommandPool(uint32_t queue_family) {
 	}
 }
 
-extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t count, bool secondary) {
+extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t count, bool secondary)
+{
 	extras::dyn_array<VkCommandBuffer> handles(count);
 
 	VkCommandBufferAllocateInfo info = {};
@@ -45,7 +47,8 @@ extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t co
 	return buffers;
 }
 
-void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) {
+void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers)
+{
 	extras::dyn_array<VkCommandBuffer> handles(buffers.size());
 	for (size_t i = 0; i < buffers.size(); i++) {
 		handles[i] = buffers[i];
@@ -59,13 +62,15 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers) 
 	}
 }
 
-void CommandPool::trim() noexcept {
+void CommandPool::trim() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkTrimCommandPool(device, m_cmd_pool, 0);
 }
 
-void CommandPool::reset(bool release_resources) {
+void CommandPool::reset(bool release_resources)
+{
 	VkCommandPoolResetFlags flags = 0;
 	if (release_resources) {
 		flags = VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT;
@@ -79,10 +84,11 @@ void CommandPool::reset(bool release_resources) {
 	}
 }
 
-CommandPool::~CommandPool() noexcept {
+CommandPool::~CommandPool() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkDestroyCommandPool(device, m_cmd_pool, HostAllocator::callbacks());
 }
 
-}
+} // namespace voxen::client::vulkan

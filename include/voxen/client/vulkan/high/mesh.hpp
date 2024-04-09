@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/vulkan/buffer.hpp>
+#include <voxen/client/vulkan/common.hpp>
 
 #include <optional>
 
@@ -40,11 +40,12 @@ public:
 	explicit Mesh(const MeshCreateInfo &create_info);
 	Mesh(Mesh &&) = delete;
 	Mesh(const Mesh &&) = delete;
-	Mesh &operator = (Mesh &&) = delete;
-	Mesh &operator = (const Mesh &) = delete;
+	Mesh &operator=(Mesh &&) = delete;
+	Mesh &operator=(const Mesh &) = delete;
 	~Mesh() = default;
 
 	void bindBuffers(VkCommandBuffer cmd_buffer);
+
 private:
 	const VertexFormat m_vertex_format;
 	const IndexFormat m_index_format;
@@ -52,4 +53,4 @@ private:
 	std::optional<FatVkBuffer> m_index_buffer;
 };
 
-}
+} // namespace voxen::client::vulkan

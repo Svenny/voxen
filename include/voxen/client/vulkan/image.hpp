@@ -11,8 +11,8 @@ public:
 	Image(const VkImageCreateInfo &info);
 	Image(Image &&) = delete;
 	Image(const Image &) = delete;
-	Image &operator = (Image &&) = delete;
-	Image &operator = (const Image &) = delete;
+	Image &operator=(Image &&) = delete;
+	Image &operator=(const Image &) = delete;
 	~Image() noexcept;
 
 	DeviceAllocation &allocation() noexcept { return m_memory; }
@@ -27,4 +27,4 @@ private:
 	DeviceAllocation m_memory;
 };
 
-}
+} // namespace voxen::client::vulkan

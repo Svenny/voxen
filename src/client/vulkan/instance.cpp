@@ -1,8 +1,8 @@
 #include <voxen/client/vulkan/instance.hpp>
 
+#include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
-#include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -79,15 +79,18 @@ static std::vector<const char *> getRequiredInstanceExtensions()
 
 	std::vector<const char *> ext_list;
 	ext_list.resize(glfw_ext_count);
-	for (uint32_t i = 0; i < glfw_ext_count; i++)
+	for (uint32_t i = 0; i < glfw_ext_count; i++) {
 		ext_list[i] = glfw_ext_list[i];
+	}
 
 	// It is an error to request one extension more than once, so we have to check
 	// that it's not already in GLFW-provided list before adding it ourselves
 	auto addToList = [&](const char *name) {
-		for (uint32_t i = 0; i < glfw_ext_count; i++)
-			if (!strcmp(glfw_ext_list[i], name))
+		for (uint32_t i = 0; i < glfw_ext_count; i++) {
+			if (!strcmp(glfw_ext_list[i], name)) {
 				return;
+			}
+		}
 		ext_list.emplace_back(name);
 	};
 
@@ -96,10 +99,12 @@ static std::vector<const char *> getRequiredInstanceExtensions()
 	}
 
 	// TODO: warn about unsupported extensions?
-	if (!ext_list.empty())
+	if (!ext_list.empty()) {
 		Log::info("Requesting the following Vulkan instance extensions:");
-	for (const char *name : ext_list)
+	}
+	for (const char *name : ext_list) {
 		Log::info("{}", name);
+	}
 	return ext_list;
 }
 
@@ -122,8 +127,8 @@ static std::vector<const char *> getRequiredLayers()
 			uint32_t spec_major = VK_VERSION_MAJOR(layer.specVersion);
 			uint32_t spec_minor = VK_VERSION_MINOR(layer.specVersion);
 			uint32_t spec_patch = VK_VERSION_PATCH(layer.specVersion);
-			Log::debug("{} ({}), spec version {}.{}.{}", layer.layerName,
-			           layer.description, spec_major, spec_minor, spec_patch);
+			Log::debug("{} ({}), spec version {}.{}.{}", layer.layerName, layer.description, spec_major, spec_minor,
+				spec_patch);
 		}
 	}
 
@@ -132,7 +137,7 @@ static std::vector<const char *> getRequiredLayers()
 	// unsupported ones. Useful for developing on different machines becuase
 	// each machine may have a different set of available layers.
 	auto addIfAvailable = [&](const char *name) {
-		for (const auto &props: available_props) {
+		for (const auto &props : available_props) {
 			if (!strcmp(props.layerName, name)) {
 				layer_list.emplace_back(name);
 				return;
@@ -144,10 +149,12 @@ static std::vector<const char *> getRequiredLayers()
 	addIfAvailable("VK_LAYER_KHRONOS_validation");
 	addIfAvailable("VK_LAYER_MESA_overlay");
 
-	if (!layer_list.empty())
+	if (!layer_list.empty()) {
 		Log::info("Requesting the following Vulkan layers:");
-	for (const char *name : layer_list)
+	}
+	for (const char *name : layer_list) {
 		Log::info("{}", name);
+	}
 	return layer_list;
 }
 
@@ -176,8 +183,9 @@ void Instance::createInstance()
 
 	auto &backend = Backend::backend();
 	VkResult result = backend.vkCreateInstance(&create_info, HostAllocator::callbacks(), &m_handle);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateInstance");
+	}
 }
 
 void Instance::destroyInstance() noexcept
@@ -187,4 +195,4 @@ void Instance::destroyInstance() noexcept
 	backend.unloadInstanceLevelApi();
 }
 
-}
+} // namespace voxen::client::vulkan

@@ -12,8 +12,8 @@ public:
 	explicit WrappedVkDescriptorPool(const VkDescriptorPoolCreateInfo &info);
 	WrappedVkDescriptorPool(WrappedVkDescriptorPool &&) noexcept;
 	WrappedVkDescriptorPool(const WrappedVkDescriptorPool &) = delete;
-	WrappedVkDescriptorPool &operator = (WrappedVkDescriptorPool &&) noexcept;
-	WrappedVkDescriptorPool &operator = (const WrappedVkDescriptorPool &) = delete;
+	WrappedVkDescriptorPool &operator=(WrappedVkDescriptorPool &&) noexcept;
+	WrappedVkDescriptorPool &operator=(const WrappedVkDescriptorPool &) = delete;
 	~WrappedVkDescriptorPool() noexcept;
 
 	VkDescriptorPool handle() const noexcept { return m_handle; }
@@ -28,8 +28,8 @@ public:
 	DescriptorManager();
 	DescriptorManager(DescriptorManager &&) = delete;
 	DescriptorManager(const DescriptorManager &) = delete;
-	DescriptorManager &operator = (DescriptorManager &&) = delete;
-	DescriptorManager &operator = (const DescriptorManager &) = delete;
+	DescriptorManager &operator=(DescriptorManager &&) = delete;
+	DescriptorManager &operator=(const DescriptorManager &) = delete;
 	~DescriptorManager() = default;
 
 	void startNewFrame() noexcept { m_set_id = (m_set_id + 1) % Config::NUM_CPU_PENDING_FRAMES; }
@@ -45,4 +45,4 @@ private:
 	VkDescriptorSet m_terrain_frustum_cull_set[Config::NUM_CPU_PENDING_FRAMES];
 };
 
-}
+} // namespace voxen::client::vulkan

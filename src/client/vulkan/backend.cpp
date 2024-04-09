@@ -1,14 +1,14 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
-#include <voxen/client/vulkan/high/main_loop.hpp>
-#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
+#include <voxen/client/vulkan/high/main_loop.hpp>
+#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
+#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/memory.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
@@ -32,42 +32,27 @@ namespace voxen::client::vulkan
 
 struct Backend::Impl {
 	template<typename T>
-	struct Storage { std::aligned_storage_t<sizeof(T), alignof(T)> storage; };
+	struct Storage {
+		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
+	};
 
-	std::tuple<
-		Storage<Capabilities>,
-		Storage<Instance>,
-		Storage<PhysicalDevice>,
-		Storage<Device>,
+	std::tuple<Storage<Capabilities>, Storage<Instance>, Storage<PhysicalDevice>, Storage<Device>,
+		Storage<DeviceAllocator>, Storage<TransferManager>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
+		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<DescriptorManager>,
+		Storage<Surface>, Storage<Swapchain>, Storage<FramebufferCollection>, Storage<PipelineCollection>,
+		Storage<TerrainSynchronizer>, Storage<MainLoop>, Storage<TerrainRenderer>>
+		storage;
 
-		Storage<DeviceAllocator>,
-		Storage<TransferManager>,
-
-		Storage<ShaderModuleCollection>,
-		Storage<PipelineCache>,
-		Storage<DescriptorSetLayoutCollection>,
-		Storage<PipelineLayoutCollection>,
-		Storage<DescriptorManager>,
-
-		Storage<Surface>,
-		Storage<Swapchain>,
-		Storage<FramebufferCollection>,
-		Storage<PipelineCollection>,
-
-		Storage<TerrainSynchronizer>,
-
-		Storage<MainLoop>,
-		Storage<TerrainRenderer>
-	> storage;
-
-	template<typename T, typename... Args> void constructModule(T *&ptr, Args&&... args)
+	template<typename T, typename... Args>
+	void constructModule(T *&ptr, Args &&...args)
 	{
 		assert(!ptr);
 		using S = Storage<std::remove_cvref_t<T>>;
 		ptr = new (&std::get<S>(storage)) T(std::forward<Args>(args)...);
 	}
 
-	template<typename T> void destructModule(T *&ptr) noexcept
+	template<typename T>
+	void destructModule(T *&ptr) noexcept
 	{
 		if (ptr) {
 			ptr->~T();
@@ -403,4 +388,4 @@ void Backend::unloadDeviceLevelApi() noexcept
 #undef VK_INSTANCE_API_ENTRY
 }
 
-}
+} // namespace voxen::client::vulkan

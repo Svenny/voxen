@@ -9,23 +9,25 @@
 namespace voxen::client::vulkan
 {
 
-PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info) {
+PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info)
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreatePipelineLayout(device, &info, HostAllocator::callbacks(), &m_layout);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreatePipelineLayout");
+	}
 }
 
-PipelineLayout::~PipelineLayout() noexcept {
+PipelineLayout::~PipelineLayout() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkDestroyPipelineLayout(device, m_layout, HostAllocator::callbacks());
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()
-	: m_terrain_basic_layout(createTerrainBasicLayout()),
-	m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	: m_terrain_basic_layout(createTerrainBasicLayout()), m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
@@ -38,7 +40,7 @@ PipelineLayout PipelineLayoutCollection::createTerrainBasicLayout()
 	constexpr VkPushConstantRange range {
 		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.offset = 0,
-		.size = sizeof(glm::vec4)
+		.size = sizeof(glm::vec4),
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
@@ -48,7 +50,7 @@ PipelineLayout PipelineLayoutCollection::createTerrainBasicLayout()
 		.setLayoutCount = 1,
 		.pSetLayouts = &layout,
 		.pushConstantRangeCount = 1,
-		.pPushConstantRanges = &range
+		.pPushConstantRanges = &range,
 	});
 }
 
@@ -67,8 +69,8 @@ PipelineLayout PipelineLayoutCollection::createTerrainFrustumCullLayout()
 		.setLayoutCount = std::size(layouts),
 		.pSetLayouts = layouts,
 		.pushConstantRangeCount = 0,
-		.pPushConstantRanges = nullptr
+		.pPushConstantRanges = nullptr,
 	});
 }
 
-}
+} // namespace voxen::client::vulkan

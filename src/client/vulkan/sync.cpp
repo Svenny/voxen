@@ -6,7 +6,8 @@
 namespace voxen::client::vulkan
 {
 
-Semaphore::Semaphore() {
+Semaphore::Semaphore()
+{
 	VkSemaphoreCreateInfo info = {};
 	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -18,7 +19,8 @@ Semaphore::Semaphore() {
 	}
 }
 
-Semaphore::~Semaphore() noexcept {
+Semaphore::~Semaphore() noexcept
+{
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	backend.vkDestroySemaphore(device, m_semaphore, HostAllocator::callbacks());
@@ -47,4 +49,4 @@ Fence::~Fence() noexcept
 	backend.vkDestroyFence(device, m_fence, HostAllocator::callbacks());
 }
 
-}
+} // namespace voxen::client::vulkan

@@ -48,8 +48,8 @@ public:
 	explicit DeviceAllocation(DeviceAllocationArena *arena, uint32_t begin, uint32_t end) noexcept;
 	DeviceAllocation(DeviceAllocation &&other) noexcept;
 	DeviceAllocation(const DeviceAllocation &) = delete;
-	DeviceAllocation &operator = (DeviceAllocation &&other) noexcept;
-	DeviceAllocation &operator = (const DeviceAllocation &) = delete;
+	DeviceAllocation &operator=(DeviceAllocation &&other) noexcept;
+	DeviceAllocation &operator=(const DeviceAllocation &) = delete;
 	~DeviceAllocation() noexcept;
 
 	VkDeviceMemory handle() const noexcept;
@@ -92,8 +92,8 @@ public:
 	DeviceAllocator();
 	DeviceAllocator(DeviceAllocator &&) = delete;
 	DeviceAllocator(const DeviceAllocator &) = delete;
-	DeviceAllocator &operator = (DeviceAllocator &&) = delete;
-	DeviceAllocator &operator = (const DeviceAllocator &) = delete;
+	DeviceAllocator &operator=(DeviceAllocator &&) = delete;
+	DeviceAllocator &operator=(const DeviceAllocator &) = delete;
 	~DeviceAllocator() noexcept;
 
 	// NOTE: memory is NOT automatically bound to the buffer after allocation
@@ -127,7 +127,7 @@ private:
 	std::list<DeviceAllocationArena> m_dedicated_arenas;
 };
 
-}
+} // namespace voxen::client::vulkan
 
 namespace extras
 {

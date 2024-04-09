@@ -22,7 +22,7 @@ WrappedVkDescriptorSetLayout::WrappedVkDescriptorSetLayout(WrappedVkDescriptorSe
 	m_handle = std::exchange(other.m_handle, static_cast<VkDescriptorSetLayout>(VK_NULL_HANDLE));
 }
 
-WrappedVkDescriptorSetLayout &WrappedVkDescriptorSetLayout::operator = (WrappedVkDescriptorSetLayout &&other) noexcept
+WrappedVkDescriptorSetLayout &WrappedVkDescriptorSetLayout::operator=(WrappedVkDescriptorSetLayout &&other) noexcept
 {
 	std::swap(m_handle, other.m_handle);
 	return *this;
@@ -36,8 +36,7 @@ WrappedVkDescriptorSetLayout::~WrappedVkDescriptorSetLayout() noexcept
 }
 
 DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()
-	: m_main_scene_layout(createMainSceneLayout()),
-	m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	: m_main_scene_layout(createMainSceneLayout()), m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
 {
 	Log::debug("DescriptorSetLayoutCollection created successfully");
 }
@@ -59,7 +58,7 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createMainSceneLayou
 		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_ALL,
-		.pImmutableSamplers = nullptr
+		.pImmutableSamplers = nullptr,
 	};
 
 	const VkDescriptorSetLayoutCreateInfo info {
@@ -82,21 +81,21 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-		.pImmutableSamplers = nullptr
+		.pImmutableSamplers = nullptr,
 	};
 	bindings[1] = {
 		.binding = 1,
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-		.pImmutableSamplers = nullptr
+		.pImmutableSamplers = nullptr,
 	};
 	bindings[2] = {
 		.binding = 2,
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-		.pImmutableSamplers = nullptr
+		.pImmutableSamplers = nullptr,
 	};
 
 	const VkDescriptorSetLayoutCreateInfo info {
@@ -111,4 +110,4 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 	return WrappedVkDescriptorSetLayout(info);
 }
 
-}
+} // namespace voxen::client::vulkan

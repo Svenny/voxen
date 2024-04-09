@@ -60,8 +60,7 @@ void Device::waitIdle()
 
 std::vector<const char *> Device::getRequiredDeviceExtensions()
 {
-	std::vector<const char *> ext_list
-	{
+	std::vector<const char *> ext_list {
 		// It's dependency `VK_KHR_surface` is guaranteed to
 		// be satisfied by GLFW-provided required instance extensions list
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -101,7 +100,7 @@ void Device::createDevice()
 	features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	features.pNext = &features12;
 	features.features.multiDrawIndirect = VK_TRUE; // For chunk rendering
-	features.features.fillModeNonSolid = VK_TRUE; // For debug octree drawing
+	features.features.fillModeNonSolid = VK_TRUE;  // For debug octree drawing
 
 	auto &backend = Backend::backend();
 	auto &phys_device = backend.physicalDevice();
@@ -169,4 +168,4 @@ void Device::destroyDevice() noexcept
 	backend.unloadDeviceLevelApi();
 }
 
-}
+} // namespace voxen::client::vulkan

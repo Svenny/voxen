@@ -67,9 +67,8 @@ bool Capabilities::checkMandatoryProperties()
 	if (!caps.structure.name) { \
 		Log::info("Mandatory feature '" #name "' is not supported"); \
 		return false; \
-	} else { \
-		request.structure.name = VK_TRUE; \
-	}
+	} \
+	request.structure.name = VK_TRUE;
 
 	// Needed for weighted-blended OIT approximation
 	CHECK_MANDATORY_FEATURE(features10.features, independentBlend);
@@ -134,15 +133,15 @@ void Capabilities::checkOptionalProperties()
 		maxSamplesCount(caps.props10.properties.limits.sampledImageIntegerSampleCounts),
 		maxSamplesCount(caps.props10.properties.limits.sampledImageDepthSampleCounts),
 		maxSamplesCount(caps.props10.properties.limits.sampledImageStencilSampleCounts),
-		maxSamplesCount(caps.props12.framebufferIntegerColorSampleCounts)
+		maxSamplesCount(caps.props12.framebufferIntegerColorSampleCounts),
 	});
 
 	// TODO (Svenny): check `max_samples_locations`
 
 	constexpr VkResolveModeFlags resolve_bits = VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT;
-	if (caps.props12.independentResolve == VK_TRUE &&
-		(caps.props12.supportedDepthResolveModes & resolve_bits) == resolve_bits &&
-		(caps.props12.supportedStencilResolveModes & resolve_bits) == resolve_bits) {
+	if (caps.props12.independentResolve == VK_TRUE
+		&& (caps.props12.supportedDepthResolveModes & resolve_bits) == resolve_bits
+		&& (caps.props12.supportedStencilResolveModes & resolve_bits) == resolve_bits) {
 		m_optional_caps.advanced_zs_resolve_modes_available = true;
 	}
 }
@@ -199,13 +198,13 @@ bool Capabilities::checkMandatoryFormats(VkPhysicalDevice device)
 	constexpr FormatRequirement requirements[] = {
 		// Used as main scene render target
 		{ .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-		  .optimal = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT },
+			.optimal = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT },
 		// Used as main scene depth render target
 		{ .format = VK_FORMAT_D32_SFLOAT,
-		  .optimal = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT },
+			.optimal = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT },
 		// Used for weighted-blended OIT approximation "reveal accumulator" buffer
 		{ .format = VK_FORMAT_R16_UNORM,
-		  .optimal = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT },
+			.optimal = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT },
 
 		// Output to swapchain will be done in either one of these formats
 		{ .format = VK_FORMAT_R8G8B8A8_UNORM, .optimal = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT },
@@ -224,17 +223,16 @@ bool Capabilities::checkMandatoryFormats(VkPhysicalDevice device)
 
 		if ((props.linearTilingFeatures & req.linear) != req.linear) {
 			Log::info("Not all linear tiling features are supported for format '{}'",
-			          VulkanUtils::getVkFormatString(req.format));
+				VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.optimalTilingFeatures & req.optimal) != req.optimal) {
 			Log::info("Not all optimal tiling features are supported for format '{}'",
-			          VulkanUtils::getVkFormatString(req.format));
+				VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.bufferFeatures & req.buffer) != req.buffer) {
-			Log::info("Not all buffer features are supported for format '{}'",
-			          VulkanUtils::getVkFormatString(req.format));
+			Log::info("Not all buffer features are supported for format '{}'", VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 	}
@@ -335,9 +333,9 @@ bool Capabilities::isExtensionSupported(const char *name) const noexcept
 	} wrapper { name };
 
 	return std::binary_search(m_phys_dev_caps.extensions.begin(), m_phys_dev_caps.extensions.end(), wrapper,
-	[](const auto &a, const auto &b){
-		return strncmp(a.extensionName, b.extensionName, VK_MAX_EXTENSION_NAME_SIZE) < 0;
-	});
+		[](const auto &a, const auto &b) {
+			return strncmp(a.extensionName, b.extensionName, VK_MAX_EXTENSION_NAME_SIZE) < 0;
+		});
 }
 
 uint32_t Capabilities::maxSamplesCount(VkSampleCountFlags flags) noexcept
@@ -347,4 +345,4 @@ uint32_t Capabilities::maxSamplesCount(VkSampleCountFlags flags) noexcept
 	return 1u << std::countr_one(flags);
 }
 
-}
+} // namespace voxen::client::vulkan

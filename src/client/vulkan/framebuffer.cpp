@@ -11,9 +11,9 @@
 namespace voxen::client::vulkan
 {
 
-FramebufferCollection::FramebufferCollection() :
-	m_scene_depth_stencil_buffer(createSceneDepthStencilBuffer()),
-	m_scene_depth_stencil_buffer_view(createSceneDepthStencilBufferView())
+FramebufferCollection::FramebufferCollection()
+	: m_scene_depth_stencil_buffer(createSceneDepthStencilBuffer())
+	, m_scene_depth_stencil_buffer_view(createSceneDepthStencilBufferView())
 {
 	// To allow multiple frames we need to keep N copies of render targets
 	static_assert(Config::NUM_GPU_PENDING_FRAMES == 1, "A single pending GPU frame is currently assumed");
@@ -64,4 +64,4 @@ ImageView FramebufferCollection::createSceneDepthStencilBufferView()
 	return ImageView(info);
 }
 
-}
+} // namespace voxen::client::vulkan

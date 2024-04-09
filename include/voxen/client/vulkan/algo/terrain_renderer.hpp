@@ -27,7 +27,7 @@ class Chunk;
 
 }
 
-}
+} // namespace voxen
 
 namespace voxen::client::vulkan
 {
@@ -39,8 +39,8 @@ public:
 	TerrainRenderer();
 	TerrainRenderer(TerrainRenderer &&) = delete;
 	TerrainRenderer(const TerrainRenderer &) = delete;
-	TerrainRenderer &operator = (TerrainRenderer &&) = delete;
-	TerrainRenderer &operator = (const TerrainRenderer &) = delete;
+	TerrainRenderer &operator=(TerrainRenderer &&) = delete;
+	TerrainRenderer &operator=(const TerrainRenderer &) = delete;
 	~TerrainRenderer() = default;
 
 	void onNewWorldState(const WorldState &state);
@@ -71,4 +71,4 @@ private:
 	uint32_t m_num_active_chunks = 0;
 };
 
-}
+} // namespace voxen::client::vulkan
