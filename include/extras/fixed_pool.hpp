@@ -4,9 +4,9 @@
 #include <extras/futex.hpp>
 #include <extras/refcnt_ptr.hpp>
 
-#include <cassert>
 #include <array>
 #include <atomic>
+#include <cassert>
 #include <mutex>
 #include <new>
 #include <type_traits>
@@ -33,7 +33,7 @@ struct fixed_pool_storage<T, N, true> {
 	using type = std::array<T, N>;
 };
 
-}
+} // namespace detail
 
 // A thread-safe pool holding up to `N` objects of type `T`. It returns
 // reference-counted pointers which will automatically recycle the object.
@@ -61,8 +61,8 @@ public:
 
 	fixed_pool(fixed_pool &&) = delete;
 	fixed_pool(const fixed_pool &) = delete;
-	fixed_pool &operator = (fixed_pool &&) = delete;
-	fixed_pool &operator = (const fixed_pool &) = delete;
+	fixed_pool &operator=(fixed_pool &&) = delete;
+	fixed_pool &operator=(const fixed_pool &) = delete;
 
 	~fixed_pool() noexcept
 	{
@@ -77,8 +77,9 @@ public:
 	// This variant of method is applicable to non-reusable pools only.
 	// NOTE: this method is thread-safe but is not atomic: allocation may fail even
 	// if there is free space (when some other thread has just freed an object).
-	template<typename... Args> requires(!R)
-	pointer allocate(Args&&... args)
+	template<typename... Args>
+		requires(!R)
+	pointer allocate(Args &&...args)
 	{
 		std::lock_guard lock(m_lock);
 
@@ -90,7 +91,8 @@ public:
 		T *object = nullptr;
 		try {
 			object = new (&m_objects[pos]) T(std::forward<Args>(args)...);
-		} catch(...) {
+		}
+		catch (...) {
 			m_used_bitmap.clear(pos);
 			throw;
 		}
@@ -105,7 +107,8 @@ public:
 	// This variant of method is applicable to reusable pools only.
 	// NOTE: this method is thread-safe but is not atomic: allocation may fail
 	// even if there is free space (when some other thread has just freed an object).
-	template<typename = void> requires(R)
+	template<typename = void>
+		requires(R)
 	pointer allocate() noexcept
 	{
 		std::lock_guard lock(m_lock);
@@ -132,7 +135,7 @@ public:
 	}
 
 	// Object lifecycle management function, do not call it directly
-	void operator ()(T *object, refcnt_ptr_action action) noexcept
+	void operator()(T *object, refcnt_ptr_action action) noexcept
 	{
 		assert(object);
 		const ptrdiff_t pos_diff = object - reinterpret_cast<T *>(&m_objects[0]);
@@ -144,7 +147,7 @@ public:
 			auto old_count = m_usage_counts[id].fetch_add(1, std::memory_order_relaxed);
 			// Check there was no reference count overflow
 			assert(old_count < std::numeric_limits<decltype(old_count)>::max());
-			(void)old_count; // For builds with disabled asserts
+			(void) old_count; // For builds with disabled asserts
 		} else /*(action == refcnt_ptr_action::release_ref)*/ {
 			auto old_count = m_usage_counts[id].fetch_sub(1, std::memory_order_release);
 			if (old_count != 1) {
@@ -175,4 +178,4 @@ private:
 template<typename T, size_t N>
 using reusable_fixed_pool = fixed_pool<T, N, true>;
 
-}
+} // namespace extras

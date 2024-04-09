@@ -16,9 +16,7 @@ TEST_CASE("'defer' works properly", "[extras::defer]")
 				flag1 = true;
 			};
 
-			defer {
-				flag2 = true;
-			};
+			defer { flag2 = true; };
 		}
 
 		REQUIRE(flag1 == true);
@@ -30,12 +28,11 @@ TEST_CASE("'defer' works properly", "[extras::defer]")
 		bool flag = false;
 
 		try {
-			defer {
-				flag = true;
-			};
+			defer { flag = true; };
 
 			throw 0;
-		} catch (int ex) {
+		}
+		catch (int ex) {
 			REQUIRE(flag == true);
 		}
 	}
@@ -48,9 +45,7 @@ TEST_CASE("'defer_fail' works properly", "[extras::defer]")
 	SECTION("exiting scope normally")
 	{
 		{
-			defer_fail {
-				flag = true;
-			};
+			defer_fail { flag = true; };
 		}
 
 		REQUIRE(flag == false);
@@ -59,12 +54,11 @@ TEST_CASE("'defer_fail' works properly", "[extras::defer]")
 	SECTION("exiting scope via exception")
 	{
 		try {
-			defer_fail {
-				flag = true;
-			};
+			defer_fail { flag = true; };
 
 			throw 0;
-		} catch(int ex) {
+		}
+		catch (int ex) {
 			REQUIRE(flag == true);
 		}
 	}

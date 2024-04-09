@@ -6,7 +6,7 @@ static void managerFunction(int *value, extras::refcnt_ptr_action action) noexce
 {
 	if (action == extras::refcnt_ptr_action::acquire_ref) {
 		(*value)++;
-	} else if (action == extras::refcnt_ptr_action::release_ref){
+	} else if (action == extras::refcnt_ptr_action::release_ref) {
 		(*value)--;
 	} else {
 		REQUIRE(false);

@@ -5,8 +5,8 @@
 #include <cassert>
 #include <limits>
 #include <optional>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace extras
 {
@@ -39,8 +39,8 @@ public:
 
 	linear_allocator(linear_allocator &&) = delete;
 	linear_allocator(const linear_allocator &) = delete;
-	linear_allocator &operator = (linear_allocator &&) = delete;
-	linear_allocator &operator = (const linear_allocator &) = delete;
+	linear_allocator &operator=(linear_allocator &&) = delete;
+	linear_allocator &operator=(const linear_allocator &) = delete;
 
 	~linear_allocator() = default;
 
@@ -221,4 +221,4 @@ private:
 	}
 };
 
-}
+} // namespace extras

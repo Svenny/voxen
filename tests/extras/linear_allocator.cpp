@@ -124,10 +124,10 @@ TEST_CASE("'linear_allocator' doesn't call free callback from destructor", "[ext
 		TestAllocator2 alloc;
 
 		auto range = alloc.allocate(40, 16);
-		(void)range;
+		(void) range;
 
 		alloc.setAboutToDestroy();
 	}
 }
 
-}
+} // namespace

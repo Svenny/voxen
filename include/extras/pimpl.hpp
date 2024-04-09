@@ -40,12 +40,12 @@ template<typename T, size_t S, size_t A>
 class pimpl {
 public:
 	template<typename... Args>
-	constexpr pimpl(Args&&... args);
+	constexpr pimpl(Args &&...args);
 
 	constexpr pimpl(pimpl &&other) noexcept;
 	constexpr pimpl(const pimpl &other);
-	constexpr pimpl &operator = (pimpl &&other) noexcept;
-	constexpr pimpl &operator = (const pimpl &other);
+	constexpr pimpl &operator=(pimpl &&other) noexcept;
+	constexpr pimpl &operator=(const pimpl &other);
 	constexpr ~pimpl() noexcept;
 
 	constexpr T &object() noexcept;
@@ -55,8 +55,9 @@ private:
 	std::aligned_storage_t<S, A> m_storage;
 };
 
-template<typename T, size_t S, size_t A> template<typename... Args>
-constexpr pimpl<T, S, A>::pimpl(Args&&... args)
+template<typename T, size_t S, size_t A>
+template<typename... Args>
+constexpr pimpl<T, S, A>::pimpl(Args &&...args)
 {
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
@@ -82,7 +83,7 @@ constexpr pimpl<T, S, A>::pimpl(const pimpl &other)
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator = (pimpl &&other) noexcept
+constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator=(pimpl &&other) noexcept
 {
 	static_assert(std::is_nothrow_move_assignable_v<T>, "Type must be nothrow move-assignable");
 	object() = std::move(other);
@@ -90,7 +91,7 @@ constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator = (pimpl &&other) noexcept
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator = (const pimpl &other)
+constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator=(const pimpl &other)
 {
 	static_assert(std::is_copy_assignable_v<T>, "Type must be copy-assignable");
 	object() = other;
@@ -116,4 +117,4 @@ constexpr const T &pimpl<T, S, A>::object() const noexcept
 	return *std::launder(reinterpret_cast<const T *>(&m_storage));
 }
 
-}
+} // namespace extras

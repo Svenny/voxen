@@ -11,20 +11,17 @@ public:
 
 	ValueChecker(ValueChecker &&) = delete;
 	ValueChecker(const ValueChecker &) = delete;
-	ValueChecker &operator = (ValueChecker &&) = delete;
-	ValueChecker &operator = (const ValueChecker &) = delete;
+	ValueChecker &operator=(ValueChecker &&) = delete;
+	ValueChecker &operator=(const ValueChecker &) = delete;
 
-	~ValueChecker() noexcept
-	{
-		REQUIRE(*m_value_ptr == m_required_value);
-	}
+	~ValueChecker() noexcept { REQUIRE(*m_value_ptr == m_required_value); }
 
 private:
 	int *m_value_ptr = nullptr;
 	const int m_required_value;
 };
 
-}
+} // namespace
 
 TEST_CASE("The most basic test of 'fixed_pool'", "[extras::fixed_pool]")
 {
@@ -59,31 +56,19 @@ namespace
 
 class ReusableObject final {
 public:
-	~ReusableObject() noexcept
-	{
-		REQUIRE(m_value == 0);
-	}
+	~ReusableObject() noexcept { REQUIRE(m_value == 0); }
 
-	void afterAllocated()
-	{
-		REQUIRE(m_value == 0);
-	}
+	void afterAllocated() { REQUIRE(m_value == 0); }
 
-	void add(int value)
-	{
-		m_value += value;
-	}
+	void add(int value) { m_value += value; }
 
-	void clear() noexcept
-	{
-		m_value = 0;
-	}
+	void clear() noexcept { m_value = 0; }
 
 private:
 	int m_value = 0;
 };
 
-}
+} // namespace
 
 TEST_CASE("The most basic test of 'reusable_fixed_pool'", "[extras::fixed_pool]")
 {

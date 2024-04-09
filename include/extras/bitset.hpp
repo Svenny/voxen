@@ -31,8 +31,8 @@ public:
 
 	bitset(bitset &&other) = default;
 	bitset(const bitset &other) = default;
-	bitset &operator = (bitset &&other) = default;
-	bitset &operator = (const bitset &other) = default;
+	bitset &operator=(bitset &&other) = default;
+	bitset &operator=(const bitset &other) = default;
 	~bitset() = default;
 
 	// Return bit value at the given index
@@ -71,10 +71,7 @@ public:
 	}
 
 	// Set all bits to zero
-	void clear() noexcept
-	{
-		memset(m_data, 0, sizeof(m_data));
-	}
+	void clear() noexcept { memset(m_data, 0, sizeof(m_data)); }
 
 	// Return the number of bits set to one
 	size_t popcount() const noexcept
@@ -138,4 +135,4 @@ private:
 	uint64_t m_data[NUM_INTS];
 };
 
-}
+} // namespace extras
