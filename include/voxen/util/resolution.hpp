@@ -12,4 +12,4 @@ struct Resolution {
 	bool valid() const noexcept { return width > 0 && height > 0; }
 };
 
-}
+} // namespace voxen

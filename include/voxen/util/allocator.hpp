@@ -23,6 +23,7 @@ class AllocationTracker final {
 public:
 	// Returns an estimated value of currently used memory
 	static size_t currentlyUsedMemory() noexcept;
+
 private:
 	static std::atomic_size_t s_memoryUsage;
 
@@ -45,15 +46,16 @@ public:
 	using propagate_on_container_swap = std::true_type;
 	using is_always_equal = std::true_type;
 
-	template<typename U> struct rebind {
+	template<typename U>
+	struct rebind {
 		using other = DomainAllocator<U, D>;
 	};
 
 	constexpr DomainAllocator() = default;
 	constexpr DomainAllocator(DomainAllocator &&) = default;
 	constexpr DomainAllocator(const DomainAllocator &) = default;
-	constexpr DomainAllocator &operator = (DomainAllocator &&) = default;
-	constexpr DomainAllocator &operator = (const DomainAllocator &) = default;
+	constexpr DomainAllocator &operator=(DomainAllocator &&) = default;
+	constexpr DomainAllocator &operator=(const DomainAllocator &) = default;
 	constexpr ~DomainAllocator() = default;
 
 	[[nodiscard]] constexpr T *allocate(size_t n)
@@ -69,11 +71,11 @@ public:
 		AllocationTracker<D>::decreaseMemoryUsage(sizeof(T) * n);
 	}
 
-	constexpr bool operator == (const DomainAllocator &) const noexcept { return true; }
+	constexpr bool operator==(const DomainAllocator &) const noexcept { return true; }
 };
 
 extern template class AllocationTracker<AllocationDomain::TerrainMesh>;
 extern template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 extern template class AllocationTracker<AllocationDomain::StandbyCache>;
 
-}
+} // namespace voxen

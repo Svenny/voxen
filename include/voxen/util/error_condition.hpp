@@ -29,7 +29,7 @@ enum class VoxenErrc : int {
 // ADL-accessible factory for `std::error_condition { VoxenErrc }`
 std::error_condition make_error_condition(VoxenErrc errc) noexcept;
 
-}
+} // namespace voxen
 
 namespace std
 {
@@ -38,4 +38,4 @@ namespace std
 template<>
 struct is_error_condition_enum<voxen::VoxenErrc> : true_type {};
 
-}
+} // namespace std

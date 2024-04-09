@@ -17,7 +17,10 @@ public:
 
 	// Demangle the name of provided template argument
 	template<typename T>
-	static DemanglePtr demangle() noexcept { return demangle(typeid(T).name()); }
+	static DemanglePtr demangle() noexcept
+	{
+		return demangle(typeid(T).name());
+	}
 };
 
-}
+} // namespace voxen

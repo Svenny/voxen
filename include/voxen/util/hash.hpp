@@ -18,4 +18,4 @@ uint64_t hashXorshift64(const uint64_t *data, size_t count) noexcept;
 // Compute fast non-cryptographic CRC32 checksum
 uint32_t checksumCrc32(std::span<const std::byte> data) noexcept;
 
-}
+} // namespace voxen

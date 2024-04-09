@@ -1,7 +1,7 @@
 #include <voxen/common/uid.hpp>
 
-#include <cstdio>
 #include <cinttypes>
+#include <cstdio>
 #include <random>
 
 namespace voxen
@@ -49,4 +49,4 @@ UID UID::generateRandom()
 	return uid;
 }
 
-}
+} // namespace voxen

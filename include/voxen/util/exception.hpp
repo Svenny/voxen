@@ -20,8 +20,8 @@ public:
 	Exception() = delete;
 	Exception(Exception &&) = default;
 	Exception(const Exception &) = default;
-	Exception &operator = (Exception &&) = default;
-	Exception &operator = (const Exception &) = default;
+	Exception &operator=(Exception &&) = default;
+	Exception &operator=(const Exception &) = default;
 	~Exception() override = default;
 
 	const char *what() const noexcept override;
@@ -29,9 +29,9 @@ public:
 	const Location &where() const noexcept { return m_where; }
 
 	static Exception fromError(std::error_condition error, const char *what = nullptr,
-	                           Location loc = Location::current()) noexcept;
+		Location loc = Location::current()) noexcept;
 	static Exception fromFailedCall(std::error_condition error, std::string_view api,
-	                                Location loc = Location::current());
+		Location loc = Location::current());
 
 protected:
 	Exception(std::variant<const char *, std::string> what, std::error_condition error, Location loc) noexcept;
@@ -42,4 +42,4 @@ private:
 	Location m_where;
 };
 
-}
+} // namespace voxen

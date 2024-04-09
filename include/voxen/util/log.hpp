@@ -43,8 +43,7 @@ public:
 	};
 
 	template<typename... Args>
-	static void log(Level level, extras::source_location where,
-	                std::string_view format_str, Args&&... args) noexcept
+	static void log(Level level, extras::source_location where, std::string_view format_str, Args &&...args) noexcept
 	{
 		if (!willBeLogged(level)) {
 			return;
@@ -65,15 +64,14 @@ private:
 
 	static Level m_current_level;
 
-	static void doLog(Level level, extras::source_location where,
-	                  std::string_view format_str, fmt::format_args format_args) noexcept;
-public:
+	static void doLog(Level level, extras::source_location where, std::string_view format_str,
+		fmt::format_args format_args) noexcept;
 
+public:
 	// Yes, a very long code generation macro
 #define LOG_MAKE_FUNCTIONS(name, level) \
 	template<typename T1> \
-	constexpr static void name(T1 &&arg1, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+	constexpr static void name(T1 &&arg1, extras::source_location where = extras::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1)); \
 	} \
@@ -208,7 +206,7 @@ public:
 #undef LOG_MAKE_FUNCTIONS
 };
 
-}
+} // namespace voxen
 
 namespace extras
 {

@@ -27,7 +27,7 @@ std::shared_ptr<const WorldState> World::getLastState() const
 	return std::shared_ptr<const WorldState> { m_last_state_ptr };
 }
 
-void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval)
+void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nano> tick_inverval)
 {
 	const WorldState &last_state = *m_last_state_ptr;
 	m_next_state_ptr = std::make_shared<WorldState>(last_state);
@@ -58,4 +58,4 @@ void World::update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nan
 	m_last_state_ptr = std::move(m_next_state_ptr);
 }
 
-}
+} // namespace voxen::server

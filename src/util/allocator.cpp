@@ -28,4 +28,4 @@ template class AllocationTracker<AllocationDomain::TerrainMesh>;
 template class AllocationTracker<AllocationDomain::TerrainPrimary>;
 template class AllocationTracker<AllocationDomain::StandbyCache>;
 
-}
+} // namespace voxen
