@@ -16,7 +16,7 @@ const char *Exception::what() const noexcept
 	}
 
 	// Can directly use `std::get<const char *>()` here but this will trip exception-escape analyzer
-	if (const char * const *pstr = std::get_if<const char *>(&m_what); pstr) {
+	if (const char *const *pstr = std::get_if<const char *>(&m_what); pstr) {
 		return *pstr;
 	}
 
@@ -41,4 +41,4 @@ Exception::Exception(std::variant<const char *, std::string> what, std::error_co
 	// TODO: this is the best place to capture stacktrace
 }
 
-}
+} // namespace voxen

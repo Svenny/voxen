@@ -11,4 +11,4 @@ DebugUtils::DemanglePtr DebugUtils::demangle(const char *name) noexcept
 	return DemanglePtr(ptr, &std::free);
 }
 
-}
+} // namespace voxen

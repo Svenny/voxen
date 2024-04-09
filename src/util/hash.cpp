@@ -68,4 +68,4 @@ uint32_t checksumCrc32(std::span<const std::byte> data) noexcept
 	return static_cast<uint32_t>(crc);
 }
 
-}
+} // namespace voxen

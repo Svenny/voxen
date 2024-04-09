@@ -9,9 +9,7 @@
 namespace voxen
 {
 
-Aabb::Aabb() noexcept
-	: m_min(FLT_MAX, FLT_MAX, FLT_MAX), m_max(FLT_MIN, FLT_MIN, FLT_MIN)
-{}
+Aabb::Aabb() noexcept : m_min(FLT_MAX, FLT_MAX, FLT_MAX), m_max(FLT_MIN, FLT_MIN, FLT_MIN) {}
 
 void Aabb::mergeWith(const Aabb &other) noexcept
 {
@@ -35,4 +33,4 @@ bool Aabb::isValid() const noexcept
 	return glm::lessThanEqual(m_min, m_max) == glm::bvec3(true);
 }
 
-}
+} // namespace voxen

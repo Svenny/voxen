@@ -15,15 +15,16 @@ public:
 	World();
 	World(World &&) = delete;
 	World(const World &) = delete;
-	World &operator = (World &&) = delete;
-	World &operator = (const World &) = delete;
+	World &operator=(World &&) = delete;
+	World &operator=(const World &) = delete;
 	~World() noexcept;
 
 	std::shared_ptr<const WorldState> getLastState() const;
 
 	double secondsPerTick() const noexcept { return 1.0 / 100.0; } // 100 UPS
 
-	void update(DebugQueueRtW& queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
+	void update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
+
 private:
 	terrain::Controller m_terrain_controller;
 
@@ -39,4 +40,4 @@ private:
 	glm::dvec3 m_chunk_loading_position;
 };
 
-}
+} // namespace voxen::server

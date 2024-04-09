@@ -15,8 +15,8 @@ public:
 	Aabb() noexcept;
 	Aabb(Aabb &&) = default;
 	Aabb(const Aabb &) = default;
-	Aabb &operator = (Aabb &&) = default;
-	Aabb &operator = (const Aabb &) = default;
+	Aabb &operator=(Aabb &&) = default;
+	Aabb &operator=(const Aabb &) = default;
 	~Aabb() = default;
 
 	// Expand this AABB to also include `other` AABB
@@ -37,4 +37,4 @@ private:
 	glm::vec3 m_max;
 };
 
-}
+} // namespace voxen
