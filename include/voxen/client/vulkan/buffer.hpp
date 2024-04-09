@@ -14,8 +14,8 @@ public:
 	explicit WrappedVkBuffer(const VkBufferCreateInfo &info);
 	WrappedVkBuffer(WrappedVkBuffer &&other) noexcept;
 	WrappedVkBuffer(const WrappedVkBuffer &) = delete;
-	WrappedVkBuffer &operator = (WrappedVkBuffer &&other) noexcept;
-	WrappedVkBuffer &operator = (const WrappedVkBuffer &) = delete;
+	WrappedVkBuffer &operator=(WrappedVkBuffer &&other) noexcept;
+	WrappedVkBuffer &operator=(const WrappedVkBuffer &) = delete;
 	~WrappedVkBuffer() noexcept;
 
 	// A dumb wrapper for `vkBindBufferMemory`
@@ -44,8 +44,8 @@ public:
 	explicit FatVkBuffer(const VkBufferCreateInfo &info, DeviceMemoryUseCase use_case);
 	FatVkBuffer(FatVkBuffer &&) noexcept;
 	FatVkBuffer(const FatVkBuffer &) = delete;
-	FatVkBuffer &operator = (FatVkBuffer &&) noexcept;
-	FatVkBuffer &operator = (const FatVkBuffer &) = delete;
+	FatVkBuffer &operator=(FatVkBuffer &&) noexcept;
+	FatVkBuffer &operator=(const FatVkBuffer &) = delete;
 	~FatVkBuffer() = default;
 
 	DeviceAllocation &allocation() noexcept { return m_memory; }
@@ -62,4 +62,4 @@ private:
 	VkDeviceSize m_size = 0;
 };
 
-}
+} // namespace voxen::client::vulkan

@@ -11,8 +11,9 @@ ImageView::ImageView(const VkImageViewCreateInfo &info)
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreateImageView(device, &info, HostAllocator::callbacks(), &m_view);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateImageView");
+	}
 }
 
 ImageView::~ImageView() noexcept
@@ -22,4 +23,4 @@ ImageView::~ImageView() noexcept
 	backend.vkDestroyImageView(device, m_view, HostAllocator::callbacks());
 }
 
-}
+} // namespace voxen::client::vulkan

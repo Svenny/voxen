@@ -12,8 +12,8 @@ public:
 	explicit Surface(Window &window);
 	Surface(Surface &&) = delete;
 	Surface(const Surface &) = delete;
-	Surface &operator = (Surface &&) = delete;
-	Surface &operator = (const Surface &) = delete;
+	Surface &operator=(Surface &&) = delete;
+	Surface &operator=(const Surface &) = delete;
 	~Surface() noexcept;
 
 	Window &window() noexcept { return m_window; }
@@ -21,6 +21,7 @@ public:
 	VkPresentModeKHR presentMode() const noexcept { return m_present_mode; }
 
 	operator VkSurfaceKHR() const noexcept { return m_surface; }
+
 private:
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	Window &m_window;
@@ -32,4 +33,4 @@ private:
 	void pickPresentMode();
 };
 
-}
+} // namespace voxen::client::vulkan

@@ -16,29 +16,32 @@ namespace voxen::client::vulkan
 
 struct MainSceneUbo {
 	glm::mat4 translated_world_to_clip;
-	glm::vec3 world_position; float _pad0;
+	glm::vec3 world_position;
+	float _pad0;
 };
 
 MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
 MainLoop::MainLoop()
-	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE),
-	m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily()),
-	m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
+	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE)
+	, m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily())
+	, m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
 {
 	const VkDeviceSize align = Backend::backend().capabilities().props10().limits.minUniformBufferOffsetAlignment;
 	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
 
-	m_main_scene_ubo = FatVkBuffer(VkBufferCreateInfo {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.size = ubo_size * Config::NUM_CPU_PENDING_FRAMES,
-		.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = nullptr
-	}, DeviceMemoryUseCase::FastUpload);
+	m_main_scene_ubo = FatVkBuffer(
+		VkBufferCreateInfo {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.size = ubo_size * Config::NUM_CPU_PENDING_FRAMES,
+			.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = nullptr,
+		},
+		DeviceMemoryUseCase::FastUpload);
 
 	m_main_scene_ubo.allocation().tryHostMap();
 	assert(m_main_scene_ubo.allocation().hostPointer());
@@ -63,8 +66,9 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	VkFence render_done_fence = m_pending_frame_syncs[pending_frame_id].render_done_fence;
 
 	VkResult result = backend.vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkWaitForFences");
+	}
 
 	// Advance current set ID when CPU resources for current frame
 	// are not used anymore but before any CPU work has started
@@ -76,23 +80,26 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		VkFence image_guard_fence = m_image_guard_fences[swapchain_image_id];
 		if (image_guard_fence != VK_NULL_HANDLE) {
 			result = backend.vkWaitForFences(device, 1, &image_guard_fence, VK_TRUE, UINT64_MAX);
-			if (result != VK_SUCCESS)
+			if (result != VK_SUCCESS) {
 				throw VulkanException(result, "vkWaitForFences");
+			}
 		}
 		m_image_guard_fences[swapchain_image_id] = render_done_fence;
 	}
 
 	result = backend.vkResetFences(device, 1, &render_done_fence);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkResetFences");
+	}
 
 	VkCommandBuffer cmd_buf = m_graphics_command_buffers[pending_frame_id];
 	VkCommandBufferBeginInfo cmd_begin_info = {};
 	cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	result = backend.vkBeginCommandBuffer(cmd_buf, &cmd_begin_info);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBeginCommandBuffer");
+	}
 
 	updateMainSceneUbo(view);
 
@@ -122,8 +129,8 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 			.baseMipLevel = 0,
 			.levelCount = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1
-		}
+			.layerCount = 1,
+		},
 	};
 
 	initialImageBarriers[1] = {
@@ -142,14 +149,14 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 			.baseMipLevel = 0,
 			.levelCount = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1
-		 }
+			.layerCount = 1,
+		},
 	};
 
 	const VkDependencyInfo initialDepInfo {
-		 .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		 .imageMemoryBarrierCount = std::size(initialImageBarriers),
-		 .pImageMemoryBarriers = initialImageBarriers
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = std::size(initialImageBarriers),
+		.pImageMemoryBarriers = initialImageBarriers,
 	};
 
 	backend.vkCmdPipelineBarrier2(cmd_buf, &initialDepInfo);
@@ -206,7 +213,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		.width = float(frame_size.width),
 		.height = float(frame_size.height),
 		.minDepth = 0.0f,
-		.maxDepth = 1.0f
+		.maxDepth = 1.0f,
 	};
 	backend.vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
 
@@ -233,14 +240,14 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 			.baseMipLevel = 0,
 			.levelCount = 1,
 			.baseArrayLayer = 0,
-			.layerCount = 1
-		}
+			.layerCount = 1,
+		},
 	};
 
 	const VkDependencyInfo finalDepInfo {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 		.imageMemoryBarrierCount = 1,
-		.pImageMemoryBarriers = &finalImageBarrier
+		.pImageMemoryBarriers = &finalImageBarrier,
 	};
 
 	backend.vkCmdPipelineBarrier2(cmd_buf, &finalDepInfo);
@@ -248,8 +255,9 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	// Submit commands
 
 	result = backend.vkEndCommandBuffer(cmd_buf);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkEndCommandBuffer");
+	}
 
 	VkSubmitInfo submit_info = {};
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -264,8 +272,9 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	VkQueue queue = backend.device().graphicsQueue();
 	result = backend.vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkQueueSubmit");
+	}
 
 	swapchain.presentImage(swapchain_image_id, render_done_semaphore);
 
@@ -282,8 +291,8 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 	const uint32_t set_id = backend.descriptorManager().setId();
 	const uintptr_t ubo_data_offset = set_id * ubo_size;
 
-	MainSceneUbo *ubo_data = reinterpret_cast<MainSceneUbo *>
-		(uintptr_t(m_main_scene_ubo.allocation().hostPointer()) + ubo_data_offset);
+	MainSceneUbo *ubo_data = reinterpret_cast<MainSceneUbo *>(
+		uintptr_t(m_main_scene_ubo.allocation().hostPointer()) + ubo_data_offset);
 
 	ubo_data->translated_world_to_clip = view.translatedWorldToClip();
 	ubo_data->world_position = view.cameraPosition();
@@ -291,7 +300,7 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 	const VkDescriptorBufferInfo buffer_info {
 		.buffer = m_main_scene_ubo,
 		.offset = ubo_data_offset,
-		.range = sizeof(MainSceneUbo)
+		.range = sizeof(MainSceneUbo),
 	};
 
 	const VkWriteDescriptorSet write {
@@ -304,10 +313,10 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		.pImageInfo = nullptr,
 		.pBufferInfo = &buffer_info,
-		.pTexelBufferView = nullptr
+		.pTexelBufferView = nullptr,
 	};
 
 	backend.vkUpdateDescriptorSets(backend.device(), 1, &write, 0, nullptr);
 }
 
-}
+} // namespace voxen::client::vulkan

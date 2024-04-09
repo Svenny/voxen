@@ -57,8 +57,9 @@ void Swapchain::recreateSwapchain()
 	{
 		VkSurfaceCapabilitiesKHR caps;
 		VkResult result = backend.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_device, surface, &caps);
-		if (result != VK_SUCCESS)
+		if (result != VK_SUCCESS) {
 			throw VulkanException(result, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+		}
 
 		info.imageExtent = pickImageExtent(caps);
 		info.minImageCount = pickImagesNumber(caps);
@@ -69,8 +70,9 @@ void Swapchain::recreateSwapchain()
 	VkResult result = backend.vkCreateSwapchainKHR(device, &info, allocator, &new_swapchain);
 	// Old swapchain is retired and should be destroyed in any case
 	destroySwapchain();
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateSwapchainKHR");
+	}
 
 	m_swapchain = new_swapchain;
 	defer_fail { destroySwapchain(); };
@@ -86,10 +88,11 @@ uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 	VkDevice device = backend.device();
 
 	uint32_t image_index;
-	VkResult result = backend.vkAcquireNextImageKHR(device, m_swapchain, UINT64_MAX,
-	                                                signal_semaphore, VK_NULL_HANDLE, &image_index);
-	if (result != VK_SUCCESS)
+	VkResult result = backend.vkAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, signal_semaphore, VK_NULL_HANDLE,
+		&image_index);
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkAcquireNextImageKHR");
+	}
 	return image_index;
 }
 
@@ -111,10 +114,12 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 	info.pResults = &present_result;
 
 	VkResult queue_result = backend.vkQueuePresentKHR(queue, &info);
-	if (queue_result != VK_SUCCESS)
+	if (queue_result != VK_SUCCESS) {
 		throw VulkanException(queue_result, "vkQueuePresentKHR");
-	if (present_result != VK_SUCCESS)
+	}
+	if (present_result != VK_SUCCESS) {
 		throw VulkanException(present_result, "vkQueuePresentKHR[pResults]");
+	}
 }
 
 uint32_t Swapchain::numImages() const noexcept
@@ -131,8 +136,9 @@ void Swapchain::destroySwapchain() noexcept
 	auto allocator = HostAllocator::callbacks();
 
 	m_image_extent = { 0, 0 };
-	for (VkImageView view : m_image_views)
+	for (VkImageView view : m_image_views) {
 		backend.vkDestroyImageView(device, view, allocator);
+	}
 	m_image_views.clear();
 	// Images are destroyed automatically with swapchain
 	m_images.clear();
@@ -144,10 +150,10 @@ void Swapchain::destroySwapchain() noexcept
 VkExtent2D Swapchain::pickImageExtent(const VkSurfaceCapabilitiesKHR &caps)
 {
 	VkExtent2D result;
-	if ((caps.currentExtent.width == 0 && caps.currentExtent.height == 0) ||
-	    (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX)) {
+	if ((caps.currentExtent.width == 0 && caps.currentExtent.height == 0)
+		|| (caps.currentExtent.width == UINT32_MAX && caps.currentExtent.height == UINT32_MAX)) {
 		Log::debug("Current surface extent is undefined, using GLFW window size");
-		auto[width, height] = Backend::backend().surface().window().framebufferSize();
+		auto [width, height] = Backend::backend().surface().window().framebufferSize();
 		result.width = std::clamp(uint32_t(width), caps.minImageExtent.width, caps.maxImageExtent.width);
 		result.height = std::clamp(uint32_t(height), caps.minImageExtent.height, caps.maxImageExtent.height);
 	} else {
@@ -239,4 +245,4 @@ void Swapchain::createImageViews()
 	throw VulkanException(error_code, "vkCreateImageView");
 }
 
-}
+} // namespace voxen::client::vulkan

@@ -23,7 +23,7 @@ WrappedVkBuffer::WrappedVkBuffer(WrappedVkBuffer &&other) noexcept
 	m_handle = std::exchange(other.m_handle, static_cast<VkBuffer>(VK_NULL_HANDLE));
 }
 
-WrappedVkBuffer &WrappedVkBuffer::operator = (WrappedVkBuffer &&other) noexcept
+WrappedVkBuffer &WrappedVkBuffer::operator=(WrappedVkBuffer &&other) noexcept
 {
 	std::swap(m_handle, other.m_handle);
 	return *this;
@@ -67,7 +67,7 @@ FatVkBuffer::FatVkBuffer(FatVkBuffer &&other) noexcept
 	m_size = std::exchange(other.m_size, 0);
 }
 
-FatVkBuffer &FatVkBuffer::operator = (FatVkBuffer &&other) noexcept
+FatVkBuffer &FatVkBuffer::operator=(FatVkBuffer &&other) noexcept
 {
 	std::swap(m_buffer, other.m_buffer);
 	std::swap(m_memory, other.m_memory);
@@ -75,4 +75,4 @@ FatVkBuffer &FatVkBuffer::operator = (FatVkBuffer &&other) noexcept
 	return *this;
 }
 
-}
+} // namespace voxen::client::vulkan

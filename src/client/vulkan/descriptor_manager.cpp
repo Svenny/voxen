@@ -1,8 +1,8 @@
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
+#include <voxen/client/vulkan/device.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -24,7 +24,7 @@ WrappedVkDescriptorPool::WrappedVkDescriptorPool(WrappedVkDescriptorPool &&other
 	m_handle = std::exchange(other.m_handle, static_cast<VkDescriptorPool>(VK_NULL_HANDLE));
 }
 
-WrappedVkDescriptorPool &WrappedVkDescriptorPool::operator = (WrappedVkDescriptorPool &&other) noexcept
+WrappedVkDescriptorPool &WrappedVkDescriptorPool::operator=(WrappedVkDescriptorPool &&other) noexcept
 {
 	std::swap(m_handle, other.m_handle);
 	return *this;
@@ -58,7 +58,7 @@ DescriptorManager::DescriptorManager()
 		// TODO: this value needs to be updated when a new set layout is added
 		.maxSets = 2 * Config::NUM_CPU_PENDING_FRAMES,
 		.poolSizeCount = static_cast<uint32_t>(sizes.size()),
-		.pPoolSizes = sizes.data()
+		.pPoolSizes = sizes.data(),
 	};
 	m_main_pool = WrappedVkDescriptorPool(info);
 
@@ -68,7 +68,7 @@ DescriptorManager::DescriptorManager()
 		.pNext = nullptr,
 		.descriptorPool = m_main_pool,
 		.descriptorSetCount = Config::NUM_CPU_PENDING_FRAMES,
-		.pSetLayouts = set_layouts
+		.pSetLayouts = set_layouts,
 	};
 
 	VkDevice device = backend.device();
@@ -87,4 +87,4 @@ DescriptorManager::DescriptorManager()
 	}
 }
 
-}
+} // namespace voxen::client::vulkan

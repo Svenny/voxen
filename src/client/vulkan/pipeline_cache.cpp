@@ -18,8 +18,9 @@ inline constexpr size_t MAX_PIPELINE_CACHE_SIZE = 1 << 25; // 32 MB
 PipelineCache::PipelineCache(const char *path) : m_save_path(path)
 {
 	Log::debug("Creating PipelineCache");
-	if (path)
+	if (path) {
 		Log::debug("Trying to preinitialize pipeline cache from `{}`", path);
+	}
 	auto cache_data = FileManager::readUserFile(path);
 
 	VkPipelineCacheCreateInfo info = {};
@@ -33,15 +34,17 @@ PipelineCache::PipelineCache(const char *path) : m_save_path(path)
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device();
 	VkResult result = backend.vkCreatePipelineCache(device, &info, HostAllocator::callbacks(), &m_cache);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreatePipelineCache");
+	}
 	Log::debug("PipelineCache created successfully");
 }
 
 bool PipelineCache::dump() noexcept
 {
-	if (m_save_path.empty())
+	if (m_save_path.empty()) {
 		return false;
+	}
 
 	// malloc is used for noexcept behavior
 	void *buffer = malloc(MAX_PIPELINE_CACHE_SIZE);
@@ -77,4 +80,4 @@ PipelineCache::~PipelineCache() noexcept
 	backend.vkDestroyPipelineCache(device, m_cache, HostAllocator::callbacks());
 }
 
-}
+} // namespace voxen::client::vulkan

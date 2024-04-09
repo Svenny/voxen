@@ -12,8 +12,8 @@ public:
 	PipelineCollection();
 	PipelineCollection(PipelineCollection &&) = delete;
 	PipelineCollection(const PipelineCollection &) = delete;
-	PipelineCollection &operator = (PipelineCollection &&) = delete;
-	PipelineCollection &operator = (const PipelineCollection &) = delete;
+	PipelineCollection &operator=(PipelineCollection &&) = delete;
+	PipelineCollection &operator=(const PipelineCollection &) = delete;
 	~PipelineCollection() noexcept;
 
 	enum GraphicsPipelineId : uint32_t {
@@ -31,6 +31,7 @@ public:
 
 	VkPipeline operator[](GraphicsPipelineId idx) const noexcept;
 	VkPipeline operator[](ComputePipelineId idx) const noexcept;
+
 private:
 	void destroyPipelines() noexcept;
 
@@ -38,4 +39,4 @@ private:
 	std::array<VkPipeline, NUM_COMPUTE_PIPELINES> m_compute_pipelines;
 };
 
-}
+} // namespace voxen::client::vulkan

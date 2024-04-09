@@ -44,4 +44,4 @@ void CommandBuffer::end()
 	m_state = State::Executable;
 }
 
-}
+} // namespace voxen::client::vulkan

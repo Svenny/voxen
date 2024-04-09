@@ -72,9 +72,13 @@ public:
 	PipelineCache &pipelineCache() noexcept { return *m_pipeline_cache; }
 	const PipelineCache &pipelineCache() const noexcept { return *m_pipeline_cache; }
 	DescriptorSetLayoutCollection &descriptorSetLayoutCollection() noexcept
-		{ return *m_descriptor_set_layout_collection; }
+	{
+		return *m_descriptor_set_layout_collection;
+	}
 	const DescriptorSetLayoutCollection &descriptorSetLayoutCollection() const noexcept
-		{ return *m_descriptor_set_layout_collection; }
+	{
+		return *m_descriptor_set_layout_collection;
+	}
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 	DescriptorManager &descriptorManager() noexcept { return *m_descriptor_manager; }
@@ -112,6 +116,7 @@ public:
 	// 3. There is a lot of downstream entities (which strengthens p.2)
 	static Backend &backend() noexcept { return s_instance; }
 	static const Backend &cbackend() noexcept { return s_instance; }
+
 private:
 	State m_state = State::NotStarted;
 
@@ -159,9 +164,9 @@ private:
 	constexpr Backend(Impl &impl) noexcept;
 	Backend(Backend &&) = delete;
 	Backend(const Backend &) = delete;
-	Backend &operator = (Backend &&) = delete;
-	Backend &operator = (const Backend &) = delete;
+	Backend &operator=(Backend &&) = delete;
+	Backend &operator=(const Backend &) = delete;
 	~Backend() noexcept;
 };
 
-}
+} // namespace voxen::client::vulkan

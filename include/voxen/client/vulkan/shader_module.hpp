@@ -14,8 +14,8 @@ public:
 	explicit ShaderModule(std::string_view relative_path);
 	ShaderModule(ShaderModule &&) = delete;
 	ShaderModule(const ShaderModule &) = delete;
-	ShaderModule &operator = (ShaderModule &&) = delete;
-	ShaderModule &operator = (const ShaderModule &) = delete;
+	ShaderModule &operator=(ShaderModule &&) = delete;
+	ShaderModule &operator=(const ShaderModule &) = delete;
 	~ShaderModule() noexcept;
 
 	void load(std::string_view relative_path);
@@ -23,6 +23,7 @@ public:
 	bool isLoaded() const noexcept { return m_shader_module != VK_NULL_HANDLE; }
 
 	operator VkShaderModule() const noexcept { return m_shader_module; }
+
 private:
 	VkShaderModule m_shader_module = VK_NULL_HANDLE;
 };
@@ -32,8 +33,8 @@ public:
 	ShaderModuleCollection();
 	ShaderModuleCollection(ShaderModuleCollection &&) = delete;
 	ShaderModuleCollection(const ShaderModuleCollection &) = delete;
-	ShaderModuleCollection &operator = (ShaderModuleCollection &&) = delete;
-	ShaderModuleCollection &operator = (const ShaderModuleCollection &) = delete;
+	ShaderModuleCollection &operator=(ShaderModuleCollection &&) = delete;
+	ShaderModuleCollection &operator=(const ShaderModuleCollection &) = delete;
 	~ShaderModuleCollection() = default;
 
 	enum ShaderId : uint32_t {
@@ -46,9 +47,10 @@ public:
 		NUM_SHADERS
 	};
 
-	const ShaderModule &operator [](ShaderId idx) const;
+	const ShaderModule &operator[](ShaderId idx) const;
+
 private:
 	std::array<ShaderModule, NUM_SHADERS> m_shader_modules;
 };
 
-}
+} // namespace voxen::client::vulkan

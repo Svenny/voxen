@@ -11,15 +11,15 @@ namespace voxen::client::vulkan
 
 static_assert(Config::NUM_GPU_PENDING_FRAMES > 0, "Number of GPU pending frames must be positive");
 static_assert(Config::NUM_CPU_PENDING_FRAMES >= Config::NUM_GPU_PENDING_FRAMES,
-              "Number of CPU pending frames must not be less than GPU pending frames");
+	"Number of CPU pending frames must not be less than GPU pending frames");
 
 static_assert(Config::ARENA_SIZE_INITIAL_GUESS > 0, "Arena size initial guess must be positive");
 static_assert(Config::ARENA_SIZE_INITIAL_GUESS % Config::ARENA_SIZE_ALIGNMENT == 0,
-              "Arena size initial guess must be properly aligned");
+	"Arena size initial guess must be properly aligned");
 
 static_assert(Config::ARENA_GROW_FACTOR_DENOMINATOR > 0, "Arena grow factor denominator must be positive");
 static_assert(Config::ARENA_GROW_FACTOR_NUMERATOR > Config::ARENA_GROW_FACTOR_DENOMINATOR,
-              "Arena grow factor must be larger than one (numerator > denomenator)");
+	"Arena grow factor must be larger than one (numerator > denomenator)");
 
 static_assert(std::has_single_bit(Config::ALLOCATION_GRANULARITY), "Allocation granularity must be a power of two");
 static_assert(std::has_single_bit(Config::ARENA_SIZE_ALIGNMENT), "Arena size alignment must be a power of two");
@@ -29,8 +29,8 @@ static_assert(Config::MAX_RENDERED_CHUNKS >= 2048, "It's too dangerous to set lo
 static_assert(Config::MAX_RENDERED_CHUNKS % 128 == 0, "Rendered chunks count should be a multiple of 128");
 
 // This number is entirely not expected to ever happen in a real gameplay.
-constexpr static size_t MAX_EXPECTED_VERTICES =
-	terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE;
+constexpr static size_t MAX_EXPECTED_VERTICES = terrain::Config::CHUNK_SIZE * terrain::Config::CHUNK_SIZE
+	* terrain::Config::CHUNK_SIZE;
 // NOTE: it's an approximation based on the fact that classical Dual Contouring builds 6 triangles per vertex.
 constexpr static size_t MAX_EXPECTED_INDICES = 6 * MAX_EXPECTED_VERTICES;
 
@@ -38,6 +38,6 @@ static_assert(Config::MAX_TERRAIN_ARENA_VERTICES >= MAX_EXPECTED_VERTICES, "Aren
 static_assert(Config::MAX_TERRAIN_ARENA_INDICES >= MAX_EXPECTED_INDICES, "Arena size is dangerously low");
 static_assert(Config::TERRAIN_PER_FRAME_GC_STEPS > 0, "GC steps number must be positive");
 static_assert(Config::TERRAIN_GC_AGE_THRESHOLD > Config::NUM_CPU_PENDING_FRAMES,
-              "GC age threshold must be bigger than number of CPU frames");
+	"GC age threshold must be bigger than number of CPU frames");
 
-}
+} // namespace voxen::client::vulkan

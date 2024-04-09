@@ -14,8 +14,7 @@
 namespace voxen::client::vulkan
 {
 
-Surface::Surface(Window &window)
-	: m_window(window)
+Surface::Surface(Window &window) : m_window(window)
 {
 	Log::debug("Creating Surface");
 	auto &backend = Backend::backend();
@@ -121,4 +120,4 @@ void Surface::pickPresentMode()
 	throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "failed to find suitable present mode");
 }
 
-}
+} // namespace voxen::client::vulkan

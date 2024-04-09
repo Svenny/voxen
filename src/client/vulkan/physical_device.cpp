@@ -110,9 +110,9 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device, const VkPhysicalD
 
 	uint32_t req_version = Capabilities::MIN_VULKAN_VERSION;
 	if (props.apiVersion < req_version) {
-		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}",
-		           props.deviceName, VK_VERSION_MAJOR(props.apiVersion), VK_VERSION_MINOR(props.apiVersion),
-		           VK_VERSION_MAJOR(req_version), VK_VERSION_MINOR(req_version));
+		Log::debug("'{}' is skipped because its supported API {}.{} is lower than required {}.{}", props.deviceName,
+			VK_VERSION_MAJOR(props.apiVersion), VK_VERSION_MINOR(props.apiVersion), VK_VERSION_MAJOR(req_version),
+			VK_VERSION_MINOR(req_version));
 		return false;
 	}
 
@@ -234,4 +234,4 @@ uint32_t PhysicalDevice::calcDeviceScore(VkPhysicalDevice /*device*/, const VkPh
 	}
 }
 
-}
+} // namespace voxen::client::vulkan

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/client/vulkan/buffer.hpp>
+#include <voxen/client/vulkan/common.hpp>
 #include <voxen/common/terrain/chunk.hpp>
 
 #include <extras/refcnt_ptr.hpp>
@@ -32,8 +32,8 @@ public:
 	TerrainSynchronizer();
 	TerrainSynchronizer(TerrainSynchronizer &&) = delete;
 	TerrainSynchronizer(const TerrainSynchronizer &) = delete;
-	TerrainSynchronizer &operator = (TerrainSynchronizer &&) = delete;
-	TerrainSynchronizer &operator = (const TerrainSynchronizer &) = delete;
+	TerrainSynchronizer &operator=(TerrainSynchronizer &&) = delete;
+	TerrainSynchronizer &operator=(const TerrainSynchronizer &) = delete;
 	~TerrainSynchronizer() noexcept;
 
 	void beginSyncSession();
@@ -92,4 +92,4 @@ private:
 	static VkBuffer arenaHandle(const std::list<TerrainDataArena> &list, uint32_t id) noexcept;
 };
 
-}
+} // namespace voxen::client::vulkan

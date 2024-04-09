@@ -15,16 +15,18 @@ Image::Image(const VkImageCreateInfo &info)
 	auto allocator = HostAllocator::callbacks();
 
 	VkResult result = backend.vkCreateImage(device, &info, allocator, &m_image);
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateImage");
+	}
 	defer_fail { backend.vkDestroyImage(device, m_image, allocator); };
 
 	// TODO: For now we support only device-local images
 	m_memory = backend.deviceAllocator().allocate(m_image, DeviceMemoryUseCase::GpuOnly);
 
 	result = backend.vkBindImageMemory(device, m_image, m_memory.handle(), m_memory.offset());
-	if (result != VK_SUCCESS)
+	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBindImageMemory");
+	}
 }
 
 Image::~Image() noexcept
@@ -34,4 +36,4 @@ Image::~Image() noexcept
 	backend.vkDestroyImage(device, m_image, HostAllocator::callbacks());
 }
 
-}
+} // namespace voxen::client::vulkan

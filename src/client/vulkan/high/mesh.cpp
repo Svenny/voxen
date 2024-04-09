@@ -1,7 +1,7 @@
 #include <voxen/client/vulkan/high/mesh.hpp>
 
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/client/vulkan/high/transfer_manager.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -17,8 +17,7 @@ VkDeviceSize getVertexElementSize(VertexFormat fmt) noexcept
 		return 3 * 4;
 	case VertexFormat::Pos3D_Norm3D:
 		return 3 * 4 + 3 * 4;
-	// No `default` to make `-Werror -Wswitch` protection work
-	}
+	} // No `default` to make `-Werror -Wswitch` protection work
 }
 
 VkDeviceSize getIndexElementSize(IndexFormat fmt) noexcept
@@ -32,8 +31,7 @@ VkDeviceSize getIndexElementSize(IndexFormat fmt) noexcept
 		return 2;
 	case IndexFormat::Index32:
 		return 4;
-	// No `default` to make `-Werror -Wswitch` protection work
-	}
+	} // No `default` to make `-Werror -Wswitch` protection work
 }
 
 VkIndexType getIndexType(IndexFormat fmt) noexcept
@@ -47,8 +45,7 @@ VkIndexType getIndexType(IndexFormat fmt) noexcept
 		return VK_INDEX_TYPE_UINT16;
 	case IndexFormat::Index32:
 		return VK_INDEX_TYPE_UINT32;
-	// No `default` to make `-Werror -Wswitch` protection work
-	}
+	} // No `default` to make `-Werror -Wswitch` protection work
 }
 
 Mesh::Mesh(const MeshCreateInfo &create_info)
@@ -97,8 +94,9 @@ void Mesh::bindBuffers(VkCommandBuffer cmd_buffer)
 		VkDeviceSize offset = 0;
 		backend.vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vertex_buffer, &offset);
 	}
-	if (m_index_buffer.has_value())
+	if (m_index_buffer.has_value()) {
 		backend.vkCmdBindIndexBuffer(cmd_buffer, m_index_buffer.value(), 0, getIndexType(m_index_format));
+	}
 }
 
-}
+} // namespace voxen::client::vulkan

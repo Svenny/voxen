@@ -11,8 +11,8 @@ public:
 	Swapchain();
 	Swapchain(Swapchain &&) = delete;
 	Swapchain(const Swapchain &) = delete;
-	Swapchain &operator = (Swapchain &&) = delete;
-	Swapchain &operator = (const Swapchain &) = delete;
+	Swapchain &operator=(Swapchain &&) = delete;
+	Swapchain &operator=(const Swapchain &) = delete;
 	~Swapchain() noexcept;
 
 	void recreateSwapchain();
@@ -25,6 +25,7 @@ public:
 	VkExtent2D imageExtent() const noexcept { return m_image_extent; }
 
 	operator VkSwapchainKHR() const noexcept { return m_swapchain; }
+
 private:
 	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
 	std::vector<VkImage> m_images;
@@ -38,4 +39,4 @@ private:
 	void createImageViews();
 };
 
-}
+} // namespace voxen::client::vulkan

@@ -18,12 +18,13 @@ public:
 	FramebufferCollection();
 	FramebufferCollection(FramebufferCollection &&) = delete;
 	FramebufferCollection(const FramebufferCollection &) = delete;
-	FramebufferCollection &operator = (FramebufferCollection &&) = delete;
-	FramebufferCollection &operator = (const FramebufferCollection &) = delete;
+	FramebufferCollection &operator=(FramebufferCollection &&) = delete;
+	FramebufferCollection &operator=(const FramebufferCollection &) = delete;
 	~FramebufferCollection() = default;
 
 	Image &sceneDepthStencilBuffer() noexcept { return m_scene_depth_stencil_buffer; }
 	ImageView &sceneDepthStencilBufferView() noexcept { return m_scene_depth_stencil_buffer_view; }
+
 private:
 	Image m_scene_depth_stencil_buffer;
 	ImageView m_scene_depth_stencil_buffer_view;
@@ -32,4 +33,4 @@ private:
 	ImageView createSceneDepthStencilBufferView();
 };
 
-}
+} // namespace voxen::client::vulkan

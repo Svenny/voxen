@@ -82,4 +82,4 @@ public:
 	constexpr static uint32_t TERRAIN_GC_AGE_THRESHOLD = 16;
 };
 
-}
+} // namespace voxen::client::vulkan

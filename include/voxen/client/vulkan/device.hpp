@@ -12,8 +12,8 @@ public:
 	Device();
 	Device(Device &&) = delete;
 	Device(const Device &) = delete;
-	Device &operator = (Device &&) = delete;
-	Device &operator = (const Device &) = delete;
+	Device &operator=(Device &&) = delete;
+	Device &operator=(const Device &) = delete;
 	~Device() noexcept;
 
 	void waitIdle();
@@ -24,6 +24,7 @@ public:
 	VkQueue presentQueue() const noexcept { return m_present_queue; }
 
 	operator VkDevice() const noexcept { return m_device; }
+
 private:
 	VkDevice m_device = VK_NULL_HANDLE;
 	VkQueue m_graphics_queue = VK_NULL_HANDLE;
@@ -38,4 +39,4 @@ private:
 	void destroyDevice() noexcept;
 };
 
-}
+} // namespace voxen::client::vulkan
