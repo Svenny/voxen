@@ -23,7 +23,7 @@ struct ZeroCrossingContext {
 	voxel_t voxel_lesser, voxel_bigger;
 };
 
-}
+} // namespace
 
 template<int D, typename F>
 static glm::dvec3 findZeroCrossing(glm::dvec3 p, double c1, double f0, double f1, F &&f) noexcept
@@ -43,8 +43,9 @@ static glm::dvec3 findZeroCrossing(glm::dvec3 p, double c1, double f0, double f1
 			c0 = mid;
 			if (side == -1) {
 				double m = 1.0 - val / f0;
-				if (m <= 0.0)
+				if (m <= 0.0) {
 					m = 0.5;
+				}
 				f1 *= m;
 			}
 			f0 = val;
@@ -53,8 +54,9 @@ static glm::dvec3 findZeroCrossing(glm::dvec3 p, double c1, double f0, double f1
 			c1 = mid;
 			if (side == +1) {
 				double m = 1.0 - val / f1;
-				if (m <= 0.0)
+				if (m <= 0.0) {
 					m = 0.5;
+				}
 				f0 *= m;
 			}
 			f1 = val;
@@ -72,16 +74,15 @@ static void addZeroCrossing(const ZeroCrossingContext &ctx, F &&f, DF &&df, Herm
 	const double edge_world_min_c = ctx.edge_world_min[D];
 	const double edge_world_max_c = edge_world_min_c + ctx.edge_world_length;
 
-	glm::dvec3 point_world =
-		findZeroCrossing<D>(ctx.edge_world_min, edge_world_max_c, ctx.value_lesser, ctx.value_bigger, f);
+	glm::dvec3 point_world = findZeroCrossing<D>(ctx.edge_world_min, edge_world_max_c, ctx.value_lesser,
+		ctx.value_bigger, f);
 	double offset = (point_world[D] - edge_world_min_c) / ctx.edge_world_length;
 
 	glm::vec3 normal = glm::normalize(df(point_world.x, point_world.y, point_world.z));
 	bool lesser_endpoint_solid = ctx.sign_lesser;
 	voxel_t solid_voxel = lesser_endpoint_solid ? ctx.voxel_lesser : ctx.voxel_bigger;
 
-	storage.emplace(ctx.store_x, ctx.store_y, ctx.store_z,
-	                normal, offset, D, lesser_endpoint_solid, solid_voxel);
+	storage.emplace(ctx.store_x, ctx.store_y, ctx.store_z, normal, offset, D, lesser_endpoint_solid, solid_voxel);
 }
 
 constexpr static double MOUNTAIN_SPREAD = 10'000.0;
@@ -147,9 +148,7 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 	}
 
 	// Find surface-crossing edges
-	ZeroCrossingContext ctx {
-		.edge_world_length = double(scale)
-	};
+	ZeroCrossingContext ctx { .edge_world_length = double(scale) };
 
 	const auto &voxels = grid.voxels();
 
@@ -198,4 +197,4 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 	}
 }
 
-}
+} // namespace voxen::terrain

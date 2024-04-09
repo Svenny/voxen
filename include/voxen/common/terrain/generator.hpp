@@ -8,8 +8,7 @@ namespace voxen::terrain
 
 class TerrainGenerator final {
 public:
-
 	void generate(ChunkId id, ChunkPrimaryData &output) const;
 };
 
-}
+} // namespace voxen::terrain

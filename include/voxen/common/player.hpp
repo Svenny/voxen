@@ -30,4 +30,4 @@ private:
 	void updateSecondaryFactors() noexcept;
 };
 
-}
+} // namespace voxen

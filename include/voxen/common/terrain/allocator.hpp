@@ -21,4 +21,4 @@ public:
 	static void collectGarbage() noexcept;
 };
 
-}
+} // namespace voxen::terrain

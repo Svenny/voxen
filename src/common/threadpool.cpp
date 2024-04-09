@@ -1,10 +1,10 @@
 #include <voxen/common/threadpool.hpp>
 
-#include <thread>
 #include <atomic>
+#include <cassert>
 #include <condition_variable>
 #include <future>
-#include <cassert>
+#include <thread>
 
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -19,8 +19,7 @@ constexpr static size_t STD_THREAD_COUNT_OFFSET = 2;
 // didn't return meaningful value. Assuming an "average" 8-threaded machine.
 constexpr static size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
 
-struct ThreadPool::ReportableWorkerState
-{
+struct ThreadPool::ReportableWorkerState {
 	std::mutex semaphore_mutex;
 	std::condition_variable semaphore;
 	std::atomic_bool is_exit;
@@ -29,8 +28,7 @@ struct ThreadPool::ReportableWorkerState
 	std::queue<std::packaged_task<void()>> tasks_queue;
 };
 
-struct ThreadPool::ReportableWorker
-{
+struct ThreadPool::ReportableWorker {
 	std::thread worker;
 	ReportableWorkerState state;
 };
@@ -56,8 +54,7 @@ ThreadPool::ThreadPool(size_t thread_count)
 
 ThreadPool::~ThreadPool() noexcept
 {
-	for (ReportableWorker* worker : m_workers)
-	{
+	for (ReportableWorker* worker : m_workers) {
 		worker->state.is_exit.store(true);
 		worker->state.semaphore.notify_one();
 	}
@@ -68,8 +65,7 @@ ThreadPool::~ThreadPool() noexcept
 		}
 	}
 
-	while (!m_workers.empty())
-	{
+	while (!m_workers.empty()) {
 		delete m_workers.back();
 		m_workers.pop_back();
 	}
@@ -81,9 +77,9 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_tas
 	assert(type == TaskType::Standard);
 
 	size_t min_job_count = SIZE_MAX;
-	ReportableWorker *min_job_thread = nullptr;
+	ReportableWorker* min_job_thread = nullptr;
 
-	for (ReportableWorker *worker : m_workers) {
+	for (ReportableWorker* worker : m_workers) {
 		size_t job_count;
 
 		{
@@ -105,20 +101,18 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_tas
 
 void ThreadPool::workerFunction(ReportableWorkerState* state)
 {
-	while(!state->is_exit.load())
-	{
+	while (!state->is_exit.load()) {
 		{
-		std::unique_lock<std::mutex> lock(state->semaphore_mutex);
-		state->semaphore.wait(lock);
+			std::unique_lock semaphore_lock(state->semaphore_mutex);
+			state->semaphore.wait(semaphore_lock);
 		}
 
-		while (task_queue_size(state) != 0)
-		{
+		while (task_queue_size(state) != 0) {
 			std::packaged_task<void()> task;
 			{
-			std::unique_lock<std::mutex> lock(state->state_mutex);
-			task = std::move(state->tasks_queue.front());
-			state->tasks_queue.pop();
+				std::unique_lock<std::mutex> lock(state->state_mutex);
+				task = std::move(state->tasks_queue.front());
+				state->tasks_queue.pop();
 			}
 
 			task();
@@ -173,7 +167,7 @@ void ThreadPool::initGlobalVoxenPool(size_t thread_count)
 void ThreadPool::releaseGlobalVoxenPool()
 {
 	assert(global_voxen_pool);
-	delete global_voxen_pool ;
+	delete global_voxen_pool;
 	global_voxen_pool = nullptr;
 }
 
@@ -183,4 +177,4 @@ ThreadPool& ThreadPool::globalVoxenPool()
 	return *global_voxen_pool;
 }
 
-}
+} // namespace voxen

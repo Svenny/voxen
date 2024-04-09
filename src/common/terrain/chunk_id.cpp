@@ -33,7 +33,7 @@ ChunkId ChunkId::toParent() const noexcept
 		.lod = this->lod + 1u,
 		.base_x = this->base_x & offmask,
 		.base_y = this->base_y & offmask,
-		.base_z = this->base_z & offmask
+		.base_z = this->base_z & offmask,
 	};
 }
 
@@ -49,8 +49,8 @@ ChunkId ChunkId::toChild(size_t id) const noexcept
 		.lod = this->lod - 1u,
 		.base_x = this->base_x + ((id & 2u) ? half : 0),
 		.base_y = this->base_y + ((id & 4u) ? half : 0),
-		.base_z = this->base_z + ((id & 1u) ? half : 0)
+		.base_z = this->base_z + ((id & 1u) ? half : 0),
 	};
 }
 
-}
+} // namespace voxen::terrain

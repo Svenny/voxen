@@ -2,23 +2,21 @@
 
 #include <voxen/visibility.hpp>
 
-#include <mutex>
-#include <queue>
-#include <memory>
 #include <functional>
 #include <future>
+#include <memory>
+#include <mutex>
+#include <queue>
 
 namespace voxen
 {
 
-template <typename T>
+template<typename T>
 class ThreadPoolResultsQueue {
 public:
 	ThreadPoolResultsQueue(const ThreadPoolResultsQueue& other) = delete;
 	ThreadPoolResultsQueue(ThreadPoolResultsQueue&& other) = default;
-	~ThreadPoolResultsQueue() noexcept
-	{
-	}
+	~ThreadPoolResultsQueue() noexcept {}
 
 	static std::shared_ptr<ThreadPoolResultsQueue<T>> createPoolQueue()
 	{
@@ -64,34 +62,36 @@ public:
 	};
 
 	explicit ThreadPool(size_t thread_count = 0);
-	ThreadPool(ThreadPool &&) = delete;
-	ThreadPool(const ThreadPool &) = delete;
-	ThreadPool &operator = (ThreadPool &&) = delete;
-	ThreadPool &operator = (const ThreadPool &) = delete;
+	ThreadPool(ThreadPool&&) = delete;
+	ThreadPool(const ThreadPool&) = delete;
+	ThreadPool& operator=(ThreadPool&&) = delete;
+	ThreadPool& operator=(const ThreadPool&) = delete;
 	~ThreadPool() noexcept;
 
 	template<typename F, typename... Args>
-	std::future<std::invoke_result_t<F, Args...>> enqueueTask(TaskType type, F &&f, Args&&... args)
+	std::future<std::invoke_result_t<F, Args...>> enqueueTask(TaskType type, F&& f, Args&&... args)
 	{
 		using R = std::invoke_result_t<F, Args...>;
 
 		std::promise<R> promise;
 		std::future<R> future = promise.get_future();
 
-		doEnqueueTask(type, std::packaged_task<void()> {
-			[promise = std::move(promise), task = std::bind(std::forward<F>(f), std::forward<Args>(args)...)]() mutable {
-				try {
-					if constexpr (std::is_same_v<R, void>) {
-						task();
-						promise.set_value();
-					} else {
-						promise.set_value(task());
+		doEnqueueTask(type,
+			std::packaged_task<void()> {
+				[promise = std::move(promise),
+					task = std::bind(std::forward<F>(f), std::forward<Args>(args)...)]() mutable {
+					try {
+						if constexpr (std::is_same_v<R, void>) {
+							task();
+							promise.set_value();
+						} else {
+							promise.set_value(task());
+						}
 					}
-				} catch (...) {
-					promise.set_exception(std::current_exception());
-				}
-			}
-		});
+					catch (...) {
+						promise.set_exception(std::current_exception());
+					}
+				} });
 
 		return future;
 	}
@@ -119,4 +119,4 @@ private:
 	static ThreadPool* global_voxen_pool;
 };
 
-}
+} // namespace voxen

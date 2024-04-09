@@ -23,13 +23,13 @@ public:
 	Queue();
 	Queue(Queue &&) = delete;
 	Queue(const Queue &) = delete;
-	Queue &operator = (Queue &&) = delete;
-	Queue &operator = (const Queue &) = delete;
+	Queue &operator=(Queue &&) = delete;
+	Queue &operator=(const Queue &) = delete;
 	~Queue() noexcept;
 
 	// Wrapper around the next `send()` method constructing message in place
 	template<typename T, typename... Args>
-	void send(uint32_t id, Args&&... args)
+	void send(uint32_t id, Args &&...args)
 	{
 		Message msg;
 		msg.packPayload<T>(id, std::forward<Args>(args)...);
@@ -68,7 +68,10 @@ public:
 	constexpr QueueSender(Queue &queue) noexcept : m_queue(queue) {}
 
 	template<typename T, typename... Args>
-	void send(uint32_t id, Args&&... args) { m_queue.send<T>(id, std::forward<Args>(args)...); }
+	void send(uint32_t id, Args &&...args)
+	{
+		m_queue.send<T>(id, std::forward<Args>(args)...);
+	}
 
 	void send(const Message &msg) { m_queue.send(msg); }
 
@@ -76,4 +79,4 @@ private:
 	Queue &m_queue;
 };
 
-}
+} // namespace voxen::msg

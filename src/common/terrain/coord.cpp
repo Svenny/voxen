@@ -22,4 +22,4 @@ glm::dvec3 CoordUtils::chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) no
 	return local * double(1u << id.lod) + glm::dvec3(base);
 }
 
-}
+} // namespace voxen::terrain

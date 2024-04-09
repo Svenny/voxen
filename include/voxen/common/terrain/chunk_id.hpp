@@ -19,7 +19,7 @@ struct alignas(uint64_t) ChunkId {
 	// Smallest Z coordinate of the chunk in chunk-space
 	int32_t base_z;
 
-	auto operator <=> (const ChunkId &) const noexcept = default;
+	auto operator<=>(const ChunkId &) const noexcept = default;
 
 	// Very fast hash function which can have worse distribution than `slowHash()`
 	uint64_t fastHash() const noexcept;
@@ -33,7 +33,7 @@ struct alignas(uint64_t) ChunkId {
 	ChunkId toChild(size_t id) const noexcept;
 };
 
-}
+} // namespace voxen::terrain
 
 namespace std
 {
@@ -42,10 +42,7 @@ namespace std
 template<>
 struct hash<voxen::terrain::ChunkId> final {
 public:
-	size_t operator()(const voxen::terrain::ChunkId &id) const noexcept
-	{
-		return id.fastHash();
-	}
+	size_t operator()(const voxen::terrain::ChunkId &id) const noexcept { return id.fastHash(); }
 };
 
-}
+} // namespace std

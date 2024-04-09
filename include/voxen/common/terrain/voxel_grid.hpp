@@ -24,8 +24,8 @@ public:
 	VoxelGrid() = default;
 	VoxelGrid(VoxelGrid &&) = default;
 	VoxelGrid(const VoxelGrid &) = default;
-	VoxelGrid &operator = (VoxelGrid &&) = default;
-	VoxelGrid &operator = (const VoxelGrid &) = default;
+	VoxelGrid &operator=(VoxelGrid &&) = default;
+	VoxelGrid &operator=(const VoxelGrid &) = default;
 	~VoxelGrid() = default;
 
 	// Return linearized array of voxels from cell `(x, y, z):(x+1, y+1, z+1)`.
@@ -47,4 +47,4 @@ private:
 	VoxelsArray m_data;
 };
 
-}
+} // namespace voxen::terrain

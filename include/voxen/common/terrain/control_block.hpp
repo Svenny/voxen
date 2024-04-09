@@ -23,8 +23,8 @@ public:
 	ChunkControlBlock() = default;
 	ChunkControlBlock(ChunkControlBlock &&) = delete;
 	ChunkControlBlock(const ChunkControlBlock &) = delete;
-	ChunkControlBlock &operator = (ChunkControlBlock &&) = delete;
-	ChunkControlBlock &operator = (const ChunkControlBlock &) = delete;
+	ChunkControlBlock &operator=(ChunkControlBlock &&) = delete;
+	ChunkControlBlock &operator=(const ChunkControlBlock &) = delete;
 	~ChunkControlBlock() = default;
 
 	void setState(State state) noexcept { m_state = state; }
@@ -60,4 +60,4 @@ private:
 	extras::refcnt_ptr<Chunk> m_chunk;
 };
 
-}
+} // namespace voxen::terrain

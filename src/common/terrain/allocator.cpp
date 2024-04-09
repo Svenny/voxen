@@ -28,13 +28,13 @@ public:
 	Superpool() = default;
 	Superpool(Superpool &&) = delete;
 	Superpool(const Superpool &) = delete;
-	Superpool &operator = (Superpool &&) = delete;
-	Superpool &operator = (const Superpool &) = delete;
+	Superpool &operator=(Superpool &&) = delete;
+	Superpool &operator=(const Superpool &) = delete;
 	~Superpool() = default;
 
 	// TODO: not thread-safe
 	template<typename... Args>
-	ObjectPtr allocate(Args&&... args)
+	ObjectPtr allocate(Args &&...args)
 	{
 		// TODO: allocation complexity will increase as pool gets occupied
 		for (auto &subpool : m_subpools) {
@@ -93,7 +93,7 @@ private:
 	typename ListType::iterator m_fast_gc_iter = m_subpools.end();
 };
 
-}
+} // namespace
 
 static Superpool<Chunk, false, AllocationDomain::TerrainPrimary> g_chunk_superpool;
 
@@ -107,4 +107,4 @@ void PoolAllocator::collectGarbage() noexcept
 	g_chunk_superpool.gcFast();
 }
 
-}
+} // namespace voxen::terrain

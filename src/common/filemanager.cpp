@@ -1,49 +1,51 @@
 #include <voxen/common/filemanager.hpp>
 
-#include <fstream>
-#include <cassert>
 #include <atomic>
-#include <vector>
+#include <cassert>
+#include <fstream>
+#include <functional>
+#include <future>
 #include <queue>
 #include <thread>
-#include <future>
-#include <functional>
+#include <vector>
 
-#include <voxen/util/log.hpp>
 #include <extras/defer.hpp>
+#include <voxen/util/log.hpp>
 
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <sago/platform_folders.h>
 
+using extras::dyn_array;
+using std::atomic_bool;
 using std::filesystem::path;
+using std::future;
 using std::ifstream;
 using std::ofstream;
 using std::optional;
-using std::string;
-using std::vector;
-using std::future;
-using std::thread;
 using std::packaged_task;
-using std::atomic_bool;
-using extras::dyn_array;
+using std::string;
+using std::thread;
+using std::vector;
 
 using namespace std::chrono_literals;
 
 namespace
 {
 
-static void printErrno(const char *message, const string& path) noexcept {
+static void printErrno(const char* message, const string& path) noexcept
+{
 	int code = errno;
 	char buf[1024];
-	char *desc = strerror_r(code, buf, std::size(buf));
+	char* desc = strerror_r(code, buf, std::size(buf));
 	voxen::Log::error("{} `{}`, error code {} ({})", message, path, code, desc);
 }
 
 struct RawBytesStorage {
-	void set_size(size_t size) {
+	void set_size(size_t size)
+	{
 		std::allocator<std::byte> alloc;
 		m_data = alloc.allocate(size);
 		m_size = size;
@@ -55,16 +57,15 @@ struct RawBytesStorage {
 };
 
 struct StringStorage {
-	void set_size(size_t size) noexcept {
-		m_string.resize(size, ' ');
-	}
+	void set_size(size_t size) noexcept { m_string.resize(size, ' '); }
 	void* data() noexcept { return m_string.data(); }
 
 	string m_string;
 };
 
 template<typename T>
-bool readAbsPath(const string& path, T& storageObject) noexcept {
+bool readAbsPath(const string& path, T& storageObject) noexcept
+{
 	// TODO: handle EINTR
 	int fd = open(path.c_str(), O_RDONLY);
 	if (fd < 0) {
@@ -91,26 +92,27 @@ bool readAbsPath(const string& path, T& storageObject) noexcept {
 		}
 		return true;
 	}
-	catch (const std::bad_alloc &e) {
+	catch (const std::bad_alloc& e) {
 		voxen::Log::error("Out of memory: {}", e.what());
 		return false;
 	}
 }
 
-static bool writeAbsPathFile(const string& path, const void *data, size_t size) noexcept {
+static bool writeAbsPathFile(const string& path, const void* data, size_t size) noexcept
+{
 	string temp_path_s;
 	try {
 		temp_path_s = path;
 		temp_path_s += ".XXXXXX";
 	}
-	catch (const std::bad_alloc &e) {
+	catch (const std::bad_alloc& e) {
 		voxen::Log::error("Out of memory: {}", e.what());
 		return false;
 	}
 
 	// TODO: handle EINTR
 	int fd = mkstemp(temp_path_s.data());
-	const char *temp_path = temp_path_s.c_str();
+	const char* temp_path = temp_path_s.c_str();
 	if (fd < 0) {
 		printErrno("Can't mkstemp file", temp_path);
 		return false;
@@ -157,23 +159,23 @@ private:
 public:
 	FileIoThreadPool()
 	{
-		for (size_t i = 0; i < START_THREAD_COUNT; i++)
+		for (size_t i = 0; i < START_THREAD_COUNT; i++) {
 			run_worker(make_worker());
+		}
 	}
 
 	~FileIoThreadPool()
 	{
-		for (ReportableWorker* worker : threads)
-		{
+		for (ReportableWorker* worker : threads) {
 			worker->state.is_exit.store(true);
 			worker->state.semaphore.notify_one();
 		}
 
-		for (ReportableWorker* worker : threads)
+		for (ReportableWorker* worker : threads) {
 			worker->worker.join();
+		}
 
-		while (threads.size() > 0)
-		{
+		while (threads.size() > 0) {
 			delete threads.back();
 			threads.pop_back();
 		}
@@ -186,21 +188,19 @@ public:
 
 		packaged_task<void()> task(task_function);
 
-		for (size_t i = 0; i < threads.size(); i++)
-		{
+		for (size_t i = 0; i < threads.size(); i++) {
 			ReportableWorker* worker = threads[i];
 			worker->state.state_mutex.lock();
-			if (!worker->state.has_task)
-			{
+			if (!worker->state.has_task) {
 				worker->state.tasks_queue.push(std::move(task));
 				worker->state.has_task = true;
 				worker->state.state_mutex.unlock();
 
 				worker->state.semaphore.notify_one();
 				return;
-			}
-			else
+			} else {
 				worker->state.state_mutex.unlock();
+			}
 		}
 		// If we here, then no free threads, so construct new for the task
 		// So, make worker, push task and run the worker
@@ -220,11 +220,9 @@ private:
 		bool is_eternal_thread = state->live_forever;
 		state->state_mutex.unlock();
 
-		while(!state->is_exit.load())
-		{
+		while (!state->is_exit.load()) {
 			state->state_mutex.lock();
-			if (state->tasks_queue.size() >= 1)
-			{
+			if (state->tasks_queue.size() >= 1) {
 				packaged_task<void()> task = std::move(state->tasks_queue.front());
 				state->tasks_queue.pop();
 				state->state_mutex.unlock();
@@ -237,15 +235,15 @@ private:
 			state->state_mutex.unlock();
 
 			{
-			std::unique_lock<std::mutex> lock(state->semaphore_mutex);
-			if (is_eternal_thread)
-				state->semaphore.wait(lock);
-			else
-			{
-				std::cv_status status = state->semaphore.wait_for(lock, THREAD_LIVE_TIMEOUT);
-				if (status == std::cv_status::timeout)
-					state->is_exit.store(true);
-			}
+				std::unique_lock<std::mutex> lock(state->semaphore_mutex);
+				if (is_eternal_thread) {
+					state->semaphore.wait(lock);
+				} else {
+					std::cv_status status = state->semaphore.wait_for(lock, THREAD_LIVE_TIMEOUT);
+					if (status == std::cv_status::timeout) {
+						state->is_exit.store(true);
+					}
+				}
 			}
 		}
 	}
@@ -254,10 +252,11 @@ private:
 	{
 		ReportableWorker* new_worker = new ReportableWorker();
 		new_worker->state.has_task = false;
-		if (threads.size() < ETERNAL_THREAD_COUNT)
+		if (threads.size() < ETERNAL_THREAD_COUNT) {
 			new_worker->state.live_forever = true;
-		else
+		} else {
 			new_worker->state.live_forever = false;
+		}
 		threads.push_back(new_worker);
 		return new_worker;
 	}
@@ -270,15 +269,13 @@ private:
 
 	void cleanup_finished_workers()
 	{
-		for (auto iter = threads.begin(); iter != threads.end();)
-		{
-			if ((*iter)->state.is_exit.load())
-			{
+		for (auto iter = threads.begin(); iter != threads.end();) {
+			if ((*iter)->state.is_exit.load()) {
 				delete *iter;
 				iter = threads.erase(iter);
-			}
-			else
+			} else {
 				iter++;
+			}
 		}
 	}
 
@@ -300,7 +297,7 @@ namespace voxen
 path FileManager::user_data_path;
 path FileManager::game_data_path;
 
-void FileManager::setProfileName(const std::string &path_to_binary, const std::string &profile_name)
+void FileManager::setProfileName(const std::string& path_to_binary, const std::string& profile_name)
 {
 	// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
 	auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
@@ -311,21 +308,25 @@ void FileManager::setProfileName(const std::string &path_to_binary, const std::s
 
 optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_path) noexcept
 {
-	if (relative_path.empty())
+	if (relative_path.empty()) {
 		return std::nullopt;
+	}
 
 	RawBytesStorage storage;
 	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
-	return success ? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>())) : std::nullopt;
+	return success
+		? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>()))
+		: std::nullopt;
 }
 
-bool FileManager::writeUserFile(const path& relative_path, const void *data, size_t size, bool create_directories) noexcept
+bool FileManager::writeUserFile(const path& relative_path, const void* data, size_t size,
+	bool create_directories) noexcept
 {
 	path filepath = FileManager::userDataPath() / relative_path;
-	if (create_directories)
-	{
-		if (!FileManager::makeDirsForFile(filepath))
+	if (create_directories) {
+		if (!FileManager::makeDirsForFile(filepath)) {
 			return false;
+		}
 	}
 
 	return writeAbsPathFile(filepath, data, size);
@@ -333,8 +334,9 @@ bool FileManager::writeUserFile(const path& relative_path, const void *data, siz
 
 optional<string> FileManager::readUserTextFile(const path& relative_path) noexcept
 {
-	if (relative_path.empty())
+	if (relative_path.empty()) {
 		return std::nullopt;
+	}
 
 	StringStorage storage;
 	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
@@ -344,10 +346,10 @@ optional<string> FileManager::readUserTextFile(const path& relative_path) noexce
 bool FileManager::writeUserTextFile(const path& relative_path, const string& text, bool create_directories) noexcept
 {
 	path filepath = FileManager::userDataPath() / relative_path;
-	if (create_directories)
-	{
-		if (!FileManager::makeDirsForFile(filepath))
+	if (create_directories) {
+		if (!FileManager::makeDirsForFile(filepath)) {
 			return false;
+		}
 	}
 
 	return writeAbsPathFile(filepath, text.data(), text.size());
@@ -355,18 +357,22 @@ bool FileManager::writeUserTextFile(const path& relative_path, const string& tex
 
 optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path) noexcept
 {
-	if (relative_path.empty())
+	if (relative_path.empty()) {
 		return std::nullopt;
+	}
 
 	RawBytesStorage storage;
 	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
-	return success ? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>())) : std::nullopt;
+	return success
+		? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>()))
+		: std::nullopt;
 }
 
 optional<string> FileManager::readTextFile(const path& relative_path) noexcept
 {
-	if (relative_path.empty())
+	if (relative_path.empty()) {
 		return std::nullopt;
+	}
 
 	StringStorage storage;
 	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
@@ -378,11 +384,11 @@ bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path) no
 	try {
 		std::filesystem::create_directories(relative_path.parent_path());
 	}
-	catch (const std::bad_alloc &e) {
+	catch (const std::bad_alloc& e) {
 		voxen::Log::error("Out of memory: {}", e.what());
 		return false;
 	}
-	catch (const std::filesystem::filesystem_error &e) {
+	catch (const std::filesystem::filesystem_error& e) {
 		voxen::Log::error("Directory creation error: {}", e.what());
 		return false;
 	}
@@ -400,21 +406,24 @@ path FileManager::gameDataPath() noexcept
 	return game_data_path;
 }
 
-std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(std::filesystem::path relative_path) noexcept
+std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(
+	std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(new std::promise<optional<dyn_array<std::byte>>>);
+	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
+		new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = promise]() mutable {
-		p->set_value(FileManager::readFile(filapath));
-	});
+	std::function<void()> task_function(
+		[filapath = std::move(relative_path), p = promise]() mutable { p->set_value(FileManager::readFile(filapath)); });
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-std::future<std::optional<extras::dyn_array<std::byte> > > FileManager::readUserFileAsync(std::filesystem::path relative_path) noexcept
+std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readUserFileAsync(
+	std::filesystem::path relative_path) noexcept
 {
-	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(new std::promise<optional<dyn_array<std::byte>>>);
+	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
+		new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
 	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
@@ -448,29 +457,33 @@ std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::
 	return result;
 }
 
-std::future<bool> FileManager::writeUserFileAsync(std::filesystem::path relative_path, const void* data, size_t size, bool create_directories) noexcept
+std::future<bool> FileManager::writeUserFileAsync(std::filesystem::path relative_path, const void* data, size_t size,
+	bool create_directories) noexcept
 {
 	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
 	std::future<bool> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise), data, size, create_directories]() mutable {
-		p->set_value(FileManager::writeUserFile(filapath, data, size, create_directories));
-	});
+	std::function<void()> task_function(
+		[filapath = std::move(relative_path), p = std::move(promise), data, size, create_directories]() mutable {
+			p->set_value(FileManager::writeUserFile(filapath, data, size, create_directories));
+		});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, const std::string&& text, bool create_directories) noexcept
+std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, const std::string&& text,
+	bool create_directories) noexcept
 {
 	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
 	std::future<bool> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise), txt = std::move(text), create_directories]() mutable {
-		p->set_value(FileManager::writeUserTextFile(filapath, std::move(txt), create_directories));
-	});
+	std::function<void()> task_function(
+		[filapath = std::move(relative_path), p = std::move(promise), txt = std::move(text),
+			create_directories]() mutable {
+			p->set_value(FileManager::writeUserTextFile(filapath, std::move(txt), create_directories));
+		});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-
-}
+} // namespace voxen

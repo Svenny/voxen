@@ -19,4 +19,4 @@ public:
 	static glm::dvec3 chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) noexcept;
 };
 
-}
+} // namespace voxen::terrain

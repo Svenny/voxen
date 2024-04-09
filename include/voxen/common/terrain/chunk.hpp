@@ -22,8 +22,8 @@ public:
 	Chunk() = delete;
 	Chunk(Chunk &&) = delete;
 	Chunk(const Chunk &) = delete;
-	Chunk &operator = (Chunk &&) noexcept;
-	Chunk &operator = (const Chunk &) = delete;
+	Chunk &operator=(Chunk &&) noexcept;
+	Chunk &operator=(const Chunk &) = delete;
 	~Chunk() = default;
 
 	// Returns `true` if this chunk does not cross the terrain surface.
@@ -47,4 +47,4 @@ private:
 	ChunkSurface m_surface;
 };
 
-}
+} // namespace voxen::terrain

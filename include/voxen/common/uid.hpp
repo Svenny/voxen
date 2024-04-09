@@ -26,11 +26,11 @@ struct VOXEN_API UID {
 	consteval UID(std::span<const char, CHAR_REPR_LENGTH> in) noexcept;
 	UID(UID &&) = default;
 	UID(const UID &) = default;
-	UID &operator = (UID &&) = default;
-	UID &operator = (const UID &) = default;
+	UID &operator=(UID &&) = default;
+	UID &operator=(const UID &) = default;
 	~UID() = default;
 
-	auto operator <=> (const UID &) const = default;
+	auto operator<=>(const UID &) const = default;
 
 	// Write string representation with the following format:
 	// "########-########-########-########\0"
@@ -65,11 +65,11 @@ consteval UID::UID(std::span<const char, CHAR_REPR_LENGTH> in) noexcept
 		};
 
 		uint64_t result = 0;
-		for(char c : x.subspan<0, 8>()) {
+		for (char c : x.subspan<0, 8>()) {
 			result = (result << 4u) | uint64_t(decode_char(c));
 		}
 
-		for(char c : x.subspan<9, 8>()) {
+		for (char c : x.subspan<9, 8>()) {
 			result = (result << 4u) | uint64_t(decode_char(c));
 		}
 
@@ -80,4 +80,4 @@ consteval UID::UID(std::span<const char, CHAR_REPR_LENGTH> in) noexcept
 	v1 = decode_u64(in.subspan<18, 17>());
 }
 
-}
+} // namespace voxen

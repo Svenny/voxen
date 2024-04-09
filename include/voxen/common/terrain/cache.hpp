@@ -16,8 +16,8 @@ public:
 	ChunkCache();
 	ChunkCache(ChunkCache &&) = delete;
 	ChunkCache(const ChunkCache &) = delete;
-	ChunkCache &operator = (ChunkCache &&) = delete;
-	ChunkCache &operator = (const ChunkCache &) = delete;
+	ChunkCache &operator=(ChunkCache &&) = delete;
+	ChunkCache &operator=(const ChunkCache &) = delete;
 	~ChunkCache() = default;
 
 	// Lookup chunk with given ID in the cache.
@@ -41,4 +41,4 @@ private:
 	std::pair<size_t, size_t> findSetAndIndex(ChunkId id) const noexcept;
 };
 
-}
+} // namespace voxen::terrain

@@ -34,4 +34,4 @@ void ChunkSurface::addTriangle(uint32_t a, uint32_t b, uint32_t c)
 	m_indices.emplace_back(c);
 }
 
-}
+} // namespace voxen::terrain

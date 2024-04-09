@@ -10,4 +10,4 @@ void ChunkPrimaryData::clear() noexcept
 	hermite_data_z.clear();
 }
 
-}
+} // namespace voxen::terrain
