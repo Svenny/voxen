@@ -25,9 +25,10 @@ public:
 	void update(const WorldState& lastState, DebugQueueRtW& queue);
 
 	GameView& view();
+
 private:
 	GameView m_gameview;
 	// TODO stack for another GUI elements
 };
 
-}
+} // namespace voxen::client

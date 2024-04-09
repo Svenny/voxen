@@ -7,13 +7,15 @@
 #include <GLFW/glfw3.h>
 #include <extras/string_utils.hpp>
 
-using std::tuple;
 using std::make_pair;
 using std::string;
 using std::string_view;
+using std::tuple;
 
-namespace voxen::client {
+namespace voxen::client
+{
 
+// clang-format off
 const std::array<std::pair<int, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
 	make_pair(GLFW_KEY_SPACE, "SPACE"),
 	make_pair(GLFW_KEY_APOSTROPHE, "APOSTROPHE"), /* ' */
@@ -129,6 +131,7 @@ const std::array<std::pair<int, string>, 94> InputEventAdapter::KEYCODE_2_STRING
 	make_pair(GLFW_KEY_RIGHT_SUPER, "RSUPER"),
 	*/
 };
+// clang-format on
 
 const std::array<std::pair<int, string>, 6> InputEventAdapter::MODS_2_STRING = {
 	make_pair(GLFW_MOD_SHIFT, "Shift"),
@@ -136,22 +139,22 @@ const std::array<std::pair<int, string>, 6> InputEventAdapter::MODS_2_STRING = {
 	make_pair(GLFW_MOD_ALT, "Alt"),
 	make_pair(GLFW_MOD_SUPER, "Super"),
 	make_pair(GLFW_MOD_CAPS_LOCK, "CapsLock"),
-	make_pair(GLFW_MOD_NUM_LOCK, "Numlock")
+	make_pair(GLFW_MOD_NUM_LOCK, "Numlock"),
 };
 
-const std::array<std::pair<PlayerActionEvent, string>, 12> InputEventAdapter::PLAYERACTIONS_2_STRINGS= {
-    make_pair(PlayerActionEvent::MoveForward, "move forward"),
-    make_pair(PlayerActionEvent::MoveBackward, "move backward"),
-    make_pair(PlayerActionEvent::MoveUp, "move up"),
-    make_pair(PlayerActionEvent::MoveDown, "stop move down"),
-    make_pair(PlayerActionEvent::MoveLeft, "move left"),
-    make_pair(PlayerActionEvent::MoveRight, "move right"),
-    make_pair(PlayerActionEvent::RollLeft, "roll left"),
-    make_pair(PlayerActionEvent::RollRight, "roll right"),
-    make_pair(PlayerActionEvent::PauseGame, "pause game"),
-    make_pair(PlayerActionEvent::IncreaseSpeed, "increase speed"),
-    make_pair(PlayerActionEvent::DecreaseSpeed, "decrease speed"),
-    make_pair(PlayerActionEvent::LockChunkLoadingPoint, "lock chunk loading point")
+const std::array<std::pair<PlayerActionEvent, string>, 12> InputEventAdapter::PLAYERACTIONS_2_STRINGS = {
+	make_pair(PlayerActionEvent::MoveForward, "move forward"),
+	make_pair(PlayerActionEvent::MoveBackward, "move backward"),
+	make_pair(PlayerActionEvent::MoveUp, "move up"),
+	make_pair(PlayerActionEvent::MoveDown, "stop move down"),
+	make_pair(PlayerActionEvent::MoveLeft, "move left"),
+	make_pair(PlayerActionEvent::MoveRight, "move right"),
+	make_pair(PlayerActionEvent::RollLeft, "roll left"),
+	make_pair(PlayerActionEvent::RollRight, "roll right"),
+	make_pair(PlayerActionEvent::PauseGame, "pause game"),
+	make_pair(PlayerActionEvent::IncreaseSpeed, "increase speed"),
+	make_pair(PlayerActionEvent::DecreaseSpeed, "decrease speed"),
+	make_pair(PlayerActionEvent::LockChunkLoadingPoint, "lock chunk loading point"),
 };
 
 const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING = {
@@ -162,7 +165,7 @@ const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING
 	make_pair(GLFW_MOUSE_BUTTON_5, "MOUSE_5"),
 	make_pair(GLFW_MOUSE_BUTTON_6, "MOUSE_6"),
 	make_pair(GLFW_MOUSE_BUTTON_7, "MOUSE_7"),
-	make_pair(GLFW_MOUSE_BUTTON_8, "MOUSE_8")
+	make_pair(GLFW_MOUSE_BUTTON_8, "MOUSE_8"),
 };
 
 std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToActionMap;
@@ -170,47 +173,56 @@ std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::mouseKeyToAction
 std::map<bool, PlayerActionEvent> InputEventAdapter::scrollToActionMap;
 string InputEventAdapter::actionSettingsPath = "configs/action_settings.ini";
 Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
-Config* InputEventAdapter::actionSettingsConfig = nullptr;
+Config *InputEventAdapter::actionSettingsConfig = nullptr;
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(int key, int scancode, int action, int mods) {
-	// `action` have three state: press, release, repeat. We support for actions only press/release logic on this moment, so
-	// so pass only values with two state: press/repreate - true and release - false
-	// More info: https://www.glfw.org/docs/3.3.2/group__input.html#ga2485743d0b59df3791c45951c4195265
-	(void)scancode;
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(int key, int scancode, int action,
+	int mods)
+{
+	// `action` have three state: press, release, repeat. We support for actions
+	// only press/release logic at this moment so pass only values with two state:
+	// press/repreate - true and release - false More info:
+	// https://www.glfw.org/docs/3.3.2/group__input.html#ga2485743d0b59df3791c45951c4195265
+	(void) scancode;
 
 	auto search = keyboardKeyToActionMap.find(tuple<int, int>(key, mods));
-	if (search != keyboardKeyToActionMap.end())
+	if (search != keyboardKeyToActionMap.end()) {
 		return make_pair(search->second, action != GLFW_RELEASE);
-	else
+	} else {
 		return make_pair(PlayerActionEvent::None, true);
+	}
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseKeyToPlayerEvent(int button, int action, int mods) {
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseKeyToPlayerEvent(int button, int action, int mods)
+{
 	auto search = mouseKeyToActionMap.find(tuple<int, int>(button, mods));
-	if (search != mouseKeyToActionMap.end())
+	if (search != mouseKeyToActionMap.end()) {
 		return make_pair(search->second, action != GLFW_RELEASE);
-	else
+	} else {
 		return make_pair(PlayerActionEvent::None, true);
+	}
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseScrollToPlayerEvent(double xoffset, double yoffset) {
-	(void)xoffset;
+std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseScrollToPlayerEvent(double xoffset, double yoffset)
+{
+	(void) xoffset;
 
 	auto search = scrollToActionMap.find(yoffset >= 0);
-    if (search != scrollToActionMap.end())
+	if (search != scrollToActionMap.end()) {
 		return make_pair(search->second, true);
-	else
+	} else {
 		return make_pair(PlayerActionEvent::None, true);
+	}
 }
 
-void InputEventAdapter::init() {
+void InputEventAdapter::init()
+{
 	assert(actionSettingsConfig == nullptr);
 	actionSettingsConfig = new Config(FileManager::userDataPath() / actionSettingsPath, actionSettingConfigScheme);
 
-	for (const Config::SchemeEntry& entry : actionSettingConfigScheme) {
+	for (const Config::SchemeEntry &entry : actionSettingConfigScheme) {
 		const string &default_value = std::get<string>(entry.default_value);
-		const string &value_string = actionSettingsConfig->optionString(entry.section,
-		                                                                entry.parameter_name).value_or(default_value);
+		const string &value_string
+			= actionSettingsConfig->optionString(entry.section, entry.parameter_name).value_or(default_value);
 
 		string_view value(value_string);
 		PlayerActionEvent event = stringToAction(entry.parameter_name);
@@ -218,150 +230,224 @@ void InputEventAdapter::init() {
 		string_view parameter_name(entry.parameter_name);
 
 		if (event != PlayerActionEvent::None) {
-			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos)
+			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos) {
 				parseToken(value, event, parameter_name, default_value);
-			else
+			} else {
 				extras::string_split_apply(value, KEYS_SEQUENCE_DELIMITER,
-				[event, &default_value, parameter_name](string_view s){
-					parseToken(s, event, parameter_name, default_value);
-				});
+					[event, &default_value, parameter_name](string_view s) {
+						parseToken(s, event, parameter_name, default_value);
+					});
+			}
+		} else {
+			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value",
+				entry.parameter_name, value_string);
 		}
-		else
-			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value", entry.parameter_name, value_string);
 	}
 }
 
-void InputEventAdapter::release() noexcept {
+void InputEventAdapter::release() noexcept
+{
 	delete actionSettingsConfig;
 	actionSettingsConfig = nullptr;
 }
 
-Config::Scheme InputEventAdapter::actionSettingsScheme() {
-	static const char* player_section = "player actions";
+Config::Scheme InputEventAdapter::actionSettingsScheme()
+{
+	static const char *player_section = "player actions";
 	Config::Scheme s;
 
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveForward)), "Fly forward", keyboardKeyToString(GLFW_KEY_W, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveRight)), "Fly right", keyboardKeyToString(GLFW_KEY_D, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveLeft)), "Fly left", keyboardKeyToString(GLFW_KEY_A, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveBackward)), "Fly backward", keyboardKeyToString(GLFW_KEY_S, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveDown)), "Fly down", keyboardKeyToString(GLFW_KEY_C, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::MoveUp)), "Fly up", keyboardKeyToString(GLFW_KEY_SPACE, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::RollLeft)), "Roll counterclockwise", keyboardKeyToString(GLFW_KEY_Q, 0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::RollRight)), "Rool clockwise", keyboardKeyToString(GLFW_KEY_E, 0)});
 	s.push_back({
-		player_section, string(actionToString(PlayerActionEvent::PauseGame)), "Pause movement and release cursor",
-			mouseButtonToString(GLFW_MOUSE_BUTTON_LEFT, 0) + string(KEYS_SEQUENCE_DELIMITER) + keyboardKeyToString(GLFW_KEY_ESCAPE, 0)
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveForward)),
+		"Fly forward",
+		keyboardKeyToString(GLFW_KEY_W, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveRight)),
+		"Fly right",
+		keyboardKeyToString(GLFW_KEY_D, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveLeft)),
+		"Fly left",
+		keyboardKeyToString(GLFW_KEY_A, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveBackward)),
+		"Fly backward",
+		keyboardKeyToString(GLFW_KEY_S, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveDown)),
+		"Fly down",
+		keyboardKeyToString(GLFW_KEY_C, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::MoveUp)),
+		"Fly up",
+		keyboardKeyToString(GLFW_KEY_SPACE, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::RollLeft)),
+		"Roll counterclockwise",
+		keyboardKeyToString(GLFW_KEY_Q, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::RollRight)),
+		"Rool clockwise",
+		keyboardKeyToString(GLFW_KEY_E, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::PauseGame)),
+		"Pause movement and release cursor",
+		mouseButtonToString(GLFW_MOUSE_BUTTON_LEFT, 0) + string(KEYS_SEQUENCE_DELIMITER)
+			+ keyboardKeyToString(GLFW_KEY_ESCAPE, 0),
 	});
 
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::IncreaseSpeed)), "Incrase movement speed", scrollToString(1.0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::DecreaseSpeed)), "Decrease movement speed", scrollToString(-1.0)});
-	s.push_back({player_section, string(actionToString(PlayerActionEvent::LockChunkLoadingPoint)), "Lock chunk-loading position", keyboardKeyToString(GLFW_KEY_F, 0)});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::IncreaseSpeed)),
+		"Incrase movement speed",
+		scrollToString(1.0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::DecreaseSpeed)),
+		"Decrease movement speed",
+		scrollToString(-1.0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::LockChunkLoadingPoint)),
+		"Lock chunk-loading position",
+		keyboardKeyToString(GLFW_KEY_F, 0),
+	});
 
 	return s;
 }
 
-string_view InputEventAdapter::actionToString(PlayerActionEvent event) {
+string_view InputEventAdapter::actionToString(PlayerActionEvent event)
+{
 	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
-		if (it->first == event)
+		if (it->first == event) {
 			return string_view(it->second);
+		}
 	}
 	return string_view();
 }
 
-PlayerActionEvent InputEventAdapter::stringToAction(string_view s) {
-for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
-		if (it->second == s)
+PlayerActionEvent InputEventAdapter::stringToAction(string_view s)
+{
+	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
+		if (it->second == s) {
 			return it->first;
+		}
 	}
 	return PlayerActionEvent::None;
 }
 
-string InputEventAdapter::keyboardKeyToString(int key, int mods) {
+string InputEventAdapter::keyboardKeyToString(int key, int mods)
+{
 	string result;
 
 	for (auto it = KEYCODE_2_STRING.begin(); it != KEYCODE_2_STRING.end(); it++) {
-		if (it->first == key)
+		if (it->first == key) {
 			result = it->second;
+		}
 	}
 
-	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
-		if (mods & it->first)
-			result += string(KEYS_DELIMITER)+it->second;
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
+		if (mods & it->first) {
+			result += string(KEYS_DELIMITER) + it->second;
+		}
+	}
 
 	return result;
 }
 
-std::string InputEventAdapter::scrollToString(double yoffset) {
-	if (yoffset >= 0)
+std::string InputEventAdapter::scrollToString(double yoffset)
+{
+	if (yoffset >= 0) {
 		return string(SCROLL_UP_STRING);
-	else
+	} else {
 		return string(SCROLL_DOWN_STRING);
+	}
 }
 
-string InputEventAdapter::mouseButtonToString(int button, int mods) {
+string InputEventAdapter::mouseButtonToString(int button, int mods)
+{
 	string result;
 
 	for (auto it = MOUSEKEY_2_STRING.begin(); it != MOUSEKEY_2_STRING.end(); it++) {
-		if (it->first == button)
+		if (it->first == button) {
 			result = it->second;
+		}
 	}
 
-	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++)
-		if (mods & it->first)
-			result += string(KEYS_DELIMITER)+it->second;
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
+		if (mods & it->first) {
+			result += string(KEYS_DELIMITER) + it->second;
+		}
+	}
 
 	return result;
 }
 
-int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int>* tuple_ptr, bool* scroll_ptr) {
+int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int> *tuple_ptr, bool *scroll_ptr)
+{
 	if (s.find(KEYS_DELIMITER) == string::npos) {
 		// Simple form, just only key without any modifiers
-		for(const std::pair<int, string>& pair : KEYCODE_2_STRING)
+		for (const std::pair<int, string> &pair : KEYCODE_2_STRING) {
 			if (pair.second == s) {
 				*tuple_ptr = tuple<int, int>(pair.first, 0);
 				return 1;
 			}
-		for(const std::pair<int, string>& pair : MOUSEKEY_2_STRING)
+		}
+		for (const std::pair<int, string> &pair : MOUSEKEY_2_STRING) {
 			if (pair.second == s) {
 				*tuple_ptr = tuple<int, int>(pair.first, 0);
 				return 2;
 			}
+		}
 		if (SCROLL_UP_STRING == s) {
 			*scroll_ptr = true;
 			return 3;
-		}
-		else if (SCROLL_DOWN_STRING == s) {
+		} else if (SCROLL_DOWN_STRING == s) {
 			*scroll_ptr = false;
 			return 3;
-		}
-		else {
+		} else {
 			return 0;
 		}
-	}
-	else {
+	} else {
 		int key = 0;
 		int mods = 0;
-		int key_type = 0; //0 - unknown, 1 - key button, 2 - mouse button
+		int key_type = 0; // 0 - unknown, 1 - key button, 2 - mouse button
 		bool fully_parsed = true;
 
-		extras::string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken){
+		extras::string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken) {
 			parseComplexToken(subtoken, key, mods, key_type, fully_parsed);
 		});
 
-		if (fully_parsed == false)
+		if (fully_parsed == false) {
 			return 0;
-		else {
-			if (key_type == 0)
+		} else {
+			if (key_type == 0) {
 				return 0;
-			else if (key_type == 1) {
+			} else if (key_type == 1) {
 				*tuple_ptr = tuple<int, int>(key, mods);
 				return 1;
-			}
-			else if (key_type == 2) {
+			} else if (key_type == 2) {
 				*tuple_ptr = tuple<int, int>(key, mods);
 				return 2;
-			}
-			else {
+			} else {
 				assert(false);
 				return 0;
 			}
@@ -369,65 +455,74 @@ int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int>* tuple_ptr,
 	}
 }
 
-void InputEventAdapter::parseToken(string_view s, PlayerActionEvent event, string_view parameter_name, string_view default_value) {
+void InputEventAdapter::parseToken(string_view s, PlayerActionEvent event, string_view parameter_name,
+	string_view default_value)
+{
 	tuple<int, int> keys_with_mods;
 	bool scroll;
 
 	int type = stringToMapkey(s, &keys_with_mods, &scroll);
-	if (type != 0)
-		if (type == 1)
+	if (type != 0) {
+		if (type == 1) {
 			keyboardKeyToActionMap[keys_with_mods] = event;
-		else if (type == 2)
+		} else if (type == 2) {
 			mouseKeyToActionMap[keys_with_mods] = event;
-		else if (type == 3)
+		} else if (type == 3) {
 			scrollToActionMap[scroll] = event;
-		else
+		} else {
 			assert(false);
-	else {
+		}
+	} else {
 		Log::warn("Can't parse \"{}\" for \"{}\" action, use default value", s, parameter_name);
 
 		type = stringToMapkey(default_value, &keys_with_mods, &scroll);
 		assert(type != 0); // Because default value must be always valid
-		if (type == 1)
+		if (type == 1) {
 			keyboardKeyToActionMap[keys_with_mods] = event;
-		else if (type == 2)
+		} else if (type == 2) {
 			mouseKeyToActionMap[keys_with_mods] = event;
-		else if (type == 3)
+		} else if (type == 3) {
 			scrollToActionMap[scroll] = event;
-		else
+		} else {
 			assert(false);
+		}
 	}
 }
 
-void InputEventAdapter::parseComplexToken(string_view s, int& key, int& mods, int& key_type, bool& fully_parsed) {
-	if (fully_parsed == false)
+void InputEventAdapter::parseComplexToken(string_view s, int &key, int &mods, int &key_type, bool &fully_parsed)
+{
+	if (fully_parsed == false) {
 		return;
+	}
 
 	bool found = false;
-	for(const std::pair<int, string>& pair : KEYCODE_2_STRING)
+	for (const std::pair<int, string> &pair : KEYCODE_2_STRING) {
 		if (pair.second == s) {
 			key = pair.first;
 			found = true;
 			key_type = 1;
 			break;
+		}
 	}
 
 	if (!found) {
-		for(const std::pair<int, string>& pair : MOUSEKEY_2_STRING)
+		for (const std::pair<int, string> &pair : MOUSEKEY_2_STRING) {
 			if (pair.second == s) {
 				key = pair.first;
 				found = true;
 				key_type = 2;
 				break;
 			}
+		}
 	}
 
 	if (!found) {
-		for(const std::pair<int, string>& pair : MODS_2_STRING)
+		for (const std::pair<int, string> &pair : MODS_2_STRING) {
 			if (pair.second == s) {
 				mods |= pair.first;
 				found = true;
 				break;
+			}
 		}
 	}
 
@@ -437,4 +532,4 @@ void InputEventAdapter::parseComplexToken(string_view s, int& key, int& mods, in
 	}
 }
 
-}
+} // namespace voxen::client

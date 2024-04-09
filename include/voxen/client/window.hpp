@@ -25,7 +25,7 @@ public:
 
 	GLFWwindow *glfwHandle() const noexcept { return mWindow; }
 
-	bool attachGUI(Gui& gui);
+	bool attachGUI(Gui &gui);
 
 	int width() const noexcept;
 	int height() const noexcept;
@@ -40,28 +40,29 @@ public:
 	void useOrientationCursor();
 
 	static Window &instance() noexcept { return gInstance; }
+
 private:
 	Window() = default;
 	~Window() = default;
 	Window(const Window &) = delete;
-	Window &operator = (const Window &) = delete;
+	Window &operator=(const Window &) = delete;
 	Window(Window &&) = delete;
-	Window &operator = (Window &&) = delete;
+	Window &operator=(Window &&) = delete;
 
 	static Window gInstance;
 	bool mIsStarted = false;
 
 	GLFWwindow *mWindow;
-	Gui* m_attached_gui = nullptr;
+	Gui *m_attached_gui = nullptr;
 
 	VOXEN_LOCAL void createWindow(int width, int height);
 
-	VOXEN_LOCAL static void globalKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) noexcept;
-	VOXEN_LOCAL static void globalMouseMovement(GLFWwindow* window, double xpos, double ypos) noexcept;
-	VOXEN_LOCAL static void globalMouseKey(GLFWwindow* window, int button, int action, int mods) noexcept;
-	VOXEN_LOCAL static void globalMouseScroll(GLFWwindow* window, double xoffset, double yoffset) noexcept;
+	VOXEN_LOCAL static void globalKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) noexcept;
+	VOXEN_LOCAL static void globalMouseMovement(GLFWwindow *window, double xpos, double ypos) noexcept;
+	VOXEN_LOCAL static void globalMouseKey(GLFWwindow *window, int button, int action, int mods) noexcept;
+	VOXEN_LOCAL static void globalMouseScroll(GLFWwindow *window, double xoffset, double yoffset) noexcept;
 
 	VOXEN_LOCAL static void glfwErrorCallback(int code, const char *message) noexcept;
 };
 
-}
+} // namespace voxen::client

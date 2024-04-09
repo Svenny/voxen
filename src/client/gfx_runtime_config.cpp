@@ -7,9 +7,11 @@ namespace voxen::client
 
 void GfxRuntimeConfig::addOptions(cxxopts::Options &opts)
 {
+	// clang-format off
 	opts.add_options("Graphics")
 		("gfx-debugging", "Enable graphics API debugging extensions")
 		("gfx-validation", "Enable graphics API validation layers");
+	// clang-format on
 }
 
 void GfxRuntimeConfig::fill(const cxxopts::ParseResult &result)
@@ -18,4 +20,4 @@ void GfxRuntimeConfig::fill(const cxxopts::ParseResult &result)
 	m_use_validation = result["gfx-validation"].as<bool>();
 }
 
-}
+} // namespace voxen::client

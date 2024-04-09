@@ -1,7 +1,7 @@
-#include <voxen/client/window.hpp>
 #include <voxen/client/gui.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/client/window.hpp>
 #include <voxen/common/config.hpp>
+#include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -12,8 +12,8 @@ Window Window::gInstance;
 
 static void logGlfwVersion()
 {
-	Log::debug("Voxen is compiled against GLFW {}.{}.{} ({})",
-		GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION, glfwGetVersionString());
+	Log::debug("Voxen is compiled against GLFW {}.{}.{} ({})", GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR,
+		GLFW_VERSION_REVISION, glfwGetVersionString());
 
 	int major, minor, revision;
 	glfwGetVersion(&major, &minor, &revision);
@@ -27,12 +27,12 @@ void Window::start(int width, int height)
 	}
 	Log::info("Starting window and GLFW library");
 	logGlfwVersion();
-	glfwSetErrorCallback (&Window::glfwErrorCallback);
-	if (glfwInit () != GLFW_TRUE) {
+	glfwSetErrorCallback(&Window::glfwErrorCallback);
+	if (glfwInit() != GLFW_TRUE) {
 		Log::fatal("Couldn't init GLFW!");
-		throw std::runtime_error ("GLFW init failed");
+		throw std::runtime_error("GLFW init failed");
 	}
-	createWindow (width, height);
+	createWindow(width, height);
 	useRegularCursor();
 	glfwSetWindowUserPointer(mWindow, this);
 	Log::info("GLFW started successfully, window created");
@@ -45,47 +45,47 @@ void Window::stop()
 		return;
 	}
 	Log::info("Destroying window and stopping GLFW");
-	glfwDestroyWindow (mWindow);
-	glfwTerminate ();
+	glfwDestroyWindow(mWindow);
+	glfwTerminate();
 	mIsStarted = false;
 }
 
 bool Window::shouldClose() const
 {
-	return glfwWindowShouldClose (mWindow) != 0;
+	return glfwWindowShouldClose(mWindow) != 0;
 }
 
 void Window::pollEvents()
 {
-	glfwPollEvents ();
+	glfwPollEvents();
 }
 
 void Window::createWindow(int width, int height)
 {
 	using namespace std::literals;
 
-	glfwWindowHint (GLFW_RESIZABLE, GLFW_FALSE); // for windowed
-	glfwWindowHint (GLFW_FOCUSED, GLFW_TRUE); // for windowed
-	glfwWindowHint (GLFW_AUTO_ICONIFY, GLFW_TRUE); // for full-screen
-	glfwWindowHint (GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
-	glfwWindowHint (GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // for windowed
+	glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);       // for windowed
+	glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);  // for full-screen
+	glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE); // for full-screen
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	Config *cfg = Config::mainConfig();
-	GLFWmonitor *monitor = nullptr;
+	Config* cfg = Config::mainConfig();
+	GLFWmonitor* monitor = nullptr;
 	if (cfg->getBool("window"sv, "fullscreen"sv)) {
 		// TODO: add possibility select non-primary monitor?
 		monitor = glfwGetPrimaryMonitor();
 	}
-	mWindow = glfwCreateWindow (width, height, "Voxen", monitor, nullptr);
+	mWindow = glfwCreateWindow(width, height, "Voxen", monitor, nullptr);
 
 	if (!mWindow) {
 		Log::fatal("Couldn't create window!");
-		glfwTerminate ();
-		throw std::runtime_error ("window creation failed");
+		glfwTerminate();
+		throw std::runtime_error("window creation failed");
 	}
 }
 
-void Window::glfwErrorCallback(int code, const char *message) noexcept
+void Window::glfwErrorCallback(int code, const char* message) noexcept
 {
 	Log::error("GLFW error {}:\n{}", code, message);
 }
@@ -93,7 +93,7 @@ void Window::glfwErrorCallback(int code, const char *message) noexcept
 bool Window::attachGUI(Gui& gui)
 {
 	if (m_attached_gui != nullptr) {
-		throw std::runtime_error ("try to attach gui to window, which already have another attached gui");
+		throw std::runtime_error("try to attach gui to window, which already have another attached gui");
 	}
 	m_attached_gui = &gui;
 	glfwSetKeyCallback(mWindow, Window::globalKeyCallback);
@@ -183,4 +183,4 @@ void Window::useOrientationCursor()
 	}
 }
 
-}
+} // namespace voxen::client
