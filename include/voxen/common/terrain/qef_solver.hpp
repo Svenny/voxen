@@ -18,7 +18,7 @@ public:
 	*/
 	struct State {
 		// Compressed matrix, only nonzero elements
-		// clang-format off
+		// clang-format off: data layout is more readable this way
 		float a_11, a_12, a_13, b_1;
 		float       a_22, a_23, b_2;
 		float             a_33, b_3;

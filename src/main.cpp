@@ -63,8 +63,12 @@ cxxopts::Options initCli()
 		}
 		options.add_options(entry.section)(arg_name, entry.description, default_cli_value);
 	}
-	options.add_options()("h,help", "Display help information")("p,profile", "Profile name",
-		cxxopts::value<std::string>()->default_value("default"));
+
+	// clang-format off: breaks nice chaining syntax
+	options.add_options()
+		("h,help", "Display help information")
+		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
+	// clang-format on
 
 	voxen::RuntimeConfig::addOptions(options);
 
