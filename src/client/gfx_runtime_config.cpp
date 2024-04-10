@@ -7,7 +7,7 @@ namespace voxen::client
 
 void GfxRuntimeConfig::addOptions(cxxopts::Options &opts)
 {
-	// clang-format off
+	// clang-format off: breaks nice chaining syntax
 	opts.add_options("Graphics")
 		("gfx-debugging", "Enable graphics API debugging extensions")
 		("gfx-validation", "Enable graphics API validation layers");

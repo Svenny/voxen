@@ -15,7 +15,7 @@ using std::tuple;
 namespace voxen::client
 {
 
-// clang-format off
+// clang-format off: turns this array into a mess
 const std::array<std::pair<int, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
 	make_pair(GLFW_KEY_SPACE, "SPACE"),
 	make_pair(GLFW_KEY_APOSTROPHE, "APOSTROPHE"), /* ' */

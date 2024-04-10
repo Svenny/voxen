@@ -23,7 +23,7 @@ constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * Config:
 constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * Config::MAX_RENDERED_CHUNKS;
 constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * Config::MAX_RENDERED_CHUNKS;
 
-// clang-format off
+// clang-format off: breaks more readable table formatting
 constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #define LO 0.0f
 #define HI float(terrain::Config::CHUNK_SIZE)

@@ -239,7 +239,7 @@ void QefSolver3D::merge(const State &data) noexcept
 	}
 
 	int id = m_usedRows;
-	// clang-format off
+	// clang-format off: data layout is more readable this way
 	A[0][id] = data.a_11; A[1][id] = data.a_12; A[2][id] = data.a_13; A[3][id] = data.b_1;
 	id++;
 	A[0][id] =         0; A[1][id] = data.a_22; A[2][id] = data.a_23; A[3][id] = data.b_2;
@@ -259,7 +259,7 @@ QefSolver3D::State QefSolver3D::state() noexcept
 	assert(m_pointsCount < (1u << 30u));
 
 	return State {
-		// clang-format off
+		// clang-format off: data layout is more readable this way
 		.a_11 = A[0][0], .a_12 = A[1][0], .a_13 = A[2][0], .b_1 = A[3][0],
 		                 .a_22 = A[1][1], .a_23 = A[2][1], .b_2 = A[3][1],
 		                                  .a_33 = A[2][2], .b_3 = A[3][2],
