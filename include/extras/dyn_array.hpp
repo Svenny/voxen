@@ -2,8 +2,9 @@
  * creation time. Fills in the gap between std::vector and std::array. */
 #pragma once
 
+#include <algorithm>
 #include <memory>
-#include <stdexcept>
+#include <span>
 
 namespace extras
 {
@@ -17,7 +18,7 @@ public:
 	using reference = T &;
 	using iterator_category = std::contiguous_iterator_tag;
 
-	constexpr dyn_array_iterator() noexcept : m_ptr(nullptr) {}
+	constexpr dyn_array_iterator() noexcept {}
 	constexpr dyn_array_iterator(std::add_const_t<T> *ptr) noexcept : m_ptr(ptr) {}
 	constexpr dyn_array_iterator(std::remove_const_t<T> *ptr) noexcept : m_ptr(ptr) {}
 
@@ -80,7 +81,7 @@ public:
 	}
 
 private:
-	T *m_ptr;
+	T *m_ptr = nullptr;
 };
 
 template<typename T, typename Allocator = std::allocator<T>>
@@ -92,6 +93,11 @@ public:
 		"extras::dyn_array doesn't allow throwing move constructors");
 	static_assert(!std::is_move_assignable_v<T> || std::is_nothrow_move_assignable_v<T>,
 		"extras::dyn_array doesn't allow throwing move assignment");
+	// Protect from esoteric edge cases with allocators
+	static_assert(std::is_nothrow_destructible_v<Allocator> && std::is_nothrow_copy_constructible_v<Allocator>
+			&& std::is_nothrow_move_constructible_v<Allocator> && std::is_nothrow_copy_assignable_v<Allocator>
+			&& std::is_nothrow_move_assignable_v<Allocator>,
+		"extras::dyn_array doesn't allow throwing allocator");
 
 	using value_type = T;
 	using allocator_type = Allocator;
@@ -107,6 +113,8 @@ public:
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+	constexpr explicit dyn_array() noexcept {}
+
 	constexpr explicit dyn_array(size_type count, const T &value, const Allocator &alloc = Allocator())
 		: m_size(count), m_alloc(alloc)
 	{
@@ -115,7 +123,7 @@ public:
 	}
 
 	/// This constructor with owning changing from raw allocated memory.
-	constexpr explicit dyn_array(T *data, size_type count, const Allocator &alloc)
+	constexpr explicit dyn_array(T *data, size_type count, const Allocator &alloc) noexcept
 		: m_size(count), m_data(data), m_alloc(alloc)
 	{
 		// do nothing
@@ -143,12 +151,32 @@ public:
 
 	constexpr dyn_array(dyn_array &&other) noexcept : m_size(other.m_size), m_data(other.m_data), m_alloc(other.m_alloc)
 	{
-		other.m_data = nullptr;
+		if (&other != this) {
+			other.m_data = nullptr;
+		}
 	}
 
 	constexpr dyn_array(std::initializer_list<T> init, const Allocator &alloc = Allocator())
 		: dyn_array(init.begin(), init.end(), alloc)
 	{}
+
+	constexpr dyn_array &operator=(const dyn_array &other)
+	{
+		if (m_size == other.m_size && m_alloc == other.m_alloc) {
+			std::copy(other.cbegin(), other.cend(), begin());
+			return *this;
+		}
+
+		return *this = dyn_array { other };
+	}
+
+	constexpr dyn_array &operator=(dyn_array &&other) noexcept
+	{
+		std::swap(m_size, other.m_size);
+		std::swap(m_data, other.m_data);
+		std::swap(m_alloc, other.m_alloc);
+		return *this;
+	}
 
 	~dyn_array() noexcept
 	{
@@ -158,20 +186,14 @@ public:
 		std::allocator_traits<Allocator>::deallocate(m_alloc, m_data, m_size);
 	}
 
-	[[nodiscard]] T &at(size_type pos)
+	[[nodiscard]] std::span<const std::byte> as_bytes() const noexcept
 	{
-		if (pos >= m_size) {
-			throw std::out_of_range("extras::dyn_array::at() failed bounds check");
-		}
-		return m_data[pos];
+		return std::as_bytes(std::span(m_data, m_size));
 	}
 
-	[[nodiscard]] const T &at(size_type pos) const
+	[[nodiscard]] std::span<std::byte> as_writable_bytes() noexcept
 	{
-		if (pos >= m_size) {
-			throw std::out_of_range("extras::dyn_array::at() failed bounds check");
-		}
-		return m_data[pos];
+		return std::as_writable_bytes(std::span(m_data, m_size));
 	}
 
 	[[nodiscard]] constexpr T &operator[](size_type pos) noexcept { return m_data[pos]; }
@@ -182,6 +204,7 @@ public:
 
 	[[nodiscard]] constexpr bool empty() const noexcept { return m_size == 0; }
 	[[nodiscard]] constexpr size_type size() const noexcept { return m_size; }
+	[[nodiscard]] constexpr size_type size_bytes() const noexcept { return m_size * sizeof(T); }
 
 	[[nodiscard]] constexpr iterator begin() noexcept { return iterator(m_data); }
 	[[nodiscard]] constexpr const_iterator begin() const noexcept { return const_iterator(m_data); }
@@ -192,9 +215,9 @@ public:
 	[[nodiscard]] constexpr const_iterator cend() const noexcept { return const_iterator(m_data + m_size); }
 
 private:
-	size_type m_size;
-	T *m_data;
-	Allocator m_alloc;
+	size_type m_size = 0;
+	T *m_data = nullptr;
+	[[no_unique_address]] Allocator m_alloc = {};
 };
 
 // Deduction guide for constructing from two iterators
