@@ -22,6 +22,8 @@
 #include <glm/glm.hpp>
 
 // Not sure if there are headers not transitively included by these
+#include <fmt/chrono.h>
+#include <fmt/color.h>
 #include <fmt/compile.h>
 #include <fmt/format.h>
 
