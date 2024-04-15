@@ -55,6 +55,8 @@ ThreadPool::ThreadPool(size_t thread_count)
 ThreadPool::~ThreadPool() noexcept
 {
 	for (ReportableWorker* worker : m_workers) {
+		std::unique_lock lock(worker->state.semaphore_mutex);
+
 		worker->state.is_exit.store(true);
 		worker->state.semaphore.notify_one();
 	}
@@ -101,11 +103,10 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_tas
 
 void ThreadPool::workerFunction(ReportableWorkerState* state)
 {
+	std::unique_lock semaphore_lock(state->semaphore_mutex);
+
 	while (!state->is_exit.load()) {
-		{
-			std::unique_lock semaphore_lock(state->semaphore_mutex);
-			state->semaphore.wait(semaphore_lock);
-		}
+		state->semaphore.wait(semaphore_lock);
 
 		while (task_queue_size(state) != 0) {
 			std::packaged_task<void()> task;
