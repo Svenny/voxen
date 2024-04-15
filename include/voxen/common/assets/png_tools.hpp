@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/util/resolution.hpp>
+#include <voxen/visibility.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -22,19 +23,19 @@ struct PngInfo {
 	uint8_t channels = 0;
 };
 
-class PngTools final {
-public:
-	PngTools() = delete;
+namespace PngTools
+{
 
-	// Number of bytes needed for raw (uncompressed) data of image defined by `info`.
-	// NOTE: `info` must define a valid image (positive resolution and valid channels count).
-	static size_t numRawBytes(const PngInfo &info) noexcept;
+// Number of bytes needed for raw (uncompressed) data of image defined by `info`.
+// NOTE: `info` must define a valid image (positive resolution and valid channels count).
+VOXEN_API size_t numRawBytes(const PngInfo &info) noexcept;
 
-	// Pack raw image to PNG format, returning array of packed bytes (full PNG stream with headers etc).
-	// The first row in memory is assumed topmost, use `flip_y` to change that (flip image vertically).
-	// NOTE: `info` must define a valid image (positive resolution and valid channels count).
-	// NOTE: `bytes.size()` must be equal to `numRawBytes(info)`.
-	static extras::dyn_array<std::byte> pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y);
-};
+// Pack raw image to PNG format, returning array of packed bytes (full PNG stream with headers etc).
+// The first row in memory is assumed topmost, use `flip_y` to change that (flip image vertically).
+// NOTE: `info` must define a valid image (positive resolution and valid channels count).
+// NOTE: `bytes.size()` must be equal to `numRawBytes(info)`.
+VOXEN_API extras::dyn_array<std::byte> pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y);
+
+} // namespace PngTools
 
 } // namespace voxen::assets
