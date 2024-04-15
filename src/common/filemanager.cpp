@@ -167,6 +167,8 @@ public:
 	~FileIoThreadPool()
 	{
 		for (ReportableWorker* worker : threads) {
+			std::unique_lock lock(worker->state.semaphore_mutex);
+
 			worker->state.is_exit.store(true);
 			worker->state.semaphore.notify_one();
 		}
@@ -220,6 +222,8 @@ private:
 		bool is_eternal_thread = state->live_forever;
 		state->state_mutex.unlock();
 
+		std::unique_lock semaphore_lock(state->semaphore_mutex);
+
 		while (!state->is_exit.load()) {
 			state->state_mutex.lock();
 			if (state->tasks_queue.size() >= 1) {
@@ -234,15 +238,12 @@ private:
 			}
 			state->state_mutex.unlock();
 
-			{
-				std::unique_lock<std::mutex> lock(state->semaphore_mutex);
-				if (is_eternal_thread) {
-					state->semaphore.wait(lock);
-				} else {
-					std::cv_status status = state->semaphore.wait_for(lock, THREAD_LIVE_TIMEOUT);
-					if (status == std::cv_status::timeout) {
-						state->is_exit.store(true);
-					}
+			if (is_eternal_thread) {
+				state->semaphore.wait(semaphore_lock);
+			} else {
+				std::cv_status status = state->semaphore.wait_for(semaphore_lock, THREAD_LIVE_TIMEOUT);
+				if (status == std::cv_status::timeout) {
+					state->is_exit.store(true);
 				}
 			}
 		}
