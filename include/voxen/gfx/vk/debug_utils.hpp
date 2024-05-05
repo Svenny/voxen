@@ -1,0 +1,93 @@
+#pragma once
+
+#include <voxen/visibility.hpp>
+
+#include <vulkan/vulkan.h>
+
+#include <span>
+
+namespace voxen::gfx::vk
+{
+
+struct DebugUtilsDispatchTable {
+#define VK_API_ENTRY(x) PFN_##x x = nullptr;
+#include "api_debug_utils.in"
+#undef VK_API_ENTRY
+};
+
+class VOXEN_API DebugUtils {
+public:
+	class CmdLabelScope {
+	public:
+		CmdLabelScope(VkCommandBuffer cmd, PFN_vkCmdEndDebugUtilsLabelEXT fn) noexcept : m_cmd(cmd), m_fn(fn) {}
+		CmdLabelScope(CmdLabelScope &&) = delete;
+		CmdLabelScope(const CmdLabelScope &) = delete;
+		CmdLabelScope &operator=(CmdLabelScope &&) = delete;
+		CmdLabelScope &operator=(const CmdLabelScope &) = delete;
+
+		~CmdLabelScope() noexcept
+		{
+			if (m_cmd && m_fn) {
+				m_fn(m_cmd);
+			}
+		}
+
+	private:
+		VkCommandBuffer m_cmd;
+		PFN_vkCmdEndDebugUtilsLabelEXT m_fn;
+	};
+
+	DebugUtils() noexcept = default;
+	explicit DebugUtils(VkInstance instance, PFN_vkGetInstanceProcAddr loader);
+	DebugUtils(DebugUtils &&other) noexcept;
+	DebugUtils(const DebugUtils &) = delete;
+	DebugUtils &operator=(DebugUtils &&other) noexcept;
+	DebugUtils &operator=(const DebugUtils &) = delete;
+	~DebugUtils() noexcept;
+
+	// Whether `VK_EXT_debug_utils` extension is available and loaded.
+	// Other methods will do nothing and return no-op stubs if this is `false`.
+	bool available() const noexcept { return m_available; }
+
+	// Push debug label region into command buffer.
+	// Returned object scopes this label and will automatically pop it upon destruction.
+	[[nodiscard]] CmdLabelScope cmdPushLabel(VkCommandBuffer cmd, const char *name, std::span<const float, 4> color);
+	[[nodiscard]] CmdLabelScope cmdPushLabel(VkCommandBuffer cmd, const char *name);
+
+	// Set name for an object, will be visible in debugging tools and validation messages
+	void setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name);
+
+	template<typename T>
+	void setObjectName(VkDevice device, T handle, const char *name)
+	{
+		setObjectName(device, reinterpret_cast<uint64_t>(handle), objectType<T>(), name);
+	}
+
+private:
+	bool m_available = false;
+	DebugUtilsDispatchTable m_dt;
+
+	VkInstance m_instance = VK_NULL_HANDLE;
+	VkDebugUtilsMessengerEXT m_messenger = VK_NULL_HANDLE;
+
+	template<typename T>
+	constexpr static VkObjectType objectType()
+	{
+		if constexpr (std::is_same_v<T, VkBuffer>) {
+			return VK_OBJECT_TYPE_BUFFER;
+		} else if constexpr (std::is_same_v<T, VkImage>) {
+			return VK_OBJECT_TYPE_IMAGE;
+		} else if constexpr (std::is_same_v<T, VkImageView>) {
+			return VK_OBJECT_TYPE_IMAGE_VIEW;
+		} else {
+// TODO: this is a temporary hack until we bump CI runners to Ubuntu 24.04; remove it then
+#if __clang_major__ < 17
+			return VK_OBJECT_TYPE_UNKNOWN;
+#else
+			static_assert(false, "Unknown handle type");
+#endif
+		}
+	}
+};
+
+} // namespace voxen::gfx::vk

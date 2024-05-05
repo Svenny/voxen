@@ -76,6 +76,7 @@ set(VOXEN_SOURCES
 	src/util/hash.cpp
 	src/util/log.cpp
 	src/voxen/common/uid.cpp
+	src/voxen/gfx/vk/debug_utils.cpp
 	src/voxen/gfx/vk/render_graph_builder.cpp
 	src/voxen/gfx/vk/render_graph_execution.cpp
 	src/voxen/gfx/vk/render_graph_private.cpp
