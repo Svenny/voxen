@@ -1,0 +1,6 @@
+// Alphabet order
+VK_API_ENTRY(vkCmdBeginDebugUtilsLabelEXT)
+VK_API_ENTRY(vkCmdEndDebugUtilsLabelEXT)
+VK_API_ENTRY(vkCreateDebugUtilsMessengerEXT)
+VK_API_ENTRY(vkDestroyDebugUtilsMessengerEXT)
+VK_API_ENTRY(vkSetDebugUtilsObjectNameEXT)

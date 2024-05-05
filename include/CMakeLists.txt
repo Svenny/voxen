@@ -83,6 +83,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/threadpool.hpp
 	include/voxen/common/uid.hpp
 	include/voxen/common/world_state.hpp
+	include/voxen/gfx/vk/debug_utils.hpp
 	include/voxen/gfx/vk/render_graph.hpp
 	include/voxen/gfx/vk/render_graph_builder.hpp
 	include/voxen/gfx/vk/render_graph_execution.hpp
