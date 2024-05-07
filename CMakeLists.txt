@@ -46,6 +46,7 @@ target_link_libraries(voxen PUBLIC
 target_link_libraries(voxen PRIVATE
 	3rdparty::glfw
 	3rdparty::platform-folders
+	3rdparty::vma
 	3rdparty::vulkan-headers
 	3rdparty::zlib
 )

@@ -22,3 +22,5 @@ include(glm.cmake)
 include(platform-folders.cmake)
 include(simpleini.cmake)
 include(vulkan-headers.cmake)
+# Depends on `vulkan-headers`, include after them
+include(vma.cmake)
