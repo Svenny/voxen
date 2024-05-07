@@ -29,4 +29,15 @@ for header in [ 'vulkan.h', 'vulkan_core.h', 'vulkan_wayland.h', 'vulkan_win32.h
 	print(f'Patching in VKAPI_NOEXCEPT in {path}')
 	subprocess.run(['sed', '-i', 's/);/) VKAPI_NOEXCEPT;/', path], check=True)
 
+video_dir = (headers_dir / '../vk_video').resolve()
+
+for header in [ 'vulkan_video_codecs_common.h', 'vulkan_video_codec_h264std.h', 'vulkan_video_codec_h265std.h', 'vulkan_video_codec_av1std.h',
+   'vulkan_video_codec_h264std_decode.h', 'vulkan_video_codec_h264std_encode.h', 'vulkan_video_codec_h265std_decode.h', 'vulkan_video_codec_h265std_encode.h',
+   'vulkan_video_codec_av1std_decode.h' ]:
+   url = f'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/{header}'
+   path = video_dir / header
+
+   print(f'Downloading {url} to {path}')
+   subprocess.run(['curl', url, '-o', path], check=True)
+
 print('Done')
