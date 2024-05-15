@@ -104,7 +104,7 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 	std::deque<RenderGraphImage::Private> images;
 	std::vector<Command> commands;
 
-	RenderGraphImageView output_view;
+	RenderGraphImage output_image;
 };
 
 } // namespace voxen::gfx::vk

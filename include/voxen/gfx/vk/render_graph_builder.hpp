@@ -66,12 +66,12 @@ public:
 	RenderGraphBuilder &operator=(const RenderGraphBuilder &) = delete;
 	~RenderGraphBuilder() noexcept;
 
-	RenderGraphImageView &outputView();
+	RenderGraphImage &outputImage();
 
 	// Images
 
 	// Declare a 2D image
-	RenderGraphImage make2DImage(std::string name, Image2DConfig config);
+	RenderGraphImage make2DImage(std::string_view name, Image2DConfig config);
 	// Declare a double-buffered 2D image.
 	// Returns a pair of images where one is "current" and the other is "previous".
 	// The pair is symmetric but `(current; previous)` usage convention is encouraged.
@@ -81,22 +81,22 @@ public:
 	// Buffers
 
 	// Declare a fixed-size buffer
-	RenderGraphBuffer makeBuffer(std::string name, VkDeviceSize size);
+	RenderGraphBuffer makeBuffer(std::string_view name, VkDeviceSize size);
 	// Declare a dynamic-sized buffer. Its size must be set with `RenderGraphExecution::setDynamicBufferSize()`.
 	// NOTE: size must be set on each graph execution. You will receive a valid handle only after that.
-	RenderGraphBuffer makeDynamicSizedBuffer(std::string name);
+	RenderGraphBuffer makeDynamicSizedBuffer(std::string_view name);
 
 	// Image views
 
 	// Declare a view covering the whole image
-	RenderGraphImageView makeBasicImageView(std::string name, RenderGraphImage &image);
+	RenderGraphImageView makeBasicImageView(std::string_view name, RenderGraphImage &image);
 	// Declare a view covering one MIP level of the image
-	RenderGraphImageView makeSingleMipImageView(std::string name, RenderGraphImage &image, uint32_t mip = 0);
+	RenderGraphImageView makeSingleMipImageView(std::string_view name, RenderGraphImage &image, uint32_t mip = 0);
 	// Declare a view covering a provided range of MIP levels, possibly with a different format.
 	// View type will be VK_IMAGE_VIEW_TYPE_2D for image with only one array layer
 	// and VK_IMAGE_VIEW_TYPE_2D_ARRAY otherwise.
-	RenderGraphImageView makeImageView(std::string name, RenderGraphImage &image, VkFormat format, uint32_t firstMip = 0,
-		uint32_t mipCount = VK_REMAINING_MIP_LEVELS);
+	RenderGraphImageView makeImageView(std::string_view name, RenderGraphImage &image, VkFormat format,
+		uint32_t firstMip = 0, uint32_t mipCount = VK_REMAINING_MIP_LEVELS);
 
 	// Resource usage
 
@@ -117,13 +117,13 @@ public:
 	// Render targets
 
 	// Declare render target with VK_ATTACHMENT_LOAD_OP_DONT_CARE and VK_ATTACHMENT_STORE_OP_STORE
-	RenderTarget makeRenderTargetDiscardStore(RenderGraphImageView &view);
+	RenderTarget makeRenderTargetDiscardStore(RenderGraphImage &image, uint32_t mip = 0);
 	// Declare render target with VK_ATTACHMENT_LOAD_OP_CLEAR and VK_ATTACHMENT_STORE_OP_STORE
-	RenderTarget makeRenderTargetClearStore(RenderGraphImageView &view, VkClearColorValue clear_value);
+	RenderTarget makeRenderTargetClearStore(RenderGraphImage &image, VkClearColorValue clear_value, uint32_t mip = 0);
 
 	// Declare depth/stencil target with VK_ATTACHMENT_LOAD_OP_CLEAR and VK_ATTACHMENT_STORE_OP_STORE
-	DepthStencilTarget makeDepthStencilTargetClearStore(RenderGraphImageView &view,
-		VkClearDepthStencilValue clear_value);
+	DepthStencilTarget makeDepthStencilTargetClearStore(RenderGraphImage &image, VkClearDepthStencilValue clear_value,
+		uint32_t mip = 0);
 
 	// Passes (will be executed in declaration order)
 
