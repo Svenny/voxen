@@ -9,7 +9,6 @@
 #include <voxen/client/vulkan/high/main_loop.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
-#include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/memory.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
@@ -18,7 +17,7 @@
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
-
+#include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -36,7 +35,7 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<Capabilities>, Storage<Instance>, Storage<PhysicalDevice>, Storage<Device>,
+	std::tuple<Storage<Capabilities>, Storage<gfx::vk::Instance>, Storage<PhysicalDevice>, Storage<Device>,
 		Storage<DeviceAllocator>, Storage<TransferManager>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
 		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<DescriptorManager>,
 		Storage<Surface>, Storage<Swapchain>, Storage<FramebufferCollection>, Storage<PipelineCollection>,
@@ -196,6 +195,11 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 		if (start_all) {
 			m_impl.constructModule(m_capabilities);
 			m_impl.constructModule(m_instance);
+
+			if (!loadInstanceLevelApi(m_instance->handle())) {
+				return false;
+			}
+
 			m_impl.constructModule(m_physical_device);
 			m_impl.constructModule(m_device);
 

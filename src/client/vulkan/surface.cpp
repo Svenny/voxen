@@ -2,8 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
@@ -18,7 +18,7 @@ Surface::Surface(Window &window) : m_window(window)
 {
 	Log::debug("Creating Surface");
 	auto &backend = Backend::backend();
-	VkInstance instance = backend.instance();
+	VkInstance instance = backend.instance().handle();
 	auto allocator = HostAllocator::callbacks();
 
 	VkResult result = glfwCreateWindowSurface(instance, window.glfwHandle(), allocator, &m_surface);
@@ -37,7 +37,7 @@ Surface::~Surface() noexcept
 {
 	Log::debug("Destroying Surface");
 	auto &backend = Backend::backend();
-	VkInstance instance = backend.instance();
+	VkInstance instance = backend.instance().handle();
 	backend.vkDestroySurfaceKHR(instance, m_surface, HostAllocator::callbacks());
 }
 

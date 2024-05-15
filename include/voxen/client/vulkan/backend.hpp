@@ -7,6 +7,13 @@
 
 #include <string_view>
 
+namespace voxen::gfx::vk
+{
+
+class Instance;
+
+}
+
 namespace voxen::client::vulkan
 {
 
@@ -16,7 +23,6 @@ class DescriptorSetLayoutCollection;
 class Device;
 class DeviceAllocator;
 class FramebufferCollection;
-class Instance;
 class MainLoop;
 class PhysicalDevice;
 class PipelineCache;
@@ -53,8 +59,8 @@ public:
 
 	Capabilities &capabilities() noexcept { return *m_capabilities; }
 	const Capabilities &capabilities() const noexcept { return *m_capabilities; }
-	Instance &instance() noexcept { return *m_instance; }
-	const Instance &instance() const noexcept { return *m_instance; }
+	gfx::vk::Instance &instance() noexcept { return *m_instance; }
+	const gfx::vk::Instance &instance() const noexcept { return *m_instance; }
 	PhysicalDevice &physicalDevice() noexcept { return *m_physical_device; }
 	const PhysicalDevice &physicalDevice() const noexcept { return *m_physical_device; }
 	Device &device() noexcept { return *m_device; }
@@ -123,7 +129,7 @@ private:
 	Impl &m_impl;
 
 	Capabilities *m_capabilities = nullptr;
-	Instance *m_instance = nullptr;
+	gfx::vk::Instance *m_instance = nullptr;
 	PhysicalDevice *m_physical_device = nullptr;
 	Device *m_device = nullptr;
 

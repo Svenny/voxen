@@ -2,7 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
-#include <voxen/client/vulkan/instance.hpp>
+#include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -21,7 +21,7 @@ PhysicalDevice::PhysicalDevice()
 	Log::debug("Creating PhysicalDevice");
 
 	auto &backend = Backend::backend();
-	VkInstance instance = backend.instance();
+	VkInstance instance = backend.instance().handle();
 
 	uint32_t num_devices = 0;
 	VkResult result = backend.vkEnumeratePhysicalDevices(instance, &num_devices, nullptr);
@@ -199,7 +199,7 @@ bool PhysicalDevice::populateQueueFamilies(VkPhysicalDevice device)
 		Log::debug("Preferred transfer queue family index: {}", m_transfer_queue_family);
 	}
 
-	VkInstance instance = backend.instance();
+	VkInstance instance = backend.instance().handle();
 	// Check if graphics queue family supports present first
 	if (glfwGetPhysicalDevicePresentationSupport(instance, device, m_graphics_queue_family)) {
 		Log::debug("Graphics queue family can also present");

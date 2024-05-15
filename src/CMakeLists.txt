@@ -24,7 +24,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/framebuffer.cpp
 	src/client/vulkan/image.cpp
 	src/client/vulkan/image_view.cpp
-	src/client/vulkan/instance.cpp
 	src/client/vulkan/memory.cpp
 	src/client/vulkan/physical_device.cpp
 	src/client/vulkan/pipeline.cpp
@@ -83,6 +82,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/vk_instance.cpp
 )
 
 target_sources(game PRIVATE
