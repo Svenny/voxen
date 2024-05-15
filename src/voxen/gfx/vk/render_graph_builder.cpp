@@ -152,20 +152,30 @@ VkImageUsageFlags imageAccessToUsage(VkAccessFlags2 flags)
 
 } // namespace
 
-RenderGraphBuilder::RenderGraphBuilder(RenderGraphPrivate &priv) noexcept : m_private(priv) {}
+RenderGraphBuilder::RenderGraphBuilder(RenderGraphPrivate &priv) noexcept : m_private(priv)
+{
+	// TODO: stub before render graph is integrated with swapchain
+	m_private.output_image = make2DImage("output_stub",
+		{
+			.format = VK_FORMAT_R8G8B8A8_SRGB,
+			.resolution = { 1280, 720 },
+			.mips = 1,
+			.layers = 1,
+		});
+}
 
 RenderGraphBuilder::~RenderGraphBuilder() noexcept = default;
 
-RenderGraphImageView &RenderGraphBuilder::outputView()
+RenderGraphImage &RenderGraphBuilder::outputImage()
 {
-	return m_private.output_view;
+	return m_private.output_image;
 }
 
-RenderGraphImage RenderGraphBuilder::make2DImage(std::string name, Image2DConfig config)
+RenderGraphImage RenderGraphBuilder::make2DImage(std::string_view name, Image2DConfig config)
 {
 	auto &priv = m_private.images.emplace_back();
 
-	priv.name = std::move(name);
+	priv.name = fmt::format("graph/img/{}", name);
 	priv.mip_states.resize(config.mips);
 	initImageCreateInfo(priv.create_info, config);
 
@@ -178,12 +188,12 @@ std::pair<RenderGraphImage, RenderGraphImage> RenderGraphBuilder::makeDoubleBuff
 	auto &priv = m_private.images.emplace_back();
 	auto &prev_priv = m_private.images.emplace_back();
 
-	priv.name = std::string(name) + "@A";
+	priv.name = fmt::format("graph/img/{}@A", name);
 	priv.temporal_sibling = &prev_priv;
 	priv.mip_states.resize(config.mips);
 	initImageCreateInfo(priv.create_info, config);
 
-	prev_priv.name = std::string(name) + "@B";
+	prev_priv.name = fmt::format("graph/img/{}@B", name);
 	prev_priv.temporal_sibling = &priv;
 	prev_priv.mip_states.resize(config.mips);
 	initImageCreateInfo(prev_priv.create_info, config);
@@ -191,38 +201,39 @@ std::pair<RenderGraphImage, RenderGraphImage> RenderGraphBuilder::makeDoubleBuff
 	return { RenderGraphImage(priv), RenderGraphImage(prev_priv) };
 }
 
-RenderGraphBuffer RenderGraphBuilder::makeDynamicSizedBuffer(std::string name)
+RenderGraphBuffer RenderGraphBuilder::makeDynamicSizedBuffer(std::string_view name)
 {
 	auto &priv = m_private.buffers.emplace_back();
 
-	priv.name = std::move(name);
+	priv.name = fmt::format("graph/buf/{}", name);
 	priv.dynamic_sized = true;
 	initBufferCreateInfo(priv.create_info, 0);
 
 	return RenderGraphBuffer(priv);
 }
 
-RenderGraphImageView RenderGraphBuilder::makeBasicImageView(std::string name, RenderGraphImage &image)
+RenderGraphImageView RenderGraphBuilder::makeBasicImageView(std::string_view name, RenderGraphImage &image)
 {
 	auto *image_priv = image.getPrivate();
 	if (!image_priv) {
 		return {};
 	}
 
-	return makeImageView(std::move(name), image, image_priv->create_info.format);
+	return makeImageView(name, image, image_priv->create_info.format);
 }
 
-RenderGraphImageView RenderGraphBuilder::makeSingleMipImageView(std::string name, RenderGraphImage &image, uint32_t mip)
+RenderGraphImageView RenderGraphBuilder::makeSingleMipImageView(std::string_view name, RenderGraphImage &image,
+	uint32_t mip)
 {
 	auto *image_priv = image.getPrivate();
 	if (!image_priv) {
 		return {};
 	}
 
-	return makeImageView(std::move(name), image, image_priv->create_info.format, mip, 1);
+	return makeImageView(name, image, image_priv->create_info.format, mip, 1);
 }
 
-RenderGraphImageView RenderGraphBuilder::makeImageView(std::string name, RenderGraphImage &image, VkFormat format,
+RenderGraphImageView RenderGraphBuilder::makeImageView(std::string_view name, RenderGraphImage &image, VkFormat format,
 	uint32_t firstMip, uint32_t mipCount)
 {
 	auto *image_priv = image.getPrivate();
@@ -232,7 +243,7 @@ RenderGraphImageView RenderGraphBuilder::makeImageView(std::string name, RenderG
 
 	auto &priv = image_priv->views.emplace_back();
 
-	priv.name = std::move(name);
+	priv.name = fmt::format("graph/img/{}", name);
 	priv.image = image_priv;
 
 	// TODO: make view type explicitly requestable
@@ -294,8 +305,14 @@ RenderGraphBuilder::ResourceUsage RenderGraphBuilder::makeImageViewUsage(RenderG
 	};
 }
 
-RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetDiscardStore(RenderGraphImageView &view)
+RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetDiscardStore(RenderGraphImage &image, uint32_t mip)
 {
+	if (!image.getPrivate()) {
+		return {};
+	}
+
+	RenderGraphImageView view = makeSingleMipImageView(image.getPrivate()->name + "/rtv", image, mip);
+
 	return {
 		.resource = view.getPrivate(),
 		.load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -303,9 +320,15 @@ RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetDiscardStor
 	};
 }
 
-RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetClearStore(RenderGraphImageView &view,
-	VkClearColorValue clear_value)
+RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetClearStore(RenderGraphImage &image,
+	VkClearColorValue clear_value, uint32_t mip)
 {
+	if (!image.getPrivate()) {
+		return {};
+	}
+
+	RenderGraphImageView view = makeSingleMipImageView(image.getPrivate()->name + "/rtv", image, mip);
+
 	return {
 		.resource = view.getPrivate(),
 		.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -314,9 +337,15 @@ RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetClearStore(
 	};
 }
 
-RenderGraphBuilder::DepthStencilTarget RenderGraphBuilder::makeDepthStencilTargetClearStore(RenderGraphImageView &view,
-	VkClearDepthStencilValue clear_value)
+RenderGraphBuilder::DepthStencilTarget RenderGraphBuilder::makeDepthStencilTargetClearStore(RenderGraphImage &image,
+	VkClearDepthStencilValue clear_value, uint32_t mip)
 {
+	if (!image.getPrivate()) {
+		return {};
+	}
+
+	RenderGraphImageView view = makeSingleMipImageView(image.getPrivate()->name + "/dsv", image, mip);
+
 	return {
 		.resource = view.getPrivate(),
 		.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
