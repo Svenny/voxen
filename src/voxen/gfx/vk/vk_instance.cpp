@@ -1,56 +1,45 @@
-#include <voxen/client/vulkan/instance.hpp>
+#include <voxen/gfx/vk/vk_instance.hpp>
 
 #include <voxen/client/gfx_runtime_config.hpp>
-#include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
+#include <voxen/client/vulkan/common.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 
 #include <GLFW/glfw3.h>
 
-namespace voxen::client::vulkan
+namespace voxen::gfx::vk
 {
 
-Instance::Instance()
+// TODO: there parts are not yet moved to voxen/gfx/vk
+using client::vulkan::Capabilities;
+using client::vulkan::VulkanException;
+using client::vulkan::VulkanUtils;
+
+namespace
 {
-	Log::debug("Creating Instance");
 
-	if (!checkVulkanSupport()) {
-		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "unsupported or missing Vulkan driver");
-	}
-
-	createInstance();
-
-	auto &backend = Backend::backend();
-	if (!backend.loadInstanceLevelApi(m_handle)) {
-		// Assuming at least vkDestroyInstance was found...
-		destroyInstance();
-		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing required instance-level Vulkan API");
-	}
-
-	Log::debug("Instance created successfully");
-}
-
-Instance::~Instance() noexcept
-{
-	Log::debug("Destroying Instance");
-	destroyInstance();
-	Log::debug("Intance destroyed");
-}
-
-bool Instance::checkVulkanSupport() const
+bool checkVulkanSupport()
 {
 	if (glfwVulkanSupported() != GLFW_TRUE) {
 		Log::error("No supported Vulkan ICD found");
 		return false;
 	}
 
-	auto &backend = Backend::backend();
+	auto enumerate_fn = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+		glfwGetInstanceProcAddress(VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
+
+	if (!enumerate_fn) {
+		const char *description = nullptr;
+		int error = glfwGetError(&description);
+		Log::error("Can't find vkEnumerateInstanceVersion, GLFW error {}:\n{}", error, description);
+		return false;
+	}
+
 	uint32_t version = 0;
-	VkResult result = backend.vkEnumerateInstanceVersion(&version);
+	VkResult result = enumerate_fn(&version);
 	if (result != VK_SUCCESS) {
 		Log::error("vkEnumerateInstanceVersion failed: {}", VulkanUtils::getVkResultString(result));
 		return false;
@@ -71,7 +60,29 @@ bool Instance::checkVulkanSupport() const
 	return true;
 }
 
-static std::vector<const char *> getRequiredInstanceExtensions()
+void fillDispatchTable(InstanceDispatchTable &dt)
+{
+	auto load_entry = [](const char *name) {
+		// All these functions must be exported from Vulkan loader, no instance handle is needed
+		GLFWvkproc proc = glfwGetInstanceProcAddress(VK_NULL_HANDLE, name);
+
+		if (!proc) {
+			const char *description = nullptr;
+			int error = glfwGetError(&description);
+			Log::error("Can't find '{}', GLFW error {}:\n{}", name, error, description);
+
+			throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing Vulkan loader entry point");
+		};
+
+		return proc;
+	};
+
+#define VK_API_ENTRY(x) dt.x = reinterpret_cast<PFN_##x>(load_entry(#x));
+#include <voxen/gfx/vk/api_instance.in>
+#undef VK_API_ENTRY
+}
+
+std::vector<const char *> getRequiredInstanceExtensions()
 {
 	uint32_t glfw_ext_count = 0;
 	// GLFW guarantees that on success there will be `VK_KHR_surface` at least
@@ -108,18 +119,17 @@ static std::vector<const char *> getRequiredInstanceExtensions()
 	return ext_list;
 }
 
-static std::vector<const char *> getRequiredLayers()
+std::vector<const char *> getRequiredLayers(const InstanceDispatchTable &dt)
 {
 	// Add nothing if validation is not enabled
 	if (!RuntimeConfig::instance().gfxConfig().useValidation()) {
 		return {};
 	}
 
-	auto &backend = Backend::backend();
 	uint32_t available_count;
-	backend.vkEnumerateInstanceLayerProperties(&available_count, nullptr);
+	dt.vkEnumerateInstanceLayerProperties(&available_count, nullptr);
 	std::vector<VkLayerProperties> available_props(available_count);
-	backend.vkEnumerateInstanceLayerProperties(&available_count, available_props.data());
+	dt.vkEnumerateInstanceLayerProperties(&available_count, available_props.data());
 
 	if (available_count > 0 && Log::willBeLogged(Log::Level::Debug)) {
 		Log::debug("The following Vulkan layers are available:");
@@ -158,6 +168,41 @@ static std::vector<const char *> getRequiredLayers()
 	return layer_list;
 }
 
+} // namespace
+
+Instance::Instance()
+{
+	Log::debug("Creating VkInstance");
+
+	if (!checkVulkanSupport()) {
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "unsupported or missing Vulkan driver");
+	}
+
+	fillDispatchTable(m_dt);
+	createInstance();
+
+	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
+		m_debug = DebugUtils(m_handle, m_dt.vkGetInstanceProcAddr);
+	}
+
+	Log::debug("VkInstance created successfully");
+}
+
+Instance::~Instance() noexcept
+{
+	if (!m_handle) {
+		return;
+	}
+
+	Log::debug("Destroying VkInstance");
+
+	// Destroy DebugUtils before the instance
+	m_debug = {};
+	m_dt.vkDestroyInstance(m_handle, nullptr);
+
+	Log::debug("VkInstance destroyed");
+}
+
 void Instance::createInstance()
 {
 	// Fill VkApplicationInfo
@@ -172,7 +217,7 @@ void Instance::createInstance()
 
 	// Fill VkInstanceCreateInfo
 	auto ext_list = getRequiredInstanceExtensions();
-	auto layer_list = getRequiredLayers();
+	auto layer_list = getRequiredLayers(m_dt);
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
@@ -181,18 +226,10 @@ void Instance::createInstance()
 	create_info.enabledLayerCount = uint32_t(layer_list.size());
 	create_info.ppEnabledLayerNames = layer_list.data();
 
-	auto &backend = Backend::backend();
-	VkResult result = backend.vkCreateInstance(&create_info, HostAllocator::callbacks(), &m_handle);
+	VkResult result = m_dt.vkCreateInstance(&create_info, nullptr, &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateInstance");
 	}
 }
 
-void Instance::destroyInstance() noexcept
-{
-	auto &backend = Backend::backend();
-	backend.vkDestroyInstance(m_handle, HostAllocator::callbacks());
-	backend.unloadInstanceLevelApi();
-}
-
-} // namespace voxen::client::vulkan
+} // namespace voxen::gfx::vk

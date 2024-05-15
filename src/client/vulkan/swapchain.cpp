@@ -2,7 +2,6 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/instance.hpp>
 #include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/util/log.hpp>

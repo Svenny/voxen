@@ -1,0 +1,7 @@
+// Alphabet order
+VK_API_ENTRY(vkCreateInstance)
+VK_API_ENTRY(vkDestroyInstance)
+VK_API_ENTRY(vkEnumerateInstanceLayerProperties)
+VK_API_ENTRY(vkEnumerateInstanceVersion)
+VK_API_ENTRY(vkGetDeviceProcAddr)
+VK_API_ENTRY(vkGetInstanceProcAddr)

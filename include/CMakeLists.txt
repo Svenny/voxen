@@ -38,7 +38,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/image.hpp
 	include/voxen/client/vulkan/image_view.hpp
-	include/voxen/client/vulkan/instance.hpp
 	include/voxen/client/vulkan/memory.hpp
 	include/voxen/client/vulkan/physical_device.hpp
 	include/voxen/client/vulkan/pipeline.hpp
@@ -89,6 +88,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp
