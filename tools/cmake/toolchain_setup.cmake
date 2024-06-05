@@ -4,12 +4,12 @@ if(NOT CMAKE_GENERATOR STREQUAL "Ninja" AND NOT CMAKE_GENERATOR STREQUAL "Ninja 
 	message(FATAL_ERROR "Only Ninja generator is supported!")
 endif()
 
-if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.0)
-	message(FATAL_ERROR "Only Clang 14 or newer is supported for C++ code!")
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18.0)
+	message(FATAL_ERROR "Only Clang 18 or newer is supported for C++ code!")
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_VERSION VERSION_LESS 14.0)
-	message(FATAL_ERROR "Only Clang 14 or newer is supported for C code!")
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_VERSION VERSION_LESS 18.0)
+	message(FATAL_ERROR "Only Clang 18 or newer is supported for C code!")
 endif()
 
 # This function must be called on any Voxen C/C++ target (executable, static or shared library)
