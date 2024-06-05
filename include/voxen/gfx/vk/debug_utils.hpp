@@ -80,12 +80,7 @@ private:
 		} else if constexpr (std::is_same_v<T, VkImageView>) {
 			return VK_OBJECT_TYPE_IMAGE_VIEW;
 		} else {
-// TODO: this is a temporary hack until we bump CI runners to Ubuntu 24.04; remove it then
-#if __clang_major__ < 17
-			return VK_OBJECT_TYPE_UNKNOWN;
-#else
 			static_assert(false, "Unknown handle type");
-#endif
 		}
 	}
 };
