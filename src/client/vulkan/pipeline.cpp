@@ -286,6 +286,7 @@ struct GraphicsPipelineParts {
 
 	const VkPipelineRenderingCreateInfo default_rendering_info {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.pNext = nullptr,
 		.viewMask = 0,
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,

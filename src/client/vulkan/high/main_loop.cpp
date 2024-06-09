@@ -115,6 +115,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	initialImageBarriers[0] = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		.pNext = nullptr,
 		.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
 		.srcAccessMask = 0,
 		.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -135,6 +136,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	initialImageBarriers[1] = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		.pNext = nullptr,
 		.srcStageMask = VK_PIPELINE_STAGE_2_NONE,
 		.srcAccessMask = 0,
 		.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
@@ -155,6 +157,12 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	const VkDependencyInfo initialDepInfo {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.pNext = nullptr,
+		.dependencyFlags = 0,
+		.memoryBarrierCount = 0,
+		.pMemoryBarriers = nullptr,
+		.bufferMemoryBarrierCount = 0,
+		.pBufferMemoryBarriers = nullptr,
 		.imageMemoryBarrierCount = std::size(initialImageBarriers),
 		.pImageMemoryBarriers = initialImageBarriers,
 	};
@@ -226,6 +234,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	const VkImageMemoryBarrier2 finalImageBarrier {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		.pNext = nullptr,
 		.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 		.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 		.dstStageMask = VK_PIPELINE_STAGE_2_NONE,
@@ -246,6 +255,12 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	const VkDependencyInfo finalDepInfo {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.pNext = nullptr,
+		.dependencyFlags = 0,
+		.memoryBarrierCount = 0,
+		.pMemoryBarriers = nullptr,
+		.bufferMemoryBarrierCount = 0,
+		.pBufferMemoryBarriers = nullptr,
 		.imageMemoryBarrierCount = 1,
 		.pImageMemoryBarriers = &finalImageBarrier,
 	};

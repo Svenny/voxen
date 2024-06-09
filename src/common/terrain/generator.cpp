@@ -148,7 +148,8 @@ void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
 	}
 
 	// Find surface-crossing edges
-	ZeroCrossingContext ctx { .edge_world_length = double(scale) };
+	ZeroCrossingContext ctx {};
+	ctx.edge_world_length = double(scale);
 
 	const auto &voxels = grid.voxels();
 

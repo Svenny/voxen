@@ -94,11 +94,10 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 			|| glm::any(glm::greaterThanEqual(cell_coord, glm::ivec3(Config::CHUNK_SIZE)));
 
 		auto &accum = cell_to_accumulator[key];
-		SurfaceVertex vtx {
-			.position = accum.qef_solver.solve(min_point, max_point),
-			.normal = glm::normalize(accum.normal / accum.count),
-			.flags = uint8_t(corner ? 1u : 0u),
-		};
+		SurfaceVertex vtx {};
+		vtx.position = accum.qef_solver.solve(min_point, max_point);
+		vtx.normal = glm::normalize(accum.normal / accum.count);
+		vtx.flags = uint8_t(corner ? 1u : 0u);
 
 		uint32_t id = surface.addVertex(vtx);
 		cell_to_vertex_id[key] = id;
