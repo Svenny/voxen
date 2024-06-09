@@ -327,8 +327,14 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 
 	const VkDependencyInfo depInfo {
 		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.pNext = nullptr,
+		.dependencyFlags = 0,
+		.memoryBarrierCount = 0,
+		.pMemoryBarriers = nullptr,
 		.bufferMemoryBarrierCount = 1,
 		.pBufferMemoryBarriers = &barrier,
+		.imageMemoryBarrierCount = 0,
+		.pImageMemoryBarriers = nullptr,
 	};
 
 	backend.vkCmdPipelineBarrier2(cmdbuf, &depInfo);

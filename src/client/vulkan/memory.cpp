@@ -219,11 +219,14 @@ DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase 
 	VkMemoryDedicatedRequirements dedicated_reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
 		.pNext = nullptr,
+		.prefersDedicatedAllocation = false,
+		.requiresDedicatedAllocation = false,
 	};
 
 	VkMemoryRequirements2 reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
 		.pNext = &dedicated_reqs,
+		.memoryRequirements = {},
 	};
 	backend.vkGetBufferMemoryRequirements2(device, &request, &reqs);
 
@@ -262,11 +265,14 @@ DeviceAllocation DeviceAllocator::allocate(VkImage image, DeviceMemoryUseCase us
 	VkMemoryDedicatedRequirements dedicated_reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
 		.pNext = nullptr,
+		.prefersDedicatedAllocation = false,
+		.requiresDedicatedAllocation = false,
 	};
 
 	VkMemoryRequirements2 reqs {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
 		.pNext = &dedicated_reqs,
+		.memoryRequirements = {},
 	};
 	backend.vkGetImageMemoryRequirements2(device, &request, &reqs);
 
