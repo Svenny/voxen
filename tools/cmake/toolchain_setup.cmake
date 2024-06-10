@@ -57,6 +57,10 @@ function(voxen_setup_target target is_executable)
 		# Possible side effect: inline functions can have different
 		# addresses across binary boundaries (but who cares?).
 		-Bsymbolic-functions
+
+		# Treat unresolved symbols as errors when linking shared libraries.
+		# Useful to catch missing dependencies a bit faster.
+		--no-undefined
 	)
 
 	set_target_properties(${target} PROPERTIES
