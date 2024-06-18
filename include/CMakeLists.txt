@@ -89,6 +89,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_runner.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_instance.hpp
+	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

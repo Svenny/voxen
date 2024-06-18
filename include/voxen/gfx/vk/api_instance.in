@@ -1,7 +1,13 @@
 // Alphabet order
 VK_API_ENTRY(vkCreateInstance)
 VK_API_ENTRY(vkDestroyInstance)
+VK_API_ENTRY(vkEnumerateDeviceExtensionProperties)
 VK_API_ENTRY(vkEnumerateInstanceLayerProperties)
 VK_API_ENTRY(vkEnumerateInstanceVersion)
+VK_API_ENTRY(vkEnumeratePhysicalDevices)
 VK_API_ENTRY(vkGetDeviceProcAddr)
 VK_API_ENTRY(vkGetInstanceProcAddr)
+VK_API_ENTRY(vkGetPhysicalDeviceFeatures2)
+VK_API_ENTRY(vkGetPhysicalDeviceMemoryProperties)
+VK_API_ENTRY(vkGetPhysicalDeviceProperties2)
+VK_API_ENTRY(vkGetPhysicalDeviceQueueFamilyProperties)

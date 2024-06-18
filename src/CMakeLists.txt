@@ -83,6 +83,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_runner.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_instance.cpp
+	src/voxen/gfx/vk/vk_physical_device.cpp
 )
 
 target_sources(game PRIVATE

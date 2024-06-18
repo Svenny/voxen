@@ -4,6 +4,7 @@
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/common/runtime_config.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
@@ -201,6 +202,29 @@ Instance::~Instance() noexcept
 	m_dt.vkDestroyInstance(m_handle, nullptr);
 
 	Log::debug("VkInstance destroyed");
+}
+
+extras::dyn_array<PhysicalDevice> Instance::enumeratePhysicalDevices() const
+{
+	uint32_t count = 0;
+	VkResult result = m_dt.vkEnumeratePhysicalDevices(m_handle, &count, nullptr);
+	if (result != VK_SUCCESS) {
+		throw VulkanException(result, "vkEnumeratePhysicalDevices");
+	}
+
+	extras::dyn_array<VkPhysicalDevice> handles(count);
+	result = m_dt.vkEnumeratePhysicalDevices(m_handle, &count, handles.data());
+	if (result != VK_SUCCESS) {
+		throw VulkanException(result, "vkEnumeratePhysicalDevices");
+	}
+
+	extras::dyn_array<PhysicalDevice> devices(count);
+
+	for (uint32_t i = 0; i < count; i++) {
+		devices[i] = PhysicalDevice(*this, handles[i]);
+	}
+
+	return devices;
 }
 
 void Instance::createInstance()
