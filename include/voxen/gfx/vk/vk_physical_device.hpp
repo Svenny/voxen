@@ -58,6 +58,7 @@ public:
 	// have undefined contents, so always check it first.
 	struct ExtensionsInfo {
 		bool have_maintenance5 = false;
+		bool have_memory_budget = false;
 		bool have_mesh_shader = false;
 		bool have_push_descriptor = false;
 
