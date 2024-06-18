@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/gfx/vk/debug_utils.hpp>
+#include <voxen/gfx/vk/vk_debug_utils.hpp>
 
 namespace voxen::gfx::vk
 {
