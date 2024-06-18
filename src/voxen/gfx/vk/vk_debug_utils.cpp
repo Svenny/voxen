@@ -1,4 +1,4 @@
-#include <voxen/gfx/vk/debug_utils.hpp>
+#include <voxen/gfx/vk/vk_debug_utils.hpp>
 
 // TODO: include not moved to `gfx/vk`
 #include <voxen/client/vulkan/common.hpp>
