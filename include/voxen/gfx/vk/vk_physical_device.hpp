@@ -58,6 +58,7 @@ public:
 	// have undefined contents, so always check it first.
 	struct ExtensionsInfo {
 		bool have_maintenance5 = false;
+		bool have_memory_budget = false;
 		bool have_mesh_shader = false;
 		bool have_push_descriptor = false;
 
@@ -65,6 +66,7 @@ public:
 		VkPhysicalDeviceMeshShaderFeaturesEXT feats_mesh_shader;
 
 		VkPhysicalDeviceMaintenance5PropertiesKHR props_maintenance5;
+		VkPhysicalDeviceMemoryBudgetPropertiesEXT props_memory_budget;
 		VkPhysicalDeviceMeshShaderPropertiesEXT props_mesh_shader;
 		VkPhysicalDevicePushDescriptorPropertiesKHR props_push_descriptor;
 	};

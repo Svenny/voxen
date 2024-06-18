@@ -105,6 +105,11 @@ std::pair<void *, void *> PhysicalDevice::prepareExtInfoQuery(const Instance &in
 
 			m_ext_info.props_maintenance5.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES_KHR;
 			m_ext_info.props_maintenance5.pNext = std::exchange(props_pnext_last, &m_ext_info.props_maintenance5);
+		} else if (!strcmp(ext.extensionName, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)) {
+			m_ext_info.have_memory_budget = true;
+
+			m_ext_info.props_memory_budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+			m_ext_info.props_memory_budget.pNext = std::exchange(props_pnext_last, &m_ext_info.props_memory_budget);
 		} else if (!strcmp(ext.extensionName, VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
 			m_ext_info.have_mesh_shader = true;
 
