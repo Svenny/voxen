@@ -61,6 +61,7 @@ public:
 		bool have_memory_budget = false;
 		bool have_mesh_shader = false;
 		bool have_push_descriptor = false;
+		bool have_swapchain = false;
 
 		VkPhysicalDeviceMaintenance5FeaturesKHR feats_maintenance5;
 		VkPhysicalDeviceMeshShaderFeaturesEXT feats_mesh_shader;
