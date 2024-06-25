@@ -1,5 +1,7 @@
 // Alphabet order
+VK_API_ENTRY(vkCreateDevice)
 VK_API_ENTRY(vkCreateInstance)
+VK_API_ENTRY(vkDestroyDevice)
 VK_API_ENTRY(vkDestroyInstance)
 VK_API_ENTRY(vkEnumerateDeviceExtensionProperties)
 VK_API_ENTRY(vkEnumerateInstanceLayerProperties)
