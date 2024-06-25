@@ -79,6 +79,10 @@ private:
 			return VK_OBJECT_TYPE_IMAGE;
 		} else if constexpr (std::is_same_v<T, VkImageView>) {
 			return VK_OBJECT_TYPE_IMAGE_VIEW;
+		} else if constexpr (std::is_same_v<T, VkQueue>) {
+			return VK_OBJECT_TYPE_QUEUE;
+		} else if constexpr (std::is_same_v<T, VkSemaphore>) {
+			return VK_OBJECT_TYPE_SEMAPHORE;
 		} else {
 			static_assert(false, "Unknown handle type");
 		}
