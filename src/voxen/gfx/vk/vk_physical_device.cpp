@@ -120,6 +120,8 @@ std::pair<void *, void *> PhysicalDevice::prepareExtInfoQuery(const Instance &in
 
 			m_ext_info.props_push_descriptor.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
 			m_ext_info.props_push_descriptor.pNext = std::exchange(props_pnext_last, &m_ext_info.props_push_descriptor);
+		} else if (!strcmp(ext.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+			m_ext_info.have_swapchain = true;
 		}
 	}
 
