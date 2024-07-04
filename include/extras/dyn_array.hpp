@@ -113,13 +113,13 @@ public:
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	constexpr explicit dyn_array() noexcept {}
+	constexpr explicit dyn_array() noexcept(noexcept(Allocator())) {}
 
-	constexpr explicit dyn_array(size_type count, const T &value, const Allocator &alloc = Allocator())
-		: m_size(count), m_alloc(alloc)
+	constexpr explicit dyn_array(const Allocator &alloc) noexcept : m_alloc(alloc) {}
+
+	constexpr explicit dyn_array(size_type count, const T &value, const Allocator &alloc = Allocator()) : m_alloc(alloc)
 	{
-		m_data = std::allocator_traits<Allocator>::allocate(m_alloc, count);
-		std::uninitialized_fill_n(m_data, count, value);
+		uninitialized_construct(count, [&value](void *place, size_type) { ::new (place) T(value); });
 	}
 
 	/// This constructor with owning changing from raw allocated memory.
@@ -129,31 +129,43 @@ public:
 		// do nothing
 	}
 
-	constexpr explicit dyn_array(size_type count, const Allocator &alloc = Allocator()) : m_size(count), m_alloc(alloc)
+	constexpr explicit dyn_array(size_type count, const Allocator &alloc = Allocator()) : m_alloc(alloc)
 	{
-		m_data = std::allocator_traits<Allocator>::allocate(m_alloc, count);
-		std::uninitialized_default_construct_n(m_data, count);
+		uninitialized_construct(count, [](void *place, size_type) { ::new (place) T(); });
+	}
+
+	// Generating constructor - generates items by calling `generator(void *place, size_type index)`
+	// `place` points to uninitialized bytes; called in strict order `index = 0, 1, 2, ...`.
+	// NOTE: `generator` acts as a "programmable placement new" - i.e. object is assumed
+	// constructed (lifetime started) if it returns normally; and not constructed if it throws.
+	template<typename F>
+	constexpr explicit dyn_array(size_type count, F &&generator, const Allocator &alloc = Allocator())
+		requires(
+			!std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<F>> && std::is_invocable_v<F, void *, size_type>)
+		: m_alloc(alloc)
+	{
+		uninitialized_construct(count, std::forward<F>(generator));
 	}
 
 	template<typename InputIt>
-	constexpr explicit dyn_array(InputIt first, InputIt last, const Allocator &alloc = Allocator())
-		: m_size(std::distance(first, last)), m_alloc(alloc)
+	constexpr explicit dyn_array(InputIt first, InputIt last, const Allocator &alloc = Allocator()) : m_alloc(alloc)
 	{
-		m_data = std::allocator_traits<Allocator>::allocate(m_alloc, m_size);
-		std::uninitialized_copy(first, last, m_data);
+		uninitialized_construct(std::distance(first, last), [&first](void *place, size_type) {
+			::new (place) T(*first);
+			++first;
+		});
 	}
 
 	constexpr dyn_array(const dyn_array &other) : m_size(other.m_size), m_alloc(other.m_alloc)
 	{
-		m_data = std::allocator_traits<Allocator>::allocate(m_alloc, m_size);
-		std::uninitialized_copy_n(other.data(), m_size, m_data);
+		uninitialized_construct(other.m_size, [&other](void *place, size_type index) { ::new (place) T(other[index]); });
 	}
 
-	constexpr dyn_array(dyn_array &&other) noexcept : m_size(other.m_size), m_data(other.m_data), m_alloc(other.m_alloc)
+	constexpr dyn_array(dyn_array &&other) noexcept
+		: m_size(other.m_size), m_data(other.m_data), m_alloc(std::move(other.m_alloc))
 	{
-		if (&other != this) {
-			other.m_data = nullptr;
-		}
+		other.m_size = 0;
+		other.m_data = nullptr;
 	}
 
 	constexpr dyn_array(std::initializer_list<T> init, const Allocator &alloc = Allocator())
@@ -162,6 +174,7 @@ public:
 
 	constexpr dyn_array &operator=(const dyn_array &other)
 	{
+		// Don't reallocate when size/allocator is not changing
 		if (m_size == other.m_size && m_alloc == other.m_alloc) {
 			std::copy(other.cbegin(), other.cend(), begin());
 			return *this;
@@ -196,6 +209,9 @@ public:
 		return std::as_writable_bytes(std::span(m_data, m_size));
 	}
 
+	operator std::span<const T>() const noexcept { return std::span(m_data, m_size); }
+	operator std::span<T>() noexcept { return std::span(m_data, m_size); }
+
 	[[nodiscard]] constexpr T &operator[](size_type pos) noexcept { return m_data[pos]; }
 	[[nodiscard]] constexpr const T &operator[](size_type pos) const noexcept { return m_data[pos]; }
 
@@ -218,6 +234,31 @@ private:
 	size_type m_size = 0;
 	T *m_data = nullptr;
 	[[no_unique_address]] Allocator m_alloc = {};
+
+	template<typename F>
+	void uninitialized_construct(size_type count, F &&generator)
+	{
+		size_type init = 0;
+		T *data = std::allocator_traits<Allocator>::allocate(m_alloc, count);
+
+		try {
+			while (init < count) {
+				generator(static_cast<void *>(data + init), init);
+				++init;
+			}
+
+			m_size = count;
+			m_data = data;
+		}
+		catch (...) {
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				std::destroy_n(data, init);
+			}
+
+			std::allocator_traits<Allocator>::deallocate(m_alloc, data, count);
+			throw;
+		}
+	}
 };
 
 // Deduction guide for constructing from two iterators
