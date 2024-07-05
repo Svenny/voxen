@@ -1,29 +1,27 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
-#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/high/main_loop.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/memory.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
 
 #include <cassert>
-#include <new>
 #include <tuple>
 
 namespace voxen::client::vulkan
@@ -35,11 +33,11 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<Capabilities>, Storage<gfx::vk::Instance>, Storage<PhysicalDevice>, Storage<Device>,
-		Storage<DeviceAllocator>, Storage<TransferManager>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
-		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<DescriptorManager>,
-		Storage<Surface>, Storage<Swapchain>, Storage<FramebufferCollection>, Storage<PipelineCollection>,
-		Storage<TerrainSynchronizer>, Storage<MainLoop>, Storage<TerrainRenderer>>
+	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<DeviceAllocator>, Storage<TransferManager>,
+		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
+		Storage<PipelineLayoutCollection>, Storage<DescriptorManager>, Storage<Surface>, Storage<Swapchain>,
+		Storage<FramebufferCollection>, Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<MainLoop>,
+		Storage<TerrainRenderer>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -193,15 +191,23 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 
 	try {
 		if (start_all) {
-			m_impl.constructModule(m_capabilities);
 			m_impl.constructModule(m_instance);
 
 			if (!loadInstanceLevelApi(m_instance->handle())) {
 				return false;
 			}
 
-			m_impl.constructModule(m_physical_device);
-			m_impl.constructModule(m_device);
+			auto devices = m_instance->enumeratePhysicalDevices();
+			auto *device = selectPhysicalDevice(devices);
+			if (!device) {
+				return false;
+			}
+
+			m_impl.constructModule(m_device, *m_instance, *device);
+
+			if (!loadDeviceLevelApi(m_device->handle())) {
+				return false;
+			}
 
 			m_impl.constructModule(m_device_allocator);
 			m_impl.constructModule(m_transfer_manager);
@@ -251,11 +257,9 @@ void Backend::doStop(StartStopMode mode) noexcept
 	// Finish all outstanding operations on VkDevice, if any. If device is lost, calling
 	// vkDeviceWaitIdle will return an error. Ignore it - device is to be destroyed anyway.
 	if (m_device) {
-		try {
-			m_device->waitIdle();
-		}
-		catch (const VulkanException &e) {
-			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", VulkanUtils::getVkResultString(e.result()));
+		VkResult res = m_device->dt().vkDeviceWaitIdle(m_device->handle());
+		if (res != VK_SUCCESS) {
+			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", VulkanUtils::getVkResultString(res));
 		}
 	}
 
@@ -288,9 +292,9 @@ void Backend::doStop(StartStopMode mode) noexcept
 		m_impl.destructModule(m_device_allocator);
 
 		m_impl.destructModule(m_device);
-		m_impl.destructModule(m_physical_device);
+		unloadDeviceLevelApi();
 		m_impl.destructModule(m_instance);
-		m_impl.destructModule(m_capabilities);
+		unloadInstanceLevelApi();
 	}
 }
 
@@ -311,6 +315,60 @@ std::string_view Backend::stateToString(State state) noexcept
 	default:
 		return "UNKNOWN STATE"sv;
 	}
+}
+
+gfx::vk::PhysicalDevice *Backend::selectPhysicalDevice(extras::dyn_array<gfx::vk::PhysicalDevice> &devs) noexcept
+{
+	if (devs.empty()) {
+		Log::error("No Vulkan devices available");
+		return nullptr;
+	}
+
+	// Choose in this order:
+	// 1. The first listed discrete GPU
+	// 2. If no discrete GPUs, then any integrated one
+	// 3. If no integrated GPUs, then just the first listed device
+	//
+	// Don't do any complex "score" calculations, the user
+	// will select GPU manually if he has some unusual setup.
+	gfx::vk::PhysicalDevice *discrete = nullptr;
+	gfx::vk::PhysicalDevice *integrated = nullptr;
+	gfx::vk::PhysicalDevice *other = nullptr;
+
+	Log::debug("Auto-selecting Vulkan device");
+	for (auto &dev : devs) {
+		std::string_view name = dev.info().props.properties.deviceName;
+
+		if (!gfx::vk::Device::isSupported(dev)) {
+			Log::debug("'{}' is does not pass minimal requirements", name);
+			continue;
+		}
+
+		VkPhysicalDeviceType type = dev.info().props.properties.deviceType;
+
+		if (type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			Log::debug("'{}' is dGPU, taking it", name);
+			discrete = &dev;
+			break;
+		}
+
+		if (type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+			Log::debug("'{}' is iGPU, might take it if won't find dGPU", name);
+			integrated = &dev;
+		} else if (!other) {
+			Log::debug("'{}' is neither iGPU nor dGPU, might take it if won't find one", name);
+		}
+	}
+
+	gfx::vk::PhysicalDevice *chosen = discrete ? discrete : (integrated ? integrated : other);
+
+	if (!chosen) {
+		Log::error("No Vulkan devices passing minimal requirements found");
+		return nullptr;
+	}
+
+	Log::debug("Auto-selected GPU: '{}'", chosen->info().props.properties.deviceName);
+	return chosen;
 }
 
 // API lodaing/unloading methods

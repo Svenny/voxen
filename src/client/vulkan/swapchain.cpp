@@ -1,9 +1,9 @@
 #include <voxen/client/vulkan/swapchain.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
@@ -28,8 +28,8 @@ void Swapchain::recreateSwapchain()
 {
 	auto &backend = Backend::backend();
 	assert(backend.surface() != nullptr);
-	VkPhysicalDevice phys_device = backend.physicalDevice();
-	VkDevice device = backend.device();
+	VkPhysicalDevice phys_device = backend.device().physicalDevice().handle();
+	VkDevice device = backend.device().handle();
 	VkSurfaceKHR surface = backend.surface();
 	auto allocator = HostAllocator::callbacks();
 
@@ -84,7 +84,7 @@ void Swapchain::recreateSwapchain()
 uint32_t Swapchain::acquireImage(VkSemaphore signal_semaphore)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 
 	uint32_t image_index;
 	VkResult result = backend.vkAcquireNextImageKHR(device, m_swapchain, UINT64_MAX, signal_semaphore, VK_NULL_HANDLE,
@@ -100,7 +100,6 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 	assert(idx < m_images.size());
 
 	auto &backend = Backend::backend();
-	VkQueue queue = backend.device().presentQueue();
 
 	VkResult present_result;
 	VkPresentInfoKHR info = {};
@@ -112,7 +111,7 @@ void Swapchain::presentImage(uint32_t idx, VkSemaphore wait_semaphore)
 	info.pImageIndices = &idx;
 	info.pResults = &present_result;
 
-	VkResult queue_result = backend.vkQueuePresentKHR(queue, &info);
+	VkResult queue_result = backend.vkQueuePresentKHR(backend.device().mainQueue(), &info);
 	if (queue_result != VK_SUCCESS) {
 		throw VulkanException(queue_result, "vkQueuePresentKHR");
 	}
@@ -131,7 +130,7 @@ uint32_t Swapchain::numImages() const noexcept
 void Swapchain::destroySwapchain() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	auto allocator = HostAllocator::callbacks();
 
 	m_image_extent = { 0, 0 };
@@ -182,7 +181,7 @@ void Swapchain::obtainImages()
 	assert(m_swapchain != VK_NULL_HANDLE && m_images.empty());
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 
 	uint32_t num_images;
 	VkResult result = backend.vkGetSwapchainImagesKHR(device, m_swapchain, &num_images, nullptr);
@@ -203,7 +202,7 @@ void Swapchain::createImageViews()
 	assert(m_swapchain != VK_NULL_HANDLE && m_image_views.empty());
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	auto allocator = HostAllocator::callbacks();
 
 	VkImageViewCreateInfo info = {};

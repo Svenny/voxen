@@ -4,10 +4,10 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -24,10 +24,11 @@ MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
 
 MainLoop::MainLoop()
 	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE)
-	, m_graphics_command_pool(Backend::backend().physicalDevice().graphicsQueueFamily())
+	, m_graphics_command_pool(Backend::backend().device().info().main_queue_family)
 	, m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
 {
-	const VkDeviceSize align = Backend::backend().capabilities().props10().limits.minUniformBufferOffsetAlignment;
+	Backend &backend = Backend::backend();
+	const VkDeviceSize align = backend.device().physInfo().props.properties.limits.minUniformBufferOffsetAlignment;
 	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
 
 	m_main_scene_ubo = FatVkBuffer(
@@ -57,7 +58,7 @@ MainLoop::~MainLoop() noexcept
 void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	auto &swapchain = backend.swapchain();
 
 	size_t pending_frame_id = m_frame_id % Config::NUM_CPU_PENDING_FRAMES;
@@ -274,22 +275,12 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		throw VulkanException(result, "vkEndCommandBuffer");
 	}
 
-	VkSubmitInfo submit_info = {};
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = &frame_acquired_semaphore;
-	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	submit_info.pWaitDstStageMask = &wait_stage;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &cmd_buf;
-	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = &render_done_semaphore;
-
-	VkQueue queue = backend.device().graphicsQueue();
-	result = backend.vkQueueSubmit(queue, 1, &submit_info, render_done_fence);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkQueueSubmit");
-	}
+	backend.device().submitCommands({
+		.wait_binary_semaphore = frame_acquired_semaphore,
+		.cmds = std::span(&cmd_buf, 1),
+		.signal_binary_semaphore = render_done_semaphore,
+		.signal_fence = render_done_fence,
+	});
 
 	swapchain.presentImage(swapchain_image_id, render_done_semaphore);
 
@@ -300,7 +291,7 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 {
 	auto &backend = Backend::backend();
 
-	const VkDeviceSize align = backend.capabilities().props10().limits.minUniformBufferOffsetAlignment;
+	const VkDeviceSize align = backend.device().physInfo().props.properties.limits.minUniformBufferOffsetAlignment;
 	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
 
 	const uint32_t set_id = backend.descriptorManager().setId();
@@ -331,7 +322,7 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 		.pTexelBufferView = nullptr,
 	};
 
-	backend.vkUpdateDescriptorSets(backend.device(), 1, &write, 0, nullptr);
+	backend.vkUpdateDescriptorSets(backend.device().handle(), 1, &write, 0, nullptr);
 }
 
 } // namespace voxen::client::vulkan

@@ -2,8 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
@@ -51,7 +51,8 @@ public:
 			.allocationSize = size,
 			.memoryTypeIndex = memory_type,
 		};
-		VkResult result = backend.vkAllocateMemory(backend.device(), &info, HostAllocator::callbacks(), &m_handle);
+		VkResult result = backend.vkAllocateMemory(backend.device().handle(), &info, HostAllocator::callbacks(),
+			&m_handle);
 		if (result != VK_SUCCESS) {
 			throw VulkanException(result, "vkAllocateMemory");
 		}
@@ -65,7 +66,7 @@ public:
 	~DeviceAllocationArena() noexcept
 	{
 		auto &backend = Backend::backend();
-		VkDevice device = backend.device();
+		VkDevice device = backend.device().handle();
 		backend.vkFreeMemory(device, m_handle, HostAllocator::callbacks());
 	}
 
@@ -75,7 +76,7 @@ public:
 		assert(m_host_mappable);
 
 		auto &backend = Backend::backend();
-		VkResult result = backend.vkMapMemory(backend.device(), m_handle, 0, VK_WHOLE_SIZE, 0, &m_host_pointer);
+		VkResult result = backend.vkMapMemory(backend.device().handle(), m_handle, 0, VK_WHOLE_SIZE, 0, &m_host_pointer);
 		if (result != VK_SUCCESS) {
 			throw VulkanException(result, "vkMapMemory");
 		}
@@ -95,7 +96,7 @@ public:
 		assert(m_host_pointer);
 
 		auto &backend = Backend::backend();
-		backend.vkUnmapMemory(backend.device(), m_handle);
+		backend.vkUnmapMemory(backend.device().handle(), m_handle);
 		m_host_pointer = nullptr;
 	}
 
@@ -208,7 +209,7 @@ DeviceAllocator::~DeviceAllocator() noexcept
 DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase use_case)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 
 	const VkBufferMemoryRequirementsInfo2 request {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2,
@@ -254,7 +255,7 @@ DeviceAllocation DeviceAllocator::allocate(VkBuffer buffer, DeviceMemoryUseCase 
 DeviceAllocation DeviceAllocator::allocate(VkImage image, DeviceMemoryUseCase use_case)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 
 	const VkImageMemoryRequirementsInfo2 request {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
@@ -429,7 +430,7 @@ VkDeviceSize DeviceAllocator::getAllocSizeLimit(uint32_t memory_type) const
 void DeviceAllocator::readMemoryProperties()
 {
 	auto &backend = Backend::backend();
-	backend.vkGetPhysicalDeviceMemoryProperties(backend.physicalDevice(), &m_mem_props);
+	backend.vkGetPhysicalDeviceMemoryProperties(backend.device().physicalDevice().handle(), &m_mem_props);
 
 	if (!Log::willBeLogged(Log::Level::Debug)) {
 		return;

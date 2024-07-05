@@ -20,12 +20,10 @@ set(VOXEN_SOURCES
 	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_manager.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
-	src/client/vulkan/device.cpp
 	src/client/vulkan/framebuffer.cpp
 	src/client/vulkan/image.cpp
 	src/client/vulkan/image_view.cpp
 	src/client/vulkan/memory.cpp
-	src/client/vulkan/physical_device.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp

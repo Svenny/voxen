@@ -10,21 +10,20 @@
 namespace voxen::gfx::vk
 {
 
+class Device;
 class Instance;
+class PhysicalDevice;
 
-}
+} // namespace voxen::gfx::vk
 
 namespace voxen::client::vulkan
 {
 
-class Capabilities;
 class DescriptorManager;
 class DescriptorSetLayoutCollection;
-class Device;
 class DeviceAllocator;
 class FramebufferCollection;
 class MainLoop;
-class PhysicalDevice;
 class PipelineCache;
 class PipelineCollection;
 class PipelineLayoutCollection;
@@ -57,14 +56,10 @@ public:
 
 	State state() const noexcept { return m_state; }
 
-	Capabilities &capabilities() noexcept { return *m_capabilities; }
-	const Capabilities &capabilities() const noexcept { return *m_capabilities; }
 	gfx::vk::Instance &instance() noexcept { return *m_instance; }
 	const gfx::vk::Instance &instance() const noexcept { return *m_instance; }
-	PhysicalDevice &physicalDevice() noexcept { return *m_physical_device; }
-	const PhysicalDevice &physicalDevice() const noexcept { return *m_physical_device; }
-	Device &device() noexcept { return *m_device; }
-	const Device &device() const noexcept { return *m_device; }
+	gfx::vk::Device &device() noexcept { return *m_device; }
+	const gfx::vk::Device &device() const noexcept { return *m_device; }
 
 	DeviceAllocator &deviceAllocator() noexcept { return *m_device_allocator; }
 	const DeviceAllocator &deviceAllocator() const noexcept { return *m_device_allocator; }
@@ -105,11 +100,6 @@ public:
 	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
 	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
 
-	bool loadInstanceLevelApi(VkInstance instance) noexcept;
-	void unloadInstanceLevelApi() noexcept;
-	bool loadDeviceLevelApi(VkDevice device) noexcept;
-	void unloadDeviceLevelApi() noexcept;
-
 	// Declare pointers to Vulkan API entry points, moved
 	// into a separate file because of size and ugliness
 #include "api_table_declare.in"
@@ -128,10 +118,8 @@ private:
 
 	Impl &m_impl;
 
-	Capabilities *m_capabilities = nullptr;
 	gfx::vk::Instance *m_instance = nullptr;
-	PhysicalDevice *m_physical_device = nullptr;
-	Device *m_device = nullptr;
+	gfx::vk::Device *m_device = nullptr;
 
 	DeviceAllocator *m_device_allocator = nullptr;
 	TransferManager *m_transfer_manager = nullptr;
@@ -155,8 +143,13 @@ private:
 	static constinit Backend s_instance;
 
 	static std::string_view stateToString(State state) noexcept;
+	static gfx::vk::PhysicalDevice *selectPhysicalDevice(extras::dyn_array<gfx::vk::PhysicalDevice> &devs) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
+	bool loadInstanceLevelApi(VkInstance instance) noexcept;
+	void unloadInstanceLevelApi() noexcept;
+	bool loadDeviceLevelApi(VkDevice device) noexcept;
+	void unloadDeviceLevelApi() noexcept;
 
 	enum class StartStopMode {
 		Everything,

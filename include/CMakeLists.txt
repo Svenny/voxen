@@ -34,12 +34,10 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/config.hpp
 	include/voxen/client/vulkan/descriptor_manager.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
-	include/voxen/client/vulkan/device.hpp
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/image.hpp
 	include/voxen/client/vulkan/image_view.hpp
 	include/voxen/client/vulkan/memory.hpp
-	include/voxen/client/vulkan/physical_device.hpp
 	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp

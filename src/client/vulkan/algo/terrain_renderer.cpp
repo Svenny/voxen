@@ -2,7 +2,6 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -11,6 +10,7 @@
 #include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/dyn_array.hpp>
@@ -210,7 +210,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 		.pTexelBufferView = nullptr,
 	};
 
-	backend.vkUpdateDescriptorSets(backend.device(), std::size(writes), writes, 0, nullptr);
+	backend.vkUpdateDescriptorSets(backend.device().handle(), std::size(writes), writes, 0, nullptr);
 
 	auto &terrain_sync = backend.terrainSynchronizer();
 	terrain_sync.beginSyncSession();

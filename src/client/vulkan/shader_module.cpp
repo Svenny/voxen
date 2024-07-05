@@ -1,7 +1,7 @@
 #include <voxen/client/vulkan/shader_module.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 #include <voxen/common/filemanager.hpp>
 #include <voxen/util/log.hpp>
@@ -28,7 +28,7 @@ void ShaderModule::load(std::string_view relative_path)
 	info.pCode = reinterpret_cast<const uint32_t *>(code_bytes.data());
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkCreateShaderModule(device, &info, HostAllocator::callbacks(), &m_shader_module);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateShaderModule");
@@ -42,7 +42,7 @@ void ShaderModule::unload() noexcept
 	}
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkDestroyShaderModule(device, m_shader_module, HostAllocator::callbacks());
 	m_shader_module = VK_NULL_HANDLE;
 }

@@ -2,7 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
-#include <voxen/client/vulkan/device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -12,7 +12,7 @@ namespace voxen::client::vulkan
 WrappedVkDescriptorPool::WrappedVkDescriptorPool(const VkDescriptorPoolCreateInfo &info)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkCreateDescriptorPool(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateDescriptorPool");
@@ -33,7 +33,7 @@ WrappedVkDescriptorPool &WrappedVkDescriptorPool::operator=(WrappedVkDescriptorP
 WrappedVkDescriptorPool::~WrappedVkDescriptorPool() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkDestroyDescriptorPool(device, m_handle, HostAllocator::callbacks());
 }
 
@@ -71,7 +71,7 @@ DescriptorManager::DescriptorManager()
 		.pSetLayouts = set_layouts,
 	};
 
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result;
 
 	std::fill(std::begin(set_layouts), std::end(set_layouts), layout_collection.mainSceneLayout());
