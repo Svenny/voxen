@@ -7,6 +7,8 @@
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
+#include <extras/defer.hpp>
+
 #include <vma/vk_mem_alloc.h>
 
 namespace voxen::gfx::vk
@@ -47,10 +49,16 @@ Device::Device(Instance &instance, PhysicalDevice &phys_dev) : m_instance(instan
 	}
 
 	createDevice();
+	defer_fail { instance.dt().vkDestroyDevice(m_handle, nullptr); };
+
 	fillMainDispatchTable(m_dt, instance.dt().vkGetDeviceProcAddr, m_handle);
 	getQueueHandles();
+
 	createVma();
+	defer_fail { vmaDestroyAllocator(m_vma); };
+
 	createTimelineSemaphore();
+	defer_fail { m_dt.vkDestroySemaphore(m_handle, m_timeline_semaphore, nullptr); };
 
 	auto &props = m_phys_device.info().props.properties;
 	Log::info("Created VkDevice from GPU '{}'", props.deviceName);

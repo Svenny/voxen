@@ -9,6 +9,8 @@
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 
+#include <extras/defer.hpp>
+
 #include <GLFW/glfw3.h>
 
 namespace voxen::gfx::vk
@@ -181,6 +183,7 @@ Instance::Instance()
 
 	fillDispatchTable(m_dt);
 	createInstance();
+	defer_fail { m_dt.vkDestroyInstance(m_handle, nullptr); };
 
 	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
 		m_debug = DebugUtils(m_handle, m_dt.vkGetInstanceProcAddr);
