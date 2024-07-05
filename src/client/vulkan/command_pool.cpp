@@ -1,7 +1,7 @@
 #include <voxen/client/vulkan/command_pool.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -16,7 +16,7 @@ CommandPool::CommandPool(uint32_t queue_family)
 	info.queueFamilyIndex = queue_family;
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkCreateCommandPool(device, &info, HostAllocator::callbacks(), &m_cmd_pool);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateCommandPool");
@@ -34,7 +34,7 @@ extras::dyn_array<CommandBuffer> CommandPool::allocateCommandBuffers(uint32_t co
 	info.commandBufferCount = count;
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkAllocateCommandBuffers(device, &info, handles.data());
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkAllocateCommandBuffers");
@@ -55,7 +55,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers)
 	}
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkFreeCommandBuffers(device, m_cmd_pool, uint32_t(buffers.size()), handles.data());
 	for (auto &buf : buffers) {
 		buf = CommandBuffer();
@@ -65,7 +65,7 @@ void CommandPool::freeCommandBuffers(extras::dyn_array<CommandBuffer> &buffers)
 void CommandPool::trim() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkTrimCommandPool(device, m_cmd_pool, 0);
 }
 
@@ -77,7 +77,7 @@ void CommandPool::reset(bool release_resources)
 	}
 
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkResetCommandPool(device, m_cmd_pool, flags);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkResetCommandPool");
@@ -87,7 +87,7 @@ void CommandPool::reset(bool release_resources)
 CommandPool::~CommandPool() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkDestroyCommandPool(device, m_cmd_pool, HostAllocator::callbacks());
 }
 

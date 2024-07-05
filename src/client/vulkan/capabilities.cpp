@@ -1,7 +1,7 @@
 #include <voxen/client/vulkan/capabilities.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/log.hpp>
 
 #include <bit>

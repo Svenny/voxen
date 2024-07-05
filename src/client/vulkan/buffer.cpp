@@ -1,7 +1,7 @@
 #include <voxen/client/vulkan/buffer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 #include <extras/defer.hpp>
 
@@ -11,7 +11,7 @@ namespace voxen::client::vulkan
 WrappedVkBuffer::WrappedVkBuffer(const VkBufferCreateInfo &info)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkCreateBuffer(device, &info, HostAllocator::callbacks(), &m_handle);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateBuffer");
@@ -32,14 +32,14 @@ WrappedVkBuffer &WrappedVkBuffer::operator=(WrappedVkBuffer &&other) noexcept
 WrappedVkBuffer::~WrappedVkBuffer() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	backend.vkDestroyBuffer(device, m_handle, HostAllocator::callbacks());
 }
 
 void WrappedVkBuffer::bindMemory(VkDeviceMemory memory, VkDeviceSize offset)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkBindBufferMemory(device, m_handle, memory, offset);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBindBufferMemory");
@@ -49,7 +49,7 @@ void WrappedVkBuffer::bindMemory(VkDeviceMemory memory, VkDeviceSize offset)
 void WrappedVkBuffer::getMemoryRequirements(VkMemoryRequirements &reqs) const noexcept
 {
 	auto &backend = Backend::backend();
-	backend.vkGetBufferMemoryRequirements(backend.device(), m_handle, &reqs);
+	backend.vkGetBufferMemoryRequirements(backend.device().handle(), m_handle, &reqs);
 }
 
 FatVkBuffer::FatVkBuffer(const VkBufferCreateInfo &info, DeviceMemoryUseCase use_case)

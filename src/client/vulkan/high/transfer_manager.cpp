@@ -1,8 +1,8 @@
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -10,7 +10,7 @@ namespace voxen::client::vulkan
 {
 
 TransferManager::TransferManager()
-	: m_command_pool(Backend::backend().physicalDevice().transferQueueFamily())
+	: m_command_pool(Backend::backend().device().info().dma_queue_family)
 	, m_command_buffers(m_command_pool.allocateCommandBuffers(1))
 	, m_staging_buffer(createStagingBuffer())
 {
@@ -90,14 +90,15 @@ void TransferManager::ensureUploadsDone()
 	auto &backend = Backend::backend();
 	auto &device = backend.device();
 
-	VkSubmitInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	info.commandBufferCount = 1;
 	VkCommandBuffer cmd_buf = m_command_buffers[0];
-	info.pCommandBuffers = &cmd_buf;
-	backend.vkQueueSubmit(device.transferQueue(), 1, &info, VK_NULL_HANDLE);
-	// TODO: use a proper synchronisation (fence?)
-	device.waitIdle();
+
+	uint64_t timeline = device.submitCommands({
+		.queue = gfx::vk::Device::SubmitQueue::Dma,
+		.cmds = std::span(&cmd_buf, 1),
+		.signal_timeline = true,
+	});
+	// TODO: do it asynchronously
+	device.waitForTimeline(timeline);
 }
 
 FatVkBuffer TransferManager::createStagingBuffer()

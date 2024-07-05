@@ -1,13 +1,13 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -466,7 +466,7 @@ PipelineCollection::PipelineCollection()
 
 	auto &backend = Backend::backend();
 	assert(backend.pipelineCache() != nullptr);
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	VkPipelineCache cache = backend.pipelineCache();
 	auto allocator = HostAllocator::callbacks();
 
@@ -512,7 +512,7 @@ VkPipeline PipelineCollection::operator[](ComputePipelineId idx) const noexcept
 void PipelineCollection::destroyPipelines() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device();
+	VkDevice device = backend.device().handle();
 	auto allocator = HostAllocator::callbacks();
 
 	for (VkPipeline &pipe : m_graphics_pipelines) {

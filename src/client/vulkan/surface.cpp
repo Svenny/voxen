@@ -1,9 +1,9 @@
 #include <voxen/client/vulkan/surface.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/device.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
+#include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
@@ -46,8 +46,8 @@ void Surface::checkPresentSupport()
 	auto &backend = Backend::backend();
 	// Present support should've been checked in VulkanQueueManager when
 	// looking for a present queue family, so it's maybe a double check
-	VkPhysicalDevice device = backend.physicalDevice();
-	uint32_t family = backend.physicalDevice().presentQueueFamily();
+	VkPhysicalDevice device = backend.device().physicalDevice().handle();
+	uint32_t family = backend.device().info().main_queue_family;
 	VkBool32 supported;
 	VkResult result = backend.vkGetPhysicalDeviceSurfaceSupportKHR(device, family, m_surface, &supported);
 	if (result != VK_SUCCESS) {
@@ -64,7 +64,7 @@ void Surface::checkPresentSupport()
 void Surface::pickSurfaceFormat()
 {
 	auto &backend = Backend::backend();
-	VkPhysicalDevice device = backend.physicalDevice();
+	VkPhysicalDevice device = backend.device().physicalDevice().handle();
 
 	uint32_t num_formats;
 	std::vector<VkSurfaceFormatKHR> formats;
@@ -93,7 +93,7 @@ void Surface::pickSurfaceFormat()
 void Surface::pickPresentMode()
 {
 	auto &backend = Backend::backend();
-	VkPhysicalDevice device = backend.physicalDevice();
+	VkPhysicalDevice device = backend.device().physicalDevice().handle();
 
 	uint32_t num_modes;
 	std::vector<VkPresentModeKHR> modes;

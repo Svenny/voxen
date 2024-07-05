@@ -2,9 +2,9 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/device.hpp>
 #include <voxen/client/vulkan/surface.hpp>
 #include <voxen/client/vulkan/swapchain.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 
 #include <voxen/util/log.hpp>
 

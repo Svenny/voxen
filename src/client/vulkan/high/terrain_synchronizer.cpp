@@ -3,8 +3,8 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
-#include <voxen/client/vulkan/physical_device.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
@@ -56,9 +56,9 @@ private:
 
 TerrainSynchronizer::TerrainSynchronizer()
 {
-	auto &dev = Backend::backend().physicalDevice();
-	m_queue_families[0] = dev.graphicsQueueFamily();
-	m_queue_families[1] = dev.transferQueueFamily();
+	auto &dev_info = Backend::backend().device().info();
+	m_queue_families[0] = dev_info.main_queue_family;
+	m_queue_families[1] = dev_info.dma_queue_family;
 
 	if (m_queue_families[0] != m_queue_families[1]) {
 		Log::info("GPU has DMA queue, surface transfers will go through it");
