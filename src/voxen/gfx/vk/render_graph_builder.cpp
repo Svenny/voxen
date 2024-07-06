@@ -201,13 +201,13 @@ std::pair<RenderGraphImage, RenderGraphImage> RenderGraphBuilder::makeDoubleBuff
 	return { RenderGraphImage(priv), RenderGraphImage(prev_priv) };
 }
 
-RenderGraphBuffer RenderGraphBuilder::makeDynamicSizedBuffer(std::string_view name)
+RenderGraphBuffer RenderGraphBuilder::makeBuffer(std::string_view name, BufferConfig config)
 {
 	auto &priv = m_private.buffers.emplace_back();
 
 	priv.name = fmt::format("graph/buf/{}", name);
-	priv.dynamic_sized = true;
-	initBufferCreateInfo(priv.create_info, 0);
+	priv.dynamic_sized = config.dynamic_size;
+	initBufferCreateInfo(priv.create_info, config.size);
 
 	return RenderGraphBuffer(priv);
 }
