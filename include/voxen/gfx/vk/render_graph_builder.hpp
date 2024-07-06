@@ -21,10 +21,22 @@ class VOXEN_API RenderGraphBuilder {
 public:
 	using PassCallback = void (*)(IRenderGraph &, RenderGraphExecution &);
 
+	struct BufferConfig {
+		// Fixed buffer size, ignored if `dynamic_size == true`, otherwise must be > 0
+		VkDeviceSize size = 0;
+		// Whether buffer size is set dynamically during graph execution
+		bool dynamic_size = false;
+	};
+
 	struct Image2DConfig {
+		// Main image format. Image views can reinterpret it to other
+		// formats, their list is automatically collected internally.
 		VkFormat format = VK_FORMAT_UNDEFINED;
+		// Resolution, must be valid (at least 1x1)
 		Resolution resolution;
+		// Number of MIP levels, must be in range [1; log2(max(width, height))]
 		uint32_t mips = 1;
+		// Number of image array layers, must be > 0
 		uint32_t layers = 1;
 	};
 
@@ -80,11 +92,10 @@ public:
 
 	// Buffers
 
-	// Declare a fixed-size buffer
-	RenderGraphBuffer makeBuffer(std::string_view name, VkDeviceSize size);
-	// Declare a dynamic-sized buffer. Its size must be set with `RenderGraphExecution::setDynamicBufferSize()`.
-	// NOTE: size must be set on each graph execution. You will receive a valid handle only after that.
-	RenderGraphBuffer makeDynamicSizedBuffer(std::string_view name);
+	// Declare a buffer.
+	// If `config.dynamic_size == true`, its size must be set with `RenderGraphExecution::setDynamicBufferSize()`.
+	// NOTE: dynamic size must be set on each graph execution. You will receive a valid handle only after that.
+	RenderGraphBuffer makeBuffer(std::string_view name, BufferConfig config);
 
 	// Image views
 
