@@ -166,6 +166,11 @@ RenderGraphBuilder::RenderGraphBuilder(RenderGraphPrivate &priv) noexcept : m_pr
 
 RenderGraphBuilder::~RenderGraphBuilder() noexcept = default;
 
+Device &RenderGraphBuilder::device() noexcept
+{
+	return m_private.device;
+}
+
 RenderGraphImage &RenderGraphBuilder::outputImage()
 {
 	return m_private.output_image;
@@ -394,7 +399,7 @@ void RenderGraphBuilder::makeRenderPass(std::string name, PassCallback callback,
 			discard);
 	}
 
-	assert(color_targets.size() <= RenderGraphPrivate::MAX_RENDER_TARGETS);
+	assert(color_targets.size() <= Consts::GRAPH_MAX_RENDER_TARGETS);
 	for (size_t i = 0; i < color_targets.size(); i++) {
 		cmd.targets[i] = color_targets[i];
 

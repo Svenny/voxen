@@ -5,6 +5,8 @@
 namespace voxen::gfx::vk
 {
 
+class FrameContext;
+
 struct RenderGraphPrivate;
 
 // A temporary entity passed to `IRenderGraph` execution callbacks.
@@ -25,14 +27,14 @@ public:
 	// It's not allowed to set size multiple times during one execution.
 	void setDynamicBufferSize(RenderGraphBuffer &buffer, VkDeviceSize size);
 
-	// Command buffer to record graph execution commands into.
-	// It is in recording state. Do not end this command buffer.
-	VkCommandBuffer commandBuffer() const noexcept { return m_cmd_buffer; }
+	// Frame context that will execute this
+	// Its command buffer is in recording state, do not end it manually.
+	FrameContext &frameContext() noexcept { return m_frame_context; }
+
 
 private:
 	RenderGraphPrivate &m_private;
-
-	VkCommandBuffer m_cmd_buffer = VK_NULL_HANDLE;
+	FrameContext &m_frame_context;
 };
 
 } // namespace voxen::gfx::vk
