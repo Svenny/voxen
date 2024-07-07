@@ -22,6 +22,15 @@ RenderGraphBuffer &RenderGraphBuffer::operator=(RenderGraphBuffer &&other) noexc
 {
 	std::swap(m_private, other.m_private);
 	std::swap(m_handle, other.m_handle);
+
+	if (m_private) {
+		m_private->resource = this;
+	}
+
+	if (other.m_private) {
+		other.m_private->resource = &other;
+	}
+
 	return *this;
 }
 
@@ -49,6 +58,15 @@ RenderGraphImage &RenderGraphImage::operator=(RenderGraphImage &&other) noexcept
 {
 	std::swap(m_private, other.m_private);
 	std::swap(m_handle, other.m_handle);
+
+	if (m_private) {
+		m_private->resource = this;
+	}
+
+	if (other.m_private) {
+		other.m_private->resource = &other;
+	}
+
 	return *this;
 }
 
@@ -76,6 +94,15 @@ RenderGraphImageView &RenderGraphImageView::operator=(RenderGraphImageView &&oth
 {
 	std::swap(m_private, other.m_private);
 	std::swap(m_handle, other.m_handle);
+
+	if (m_private) {
+		m_private->resource = this;
+	}
+
+	if (other.m_private) {
+		other.m_private->resource = &other;
+	}
+
 	return *this;
 }
 
