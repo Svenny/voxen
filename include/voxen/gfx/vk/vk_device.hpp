@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 
 using VmaAllocation = struct VmaAllocation_T *;
@@ -122,8 +123,19 @@ public:
 	void enqueueDestroy(VkCommandPool pool) { enqueueJunkItem(pool); }
 	void enqueueDestroy(VkDescriptorPool pool) { enqueueJunkItem(pool); }
 
+	// Shorthand to `.instance().debug().setObjectName()`
+	void setObjectName(uint64_t handle, VkObjectType type, const char *name);
+
+	template<typename T>
+	void setObjectName(T handle, const char *name)
+	{
+		setObjectName(reinterpret_cast<uint64_t>(handle), DebugUtils::objectType<T>(), name);
+	}
+
 	Instance &instance() noexcept { return m_instance; }
 	PhysicalDevice &physicalDevice() noexcept { return m_phys_device; }
+	// Shorthand to `.instance().debug()`
+	DebugUtils &debug() noexcept;
 
 	VkDevice handle() const noexcept { return m_handle; }
 	VmaAllocator vma() const noexcept { return m_vma; }

@@ -63,15 +63,8 @@ public:
 		setObjectName(device, reinterpret_cast<uint64_t>(handle), objectType<T>(), name);
 	}
 
-private:
-	bool m_available = false;
-	DebugUtilsDispatchTable m_dt;
-
-	VkInstance m_instance = VK_NULL_HANDLE;
-	VkDebugUtilsMessengerEXT m_messenger = VK_NULL_HANDLE;
-
 	template<typename T>
-	constexpr static VkObjectType objectType()
+	consteval static VkObjectType objectType()
 	{
 		if constexpr (std::is_same_v<T, VkBuffer>) {
 			return VK_OBJECT_TYPE_BUFFER;
@@ -87,6 +80,13 @@ private:
 			static_assert(false, "Unknown handle type");
 		}
 	}
+
+private:
+	bool m_available = false;
+	DebugUtilsDispatchTable m_dt;
+
+	VkInstance m_instance = VK_NULL_HANDLE;
+	VkDebugUtilsMessengerEXT m_messenger = VK_NULL_HANDLE;
 };
 
 } // namespace voxen::gfx::vk

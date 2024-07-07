@@ -238,6 +238,16 @@ void Device::waitForTimeline(uint64_t value)
 	processDestroyQueue();
 }
 
+void Device::setObjectName(uint64_t handle, VkObjectType type, const char *name)
+{
+	m_instance.debug().setObjectName(m_handle, handle, type, name);
+}
+
+DebugUtils &Device::debug() noexcept
+{
+	return m_instance.debug();
+}
+
 // TODO: replace manual list of checks with Vulkan profiles
 bool Device::isSupported(PhysicalDevice &pd)
 {
@@ -479,18 +489,18 @@ void Device::createDevice()
 void Device::getQueueHandles()
 {
 	m_dt.vkGetDeviceQueue(m_handle, m_info.main_queue_family, 0, &m_main_queue);
-	m_instance.debug().setObjectName(m_handle, m_main_queue, "common/main_queue");
+	setObjectName(m_main_queue, "common/main_queue");
 
 	if (m_info.dedicated_compute_queue) {
 		m_dt.vkGetDeviceQueue(m_handle, m_info.compute_queue_family, 0, &m_compute_queue);
-		m_instance.debug().setObjectName(m_handle, m_compute_queue, "common/compute_queue");
+		setObjectName(m_compute_queue, "common/compute_queue");
 	} else {
 		m_compute_queue = m_main_queue;
 	}
 
 	if (m_info.dedicated_dma_queue) {
 		m_dt.vkGetDeviceQueue(m_handle, m_info.dma_queue_family, 0, &m_dma_queue);
-		m_instance.debug().setObjectName(m_handle, m_dma_queue, "common/dma_queue");
+		setObjectName(m_dma_queue, "common/dma_queue");
 	} else {
 		m_dma_queue = m_main_queue;
 	}
@@ -547,7 +557,7 @@ void Device::createTimelineSemaphore()
 		throw VulkanException(res, "vkCreateSemaphore");
 	}
 
-	m_instance.debug().setObjectName(m_handle, m_timeline_semaphore, "common/timeline_semaphore");
+	setObjectName(m_timeline_semaphore, "common/timeline_semaphore");
 }
 
 void Device::processDestroyQueue()
