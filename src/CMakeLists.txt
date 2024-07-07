@@ -73,6 +73,7 @@ set(VOXEN_SOURCES
 	src/util/hash.cpp
 	src/util/log.cpp
 	src/voxen/common/uid.cpp
+	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/render_graph_builder.cpp
 	src/voxen/gfx/vk/render_graph_execution.cpp
 	src/voxen/gfx/vk/render_graph_private.cpp
@@ -83,6 +84,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_device.cpp
 	src/voxen/gfx/vk/vk_instance.cpp
 	src/voxen/gfx/vk/vk_physical_device.cpp
+	src/voxen/gfx/vk/vk_private_consts.hpp
 )
 
 target_sources(game PRIVATE
