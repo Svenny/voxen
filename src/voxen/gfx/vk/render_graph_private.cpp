@@ -12,7 +12,7 @@ RenderGraphPrivate::~RenderGraphPrivate() noexcept
 			*buffer.resource = RenderGraphBuffer();
 		}
 
-		// TODO: destroy handle
+		device.enqueueDestroy(buffer.handle, buffer.alloc);
 	}
 
 	for (auto &image : images) {
@@ -20,14 +20,14 @@ RenderGraphPrivate::~RenderGraphPrivate() noexcept
 			*image.resource = RenderGraphImage();
 		}
 
-		// TODO: destroy handle
+		device.enqueueDestroy(image.handle, image.alloc);
 
 		for (auto &view : image.views) {
 			if (view.resource) {
 				*view.resource = RenderGraphImageView();
 			}
 
-			// TODO: destroy handle
+			device.enqueueDestroy(view.handle);
 		}
 	}
 }

@@ -112,7 +112,11 @@ private:
 // Ring buffer of several `FrameContext` instances to pipeline CPU->GPU command submission.
 class FrameContextRing {
 public:
-	// Size is fixed at creation time. It can throw if
+	// Size is fixed at creation time.
+	// It should be at least 2, having one context ring makes no sense.
+	// Increasing it makes CPU<->GPU latency bigger and reduces
+	// the risk of GPU stall due to lack of workload (when not CPU-bound).
+	// The generally recommended value is either 2 or 3.
 	explicit FrameContextRing(Device &device, size_t size);
 	FrameContextRing(FrameContextRing &&) = delete;
 	FrameContextRing(const FrameContextRing &) = delete;

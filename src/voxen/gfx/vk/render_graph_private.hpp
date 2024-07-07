@@ -1,7 +1,11 @@
 #pragma once
 
+#include <voxen/gfx/vk/frame_context.hpp>
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+
+#include "vk_private_consts.hpp"
 
 #include <deque>
 #include <vector>
@@ -22,6 +26,7 @@ struct VOXEN_LOCAL RenderGraphBuffer::Private {
 
 	VkBufferCreateInfo create_info = {};
 	VkBuffer handle = VK_NULL_HANDLE;
+	VmaAllocation alloc = VK_NULL_HANDLE;
 };
 
 struct VOXEN_LOCAL RenderGraphImageView::Private {
@@ -54,12 +59,16 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 
 	VkImageCreateInfo create_info = {};
 	VkImage handle = VK_NULL_HANDLE;
+	VmaAllocation alloc = VK_NULL_HANDLE;
 };
 
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
-	constexpr static size_t MAX_RENDER_TARGETS = 8;
-
+	explicit RenderGraphPrivate(Device &device) : device(device), fctx_ring(device, Consts::GRAPH_CONTEXT_RING_SIZE) {}
+	RenderGraphPrivate(RenderGraphPrivate &&) = delete;
+	RenderGraphPrivate(const RenderGraphPrivate &) = delete;
+	RenderGraphPrivate &operator=(RenderGraphPrivate &&) = delete;
+	RenderGraphPrivate &operator=(const RenderGraphPrivate &) = delete;
 	~RenderGraphPrivate() noexcept;
 
 	struct BufferBarrier {
@@ -89,7 +98,7 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 	struct RenderPassCommand {
 		std::string name;
 		RenderGraphBuilder::PassCallback callback;
-		RenderGraphBuilder::RenderTarget targets[MAX_RENDER_TARGETS];
+		RenderGraphBuilder::RenderTarget targets[Consts::GRAPH_MAX_RENDER_TARGETS];
 		RenderGraphBuilder::DepthStencilTarget ds_target;
 	};
 
@@ -100,8 +109,14 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 
 	using Command = std::variant<BarrierCommand, RenderPassCommand, ComputePassCommand>;
 
+	Device &device;
+	FrameContextRing fctx_ring;
+
+	// Private parts of buffer resources. Using deque to always preserve pointers.
 	std::deque<RenderGraphBuffer::Private> buffers;
+	// Private parts of image resources. Using deque to always preserve pointers.
 	std::deque<RenderGraphImage::Private> images;
+	// High-level "commands" defining the graph execution.
 	std::vector<Command> commands;
 
 	RenderGraphImage output_image;

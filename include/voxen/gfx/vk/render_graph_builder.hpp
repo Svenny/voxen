@@ -11,6 +11,8 @@
 namespace voxen::gfx::vk
 {
 
+class Device;
+
 struct RenderGraphPrivate;
 
 // A temporary entity passed to `IRenderGraph::rebuild()`.
@@ -77,6 +79,10 @@ public:
 	RenderGraphBuilder &operator=(RenderGraphBuilder &&) = delete;
 	RenderGraphBuilder &operator=(const RenderGraphBuilder &) = delete;
 	~RenderGraphBuilder() noexcept;
+
+	// Vulkan device used by this render graph system.
+	// It is guaranteed to be the same during any further execution.
+	Device &device() noexcept;
 
 	RenderGraphImage &outputImage();
 
