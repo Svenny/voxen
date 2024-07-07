@@ -1,5 +1,6 @@
 // Alphabet order
 VK_API_ENTRY(vkAllocateCommandBuffers)
+VK_API_ENTRY(vkAllocateDescriptorSets)
 VK_API_ENTRY(vkBeginCommandBuffer)
 VK_API_ENTRY(vkCmdBeginRendering)
 VK_API_ENTRY(vkCmdEndRendering)

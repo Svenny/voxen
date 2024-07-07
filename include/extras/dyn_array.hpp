@@ -113,7 +113,7 @@ public:
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	constexpr explicit dyn_array() noexcept(noexcept(Allocator())) {}
+	constexpr dyn_array() noexcept(noexcept(Allocator())) {}
 
 	constexpr explicit dyn_array(const Allocator &alloc) noexcept : m_alloc(alloc) {}
 
