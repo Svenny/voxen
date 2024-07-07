@@ -238,21 +238,6 @@ void Device::waitForTimeline(uint64_t value)
 	processDestroyQueue();
 }
 
-void Device::enqueueDestroy(VkBuffer buffer, VmaAllocation alloc)
-{
-	m_destroy_queue.emplace_back(std::make_pair(buffer, alloc), m_last_submitted_timeline);
-}
-
-void Device::enqueueDestroy(VkImage image, VmaAllocation alloc)
-{
-	m_destroy_queue.emplace_back(std::make_pair(image, alloc), m_last_submitted_timeline);
-}
-
-void Device::enqueueDestroy(VkImageView view)
-{
-	m_destroy_queue.emplace_back(view, m_last_submitted_timeline);
-}
-
 // TODO: replace manual list of checks with Vulkan profiles
 bool Device::isSupported(PhysicalDevice &pd)
 {
@@ -595,19 +580,34 @@ void Device::processDestroyQueue()
 	m_destroy_queue.erase(m_destroy_queue.begin(), iter);
 }
 
-void Device::destroy(std::pair<VkBuffer, VmaAllocation> &obj)
+void Device::enqueueJunkItem(JunkItem item)
+{
+	m_destroy_queue.emplace_back(std::move(item), m_last_submitted_timeline);
+}
+
+void Device::destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept
 {
 	vmaDestroyBuffer(m_vma, obj.first, obj.second);
 }
 
-void Device::destroy(std::pair<VkImage, VmaAllocation> &obj)
+void Device::destroy(std::pair<VkImage, VmaAllocation> &obj) noexcept
 {
 	vmaDestroyImage(m_vma, obj.first, obj.second);
 }
 
-void Device::destroy(VkImageView obj)
+void Device::destroy(VkImageView obj) noexcept
 {
 	m_dt.vkDestroyImageView(m_handle, obj, nullptr);
+}
+
+void Device::destroy(VkCommandPool pool) noexcept
+{
+	m_dt.vkDestroyCommandPool(m_handle, pool, nullptr);
+}
+
+void Device::destroy(VkDescriptorPool pool) noexcept
+{
+	m_dt.vkDestroyDescriptorPool(m_handle, pool, nullptr);
 }
 
 } // namespace voxen::gfx::vk

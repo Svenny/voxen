@@ -116,9 +116,11 @@ public:
 	// synchronized `vkDestroy*`. Therefore, any command buffers
 	// referencing the object are considered invalid after this call.
 
-	void enqueueDestroy(VkBuffer buffer, VmaAllocation alloc);
-	void enqueueDestroy(VkImage image, VmaAllocation alloc);
-	void enqueueDestroy(VkImageView view);
+	void enqueueDestroy(VkBuffer buffer, VmaAllocation alloc) { enqueueJunkItem(std::pair { buffer, alloc }); }
+	void enqueueDestroy(VkImage image, VmaAllocation alloc) { enqueueJunkItem(std::pair { image, alloc }); }
+	void enqueueDestroy(VkImageView view) { enqueueJunkItem(view); }
+	void enqueueDestroy(VkCommandPool pool) { enqueueJunkItem(pool); }
+	void enqueueDestroy(VkDescriptorPool pool) { enqueueJunkItem(pool); }
 
 	Instance &instance() noexcept { return m_instance; }
 	PhysicalDevice &physicalDevice() noexcept { return m_phys_device; }
@@ -141,7 +143,8 @@ public:
 	static bool isSupported(PhysicalDevice &pd);
 
 private:
-	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView>;
+	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
+		VkCommandPool, VkDescriptorPool>;
 
 	Instance &m_instance;
 
@@ -169,9 +172,13 @@ private:
 	void createVma();
 	void createTimelineSemaphore();
 	void processDestroyQueue();
-	void destroy(std::pair<VkBuffer, VmaAllocation> &obj);
-	void destroy(std::pair<VkImage, VmaAllocation> &obj);
-	void destroy(VkImageView obj);
+
+	void enqueueJunkItem(JunkItem item);
+	void destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept;
+	void destroy(std::pair<VkImage, VmaAllocation> &obj) noexcept;
+	void destroy(VkImageView obj) noexcept;
+	void destroy(VkCommandPool pool) noexcept;
+	void destroy(VkDescriptorPool pool) noexcept;
 };
 
 } // namespace voxen::gfx::vk
