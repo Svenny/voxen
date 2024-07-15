@@ -70,6 +70,9 @@ public:
 	// - Buffer has the only usage bit - VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 	// - Valid until this context is submitted to GPU
 	//
+	// Strong exception safety - if it throws (most likely due to OOM),
+	// the context state is not affected.
+	//
 	// Slices from consecutive allocations will usually belong to the
 	// same buffer but sometimes can be in different ones.
 	// This makes "opportunistic dynamic offsets" a viable strategy.
