@@ -110,7 +110,7 @@ DebugUtils::CmdLabelScope DebugUtils::cmdPushLabel(VkCommandBuffer cmd, const ch
 	return cmdPushLabel(cmd, name, color);
 }
 
-void DebugUtils::setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name)
+void DebugUtils::setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name) noexcept
 {
 	if (!m_available) {
 		return;

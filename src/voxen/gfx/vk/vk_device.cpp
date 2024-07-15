@@ -76,16 +76,8 @@ Device::~Device() noexcept
 
 	Log::debug("Destroying VkDevice");
 
-	// Complete all GPU operations
-	VkResult res = m_dt.vkDeviceWaitIdle(m_handle);
-	if (res != VK_SUCCESS) {
-		// Most likely VK_ERROR_DEVICE_LOST... whatever, we're destroying it anyway
-		Log::warn("vkDeviceWaitIdle failed - {}", VulkanUtils::getVkResultString(res));
-	}
-
-	// We have just completed everything, might as well write UINT64_MAX here
-	m_last_completed_timeline = m_last_submitted_timeline;
-	processDestroyQueue();
+	// Complete all GPU operations and destroy the remaining queued items
+	forceCompletion();
 
 	// Now destroy device subobjects
 	m_dt.vkDestroySemaphore(m_handle, m_timeline_semaphore, nullptr);
@@ -238,7 +230,20 @@ void Device::waitForTimeline(uint64_t value)
 	processDestroyQueue();
 }
 
-void Device::setObjectName(uint64_t handle, VkObjectType type, const char *name)
+void Device::forceCompletion() noexcept
+{
+	VkResult res = m_dt.vkDeviceWaitIdle(m_handle);
+	if (res != VK_SUCCESS) {
+		// Most likely VK_ERROR_DEVICE_LOST... whatever, we're about to destroy things
+		Log::warn("vkDeviceWaitIdle failed - {}", VulkanUtils::getVkResultString(res));
+	}
+
+	// Everything is surely completed now
+	m_last_completed_timeline = m_last_submitted_timeline;
+	processDestroyQueue();
+}
+
+void Device::setObjectName(uint64_t handle, VkObjectType type, const char *name) noexcept
 {
 	m_instance.debug().setObjectName(m_handle, handle, type, name);
 }
@@ -560,7 +565,7 @@ void Device::createTimelineSemaphore()
 	setObjectName(m_timeline_semaphore, "common/timeline_semaphore");
 }
 
-void Device::processDestroyQueue()
+void Device::processDestroyQueue() noexcept
 {
 	// Before erasing elements, check if we have too much queue capacity.
 	// This might reduce (very tiny) memory waste after a large "spike"
@@ -618,6 +623,11 @@ void Device::destroy(VkCommandPool pool) noexcept
 void Device::destroy(VkDescriptorPool pool) noexcept
 {
 	m_dt.vkDestroyDescriptorPool(m_handle, pool, nullptr);
+}
+
+void Device::destroy(VkSwapchainKHR swapchain) noexcept
+{
+	m_dt.vkDestroySwapchainKHR(m_handle, swapchain, nullptr);
 }
 
 } // namespace voxen::gfx::vk
