@@ -41,6 +41,21 @@ public:
 
 	const InstanceDispatchTable &dt() const noexcept { return m_dt; }
 
+	// More convenient interfaces to certain Vulkan functions which
+	// convert error codes to exceptions and infer some arguments
+#pragma region Vulkan API wrappers
+	using SLoc = extras::source_location;
+
+	void vkDestroySurface(VkSurfaceKHR surface) noexcept;
+
+	VkSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilities(VkPhysicalDevice physical_device,
+		VkSurfaceKHR surface, SLoc loc = SLoc::current());
+	extras::dyn_array<VkSurfaceFormatKHR> vkGetPhysicalDeviceSurfaceFormats(VkPhysicalDevice physical_device,
+		VkSurfaceKHR surface, SLoc loc = SLoc::current());
+	extras::dyn_array<VkPresentModeKHR> vkGetPhysicalDeviceSurfacePresentModes(VkPhysicalDevice physical_device,
+		VkSurfaceKHR surface, SLoc loc = SLoc::current());
+#pragma endregion
+
 private:
 	VkInstance m_handle = VK_NULL_HANDLE;
 
