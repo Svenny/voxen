@@ -160,6 +160,22 @@ public:
 	// this check will be logged with debug level.
 	static bool isSupported(PhysicalDevice &pd);
 
+	// More convenient interfaces to certain Vulkan functions which
+	// convert error codes to exceptions and can assign debug names
+#pragma region Vulkan API wrappers
+	using SLoc = extras::source_location;
+
+	VkImageView vkCreateImageView(const VkImageViewCreateInfo &create_info, const char *name = nullptr,
+		SLoc loc = SLoc::current());
+	VkSemaphore vkCreateSemaphore(const VkSemaphoreCreateInfo &create_info, const char *name = nullptr,
+		SLoc loc = SLoc::current());
+	VkSwapchainKHR vkCreateSwapchain(const VkSwapchainCreateInfoKHR &create_info, SLoc loc = SLoc::current());
+
+	void vkDestroyImageView(VkImageView view) noexcept;
+	void vkDestroySemaphore(VkSemaphore semaphore) noexcept;
+	void vkDestroySwapchain(VkSwapchainKHR swapchain) noexcept;
+#pragma endregion
+
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
 		VkCommandPool, VkDescriptorPool, VkSwapchainKHR>;
