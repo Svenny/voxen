@@ -49,6 +49,7 @@ public:
 	// Command buffer assigned to this context.
 	// It is in recording state (per Vulkan spec).
 	// Do not end it manually - this will happen automatically.
+	// It will execute on the main queue of the device.
 	VkCommandBuffer commandBuffer() const noexcept { return m_cmd_buffer; }
 
 	// Allocate a temporary descriptor set for given layout.

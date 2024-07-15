@@ -55,10 +55,10 @@ public:
 	[[nodiscard]] CmdLabelScope cmdPushLabel(VkCommandBuffer cmd, const char *name);
 
 	// Set name for an object, will be visible in debugging tools and validation messages
-	void setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name);
+	void setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name) noexcept;
 
 	template<typename T>
-	void setObjectName(VkDevice device, T handle, const char *name)
+	void setObjectName(VkDevice device, T handle, const char *name) noexcept
 	{
 		setObjectName(device, reinterpret_cast<uint64_t>(handle), objectType<T>(), name);
 	}

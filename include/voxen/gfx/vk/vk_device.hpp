@@ -110,6 +110,11 @@ public:
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
 	void waitForTimeline(uint64_t value);
 
+	// Call `vkDeviceWaitIdle` to force completion of any GPU work.
+	// Intended to be used only in object destructors. Any error
+	// is only logged and ignored, so the function is nothrow.
+	void forceCompletion() noexcept;
+
 	// All functions of `enqueueDestroy` family work similarly - schedule
 	// an object for deletion after the last GPU command submission
 	// completes execution. Completion can happen at any moment, even
@@ -122,12 +127,13 @@ public:
 	void enqueueDestroy(VkImageView view) { enqueueJunkItem(view); }
 	void enqueueDestroy(VkCommandPool pool) { enqueueJunkItem(pool); }
 	void enqueueDestroy(VkDescriptorPool pool) { enqueueJunkItem(pool); }
+	void enqueueDestroy(VkSwapchainKHR swapchain) { enqueueJunkItem(swapchain); }
 
 	// Shorthand to `.instance().debug().setObjectName()`
-	void setObjectName(uint64_t handle, VkObjectType type, const char *name);
+	void setObjectName(uint64_t handle, VkObjectType type, const char *name) noexcept;
 
 	template<typename T>
-	void setObjectName(T handle, const char *name)
+	void setObjectName(T handle, const char *name) noexcept
 	{
 		setObjectName(reinterpret_cast<uint64_t>(handle), DebugUtils::objectType<T>(), name);
 	}
@@ -156,7 +162,7 @@ public:
 
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
-		VkCommandPool, VkDescriptorPool>;
+		VkCommandPool, VkDescriptorPool, VkSwapchainKHR>;
 
 	Instance &m_instance;
 
@@ -183,7 +189,7 @@ private:
 	void getQueueHandles();
 	void createVma();
 	void createTimelineSemaphore();
-	void processDestroyQueue();
+	void processDestroyQueue() noexcept;
 
 	void enqueueJunkItem(JunkItem item);
 	void destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept;
@@ -191,6 +197,7 @@ private:
 	void destroy(VkImageView obj) noexcept;
 	void destroy(VkCommandPool pool) noexcept;
 	void destroy(VkDescriptorPool pool) noexcept;
+	void destroy(VkSwapchainKHR swapchain) noexcept;
 };
 
 } // namespace voxen::gfx::vk
