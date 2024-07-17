@@ -18,6 +18,10 @@ class VOXEN_API Window {
 public:
 	bool shouldClose() const;
 	void pollEvents();
+	// Block until the window is expanded from the minimized state
+	// then return the new value of `framebufferSize()`. Call
+	// this when creating a surface/swapchain and the size is zero.
+	std::pair<int, int> waitUntilUnMinimized();
 
 	void start(int width, int height);
 	void stop();
