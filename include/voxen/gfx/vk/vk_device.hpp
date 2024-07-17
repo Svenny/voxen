@@ -26,44 +26,49 @@ public:
 	// but allows for more concise and efficient checks (i.e. less logic
 	// and memory accesses navigating through fields of that fat boy).
 	struct Info {
-		// Family index of `SubmitQueue::Main`, for ownership transfer purposes
+		// Family index of `QueueMain`, for ownership transfer purposes
 		uint32_t main_queue_family = 0;
-		// Family index of `SubmitQueue::Compute`, can be equal to that of main
-		uint32_t compute_queue_family = 0;
-		// Family index of `SubmitQueue::Dma`, can be equal to that of main
+		// Family index of `QueueDma`, can be equal to that of main
 		uint32_t dma_queue_family = 0;
+		// Family index of `QueueCompute`, can be equal to that of main
+		uint32_t compute_queue_family = 0;
 
 		// Set if VK_EXT_memory_budget is enabled for this device
 		uint32_t have_memory_budget : 1 = 0;
 		// Set if VK_EXT_mesh_shader is enabled for this device
 		uint32_t have_mesh_shader : 1 = 0;
 
-		// Set if compute queue is not an alias of the main one
-		uint32_t dedicated_compute_queue : 1 = 0;
 		// Set if DMA queue is not an aliasa of the main one
 		uint32_t dedicated_dma_queue : 1 = 0;
+		// Set if compute queue is not an alias of the main one
+		uint32_t dedicated_compute_queue : 1 = 0;
 	};
 
-	enum class SubmitQueue {
+	enum Queue : uint32_t {
 		// Supports GRAPHICS, COMPUTE (and TRANSFER)
 		// operations. Always a dedicated queue.
-		Main,
-		// Supports COMPUTE (and TRANSFER) operations.
-		// Might be either a dedicated queue or an alias of main.
-		Compute,
+		QueueMain = 0,
 		// Supports TRANSFER operations.
 		// Might be either a dedicated queue or an alias of main.
-		Dma
+		QueueDma,
+		// Supports COMPUTE (and TRANSFER) operations.
+		// Might be either a dedicated queue or an alias of main.
+		QueueCompute,
+
+		// Do not use, only for counting queue kinds
+		QueueCount,
 	};
 
 	// See `submitCommands()`
 	struct SubmitInfo {
 		// Which queue to submit commands into
-		SubmitQueue queue = SubmitQueue::Main;
+		Queue queue = QueueMain;
 
-		// Timeline value to wait for before starting the GPU work.
-		// 0 means no wait, execution begins as soon as it can.
-		uint64_t wait_timeline = 0;
+		// Timeline value(s) to wait for before starting the GPU work, paired with their queues.
+		// Wait for a value which has no pending or complete signal operation *WILL* deadlock.
+		// Empty span means no wait, execution begins as soon as it can.
+		// NOTE: each queue has its own timeline, make sure you don't mix them.
+		std::span<std::pair<Queue, uint64_t>> wait_timelines = {};
 		// Binary semaphore to wait on before starting the GPU work.
 		// As always with binary semaphores, it will be reset after waiting.
 		// It must be either signaled or have a pending signal operation.
@@ -71,11 +76,8 @@ public:
 
 		// Command buffers, will be submitted back-to-back without
 		// synchronization in between. Can be empty (pure sync submit).
-		std::span<const VkCommandBuffer> cmds;
+		std::span<const VkCommandBuffer> cmds = {};
 
-		// Whether to signal a timeline value after GPU work completion.
-		// Signaled value will be returned from `submitCommands()`.
-		bool signal_timeline = false;
 		// Whether to signal a binary semaphore after GPU work completion.
 		// It must be either unsignaled or have a pending wait operation.
 		VkSemaphore signal_binary_semaphore = VK_NULL_HANDLE;
@@ -95,31 +97,38 @@ public:
 	~Device() noexcept;
 
 	// Submit work for GPU execution. See `SubmitInfo` for details.
-	// Returns timeline value assigned to this submission (zero if
-	// no timeline signaling was requested). This value can be used
+	// Returns timeline value assigned to this submission. It will be greater than
+	// the previous value returned for this queue by one. This value can be used
 	// to synchronize further submissions or to wait for it on CPU.
+	//
+	// NOTE: each logical queue has its own timeline, even when it actually
+	// aliases another queue. When waiting on the returned value, make sure
+	// you always pair it with the same queue you were submitting to.
 	//
 	// Upon device failure (GPU hang etc.) this function is very likely
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
 	uint64_t submitCommands(SubmitInfo info);
-	// Wait (block) until a given timeline value is signaled as complete.
-	// Passing any value not returned from `submitCommands()` earlier
-	// *WILL* deadlock the program.
+	// Wait (block) until a given queue's timeline value is signaled as complete.
+	// Passing any value not returned from `submitCommands()` (with the
+	// same queue specified) earlier *WILL* deadlock the program.
+	//
+	// NOTE: timeline is paired with the queue. Make sure this value
+	// originates from submitting to `queue` and not something else.
 	//
 	// Upon device failure (GPU hang etc.) this function is very likely
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
-	void waitForTimeline(uint64_t value);
+	void waitForTimeline(Queue queue, uint64_t value);
 
-	// Call `vkDeviceWaitIdle` to force completion of any GPU work.
+	// Call `vkDeviceWaitIdle` to force completion of any pending GPU work.
 	// Intended to be used only in object destructors. Any error
 	// is only logged and ignored, so the function is nothrow.
 	void forceCompletion() noexcept;
 
 	// All functions of `enqueueDestroy` family work similarly - schedule
-	// an object for deletion after the last GPU command submission
-	// completes execution. Completion can happen at any moment, even
-	// right inside this function call, so basically it is only a
-	// synchronized `vkDestroy*`. Therefore, any command buffers
+	// an object for deletion after the (currently) last GPU command submission
+	// on every queue completes execution. Completion can happen at any moment,
+	// even right inside this function call, so basically it is nothing more
+	// than a GPU-synchronized `vkDestroy*`. Therefore, any command buffers
 	// referencing the object are considered invalid after this call.
 
 	void enqueueDestroy(VkBuffer buffer, VmaAllocation alloc) { enqueueJunkItem(std::pair { buffer, alloc }); }
@@ -146,9 +155,10 @@ public:
 	VkDevice handle() const noexcept { return m_handle; }
 	VmaAllocator vma() const noexcept { return m_vma; }
 
-	VkQueue mainQueue() const noexcept { return m_main_queue; }
-	VkQueue computeQueue() const noexcept { return m_compute_queue; }
-	VkQueue dmaQueue() const noexcept { return m_dma_queue; }
+	VkQueue queue(Queue index) const noexcept { return m_queues[index]; }
+	VkQueue mainQueue() const noexcept { return m_queues[QueueMain]; }
+	VkQueue dmaQueue() const noexcept { return m_queues[QueueDma]; }
+	VkQueue computeQueue() const noexcept { return m_queues[QueueCompute]; }
 
 	const Info &info() const noexcept { return m_info; }
 	const PhysicalDevice::Info &physInfo() const noexcept { return m_phys_device.info(); }
@@ -179,20 +189,19 @@ public:
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
 		VkCommandPool, VkDescriptorPool, VkSwapchainKHR>;
+	using JunkEnqueue = std::pair<JunkItem, std::array<uint64_t, QueueCount>>;
 
 	Instance &m_instance;
 
 	VkDevice m_handle = VK_NULL_HANDLE;
 	VmaAllocator m_vma = VK_NULL_HANDLE;
-	VkSemaphore m_timeline_semaphore = VK_NULL_HANDLE;
 
-	VkQueue m_main_queue = VK_NULL_HANDLE;
-	VkQueue m_compute_queue = VK_NULL_HANDLE;
-	VkQueue m_dma_queue = VK_NULL_HANDLE;
+	VkSemaphore m_timeline_semaphores[QueueCount] = {};
+	VkQueue m_queues[QueueCount] = {};
+	uint64_t m_last_submitted_timelines[QueueCount] = {};
+	uint64_t m_last_completed_timelines[QueueCount] = {};
 
-	uint64_t m_last_submitted_timeline = 0;
-	uint64_t m_last_completed_timeline = 0;
-	std::vector<std::pair<JunkItem, uint64_t>> m_destroy_queue;
+	std::vector<JunkEnqueue> m_destroy_queue;
 
 	Info m_info;
 
@@ -204,7 +213,7 @@ private:
 	void createDevice();
 	void getQueueHandles();
 	void createVma();
-	void createTimelineSemaphore();
+	void createTimelineSemaphores();
 	void processDestroyQueue() noexcept;
 
 	void enqueueJunkItem(JunkItem item);

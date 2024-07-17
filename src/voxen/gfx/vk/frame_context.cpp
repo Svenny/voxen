@@ -180,15 +180,14 @@ uint64_t FrameContext::submit()
 	}
 
 	return m_device.submitCommands({
-		.queue = Device::SubmitQueue::Main,
+		.queue = Device::QueueMain,
 		.cmds = std::span(&m_cmd_buffer, 1),
-		.signal_timeline = true,
 	});
 }
 
 void FrameContext::waitAndReset()
 {
-	m_device.waitForTimeline(m_submit_timeline);
+	m_device.waitForTimeline(Device::QueueMain, m_submit_timeline);
 
 	VkDevice dev = m_device.handle();
 	auto &dt = m_device.dt();

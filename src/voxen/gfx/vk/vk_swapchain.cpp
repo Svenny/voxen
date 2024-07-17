@@ -60,7 +60,7 @@ void Swapchain::acquireImage()
 		return;
 	}
 
-	m_device.waitForTimeline(m_prev_usage_timelines[m_frame_index]);
+	m_device.waitForTimeline(Device::QueueMain, m_prev_usage_timelines[m_frame_index]);
 
 	uint32_t acquired_index = NO_IMAGE_MARKER;
 
