@@ -57,8 +57,12 @@ Device::Device(Instance &instance, PhysicalDevice &phys_dev) : m_instance(instan
 	createVma();
 	defer_fail { vmaDestroyAllocator(m_vma); };
 
-	createTimelineSemaphore();
-	defer_fail { m_dt.vkDestroySemaphore(m_handle, m_timeline_semaphore, nullptr); };
+	createTimelineSemaphores();
+	defer_fail {
+		for (VkSemaphore semaphore : m_timeline_semaphores) {
+			m_dt.vkDestroySemaphore(m_handle, semaphore, nullptr);
+		}
+	};
 
 	auto &props = m_phys_device.info().props.properties;
 	Log::info("Created VkDevice from GPU '{}'", props.deviceName);
@@ -80,7 +84,9 @@ Device::~Device() noexcept
 	forceCompletion();
 
 	// Now destroy device subobjects
-	m_dt.vkDestroySemaphore(m_handle, m_timeline_semaphore, nullptr);
+	for (VkSemaphore semaphore : m_timeline_semaphores) {
+		m_dt.vkDestroySemaphore(m_handle, semaphore, nullptr);
+	}
 	vmaDestroyAllocator(m_vma);
 
 	// And then the device itself
@@ -91,6 +97,8 @@ Device::~Device() noexcept
 
 uint64_t Device::submitCommands(SubmitInfo info)
 {
+	assert(info.queue < QueueCount);
+
 	// We need to wrap `VkCommandBuffer` handles in structs
 	VkCommandBufferSubmitInfo cmdbuf_info_stack[4];
 	std::unique_ptr<VkCommandBufferSubmitInfo[]> cmdbuf_info_heap;
@@ -98,7 +106,7 @@ uint64_t Device::submitCommands(SubmitInfo info)
 	// Assume a few command buffers (the common case)
 	// and don't require heap allocation for them
 	VkCommandBufferSubmitInfo *cmdbuf_info = cmdbuf_info_stack;
-	if (info.cmds.size() > std::size(cmdbuf_info_stack)) {
+	if (info.cmds.size() > std::size(cmdbuf_info_stack)) [[unlikely]] {
 		cmdbuf_info_heap = std::make_unique<VkCommandBufferSubmitInfo[]>(info.cmds.size());
 		cmdbuf_info = cmdbuf_info_heap.get();
 	}
@@ -112,15 +120,31 @@ uint64_t Device::submitCommands(SubmitInfo info)
 		};
 	}
 
-	VkSemaphoreSubmitInfo wait_info[2];
+	VkSemaphoreSubmitInfo wait_info[QueueCount + 1] = {};
+	// Number of actually used structs
 	uint32_t wait_info_count = 0;
 
-	if (info.wait_timeline != 0) {
-		wait_info[0] = {
+	for (auto &[queue, timeline] : info.wait_timelines) {
+		assert(queue < QueueCount);
+
+		VkSemaphore semaphore = m_timeline_semaphores[queue];
+
+		auto end = wait_info + wait_info_count;
+		auto iter = std::ranges::find(wait_info, end, semaphore, &VkSemaphoreSubmitInfo::semaphore);
+		if (iter != end) {
+			// It's enough to only wait for the largest value on a single queue
+			iter->value = std::max(iter->value, timeline);
+			continue;
+		}
+
+		// We can append up to `QueueCount` different items
+		assert(wait_info_count < std::size(wait_info));
+
+		wait_info[wait_info_count] = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 			.pNext = nullptr,
-			.semaphore = m_timeline_semaphore,
-			.value = info.wait_timeline,
+			.semaphore = semaphore,
+			.value = timeline,
 			.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 			.deviceIndex = 0,
 		};
@@ -128,6 +152,8 @@ uint64_t Device::submitCommands(SubmitInfo info)
 	}
 
 	if (info.wait_binary_semaphore != VK_NULL_HANDLE) {
+		assert(wait_info_count < std::size(wait_info));
+
 		wait_info[wait_info_count] = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 			.pNext = nullptr,
@@ -140,24 +166,21 @@ uint64_t Device::submitCommands(SubmitInfo info)
 	}
 
 	VkSemaphoreSubmitInfo signal_info[2];
-	uint32_t signal_info_count = 0;
 
-	uint64_t completion_timeline = m_last_submitted_timeline + 1;
+	// Always advance the timeline, even if the submission fails
+	uint64_t completion_timeline = ++m_last_submitted_timelines[info.queue];
 
-	if (info.signal_timeline) {
-		signal_info[0] = {
-			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-			.pNext = nullptr,
-			.semaphore = m_timeline_semaphore,
-			.value = completion_timeline,
-			.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-			.deviceIndex = 0,
-		};
-		signal_info_count++;
-	}
+	signal_info[0] = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+		.pNext = nullptr,
+		.semaphore = m_timeline_semaphores[info.queue],
+		.value = completion_timeline,
+		.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+		.deviceIndex = 0,
+	};
 
-	if (info.signal_binary_semaphore) {
-		signal_info[signal_info_count] = {
+	if (info.signal_binary_semaphore != VK_NULL_HANDLE) {
+		signal_info[1] = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 			.pNext = nullptr,
 			.semaphore = info.signal_binary_semaphore,
@@ -165,7 +188,6 @@ uint64_t Device::submitCommands(SubmitInfo info)
 			.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 			.deviceIndex = 0,
 		};
-		signal_info_count++;
 	}
 
 	VkSubmitInfo2 submit {
@@ -176,57 +198,64 @@ uint64_t Device::submitCommands(SubmitInfo info)
 		.pWaitSemaphoreInfos = wait_info,
 		.commandBufferInfoCount = static_cast<uint32_t>(info.cmds.size()),
 		.pCommandBufferInfos = cmdbuf_info,
-		.signalSemaphoreInfoCount = signal_info_count,
+		.signalSemaphoreInfoCount = info.signal_binary_semaphore != VK_NULL_HANDLE ? 2u : 1u,
 		.pSignalSemaphoreInfos = signal_info,
 	};
 
-	VkQueue queue = VK_NULL_HANDLE;
-	switch (info.queue) {
-	case SubmitQueue::Main:
-		queue = m_main_queue;
-		break;
-	case SubmitQueue::Compute:
-		queue = m_compute_queue;
-		break;
-	case SubmitQueue::Dma:
-		queue = m_dma_queue;
-		break;
-	}
-
-	VkResult res = m_dt.vkQueueSubmit2(queue, 1, &submit, info.signal_fence);
-	if (res != VK_SUCCESS) {
+	VkResult res = m_dt.vkQueueSubmit2(queue(info.queue), 1, &submit, info.signal_fence);
+	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkQueueSubmit2");
 	}
 
-	if (info.signal_timeline) {
-		m_last_submitted_timeline++;
-		return completion_timeline;
-	}
-
-	return 0;
+	return completion_timeline;
 }
 
-void Device::waitForTimeline(uint64_t value)
+void Device::waitForTimeline(Queue queue, uint64_t value)
 {
-	if (value <= m_last_completed_timeline) {
+	assert(queue < QueueCount);
+
+	if (value <= m_last_completed_timelines[queue]) {
 		return;
 	}
 
+	// First try to do without waiting.
+	// Update values of all queues, not just this one,
+	// to guarantee forward progress for the destroy queue.
+	for (uint32_t i = 0; i < QueueCount; i++) {
+		uint64_t observed_value = 0;
+		VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[i], &observed_value);
+		if (res != VK_SUCCESS) {
+			throw VulkanException(res, "vkGetSemaphoreCounterValue");
+		}
+
+		m_last_completed_timelines[i] = observed_value;
+	}
+
+	// Is it signaled now?
+	// In CPU-bound scenarios we will probably always exit here.
+	if (value <= m_last_completed_timelines[queue]) {
+		// Process destroy queue as we've updated some completion values
+		processDestroyQueue();
+		return;
+	}
+
+	// Still not signaled, we have to block
 	VkSemaphoreWaitInfo wait_info {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
 		.pNext = nullptr,
 		.flags = 0,
 		.semaphoreCount = 1,
-		.pSemaphores = &m_timeline_semaphore,
+		.pSemaphores = &m_timeline_semaphores[queue],
 		.pValues = &value,
 	};
 
 	VkResult res = m_dt.vkWaitSemaphores(m_handle, &wait_info, UINT64_MAX);
-	if (res != VK_SUCCESS) {
+	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkWaitSemaphores");
 	}
 
-	m_last_completed_timeline = value;
+	// Don't forget to process destroy queue (must do it after any completion value update)
+	m_last_completed_timelines[queue] = value;
 	processDestroyQueue();
 }
 
@@ -239,7 +268,10 @@ void Device::forceCompletion() noexcept
 	}
 
 	// Everything is surely completed now
-	m_last_completed_timeline = m_last_submitted_timeline;
+	for (uint32_t i = 0; i < QueueCount; i++) {
+		m_last_completed_timelines[i] = m_last_submitted_timelines[i];
+	}
+
 	processDestroyQueue();
 }
 
@@ -430,16 +462,6 @@ void Device::createDevice()
 		info.queueFamilyIndex = queue_info.main_queue_family;
 		queue_create_infos.emplace_back(info);
 
-		if (queue_info.compute_queue_family != VK_QUEUE_FAMILY_IGNORED) {
-			m_info.dedicated_compute_queue = 1;
-			m_info.compute_queue_family = queue_info.compute_queue_family;
-
-			info.queueFamilyIndex = queue_info.compute_queue_family;
-			queue_create_infos.emplace_back(info);
-		} else {
-			m_info.compute_queue_family = m_info.main_queue_family;
-		}
-
 		if (queue_info.dma_queue_family != VK_QUEUE_FAMILY_IGNORED) {
 			m_info.dedicated_dma_queue = 1;
 			m_info.dma_queue_family = queue_info.dma_queue_family;
@@ -448,6 +470,16 @@ void Device::createDevice()
 			queue_create_infos.emplace_back(info);
 		} else {
 			m_info.dma_queue_family = m_info.main_queue_family;
+		}
+
+		if (queue_info.compute_queue_family != VK_QUEUE_FAMILY_IGNORED) {
+			m_info.dedicated_compute_queue = 1;
+			m_info.compute_queue_family = queue_info.compute_queue_family;
+
+			info.queueFamilyIndex = queue_info.compute_queue_family;
+			queue_create_infos.emplace_back(info);
+		} else {
+			m_info.compute_queue_family = m_info.main_queue_family;
 		}
 	}
 
@@ -493,21 +525,23 @@ void Device::createDevice()
 
 void Device::getQueueHandles()
 {
-	m_dt.vkGetDeviceQueue(m_handle, m_info.main_queue_family, 0, &m_main_queue);
-	setObjectName(m_main_queue, "common/main_queue");
+	static_assert(QueueMain == 0);
 
-	if (m_info.dedicated_compute_queue) {
-		m_dt.vkGetDeviceQueue(m_handle, m_info.compute_queue_family, 0, &m_compute_queue);
-		setObjectName(m_compute_queue, "common/compute_queue");
-	} else {
-		m_compute_queue = m_main_queue;
+	m_dt.vkGetDeviceQueue(m_handle, m_info.main_queue_family, 0, &m_queues[QueueMain]);
+	setObjectName(m_queues[QueueMain], "device/queue_main");
+
+	for (uint32_t i = 1; i < QueueCount; i++) {
+		m_queues[i] = m_queues[QueueMain];
 	}
 
 	if (m_info.dedicated_dma_queue) {
-		m_dt.vkGetDeviceQueue(m_handle, m_info.dma_queue_family, 0, &m_dma_queue);
-		setObjectName(m_dma_queue, "common/dma_queue");
-	} else {
-		m_dma_queue = m_main_queue;
+		m_dt.vkGetDeviceQueue(m_handle, m_info.dma_queue_family, 0, &m_queues[QueueDma]);
+		setObjectName(m_queues[QueueDma], "device/queue_dma");
+	}
+
+	if (m_info.dedicated_compute_queue) {
+		m_dt.vkGetDeviceQueue(m_handle, m_info.compute_queue_family, 0, &m_queues[QueueCompute]);
+		setObjectName(m_queues[QueueCompute], "device/queue_compute");
 	}
 }
 
@@ -542,7 +576,7 @@ void Device::createVma()
 	}
 }
 
-void Device::createTimelineSemaphore()
+void Device::createTimelineSemaphores()
 {
 	VkSemaphoreTypeCreateInfo semaphore_type_info {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
@@ -557,12 +591,19 @@ void Device::createTimelineSemaphore()
 		.flags = 0,
 	};
 
-	VkResult res = m_dt.vkCreateSemaphore(m_handle, &semaphore_info, nullptr, &m_timeline_semaphore);
-	if (res != VK_SUCCESS) {
-		throw VulkanException(res, "vkCreateSemaphore");
-	}
+	const char *names[] = { "main", "dma", "compute" };
+	static_assert(std::size(names) == QueueCount);
 
-	setObjectName(m_timeline_semaphore, "common/timeline_semaphore");
+	for (uint32_t i = 0; i < QueueCount; i++) {
+		VkResult res = m_dt.vkCreateSemaphore(m_handle, &semaphore_info, nullptr, &m_timeline_semaphores[i]);
+		if (res != VK_SUCCESS) {
+			throw VulkanException(res, "vkCreateSemaphore");
+		}
+
+		char buf[32];
+		snprintf(buf, std::size(buf), "device/timeline_%s", names[i]);
+		setObjectName(m_timeline_semaphores[i], buf);
+	}
 }
 
 void Device::processDestroyQueue() noexcept
@@ -571,7 +612,7 @@ void Device::processDestroyQueue() noexcept
 	// This might reduce (very tiny) memory waste after a large "spike"
 	// of destroy requests (e.g. unloading something huge).
 	// `size + 1` won't needlessly shrink each time the queue is empty.
-	if (m_destroy_queue.capacity() > (m_destroy_queue.size() + 1) * 4) {
+	if (m_destroy_queue.capacity() > (m_destroy_queue.size() + 1) * 4) [[unlikely]] {
 		m_destroy_queue.shrink_to_fit();
 	}
 
@@ -579,9 +620,24 @@ void Device::processDestroyQueue() noexcept
 	// their timeline value is in non-decreasing order
 	auto iter = m_destroy_queue.begin();
 
+	std::array<uint64_t, QueueCount> threshold;
+	std::copy_n(m_last_completed_timelines, QueueCount, threshold.data());
+
+	auto is_safe = [&threshold](const JunkEnqueue &enq) {
+		for (uint32_t i = 0; i < QueueCount; i++) {
+			if (enq.second[i] > threshold[i]) {
+				return false;
+			}
+		}
+
+		return true;
+	};
+
 	while (iter != m_destroy_queue.end()) {
-		if (iter->second > m_last_completed_timeline) {
-			// Everything starting from this is not yet safe to destroy
+		if (!is_safe(*iter)) {
+			// Timelines can only increase, and items are appended in chronological
+			// order. Once we get `iter->second[i] > threshold[i]` it will
+			// stay true, meaning remaining items are not yet safe to destroy.
 			break;
 		}
 
@@ -597,7 +653,9 @@ void Device::processDestroyQueue() noexcept
 
 void Device::enqueueJunkItem(JunkItem item)
 {
-	m_destroy_queue.emplace_back(std::move(item), m_last_submitted_timeline);
+	std::array<uint64_t, QueueCount> timelines;
+	std::copy_n(m_last_submitted_timelines, QueueCount, timelines.data());
+	m_destroy_queue.emplace_back(std::move(item), timelines);
 }
 
 void Device::destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept

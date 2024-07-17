@@ -93,12 +93,11 @@ void TransferManager::ensureUploadsDone()
 	VkCommandBuffer cmd_buf = m_command_buffers[0];
 
 	uint64_t timeline = device.submitCommands({
-		.queue = gfx::vk::Device::SubmitQueue::Dma,
+		.queue = gfx::vk::Device::QueueDma,
 		.cmds = std::span(&cmd_buf, 1),
-		.signal_timeline = true,
 	});
 	// TODO: do it asynchronously
-	device.waitForTimeline(timeline);
+	device.waitForTimeline(gfx::vk::Device::QueueDma, timeline);
 }
 
 FatVkBuffer TransferManager::createStagingBuffer()
