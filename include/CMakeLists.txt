@@ -90,6 +90,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_device.hpp
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
+	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

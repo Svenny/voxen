@@ -60,6 +60,17 @@ void Window::pollEvents()
 	glfwPollEvents();
 }
 
+std::pair<int, int> Window::waitUntilUnMinimized()
+{
+	auto size = framebufferSize();
+	while (size.first == 0 && size.second == 0 && !shouldClose()) {
+		glfwWaitEvents();
+		size = framebufferSize();
+	}
+
+	return size;
+}
+
 void Window::createWindow(int width, int height)
 {
 	using namespace std::literals;
