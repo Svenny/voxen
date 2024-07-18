@@ -4,7 +4,6 @@
 #include <voxen/client/vulkan/command_buffer.hpp>
 #include <voxen/client/vulkan/command_pool.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/sync.hpp>
 
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
