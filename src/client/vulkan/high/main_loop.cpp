@@ -5,13 +5,15 @@
 #include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
-#include <voxen/client/vulkan/swapchain.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
-
+#include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
+{
+
+namespace
 {
 
 struct MainSceneUbo {
@@ -20,11 +22,10 @@ struct MainSceneUbo {
 	float _pad0;
 };
 
-MainLoop::PendingFrameSyncs::PendingFrameSyncs() : render_done_fence(true) {}
+} // namespace
 
 MainLoop::MainLoop()
-	: m_image_guard_fences(Backend::backend().swapchain().numImages(), VK_NULL_HANDLE)
-	, m_graphics_command_pool(Backend::backend().device().info().main_queue_family)
+	: m_graphics_command_pool(Backend::backend().device().info().main_queue_family)
 	, m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
 {
 	Backend &backend = Backend::backend();
@@ -58,46 +59,22 @@ MainLoop::~MainLoop() noexcept
 void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device().handle();
 	auto &swapchain = backend.swapchain();
 
 	size_t pending_frame_id = m_frame_id % Config::NUM_CPU_PENDING_FRAMES;
-	VkSemaphore frame_acquired_semaphore = m_pending_frame_syncs[pending_frame_id].frame_acquired_semaphore;
-	VkSemaphore render_done_semaphore = m_pending_frame_syncs[pending_frame_id].render_done_semaphore;
-	VkFence render_done_fence = m_pending_frame_syncs[pending_frame_id].render_done_fence;
-
-	VkResult result = backend.vkWaitForFences(device, 1, &render_done_fence, VK_TRUE, UINT64_MAX);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkWaitForFences");
-	}
+	backend.device().waitForTimeline(gfx::vk::Device::QueueMain, m_submit_timelines[pending_frame_id]);
 
 	// Advance current set ID when CPU resources for current frame
 	// are not used anymore but before any CPU work has started
 	backend.descriptorManager().startNewFrame();
 
-	uint32_t swapchain_image_id = swapchain.acquireImage(frame_acquired_semaphore);
-
-	{
-		VkFence image_guard_fence = m_image_guard_fences[swapchain_image_id];
-		if (image_guard_fence != VK_NULL_HANDLE) {
-			result = backend.vkWaitForFences(device, 1, &image_guard_fence, VK_TRUE, UINT64_MAX);
-			if (result != VK_SUCCESS) {
-				throw VulkanException(result, "vkWaitForFences");
-			}
-		}
-		m_image_guard_fences[swapchain_image_id] = render_done_fence;
-	}
-
-	result = backend.vkResetFences(device, 1, &render_done_fence);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkResetFences");
-	}
+	swapchain.acquireImage();
 
 	VkCommandBuffer cmd_buf = m_graphics_command_buffers[pending_frame_id];
 	VkCommandBufferBeginInfo cmd_begin_info = {};
 	cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	result = backend.vkBeginCommandBuffer(cmd_buf, &cmd_begin_info);
+	VkResult result = backend.vkBeginCommandBuffer(cmd_buf, &cmd_begin_info);
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkBeginCommandBuffer");
 	}
@@ -125,7 +102,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.image = swapchain.image(swapchain_image_id),
+		.image = swapchain.currentImage(),
 		.subresourceRange = VkImageSubresourceRange {
 			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.baseMipLevel = 0,
@@ -176,7 +153,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 
 	VkRenderingAttachmentInfo color_rt_info = {};
 	color_rt_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	color_rt_info.imageView = swapchain.imageView(swapchain_image_id);
+	color_rt_info.imageView = swapchain.currentImageRtv();
 	color_rt_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 	color_rt_info.resolveMode = VK_RESOLVE_MODE_NONE;
 	color_rt_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -244,7 +221,7 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.image = swapchain.image(swapchain_image_id),
+		.image = swapchain.currentImage(),
 		.subresourceRange = VkImageSubresourceRange {
 			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.baseMipLevel = 0,
@@ -275,14 +252,14 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 		throw VulkanException(result, "vkEndCommandBuffer");
 	}
 
-	backend.device().submitCommands({
-		.wait_binary_semaphore = frame_acquired_semaphore,
+	uint64_t timeline = backend.device().submitCommands({
+		.wait_binary_semaphore = swapchain.currentAcquireSemaphore(),
 		.cmds = std::span(&cmd_buf, 1),
-		.signal_binary_semaphore = render_done_semaphore,
-		.signal_fence = render_done_fence,
+		.signal_binary_semaphore = swapchain.currentPresentSemaphore(),
 	});
 
-	swapchain.presentImage(swapchain_image_id, render_done_semaphore);
+	m_submit_timelines[pending_frame_id] = timeline;
+	swapchain.presentImage(timeline);
 
 	m_frame_id++;
 }

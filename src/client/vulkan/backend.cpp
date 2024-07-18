@@ -12,11 +12,10 @@
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
-#include <voxen/client/vulkan/surface.hpp>
-#include <voxen/client/vulkan/swapchain.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
+#include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -35,7 +34,7 @@ struct Backend::Impl {
 
 	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<DeviceAllocator>, Storage<TransferManager>,
 		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
-		Storage<PipelineLayoutCollection>, Storage<DescriptorManager>, Storage<Surface>, Storage<Swapchain>,
+		Storage<PipelineLayoutCollection>, Storage<DescriptorManager>, Storage<gfx::vk::Swapchain>,
 		Storage<FramebufferCollection>, Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<MainLoop>,
 		Storage<TerrainRenderer>>
 		storage;
@@ -86,7 +85,7 @@ bool Backend::start(Window &window) noexcept
 		return false;
 	}
 
-	if (!doStart(window, StartStopMode::Everything)) {
+	if (!doStart(window)) {
 		stop();
 		return false;
 	}
@@ -102,7 +101,7 @@ void Backend::stop() noexcept
 	}
 
 	Log::info("Stopping Vulkan backend");
-	doStop(StartStopMode::Everything);
+	doStop();
 	Log::info("Vulkan backend stopped");
 	m_state = State::NotStarted;
 }
@@ -119,17 +118,9 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 		return true;
 	}
 	catch (const VulkanException &e) {
-		if (e.result() == VK_ERROR_SURFACE_LOST_KHR) {
-			m_state = State::SurfaceLost;
-			Log::error("Surface lost during rendering a frame");
-		} else if (e.result() == VK_ERROR_OUT_OF_DATE_KHR) {
-			m_state = State::SwapchainOutOfDate;
-			Log::error("Swapchain went out of date during rendering a frame");
-		} else {
-			// Other errors are considered non-recoverable
-			m_state = State::Broken;
-			Log::error("Vulkan error during rendering a frame");
-		}
+		// Unhandled errors are considered non-recoverable
+		m_state = State::Broken;
+		Log::error("Vulkan error during rendering a frame");
 		Log::error("what(): {}", e.what());
 		auto loc = e.where();
 		Log::error("where(): {}:{}", loc.file_name(), loc.line());
@@ -151,87 +142,43 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 	return false;
 }
 
-bool Backend::recreateSurface(Window &window) noexcept
+bool Backend::doStart(Window &window) noexcept
 {
-	if (m_state != State::SurfaceLost) {
-		Log::warn("recreateSurface() called when surface is not lost");
-		return true;
-	}
-
-	doStop(StartStopMode::SurfaceDependentOnly);
-
-	if (doStart(window, StartStopMode::SurfaceDependentOnly)) {
-		m_state = State::Started;
-		return true;
-	}
-	return false;
-}
-
-bool Backend::recreateSwapchain(Window &window) noexcept
-{
-	if (m_state != State::SwapchainOutOfDate) {
-		Log::warn("recreateSwapchain() called when swapchain is not out of date");
-		return true;
-	}
-
-	doStop(StartStopMode::SwapchainDependentOnly);
-
-	if (doStart(window, StartStopMode::SwapchainDependentOnly)) {
-		m_state = State::Started;
-		return true;
-	}
-	return false;
-}
-
-bool Backend::doStart(Window &window, StartStopMode mode) noexcept
-{
-	const bool start_all = (mode == StartStopMode::Everything);
-	const bool start_surface_dep = (start_all || mode == StartStopMode::SurfaceDependentOnly);
-	const bool start_swapchain_dep = (start_surface_dep || mode == StartStopMode::SwapchainDependentOnly);
-
 	try {
-		if (start_all) {
-			m_impl.constructModule(m_instance);
+		m_impl.constructModule(m_instance);
 
-			if (!loadInstanceLevelApi(m_instance->handle())) {
-				return false;
-			}
-
-			auto devices = m_instance->enumeratePhysicalDevices();
-			auto *device = selectPhysicalDevice(devices);
-			if (!device) {
-				return false;
-			}
-
-			m_impl.constructModule(m_device, *m_instance, *device);
-
-			if (!loadDeviceLevelApi(m_device->handle())) {
-				return false;
-			}
-
-			m_impl.constructModule(m_device_allocator);
-			m_impl.constructModule(m_transfer_manager);
-			m_impl.constructModule(m_terrain_synchronizer);
-
-			m_impl.constructModule(m_shader_module_collection);
-			m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
-			m_impl.constructModule(m_descriptor_set_layout_collection);
-			m_impl.constructModule(m_pipeline_layout_collection);
-			m_impl.constructModule(m_descriptor_manager);
+		if (!loadInstanceLevelApi(m_instance->handle())) {
+			return false;
 		}
 
-		if (start_surface_dep) {
-			m_impl.constructModule(m_surface, window);
-			m_impl.constructModule(m_pipeline_collection);
+		auto devices = m_instance->enumeratePhysicalDevices();
+		auto *device = selectPhysicalDevice(devices);
+		if (!device) {
+			return false;
 		}
 
-		if (start_swapchain_dep) {
-			m_impl.constructModule(m_swapchain);
-			m_impl.constructModule(m_framebuffer_collection);
+		m_impl.constructModule(m_device, *m_instance, *device);
 
-			m_impl.constructModule(m_main_loop);
-			m_impl.constructModule(m_terrain_renderer);
+		if (!loadDeviceLevelApi(m_device->handle())) {
+			return false;
 		}
+
+		m_impl.constructModule(m_device_allocator);
+		m_impl.constructModule(m_transfer_manager);
+		m_impl.constructModule(m_terrain_synchronizer);
+
+		m_impl.constructModule(m_shader_module_collection);
+		m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
+		m_impl.constructModule(m_descriptor_set_layout_collection);
+		m_impl.constructModule(m_pipeline_layout_collection);
+		m_impl.constructModule(m_descriptor_manager);
+
+		m_impl.constructModule(m_swapchain, *m_device, window);
+		m_impl.constructModule(m_pipeline_collection);
+		m_impl.constructModule(m_framebuffer_collection);
+
+		m_impl.constructModule(m_main_loop);
+		m_impl.constructModule(m_terrain_renderer);
 
 		return true;
 	}
@@ -252,7 +199,7 @@ bool Backend::doStart(Window &window, StartStopMode mode) noexcept
 	return false;
 }
 
-void Backend::doStop(StartStopMode mode) noexcept
+void Backend::doStop() noexcept
 {
 	// Finish all outstanding operations on VkDevice, if any. If device is lost, calling
 	// vkDeviceWaitIdle will return an error. Ignore it - device is to be destroyed anyway.
@@ -263,39 +210,27 @@ void Backend::doStop(StartStopMode mode) noexcept
 		}
 	}
 
-	const bool stop_all = (mode == StartStopMode::Everything);
-	const bool stop_surface_dep = (stop_all || mode == StartStopMode::SurfaceDependentOnly);
-	const bool stop_swapchain_dep = (stop_surface_dep || mode == StartStopMode::SwapchainDependentOnly);
+	m_impl.destructModule(m_terrain_renderer);
+	m_impl.destructModule(m_main_loop);
 
-	if (stop_swapchain_dep) {
-		m_impl.destructModule(m_terrain_renderer);
-		m_impl.destructModule(m_main_loop);
+	m_impl.destructModule(m_framebuffer_collection);
+	m_impl.destructModule(m_pipeline_collection);
+	m_impl.destructModule(m_swapchain);
 
-		m_impl.destructModule(m_framebuffer_collection);
-		m_impl.destructModule(m_swapchain);
-	}
+	m_impl.destructModule(m_descriptor_manager);
+	m_impl.destructModule(m_pipeline_layout_collection);
+	m_impl.destructModule(m_descriptor_set_layout_collection);
+	m_impl.destructModule(m_pipeline_cache);
+	m_impl.destructModule(m_shader_module_collection);
 
-	if (stop_surface_dep) {
-		m_impl.destructModule(m_pipeline_collection);
-		m_impl.destructModule(m_surface);
-	}
+	m_impl.destructModule(m_terrain_synchronizer);
+	m_impl.destructModule(m_transfer_manager);
+	m_impl.destructModule(m_device_allocator);
 
-	if (stop_all) {
-		m_impl.destructModule(m_descriptor_manager);
-		m_impl.destructModule(m_pipeline_layout_collection);
-		m_impl.destructModule(m_descriptor_set_layout_collection);
-		m_impl.destructModule(m_pipeline_cache);
-		m_impl.destructModule(m_shader_module_collection);
-
-		m_impl.destructModule(m_terrain_synchronizer);
-		m_impl.destructModule(m_transfer_manager);
-		m_impl.destructModule(m_device_allocator);
-
-		m_impl.destructModule(m_device);
-		unloadDeviceLevelApi();
-		m_impl.destructModule(m_instance);
-		unloadInstanceLevelApi();
-	}
+	m_impl.destructModule(m_device);
+	unloadDeviceLevelApi();
+	m_impl.destructModule(m_instance);
+	unloadInstanceLevelApi();
 }
 
 std::string_view Backend::stateToString(State state) noexcept
@@ -308,10 +243,6 @@ std::string_view Backend::stateToString(State state) noexcept
 		return "Started"sv;
 	case State::Broken:
 		return "Broken"sv;
-	case State::SurfaceLost:
-		return "Surface lost"sv;
-	case State::SwapchainOutOfDate:
-		return "Swapchain out of date"sv;
 	default:
 		return "UNKNOWN STATE"sv;
 	}

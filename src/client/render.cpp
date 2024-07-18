@@ -31,18 +31,6 @@ void Render::drawFrame(const WorldState &world_state, const GameView &view)
 		if (state == vulkan::Backend::State::Broken) {
 			Log::error("Render subsystem encountered a non-recoverable error, shutting down");
 			throw Exception::fromError(VoxenErrc::GfxFailure, "render subsystem failure");
-		} else if (state == vulkan::Backend::State::SurfaceLost) {
-			Log::info("Trying to recreate surface...");
-			if (!backend.recreateSurface(m_window)) {
-				Log::error("Surface recreation failed, shutting down");
-				throw Exception::fromError(VoxenErrc::GfxFailure, "failed to recreate surface");
-			}
-		} else if (state == vulkan::Backend::State::SwapchainOutOfDate) {
-			Log::info("Trying to recreate swapchain...");
-			if (!backend.recreateSwapchain(m_window)) {
-				Log::error("Swapchain recreation failed, shutting down");
-				throw Exception::fromError(VoxenErrc::GfxFailure, "failed to recreate swapchain");
-			}
 		} else {
 			// This branch must be unreachable
 			assert(false);

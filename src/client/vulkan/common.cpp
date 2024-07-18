@@ -55,7 +55,7 @@ VulkanException::VulkanException(VkResult result, std::string_view api, extras::
 	: Exception(fmt::format("call to '{}' failed", api), std::make_error_condition(result), loc)
 {
 	assert(api.length() > 0);
-	Log::error("{} failed with error code {}", api, VulkanUtils::getVkResultString(result));
+	Log::error("{} failed with error code {}", api, VulkanUtils::getVkResultString(result), loc);
 }
 
 // Not defining inline to satisfy -Wweak-vtables

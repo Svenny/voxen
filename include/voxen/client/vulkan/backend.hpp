@@ -13,6 +13,7 @@ namespace voxen::gfx::vk
 class Device;
 class Instance;
 class PhysicalDevice;
+class Swapchain;
 
 } // namespace voxen::gfx::vk
 
@@ -28,8 +29,6 @@ class PipelineCache;
 class PipelineCollection;
 class PipelineLayoutCollection;
 class ShaderModuleCollection;
-class Surface;
-class Swapchain;
 class TerrainRenderer;
 class TerrainSynchronizer;
 class TransferManager;
@@ -42,17 +41,12 @@ public:
 		NotStarted,
 		Started,
 		Broken,
-		SurfaceLost,
-		SwapchainOutOfDate,
 	};
 
 	bool start(Window &window) noexcept;
 	void stop() noexcept;
 
 	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
-
-	bool recreateSurface(Window &window) noexcept;
-	bool recreateSwapchain(Window &window) noexcept;
 
 	State state() const noexcept { return m_state; }
 
@@ -85,13 +79,10 @@ public:
 	DescriptorManager &descriptorManager() noexcept { return *m_descriptor_manager; }
 	const DescriptorManager &descriptorManager() const noexcept { return *m_descriptor_manager; }
 
-	Surface &surface() noexcept { return *m_surface; }
-	const Surface &surface() const noexcept { return *m_surface; }
+	gfx::vk::Swapchain &swapchain() noexcept { return *m_swapchain; }
+	const gfx::vk::Swapchain &swapchain() const noexcept { return *m_swapchain; }
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
-
-	Swapchain &swapchain() noexcept { return *m_swapchain; }
-	const Swapchain &swapchain() const noexcept { return *m_swapchain; }
 	FramebufferCollection &framebufferCollection() noexcept { return *m_framebuffer_collection; }
 	const FramebufferCollection &framebufferCollection() const noexcept { return *m_framebuffer_collection; }
 
@@ -131,10 +122,8 @@ private:
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 	DescriptorManager *m_descriptor_manager = nullptr;
 
-	Surface *m_surface = nullptr;
+	gfx::vk::Swapchain *m_swapchain = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
-
-	Swapchain *m_swapchain = nullptr;
 	FramebufferCollection *m_framebuffer_collection = nullptr;
 
 	MainLoop *m_main_loop = nullptr;
@@ -151,14 +140,8 @@ private:
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadDeviceLevelApi() noexcept;
 
-	enum class StartStopMode {
-		Everything,
-		SurfaceDependentOnly,
-		SwapchainDependentOnly
-	};
-
-	bool doStart(Window &window, StartStopMode mode) noexcept;
-	void doStop(StartStopMode mode) noexcept;
+	bool doStart(Window &window) noexcept;
+	void doStop() noexcept;
 
 	constexpr Backend(Impl &impl) noexcept;
 	Backend(Backend &&) = delete;
