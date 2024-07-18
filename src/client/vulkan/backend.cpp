@@ -1,13 +1,11 @@
 #include <voxen/client/vulkan/backend.hpp>
 
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
-#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/high/main_loop.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
-#include <voxen/client/vulkan/memory.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -32,11 +30,10 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<DeviceAllocator>, Storage<TransferManager>,
+	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<TransferManager>,
 		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
-		Storage<PipelineLayoutCollection>, Storage<DescriptorManager>, Storage<gfx::vk::Swapchain>,
-		Storage<FramebufferCollection>, Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<MainLoop>,
-		Storage<TerrainRenderer>>
+		Storage<PipelineLayoutCollection>, Storage<gfx::vk::Swapchain>, Storage<FramebufferCollection>,
+		Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<MainLoop>, Storage<TerrainRenderer>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -163,7 +160,6 @@ bool Backend::doStart(Window &window) noexcept
 			return false;
 		}
 
-		m_impl.constructModule(m_device_allocator);
 		m_impl.constructModule(m_transfer_manager);
 		m_impl.constructModule(m_terrain_synchronizer);
 
@@ -171,7 +167,6 @@ bool Backend::doStart(Window &window) noexcept
 		m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
 		m_impl.constructModule(m_descriptor_set_layout_collection);
 		m_impl.constructModule(m_pipeline_layout_collection);
-		m_impl.constructModule(m_descriptor_manager);
 
 		m_impl.constructModule(m_swapchain, *m_device, window);
 		m_impl.constructModule(m_pipeline_collection);
@@ -217,7 +212,6 @@ void Backend::doStop() noexcept
 	m_impl.destructModule(m_pipeline_collection);
 	m_impl.destructModule(m_swapchain);
 
-	m_impl.destructModule(m_descriptor_manager);
 	m_impl.destructModule(m_pipeline_layout_collection);
 	m_impl.destructModule(m_descriptor_set_layout_collection);
 	m_impl.destructModule(m_pipeline_cache);
@@ -225,7 +219,6 @@ void Backend::doStop() noexcept
 
 	m_impl.destructModule(m_terrain_synchronizer);
 	m_impl.destructModule(m_transfer_manager);
-	m_impl.destructModule(m_device_allocator);
 
 	m_impl.destructModule(m_device);
 	unloadDeviceLevelApi();

@@ -1,34 +1,10 @@
 #pragma once
 
 #include <voxen/client/vulkan/common.hpp>
-#include <voxen/client/vulkan/memory.hpp>
+#include <voxen/gfx/vk/vma_fwd.hpp>
 
 namespace voxen::client::vulkan
 {
-
-// This is a "dumb" wrapper around `VkBuffer` handle. It has only trivial logic and is designed
-// to be as flexible as possible. It can be used either directly or via some higher-level class.
-class WrappedVkBuffer final {
-public:
-	constexpr explicit WrappedVkBuffer(VkBuffer handle = VK_NULL_HANDLE) noexcept : m_handle(handle) {}
-	explicit WrappedVkBuffer(const VkBufferCreateInfo &info);
-	WrappedVkBuffer(WrappedVkBuffer &&other) noexcept;
-	WrappedVkBuffer(const WrappedVkBuffer &) = delete;
-	WrappedVkBuffer &operator=(WrappedVkBuffer &&other) noexcept;
-	WrappedVkBuffer &operator=(const WrappedVkBuffer &) = delete;
-	~WrappedVkBuffer() noexcept;
-
-	// A dumb wrapper for `vkBindBufferMemory`
-	void bindMemory(VkDeviceMemory memory, VkDeviceSize offset);
-	// A dumb wrapper for `vkGetBufferMemoryRequirements`
-	void getMemoryRequirements(VkMemoryRequirements &reqs) const noexcept;
-
-	VkBuffer handle() const noexcept { return m_handle; }
-	operator VkBuffer() const noexcept { return m_handle; }
-
-private:
-	VkBuffer m_handle = VK_NULL_HANDLE;
-};
 
 // This is a "fat", "fully self-managed" wrapper around `VkBuffer` handle.
 // It manages memory allocation automatically and is generally universal.
@@ -41,25 +17,25 @@ public:
 	};
 
 	FatVkBuffer() = default;
-	explicit FatVkBuffer(const VkBufferCreateInfo &info, DeviceMemoryUseCase use_case);
+	explicit FatVkBuffer(const VkBufferCreateInfo &info, Usage usage);
 	FatVkBuffer(FatVkBuffer &&) noexcept;
 	FatVkBuffer(const FatVkBuffer &) = delete;
 	FatVkBuffer &operator=(FatVkBuffer &&) noexcept;
 	FatVkBuffer &operator=(const FatVkBuffer &) = delete;
-	~FatVkBuffer() = default;
+	~FatVkBuffer() noexcept;
 
-	DeviceAllocation &allocation() noexcept { return m_memory; }
-
-	VkBuffer handle() const noexcept { return m_buffer.handle(); }
-	const DeviceAllocation &allocation() const noexcept { return m_memory; }
+	VkBuffer handle() const noexcept { return m_handle; }
 	VkDeviceSize size() const noexcept { return m_size; }
+	// Null for `DeviceLocal` usage, non-null for `Staging` and `Readback`
+	void *hostPointer() const noexcept { return m_host_pointer; }
 
-	operator VkBuffer() const noexcept { return m_buffer.handle(); }
+	operator VkBuffer() const noexcept { return m_handle; }
 
 private:
-	WrappedVkBuffer m_buffer;
-	DeviceAllocation m_memory;
+	VkBuffer m_handle = VK_NULL_HANDLE;
+	VmaAllocation m_memory = VK_NULL_HANDLE;
 	VkDeviceSize m_size = 0;
+	void *m_host_pointer = nullptr;
 };
 
 } // namespace voxen::client::vulkan

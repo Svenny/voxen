@@ -32,12 +32,10 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/command_pool.hpp
 	include/voxen/client/vulkan/common.hpp
 	include/voxen/client/vulkan/config.hpp
-	include/voxen/client/vulkan/descriptor_manager.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/framebuffer.hpp
 	include/voxen/client/vulkan/image.hpp
 	include/voxen/client/vulkan/image_view.hpp
-	include/voxen/client/vulkan/memory.hpp
 	include/voxen/client/vulkan/pipeline.hpp
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp
@@ -88,6 +86,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
+	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

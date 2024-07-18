@@ -2,9 +2,7 @@
 
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
-
-using VmaAllocation = struct VmaAllocation_T *;
-using VmaAllocator = struct VmaAllocator_T *;
+#include <voxen/gfx/vk/vma_fwd.hpp>
 
 namespace voxen::gfx::vk
 {

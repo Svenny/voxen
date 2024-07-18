@@ -88,7 +88,7 @@ public:
 	ConstantUpload allocateConstantUpload(VkDeviceSize size);
 
 protected:
-	uint64_t submit();
+	uint64_t submit(VkSemaphore wait_binary_semaphore, VkSemaphore signal_binary_semaphore);
 	void waitAndReset();
 
 private:
@@ -131,6 +131,8 @@ public:
 	// Does, in order:
 	// 1. End recording the command buffer of `current()` context
 	// 2. Submit recorded commands for GPU execution
+	// 2.1. If `wait_binary_semaphore` is not null, enqueue wait for it before executing
+	// 2.2. If `signal_binary_semaphore` is not null, enqueue signal after executing
 	// 3. Advance ring buffer pointer, `current()` changes value here
 	// 4. Wait for GPU completion of the new `current()` context
 	// 5. Reset all temporary objects allocated in it
@@ -145,7 +147,7 @@ public:
 	// device loss or OOM) and using frame contexts is no longer possible.
 	// No memory/objects are leaked, but the ring enters "bad state"
 	// and can only be destroyed. `current()` will return undefined values after that.
-	uint64_t submitAndAdvance();
+	uint64_t submitAndAdvance(VkSemaphore wait_binary_semaphore, VkSemaphore signal_binary_semaphore);
 
 	// Returns `true` if the ring is in "bad state", which can only
 	// (and always will) happen if `submitAndAdvance()` fails.

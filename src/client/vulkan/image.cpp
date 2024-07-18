@@ -5,35 +5,29 @@
 
 #include <extras/defer.hpp>
 
+#include <vma/vk_mem_alloc.h>
+
 namespace voxen::client::vulkan
 {
 
 Image::Image(const VkImageCreateInfo &info)
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device().handle();
-	auto allocator = HostAllocator::callbacks();
-
-	VkResult result = backend.vkCreateImage(device, &info, allocator, &m_image);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreateImage");
-	}
-	defer_fail { backend.vkDestroyImage(device, m_image, allocator); };
 
 	// TODO: For now we support only device-local images
-	m_memory = backend.deviceAllocator().allocate(m_image, DeviceMemoryUseCase::GpuOnly);
+	VmaAllocationCreateInfo alloc_info {};
+	alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
-	result = backend.vkBindImageMemory(device, m_image, m_memory.handle(), m_memory.offset());
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkBindImageMemory");
+	VkResult res = vmaCreateImage(backend.device().vma(), &info, &alloc_info, &m_image, &m_alloc, nullptr);
+	if (res != VK_SUCCESS) {
+		throw VulkanException(res, "vmaCreateImage");
 	}
 }
 
 Image::~Image() noexcept
 {
 	auto &backend = Backend::backend();
-	VkDevice device = backend.device().handle();
-	backend.vkDestroyImage(device, m_image, HostAllocator::callbacks());
+	backend.device().enqueueDestroy(m_image, m_alloc);
 }
 
 } // namespace voxen::client::vulkan

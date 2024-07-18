@@ -226,7 +226,7 @@ void RenderGraphRunner::executeGraph()
 
 	m_graph->endExecution(exec);
 
-	m_private->fctx_ring.submitAndAdvance();
+	m_private->fctx_ring.submitAndAdvance(VK_NULL_HANDLE, VK_NULL_HANDLE);
 }
 
 void RenderGraphRunner::finalizeRebuild()

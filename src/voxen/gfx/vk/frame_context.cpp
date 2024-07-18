@@ -172,17 +172,21 @@ FrameContext::ConstantUpload FrameContext::allocateConstantUpload(VkDeviceSize s
 	return result;
 }
 
-uint64_t FrameContext::submit()
+uint64_t FrameContext::submit(VkSemaphore wait_binary_semaphore, VkSemaphore signal_binary_semaphore)
 {
 	VkResult res = m_device.dt().vkEndCommandBuffer(m_cmd_buffer);
 	if (res != VK_SUCCESS) {
 		throw VulkanException(res, "vkEndCommandBuffer");
 	}
 
-	return m_device.submitCommands({
+	m_submit_timeline = m_device.submitCommands({
 		.queue = Device::QueueMain,
+		.wait_binary_semaphore = wait_binary_semaphore,
 		.cmds = std::span(&m_cmd_buffer, 1),
+		.signal_binary_semaphore = signal_binary_semaphore,
 	});
+
+	return m_submit_timeline;
 }
 
 void FrameContext::waitAndReset()
@@ -243,9 +247,16 @@ void FrameContext::waitAndReset()
 
 void FrameContext::addDescriptorPool()
 {
+	VkDescriptorPoolInlineUniformBlockCreateInfo inlub_create_info {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO,
+		.pNext = nullptr,
+		// Assuming one INLUB per set (not much sense to have more)
+		.maxInlineUniformBlockBindings = Consts::DESCRIPTOR_POOL_SCALE_FACTOR,
+	};
+
 	VkDescriptorPoolCreateInfo create_info {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.pNext = nullptr,
+		.pNext = &inlub_create_info,
 		.flags = 0,
 		.maxSets = Consts::DESCRIPTOR_POOL_SCALE_FACTOR,
 		.poolSizeCount = std::size(Consts::DESCRIPTOR_POOL_SIZING),
@@ -290,7 +301,8 @@ void FrameContext::addConstantUploadBuffer(VkDeviceSize size)
 
 	VmaAllocationCreateInfo alloc_create_info {};
 	alloc_create_info.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-	alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+	// Place it in BAR (PCI aperture) if possible
+	alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VmaAllocation alloc = VK_NULL_HANDLE;
@@ -327,10 +339,10 @@ FrameContextRing::FrameContextRing(Device &device, size_t size)
 	current().waitAndReset();
 }
 
-uint64_t FrameContextRing::submitAndAdvance()
+uint64_t FrameContextRing::submitAndAdvance(VkSemaphore wait_binary_semaphore, VkSemaphore signal_binary_semaphore)
 {
 	try {
-		uint64_t timeline = current().submit();
+		uint64_t timeline = current().submit(wait_binary_semaphore, signal_binary_semaphore);
 		m_current = (m_current + 1) % m_contexts.size();
 		current().waitAndReset();
 		return timeline;

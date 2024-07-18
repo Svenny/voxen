@@ -2,8 +2,8 @@
 
 #include <voxen/client/vulkan/buffer.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/memory.hpp>
 #include <voxen/common/terrain/chunk_id.hpp>
+#include <voxen/gfx/vk/vma_fwd.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
@@ -44,7 +44,7 @@ public:
 	~TerrainRenderer() = default;
 
 	void onNewWorldState(const WorldState &state);
-	void onFrameBegin(const GameView &view);
+	void onFrameBegin(const GameView &view, VkDescriptorSet main_scene_dset, VkDescriptorSet frustum_cull_dset);
 
 	void prepareResources(VkCommandBuffer cmdbuf);
 	void launchFrustumCull(VkCommandBuffer cmdbuf);
@@ -59,16 +59,19 @@ private:
 	// - Chunk transform (base+scale) instance buffer
 	// - Indirect draw commands buffer
 	// - Chunk AABB buffer
-	WrappedVkBuffer m_combo_buffer;
-	DeviceAllocation m_combo_buffer_memory;
+	FatVkBuffer m_combo_buffer;
 	// Pointers into `m_combo_buffer` corresponding to different buffer subsections
 	void *m_combo_buffer_host_ptr;
 	glm::vec4 *m_chunk_transform_ptr[Config::NUM_CPU_PENDING_FRAMES];
 	VkDrawIndexedIndirectCommand *m_draw_command_ptr[Config::NUM_CPU_PENDING_FRAMES];
 	Aabb *m_chunk_aabb_ptr[Config::NUM_CPU_PENDING_FRAMES];
+	uint32_t m_combo_buffer_active_section = 0;
 
 	std::vector<std::tuple<uint32_t, VkBuffer, VkBuffer, VkIndexType>> m_draw_setups;
 	uint32_t m_num_active_chunks = 0;
+
+	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
+	VkDescriptorSet m_frustum_cull_dset = VK_NULL_HANDLE;
 };
 
 } // namespace voxen::client::vulkan
