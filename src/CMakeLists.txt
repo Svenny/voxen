@@ -28,7 +28,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
 	src/client/vulkan/shader_module.cpp
-	src/client/vulkan/sync.cpp
 	src/client/vulkan/texture_manager.cpp
 	src/client/gfx_runtime_config.cpp
 	src/client/gui.cpp
