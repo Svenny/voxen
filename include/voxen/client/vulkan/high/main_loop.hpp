@@ -26,17 +26,8 @@ public:
 	void drawFrame(const WorldState &state, const GameView &view);
 
 private:
-	struct PendingFrameSyncs {
-		PendingFrameSyncs();
-		Semaphore frame_acquired_semaphore;
-		Semaphore render_done_semaphore;
-		Fence render_done_fence { true };
-	};
-
 	size_t m_frame_id = 0;
-
-	extras::dyn_array<VkFence> m_image_guard_fences;
-	PendingFrameSyncs m_pending_frame_syncs[Config::NUM_CPU_PENDING_FRAMES];
+	uint64_t m_submit_timelines[Config::NUM_CPU_PENDING_FRAMES] = {};
 
 	CommandPool m_graphics_command_pool;
 	extras::dyn_array<CommandBuffer> m_graphics_command_buffers;

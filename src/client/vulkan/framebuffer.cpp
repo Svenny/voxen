@@ -2,9 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/surface.hpp>
-#include <voxen/client/vulkan/swapchain.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_swapchain.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -25,7 +24,6 @@ Image FramebufferCollection::createSceneDepthStencilBuffer()
 	Log::debug("Creating scene depth-stencil buffer");
 
 	auto &backend = Backend::backend();
-	assert(backend.swapchain() != nullptr);
 	VkExtent2D extent = backend.swapchain().imageExtent();
 
 	VkImageCreateInfo info = {};
