@@ -20,9 +20,7 @@ class Swapchain;
 namespace voxen::client::vulkan
 {
 
-class DescriptorManager;
 class DescriptorSetLayoutCollection;
-class DeviceAllocator;
 class FramebufferCollection;
 class MainLoop;
 class PipelineCache;
@@ -55,8 +53,6 @@ public:
 	gfx::vk::Device &device() noexcept { return *m_device; }
 	const gfx::vk::Device &device() const noexcept { return *m_device; }
 
-	DeviceAllocator &deviceAllocator() noexcept { return *m_device_allocator; }
-	const DeviceAllocator &deviceAllocator() const noexcept { return *m_device_allocator; }
 	TransferManager &transferManager() noexcept { return *m_transfer_manager; }
 	const TransferManager &transferManager() const noexcept { return *m_transfer_manager; }
 	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
@@ -76,8 +72,6 @@ public:
 	}
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
-	DescriptorManager &descriptorManager() noexcept { return *m_descriptor_manager; }
-	const DescriptorManager &descriptorManager() const noexcept { return *m_descriptor_manager; }
 
 	gfx::vk::Swapchain &swapchain() noexcept { return *m_swapchain; }
 	const gfx::vk::Swapchain &swapchain() const noexcept { return *m_swapchain; }
@@ -112,7 +106,6 @@ private:
 	gfx::vk::Instance *m_instance = nullptr;
 	gfx::vk::Device *m_device = nullptr;
 
-	DeviceAllocator *m_device_allocator = nullptr;
 	TransferManager *m_transfer_manager = nullptr;
 	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
 
@@ -120,7 +113,6 @@ private:
 	PipelineCache *m_pipeline_cache = nullptr;
 	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
-	DescriptorManager *m_descriptor_manager = nullptr;
 
 	gfx::vk::Swapchain *m_swapchain = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;

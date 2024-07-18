@@ -14,7 +14,7 @@ TransferManager::TransferManager()
 	, m_command_buffers(m_command_pool.allocateCommandBuffers(1))
 	, m_staging_buffer(createStagingBuffer())
 {
-	m_staging_mapped_data = m_staging_buffer.allocation().tryHostMap();
+	m_staging_mapped_data = m_staging_buffer.hostPointer();
 	// Asserting because buffer is allocated with `Upload` use case which guarantees host visibility
 	assert(m_staging_mapped_data);
 
@@ -107,7 +107,7 @@ FatVkBuffer TransferManager::createStagingBuffer()
 	info.size = MAX_UPLOAD_SIZE;
 	info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	return FatVkBuffer(info, DeviceMemoryUseCase::Upload);
+	return FatVkBuffer(info, FatVkBuffer::Usage::Staging);
 }
 
 } // namespace voxen::client::vulkan

@@ -3,7 +3,7 @@
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
-#include <voxen/client/vulkan/descriptor_manager.hpp>
+#include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
@@ -24,30 +24,8 @@ struct MainSceneUbo {
 
 } // namespace
 
-MainLoop::MainLoop()
-	: m_graphics_command_pool(Backend::backend().device().info().main_queue_family)
-	, m_graphics_command_buffers(m_graphics_command_pool.allocateCommandBuffers(Config::NUM_CPU_PENDING_FRAMES))
+MainLoop::MainLoop() : m_fctx_ring(Backend::backend().device(), Config::NUM_CPU_PENDING_FRAMES)
 {
-	Backend &backend = Backend::backend();
-	const VkDeviceSize align = backend.device().physInfo().props.properties.limits.minUniformBufferOffsetAlignment;
-	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
-
-	m_main_scene_ubo = FatVkBuffer(
-		VkBufferCreateInfo {
-			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-			.pNext = nullptr,
-			.flags = 0,
-			.size = ubo_size * Config::NUM_CPU_PENDING_FRAMES,
-			.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-			.queueFamilyIndexCount = 0,
-			.pQueueFamilyIndices = nullptr,
-		},
-		DeviceMemoryUseCase::FastUpload);
-
-	m_main_scene_ubo.allocation().tryHostMap();
-	assert(m_main_scene_ubo.allocation().hostPointer());
-
 	Log::debug("MainLoop created successfully");
 }
 
@@ -61,29 +39,19 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	auto &backend = Backend::backend();
 	auto &swapchain = backend.swapchain();
 
-	size_t pending_frame_id = m_frame_id % Config::NUM_CPU_PENDING_FRAMES;
-	backend.device().waitForTimeline(gfx::vk::Device::QueueMain, m_submit_timelines[pending_frame_id]);
-
-	// Advance current set ID when CPU resources for current frame
-	// are not used anymore but before any CPU work has started
-	backend.descriptorManager().startNewFrame();
+	auto &fctx = m_fctx_ring.current();
 
 	swapchain.acquireImage();
 
-	VkCommandBuffer cmd_buf = m_graphics_command_buffers[pending_frame_id];
-	VkCommandBufferBeginInfo cmd_begin_info = {};
-	cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	VkResult result = backend.vkBeginCommandBuffer(cmd_buf, &cmd_begin_info);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkBeginCommandBuffer");
-	}
+	VkCommandBuffer cmd_buf = fctx.commandBuffer();
 
-	updateMainSceneUbo(view);
+	VkDescriptorSet main_scene_dset = createMainSceneDset(view);
+	VkDescriptorSet frustum_cull_dset = fctx.allocateDescriptorSet(
+		backend.descriptorSetLayoutCollection().terrainFrustumCullLayout());
 
 	auto &terrain_renderer = backend.terrainRenderer();
 	terrain_renderer.onNewWorldState(state);
-	terrain_renderer.onFrameBegin(view);
+	terrain_renderer.onFrameBegin(view, main_scene_dset, frustum_cull_dset);
 	terrain_renderer.prepareResources(cmd_buf);
 	terrain_renderer.launchFrustumCull(cmd_buf);
 
@@ -246,50 +214,36 @@ void MainLoop::drawFrame(const WorldState &state, const GameView &view)
 	backend.vkCmdPipelineBarrier2(cmd_buf, &finalDepInfo);
 
 	// Submit commands
+	uint64_t timeline = m_fctx_ring.submitAndAdvance(swapchain.currentAcquireSemaphore(),
+		swapchain.currentPresentSemaphore());
 
-	result = backend.vkEndCommandBuffer(cmd_buf);
-	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkEndCommandBuffer");
-	}
-
-	uint64_t timeline = backend.device().submitCommands({
-		.wait_binary_semaphore = swapchain.currentAcquireSemaphore(),
-		.cmds = std::span(&cmd_buf, 1),
-		.signal_binary_semaphore = swapchain.currentPresentSemaphore(),
-	});
-
-	m_submit_timelines[pending_frame_id] = timeline;
 	swapchain.presentImage(timeline);
-
-	m_frame_id++;
 }
 
-void MainLoop::updateMainSceneUbo(const GameView &view)
+VkDescriptorSet MainLoop::createMainSceneDset(const GameView &view)
 {
 	auto &backend = Backend::backend();
 
-	const VkDeviceSize align = backend.device().physInfo().props.properties.limits.minUniformBufferOffsetAlignment;
-	const VkDeviceSize ubo_size = VulkanUtils::alignUp(sizeof(MainSceneUbo), align);
+	auto &fctx = m_fctx_ring.current();
+	auto upload = fctx.allocateConstantUpload(sizeof(MainSceneUbo));
 
-	const uint32_t set_id = backend.descriptorManager().setId();
-	const uintptr_t ubo_data_offset = set_id * ubo_size;
-
-	MainSceneUbo *ubo_data = reinterpret_cast<MainSceneUbo *>(
-		uintptr_t(m_main_scene_ubo.allocation().hostPointer()) + ubo_data_offset);
+	auto *ubo_data = reinterpret_cast<MainSceneUbo *>(upload.host_mapped_span.data());
 
 	ubo_data->translated_world_to_clip = view.translatedWorldToClip();
 	ubo_data->world_position = view.cameraPosition();
 
+	VkDescriptorSet dset = fctx.allocateDescriptorSet(backend.descriptorSetLayoutCollection().mainSceneLayout());
+
 	const VkDescriptorBufferInfo buffer_info {
-		.buffer = m_main_scene_ubo,
-		.offset = ubo_data_offset,
+		.buffer = upload.buffer,
+		.offset = upload.offset,
 		.range = sizeof(MainSceneUbo),
 	};
 
 	const VkWriteDescriptorSet write {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 		.pNext = nullptr,
-		.dstSet = backend.descriptorManager().mainSceneSet(),
+		.dstSet = dset,
 		.dstBinding = 0,
 		.dstArrayElement = 0,
 		.descriptorCount = 1,
@@ -300,6 +254,7 @@ void MainLoop::updateMainSceneUbo(const GameView &view)
 	};
 
 	backend.vkUpdateDescriptorSets(backend.device().handle(), 1, &write, 0, nullptr);
+	return dset;
 }
 
 } // namespace voxen::client::vulkan

@@ -1,12 +1,8 @@
 #pragma once
 
-#include <voxen/client/vulkan/buffer.hpp>
-#include <voxen/client/vulkan/command_buffer.hpp>
-#include <voxen/client/vulkan/command_pool.hpp>
-#include <voxen/client/vulkan/config.hpp>
-
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/gfx/vk/frame_context.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -25,14 +21,8 @@ public:
 	void drawFrame(const WorldState &state, const GameView &view);
 
 private:
-	size_t m_frame_id = 0;
-	uint64_t m_submit_timelines[Config::NUM_CPU_PENDING_FRAMES] = {};
-
-	CommandPool m_graphics_command_pool;
-	extras::dyn_array<CommandBuffer> m_graphics_command_buffers;
-	FatVkBuffer m_main_scene_ubo;
-
-	void updateMainSceneUbo(const GameView &view);
+	gfx::vk::FrameContextRing m_fctx_ring;
+	VkDescriptorSet createMainSceneDset(const GameView &view);
 };
 
 } // namespace voxen::client::vulkan

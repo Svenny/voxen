@@ -1,7 +1,6 @@
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/descriptor_manager.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -63,14 +62,10 @@ TerrainRenderer::TerrainRenderer()
 		.queueFamilyIndexCount = 0,
 		.pQueueFamilyIndices = nullptr,
 	};
-	m_combo_buffer = WrappedVkBuffer(combo_info);
+	m_combo_buffer = FatVkBuffer(combo_info, FatVkBuffer::Usage::Staging);
 
-	auto &allocator = Backend::backend().deviceAllocator();
-	m_combo_buffer_memory = allocator.allocate(m_combo_buffer, DeviceMemoryUseCase::FastUpload);
-	m_combo_buffer.bindMemory(m_combo_buffer_memory.handle(), m_combo_buffer_memory.offset());
-
-	m_combo_buffer_host_ptr = m_combo_buffer_memory.tryHostMap();
-	// `FastUpload` use case guarantees host visiblity
+	m_combo_buffer_host_ptr = m_combo_buffer.hostPointer();
+	// Upload case guarantees host visiblity
 	assert(m_combo_buffer_host_ptr);
 
 	for (uint32_t i = 0; i < Config::NUM_CPU_PENDING_FRAMES; i++) {
@@ -146,14 +141,18 @@ static bool renderInfoComparator(const TerrainSynchronizer::ChunkRenderInfo &a, 
 	return a.first_index < b.first_index;
 }
 
-void TerrainRenderer::onFrameBegin(const GameView &view)
+void TerrainRenderer::onFrameBegin(const GameView &view, VkDescriptorSet main_scene_dset,
+	VkDescriptorSet frustum_cull_dset)
 {
+	m_combo_buffer_active_section = (m_combo_buffer_active_section + 1) % Config::NUM_CPU_PENDING_FRAMES;
+	m_main_scene_dset = main_scene_dset;
+	m_frustum_cull_dset = frustum_cull_dset;
+
 	using RenderInfo = TerrainSynchronizer::ChunkRenderInfo;
 
 	auto &backend = Backend::backend();
 
-	// TODO (Svenny): we can write this data only once at init time
-	uint32_t set_id = backend.descriptorManager().setId();
+	uint32_t set_id = m_combo_buffer_active_section;
 	VkDescriptorBufferInfo buffer_infos[3];
 	buffer_infos[0] = {
 		.buffer = m_combo_buffer,
@@ -171,7 +170,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view)
 		.range = CHUNK_AABB_BUFFER_SIZE,
 	};
 
-	VkDescriptorSet frustum_cull_set = backend.descriptorManager().terrainFrustumCullSet();
+	VkDescriptorSet frustum_cull_set = m_frustum_cull_dset;
 	VkWriteDescriptorSet writes[3];
 	writes[0] = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -284,7 +283,7 @@ void TerrainRenderer::prepareResources(VkCommandBuffer cmdbuf)
 				.queueFamilyIndexCount = 0,
 				.pQueueFamilyIndices = nullptr,
 			},
-			DeviceMemoryUseCase::GpuOnly);
+			FatVkBuffer::Usage::DeviceLocal);
 
 		backend.vkCmdUpdateBuffer(cmdbuf, m_debug_octree_mesh_buffer, 0, sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA),
 			DEBUG_OCTREE_VERTEX_BUFFER_DATA);
@@ -303,14 +302,14 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 	VkPipelineLayout pipe_layout = backend.pipelineLayoutCollection().terrainFrustumCullLayout();
 
 	VkDescriptorSet sets[2];
-	sets[0] = backend.descriptorManager().mainSceneSet();
-	sets[1] = backend.descriptorManager().terrainFrustumCullSet();
+	sets[0] = m_main_scene_dset;
+	sets[1] = m_frustum_cull_dset;
 	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, std::size(sets), sets, 0,
 		nullptr);
 
 	backend.vkCmdDispatch(cmdbuf, (m_num_active_chunks + 63) / 64, 1, 1);
 
-	uint32_t set_id = backend.descriptorManager().setId();
+	uint32_t set_id = m_combo_buffer_active_section;
 	const VkBufferMemoryBarrier2 barrier {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 		.pNext = nullptr,
@@ -348,7 +347,7 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::TERRAIN_SIMPLE_PIPELINE];
 	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
-	VkDescriptorSet descriptor_set = backend.descriptorManager().mainSceneSet();
+	VkDescriptorSet descriptor_set = m_main_scene_dset;
 
 	backend.vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0,
@@ -357,7 +356,7 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 	backend.vkCmdPushConstants(cmdbuf, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SUN_DIR), &SUN_DIR);
 
-	const uint32_t set_id = backend.descriptorManager().setId();
+	const uint32_t set_id = m_combo_buffer_active_section;
 	VkBuffer const xfm_buffer = m_combo_buffer;
 	const VkDeviceSize xfm_offset = uintptr_t(m_chunk_transform_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr);
 	backend.vkCmdBindVertexBuffers(cmdbuf, 1, 1, &xfm_buffer, &xfm_offset);
@@ -397,13 +396,13 @@ void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 
 	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_OCTREE_PIPELINE];
 	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
-	VkDescriptorSet descriptor_set = backend.descriptorManager().mainSceneSet();
+	VkDescriptorSet descriptor_set = m_main_scene_dset;
 
 	backend.vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0,
 		nullptr);
 
-	const uint32_t set_id = backend.descriptorManager().setId();
+	const uint32_t set_id = m_combo_buffer_active_section;
 	VkBuffer vtx_buffers[2];
 	vtx_buffers[0] = m_debug_octree_mesh_buffer;
 	vtx_buffers[1] = m_combo_buffer;

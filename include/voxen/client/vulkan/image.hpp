@@ -1,7 +1,7 @@
 #pragma once
 
 #include <voxen/client/vulkan/common.hpp>
-#include <voxen/client/vulkan/memory.hpp>
+#include <voxen/gfx/vk/vma_fwd.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -15,16 +15,13 @@ public:
 	Image &operator=(const Image &) = delete;
 	~Image() noexcept;
 
-	DeviceAllocation &allocation() noexcept { return m_memory; }
-
 	VkImage handle() const noexcept { return m_image; }
-	const DeviceAllocation &allocation() const noexcept { return m_memory; }
 
 	operator VkImage() const noexcept { return m_image; }
 
 private:
 	VkImage m_image = VK_NULL_HANDLE;
-	DeviceAllocation m_memory;
+	VmaAllocation m_alloc = VK_NULL_HANDLE;
 };
 
 } // namespace voxen::client::vulkan

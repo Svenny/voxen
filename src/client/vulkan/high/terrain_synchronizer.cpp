@@ -26,7 +26,7 @@ public:
 	using Range = std::pair<uint32_t, uint32_t>;
 
 	explicit TerrainDataArena(const VkBufferCreateInfo &info)
-		: Base(static_cast<uint32_t>(info.size)), m_buffer(info, DeviceMemoryUseCase::GpuOnly)
+		: Base(static_cast<uint32_t>(info.size)), m_buffer(info, FatVkBuffer::Usage::DeviceLocal)
 	{}
 
 	TerrainDataArena(TerrainDataArena &&) = delete;
@@ -35,9 +35,9 @@ public:
 	TerrainDataArena &operator=(const TerrainDataArena &) = delete;
 	~TerrainDataArena() = default;
 
-	bool tryHostMap() { return !!m_buffer.allocation().tryHostMap(); }
+	bool tryHostMap() { return !!m_buffer.hostPointer(); }
 
-	void *hostPointer() const noexcept { return m_buffer.allocation().hostPointer(); }
+	void *hostPointer() const noexcept { return m_buffer.hostPointer(); }
 
 	[[nodiscard]] std::optional<Range> allocate(uint32_t size) { return Base::allocate(size, ALIGNMENT); }
 
