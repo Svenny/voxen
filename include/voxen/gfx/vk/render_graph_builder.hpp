@@ -2,7 +2,6 @@
 
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
-#include <voxen/util/resolution.hpp>
 
 #include <functional>
 #include <span>
@@ -35,7 +34,7 @@ public:
 		// formats, their list is automatically collected internally.
 		VkFormat format = VK_FORMAT_UNDEFINED;
 		// Resolution, must be valid (at least 1x1)
-		Resolution resolution;
+		VkExtent2D resolution;
 		// Number of MIP levels, must be in range [1; log2(max(width, height))]
 		uint32_t mips = 1;
 		// Number of image array layers, must be > 0
@@ -84,7 +83,12 @@ public:
 	// It is guaranteed to be the same during any further execution.
 	Device &device() noexcept;
 
-	RenderGraphImage &outputImage();
+	// Format of the output (swapchain) image. It will not change until
+	// the next rebuild. Use `makeOutputRenderTarget()` to draw to it.
+	VkFormat outputImageFormat() const noexcept;
+	// Resolution of the output (swapchain) image. It will not change until
+	// the next rebuild. Use `makeOutputRenderTarget()` to draw to it.
+	VkExtent2D outputImageExtent() const noexcept;
 
 	// Images
 
@@ -133,6 +137,11 @@ public:
 
 	// Render targets
 
+	// Declare render target drawing to the output (swapchain) image.
+	// This is a single-mip, single-layer 2D image with `outputImageFormat()`
+	// and `outputImageExtent()`. Its initial contents are undefined.
+	RenderTarget makeOutputRenderTarget(bool clear = true,
+		VkClearColorValue clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } });
 	// Declare render target with VK_ATTACHMENT_LOAD_OP_DONT_CARE and VK_ATTACHMENT_STORE_OP_STORE
 	RenderTarget makeRenderTargetDiscardStore(RenderGraphImage &image, uint32_t mip = 0);
 	// Declare render target with VK_ATTACHMENT_LOAD_OP_CLEAR and VK_ATTACHMENT_STORE_OP_STORE
@@ -140,6 +149,9 @@ public:
 
 	// Declare depth/stencil target with VK_ATTACHMENT_LOAD_OP_CLEAR and VK_ATTACHMENT_STORE_OP_STORE
 	DepthStencilTarget makeDepthStencilTargetClearStore(RenderGraphImage &image, VkClearDepthStencilValue clear_value,
+		uint32_t mip = 0);
+	// Declare depth/stencil target with VK_ATTACHMENT_LOAD_OP_CLEAR and VK_ATTACHMENT_STORE_OP_DONT_CARE
+	DepthStencilTarget makeDepthStencilTargetClearDiscard(RenderGraphImage &image, VkClearDepthStencilValue clear_value,
 		uint32_t mip = 0);
 
 	// Passes (will be executed in declaration order)
@@ -181,6 +193,18 @@ public:
 			color_targets, ds_target, usage);
 	}
 
+	template<auto F>
+	void makeRenderPass(std::string name, RenderTarget rtv, DepthStencilTarget dsv, std::span<const ResourceUsage> usage)
+	{
+		makeRenderPass<F>(name, std::span(&rtv, 1), dsv, usage);
+	}
+
+	template<auto F>
+	void makeDepthRenderPass(std::string name, DepthStencilTarget dsv, std::span<const ResourceUsage> usage)
+	{
+		makeRenderPass<F>(name, std::span<const RenderTarget>(), dsv, usage);
+	}
+
 private:
 	RenderGraphPrivate &m_private;
 
@@ -197,6 +221,10 @@ private:
 		VkAccessFlags2 new_read, VkAccessFlags2 new_write);
 	void resolveImageHazards(RenderGraphImageView::Private &view, VkPipelineStageFlags2 new_stages,
 		VkAccessFlags2 new_read, VkAccessFlags2 new_write, VkImageLayout new_layout, bool discard);
+
+	// Let the runner use private builder features to insert
+	// auxiliary operations like swapchain image layout transition
+	friend class RenderGraphRunner;
 };
 
 } // namespace voxen::gfx::vk

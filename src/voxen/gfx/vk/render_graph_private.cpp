@@ -5,6 +5,19 @@ namespace voxen::gfx::vk
 
 RenderGraphPrivate::~RenderGraphPrivate() noexcept
 {
+	clear();
+}
+
+void RenderGraphPrivate::clear() noexcept
+{
+	// Drop internal objects
+	commands.clear();
+
+	assert(!output_image.resource);
+	output_image = {};
+	assert(!output_rtv.resource);
+	output_rtv = {};
+
 	// Break links to public objects and destroy handles
 
 	for (auto &buffer : buffers) {
@@ -30,6 +43,9 @@ RenderGraphPrivate::~RenderGraphPrivate() noexcept
 			device.enqueueDestroy(view.handle);
 		}
 	}
+
+	buffers.clear();
+	images.clear();
 }
 
 } // namespace voxen::gfx::vk

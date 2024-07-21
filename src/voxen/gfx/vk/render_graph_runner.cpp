@@ -2,6 +2,8 @@
 
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
+#include <voxen/util/error_condition.hpp>
+#include <voxen/util/log.hpp>
 
 #include "render_graph_private.hpp"
 
@@ -66,7 +68,7 @@ void RenderGraphRunner::visitCommand(RenderGraphExecution &exec, RenderGraphPriv
 		.pImageMemoryBarriers = imgs.get(),
 	};
 
-	m_device->dt().vkCmdPipelineBarrier2(exec.frameContext().commandBuffer(), &dep_info);
+	m_device.dt().vkCmdPipelineBarrier2(exec.frameContext().commandBuffer(), &dep_info);
 }
 
 template<>
@@ -168,28 +170,32 @@ void RenderGraphRunner::visitCommand(RenderGraphExecution &exec, RenderGraphPriv
 	};
 
 	VkCommandBuffer cmd_buf = exec.frameContext().commandBuffer();
-	auto scope = m_device->debug().cmdPushLabel(cmd_buf, cmd.name.c_str(), Consts::RENDER_PASS_LABEL_COLOR);
+	auto scope = m_device.debug().cmdPushLabel(cmd_buf, cmd.name.c_str(), Consts::RENDER_PASS_LABEL_COLOR);
 
-	m_device->dt().vkCmdBeginRendering(cmd_buf, &rendering_info);
+	m_device.dt().vkCmdBeginRendering(cmd_buf, &rendering_info);
 	cmd.callback(*m_graph, exec);
-	m_device->dt().vkCmdEndRendering(cmd_buf);
+	m_device.dt().vkCmdEndRendering(cmd_buf);
 }
 
 template<>
 void RenderGraphRunner::visitCommand(RenderGraphExecution &exec, RenderGraphPrivate::ComputePassCommand &cmd)
 {
 	VkCommandBuffer cmd_buf = exec.frameContext().commandBuffer();
-	auto scope = m_device->debug().cmdPushLabel(cmd_buf, cmd.name.c_str(), Consts::COMPUTE_PASS_LABEL_COLOR);
+	auto scope = m_device.debug().cmdPushLabel(cmd_buf, cmd.name.c_str(), Consts::COMPUTE_PASS_LABEL_COLOR);
 
 	cmd.callback(*m_graph, exec);
 }
 
-void RenderGraphRunner::attachGraph(Device &device, std::unique_ptr<IRenderGraph> graph)
+RenderGraphRunner::RenderGraphRunner(Device &device, client::Window &window) : m_device(device), m_window(window)
+{
+	m_private = std::make_shared<RenderGraphPrivate>(m_device, m_window);
+}
+
+void RenderGraphRunner::attachGraph(std::shared_ptr<IRenderGraph> graph)
 {
 	// Drop all resources/commands for previous graph
-	m_private.reset();
+	m_private->clear();
 
-	m_device = &device;
 	m_graph = std::move(graph);
 
 	rebuildGraph();
@@ -202,10 +208,14 @@ void RenderGraphRunner::rebuildGraph()
 	}
 
 	// Drop all previously created resources/commands
-	m_private = std::make_shared<RenderGraphPrivate>(*m_device);
+	m_private->clear();
 
 	RenderGraphBuilder bld(*m_private);
 	m_graph->rebuild(bld);
+
+	// Transition swapchain image to presentable layout
+	bld.resolveImageHazards(m_private->output_rtv, VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE, VK_ACCESS_2_NONE,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
 
 	finalizeRebuild();
 }
@@ -213,6 +223,32 @@ void RenderGraphRunner::rebuildGraph()
 void RenderGraphRunner::executeGraph()
 {
 	assert(m_graph);
+
+	if (m_private->fctx_ring.badState()) [[unlikely]] {
+		Log::error("Frame context ring is in bad state, can't execture render graphs anymore!");
+		throw Exception::fromError(VoxenErrc::GfxFailure, "render graph frame context ring broken");
+	}
+
+	auto &swapchain = m_private->swapchain;
+	if (swapchain.badState()) [[unlikely]] {
+		Log::error("Swapchain is in bad state, can't execute render graphs anymore!");
+		throw Exception::fromError(VoxenErrc::GfxFailure, "render graph swapchain broken");
+	}
+
+	swapchain.acquireImage();
+
+	// Check for swapchain image changes (strictly after `acquireImage()`)
+	VkFormat cur_format = swapchain.imageFormat();
+	VkFormat last_format = m_private->last_known_swapchain_format;
+	VkExtent2D cur_res = swapchain.imageExtent();
+	VkExtent2D last_res = m_private->last_known_swapchain_resolution;
+
+	if (cur_format != last_format || cur_res.width != last_res.width || cur_res.height != last_res.height) {
+		Log::info("Swapchain image format/resolution changed, rebuilding the render graph");
+		m_private->last_known_swapchain_format = cur_format;
+		m_private->last_known_swapchain_resolution = cur_res;
+		rebuildGraph();
+	}
 
 	publishResourceHandles();
 
@@ -226,7 +262,9 @@ void RenderGraphRunner::executeGraph()
 
 	m_graph->endExecution(exec);
 
-	m_private->fctx_ring.submitAndAdvance(VK_NULL_HANDLE, VK_NULL_HANDLE);
+	uint64_t timeline = m_private->fctx_ring.submitAndAdvance(swapchain.currentAcquireSemaphore(),
+		swapchain.currentPresentSemaphore());
+	swapchain.presentImage(timeline);
 }
 
 void RenderGraphRunner::finalizeRebuild()
@@ -249,7 +287,7 @@ void RenderGraphRunner::finalizeRebuild()
 	}
 
 	// Allocate resources (except dynamic-sized buffers)
-	VmaAllocator vma = m_device->vma();
+	VmaAllocator vma = m_device.vma();
 
 	for (auto &buffer : m_private->buffers) {
 		if (buffer.dynamic_sized) {
@@ -264,7 +302,7 @@ void RenderGraphRunner::finalizeRebuild()
 			throw VulkanException(res, "vmaCreateBuffer");
 		}
 
-		m_device->setObjectName(buffer.handle, buffer.name.c_str());
+		m_device.setObjectName(buffer.handle, buffer.name.c_str());
 	}
 
 	for (auto &image : m_private->images) {
@@ -309,7 +347,7 @@ void RenderGraphRunner::finalizeRebuild()
 			throw VulkanException(res, "vmaCreateImage");
 		}
 
-		m_device->setObjectName(image.handle, image.name.c_str());
+		m_device.setObjectName(image.handle, image.name.c_str());
 
 		// Remove possible `format_list` pointer to protect from accidental dangling pointers
 		image.create_info.pNext = nullptr;
@@ -317,18 +355,24 @@ void RenderGraphRunner::finalizeRebuild()
 		for (auto &view : image.views) {
 			view.create_info.image = image.handle;
 
-			res = m_device->dt().vkCreateImageView(m_device->handle(), &view.create_info, nullptr, &view.handle);
+			res = m_device.dt().vkCreateImageView(m_device.handle(), &view.create_info, nullptr, &view.handle);
 			if (res != VK_SUCCESS) {
 				throw VulkanException(res, "vkCreateImageView");
 			}
 
-			m_device->setObjectName(view.handle, view.name.c_str());
+			m_device.setObjectName(view.handle, view.name.c_str());
 		}
 	}
 }
 
 void RenderGraphRunner::publishResourceHandles()
 {
+	m_private->output_image.handle = m_private->swapchain.currentImage();
+	assert(m_private->output_image.handle != VK_NULL_HANDLE);
+
+	m_private->output_rtv.handle = m_private->swapchain.currentImageRtv();
+	assert(m_private->output_rtv.handle != VK_NULL_HANDLE);
+
 	for (auto &buffer : m_private->buffers) {
 		VkBuffer handle = buffer.handle;
 

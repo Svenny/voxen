@@ -1,11 +1,11 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/framebuffer.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 
@@ -267,8 +267,7 @@ struct GraphicsPipelineParts {
 			info.basePipelineIndex = -1;
 		}
 
-		auto &backend = Backend::backend();
-		default_surface_format = backend.swapchain().imageFormat();
+		default_surface_format = Backend::backend().renderGraph().currentOutputFormat();
 	}
 
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
@@ -283,6 +282,7 @@ struct GraphicsPipelineParts {
 	const DisabledBlendState disabled_blend_state;
 
 	VkFormat default_surface_format = VK_FORMAT_UNDEFINED;
+	const VkFormat default_depth_format = gfx::vk::LegacyRenderGraph::DEPTH_BUFFER_FORMAT;
 
 	const VkPipelineRenderingCreateInfo default_rendering_info {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
@@ -290,9 +290,9 @@ struct GraphicsPipelineParts {
 		.viewMask = 0,
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,
-		.depthAttachmentFormat = SCENE_DEPTH_STENCIL_BUFFER_FORMAT,
-		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(SCENE_DEPTH_STENCIL_BUFFER_FORMAT)
-			? SCENE_DEPTH_STENCIL_BUFFER_FORMAT
+		.depthAttachmentFormat = default_depth_format,
+		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(default_depth_format)
+			? default_depth_format
 			: VK_FORMAT_UNDEFINED,
 	};
 

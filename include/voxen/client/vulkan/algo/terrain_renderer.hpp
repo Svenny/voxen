@@ -43,6 +43,8 @@ public:
 	TerrainRenderer &operator=(const TerrainRenderer &) = delete;
 	~TerrainRenderer() = default;
 
+	VkDeviceSize getComboBufferSize() const noexcept;
+
 	void onNewWorldState(const WorldState &state);
 	void onFrameBegin(const GameView &view, VkDescriptorSet main_scene_dset, VkDescriptorSet frustum_cull_dset);
 

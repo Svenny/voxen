@@ -16,7 +16,7 @@ void initImageCreateInfo(VkImageCreateInfo &ci, const RenderGraphBuilder::Image2
 		.flags = 0,
 		.imageType = VK_IMAGE_TYPE_2D,
 		.format = config.format,
-		.extent = { uint32_t(config.resolution.width), uint32_t(config.resolution.height), 1 },
+		.extent = { config.resolution.width, config.resolution.height, 1 },
 		.mipLevels = config.mips,
 		.arrayLayers = config.layers,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
@@ -154,13 +154,30 @@ VkImageUsageFlags imageAccessToUsage(VkAccessFlags2 flags)
 
 RenderGraphBuilder::RenderGraphBuilder(RenderGraphPrivate &priv) noexcept : m_private(priv)
 {
-	// TODO: stub before render graph is integrated with swapchain
-	m_private.output_image = make2DImage("output_stub",
+	// Fill swapchain image stub structures.
+	// Most likely an unnecessary step but hazard tracking etc.
+	// might expect them to be valid, avoid introducing an edge case.
+
+	priv.output_image = {};
+	priv.output_image.mip_states.resize(1);
+	initImageCreateInfo(priv.output_image.create_info,
 		{
-			.format = VK_FORMAT_R8G8B8A8_SRGB,
-			.resolution = { 1280, 720 },
+			.format = priv.swapchain.imageFormat(),
+			.resolution = priv.swapchain.imageExtent(),
 			.mips = 1,
 			.layers = 1,
+		});
+
+	priv.output_rtv = {};
+	priv.output_rtv.image = &priv.output_image;
+	initImageViewCreateInfo(priv.output_rtv.create_info, priv.output_rtv.usage_create_info, VK_IMAGE_VIEW_TYPE_2D,
+		priv.swapchain.imageFormat(),
+		{
+			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.baseMipLevel = 0,
+			.levelCount = 1,
+			.baseArrayLayer = 0,
+			.layerCount = 1,
 		});
 }
 
@@ -171,9 +188,14 @@ Device &RenderGraphBuilder::device() noexcept
 	return m_private.device;
 }
 
-RenderGraphImage &RenderGraphBuilder::outputImage()
+VkFormat RenderGraphBuilder::outputImageFormat() const noexcept
 {
-	return m_private.output_image;
+	return m_private.swapchain.imageFormat();
+}
+
+VkExtent2D RenderGraphBuilder::outputImageExtent() const noexcept
+{
+	return m_private.swapchain.imageExtent();
 }
 
 RenderGraphImage RenderGraphBuilder::make2DImage(std::string_view name, Image2DConfig config)
@@ -310,6 +332,16 @@ RenderGraphBuilder::ResourceUsage RenderGraphBuilder::makeImageViewUsage(RenderG
 	};
 }
 
+RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeOutputRenderTarget(bool clear, VkClearColorValue clear_value)
+{
+	return {
+		.resource = &m_private.output_rtv,
+		.load_op = clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.store_op = VK_ATTACHMENT_STORE_OP_STORE,
+		.clear_value = clear_value,
+	};
+}
+
 RenderGraphBuilder::RenderTarget RenderGraphBuilder::makeRenderTargetDiscardStore(RenderGraphImage &image, uint32_t mip)
 {
 	if (!image.getPrivate()) {
@@ -355,6 +387,23 @@ RenderGraphBuilder::DepthStencilTarget RenderGraphBuilder::makeDepthStencilTarge
 		.resource = view.getPrivate(),
 		.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.store_op = VK_ATTACHMENT_STORE_OP_STORE,
+		.clear_value = clear_value,
+	};
+}
+
+RenderGraphBuilder::DepthStencilTarget RenderGraphBuilder::makeDepthStencilTargetClearDiscard(RenderGraphImage &image,
+	VkClearDepthStencilValue clear_value, uint32_t mip)
+{
+	if (!image.getPrivate()) {
+		return {};
+	}
+
+	RenderGraphImageView view = makeSingleMipImageView(image.getPrivate()->name + "/dsv", image, mip);
+
+	return {
+		.resource = view.getPrivate(),
+		.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.store_op = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.clear_value = clear_value,
 	};
 }
@@ -494,8 +543,11 @@ void RenderGraphBuilder::resolveImageHazards(RenderGraphImageView::Private &view
 	VkAccessFlags2 old_read = 0;
 	VkAccessFlags2 old_write = 0;
 
-	VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	// Whether the current layouts of subresources covered by this view
+	// are not uniform; always false for a single-mip, single-layer view.
 	bool different_layouts = false;
+	// Only valid when `different_layouts = false`
+	VkImageLayout old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	uint32_t mipBegin = range.baseMipLevel;
 	uint32_t mipEnd = mipBegin + range.levelCount;
