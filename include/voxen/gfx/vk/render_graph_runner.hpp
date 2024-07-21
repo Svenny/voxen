@@ -5,6 +5,13 @@
 
 #include <memory>
 
+namespace voxen::client
+{
+
+class Window;
+
+}
+
 namespace voxen::gfx::vk
 {
 
@@ -15,7 +22,9 @@ struct RenderGraphPrivate;
 // Management class connecting render graphs subsystem with the rest of GFX module
 class VOXEN_API RenderGraphRunner {
 public:
-	RenderGraphRunner() noexcept = default;
+	// Creates a swapchain attached to the window.
+	// This window must not be in use by any other swapchain.
+	RenderGraphRunner(Device &device, client::Window &window);
 	RenderGraphRunner(RenderGraphRunner &&) = delete;
 	RenderGraphRunner(const RenderGraphRunner &) = delete;
 	RenderGraphRunner &operator=(RenderGraphRunner &&) = delete;
@@ -23,8 +32,8 @@ public:
 	~RenderGraphRunner() noexcept;
 
 	// Attach render graph to this executor.
-	// This will destroy the previously attached graph and trigger rebuild of the new one.
-	void attachGraph(Device &device, std::unique_ptr<IRenderGraph> graph);
+	// This will detach the previous graph and trigger rebuild of the new one.
+	void attachGraph(std::shared_ptr<IRenderGraph> graph);
 	// Trigger rebuild of the currently attached render graph.
 	// Do nothing if no graph is attached.
 	void rebuildGraph();
@@ -33,10 +42,11 @@ public:
 	void executeGraph();
 
 private:
-	Device *m_device = nullptr;
+	Device &m_device;
+	client::Window &m_window;
 
 	std::shared_ptr<RenderGraphPrivate> m_private;
-	std::unique_ptr<IRenderGraph> m_graph;
+	std::shared_ptr<IRenderGraph> m_graph;
 
 	void finalizeRebuild();
 	void publishResourceHandles();

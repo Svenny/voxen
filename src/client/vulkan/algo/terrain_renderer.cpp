@@ -22,6 +22,10 @@ constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * Config:
 constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * Config::MAX_RENDERED_CHUNKS;
 constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * Config::MAX_RENDERED_CHUNKS;
 
+constexpr VkDeviceSize COMBO_BUFFER_PER_FRAME_SIZE = CHUNK_TRANSFORM_BUFFER_SIZE + DRAW_COMMAND_BUFFER_SIZE
+	+ CHUNK_AABB_BUFFER_SIZE;
+constexpr VkDeviceSize COMBO_BUFFER_SIZE = COMBO_BUFFER_PER_FRAME_SIZE * Config::NUM_CPU_PENDING_FRAMES;
+
 // clang-format off: breaks more readable table formatting
 constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #define LO 0.0f
@@ -47,15 +51,11 @@ constexpr static uint16_t DEBUG_OCTREE_INDEX_BUFFER_DATA[] = {
 
 TerrainRenderer::TerrainRenderer()
 {
-	constexpr VkDeviceSize per_frame_size = CHUNK_TRANSFORM_BUFFER_SIZE + DRAW_COMMAND_BUFFER_SIZE
-		+ CHUNK_AABB_BUFFER_SIZE;
-	constexpr VkDeviceSize combo_size = per_frame_size * Config::NUM_CPU_PENDING_FRAMES;
-
 	constexpr VkBufferCreateInfo combo_info {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = nullptr,
 		.flags = 0,
-		.size = combo_size,
+		.size = COMBO_BUFFER_SIZE,
 		.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 			| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -69,7 +69,7 @@ TerrainRenderer::TerrainRenderer()
 	assert(m_combo_buffer_host_ptr);
 
 	for (uint32_t i = 0; i < Config::NUM_CPU_PENDING_FRAMES; i++) {
-		std::byte *base = reinterpret_cast<std::byte *>(m_combo_buffer_host_ptr) + per_frame_size * i;
+		std::byte *base = reinterpret_cast<std::byte *>(m_combo_buffer_host_ptr) + COMBO_BUFFER_PER_FRAME_SIZE * i;
 
 		m_chunk_transform_ptr[i] = reinterpret_cast<glm::vec4 *>(base);
 		m_draw_command_ptr[i] = reinterpret_cast<VkDrawIndexedIndirectCommand *>(base + CHUNK_TRANSFORM_BUFFER_SIZE);
@@ -80,6 +80,11 @@ TerrainRenderer::TerrainRenderer()
 	m_draw_setups.reserve(10);
 
 	Log::debug("TerrainRenderer created successfully");
+}
+
+VkDeviceSize TerrainRenderer::getComboBufferSize() const noexcept
+{
+	return COMBO_BUFFER_SIZE;
 }
 
 void TerrainRenderer::onNewWorldState(const WorldState &state)

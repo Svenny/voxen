@@ -2,14 +2,14 @@
 
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
-#include <voxen/client/vulkan/framebuffer.hpp>
-#include <voxen/client/vulkan/high/main_loop.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
+#include <voxen/gfx/vk/legacy_render_graph.hpp>
+#include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
@@ -32,8 +32,8 @@ struct Backend::Impl {
 
 	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<TransferManager>,
 		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
-		Storage<PipelineLayoutCollection>, Storage<gfx::vk::Swapchain>, Storage<FramebufferCollection>,
-		Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<MainLoop>, Storage<TerrainRenderer>>
+		Storage<PipelineLayoutCollection>, Storage<gfx::vk::RenderGraphRunner>, Storage<PipelineCollection>,
+		Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -105,13 +105,14 @@ void Backend::stop() noexcept
 
 bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 {
-	if (!m_main_loop) {
-		Log::error("No MainLoop - refusing to draw the frame");
+	if (!m_render_graph_runner) {
+		Log::error("No RenderGraphRunner - refusing to draw the frame");
 		return false;
 	}
 
 	try {
-		m_main_loop->drawFrame(state, view);
+		m_render_graph->setGameState(state, view);
+		m_render_graph_runner->executeGraph();
 		return true;
 	}
 	catch (const VulkanException &e) {
@@ -168,11 +169,12 @@ bool Backend::doStart(Window &window) noexcept
 		m_impl.constructModule(m_descriptor_set_layout_collection);
 		m_impl.constructModule(m_pipeline_layout_collection);
 
-		m_impl.constructModule(m_swapchain, *m_device, window);
-		m_impl.constructModule(m_pipeline_collection);
-		m_impl.constructModule(m_framebuffer_collection);
+		m_render_graph = std::make_shared<gfx::vk::LegacyRenderGraph>();
+		m_impl.constructModule(m_render_graph_runner, *m_device, window);
+		m_render_graph_runner->attachGraph(m_render_graph);
 
-		m_impl.constructModule(m_main_loop);
+		m_impl.constructModule(m_pipeline_collection);
+
 		m_impl.constructModule(m_terrain_renderer);
 
 		return true;
@@ -206,11 +208,11 @@ void Backend::doStop() noexcept
 	}
 
 	m_impl.destructModule(m_terrain_renderer);
-	m_impl.destructModule(m_main_loop);
 
-	m_impl.destructModule(m_framebuffer_collection);
 	m_impl.destructModule(m_pipeline_collection);
-	m_impl.destructModule(m_swapchain);
+
+	m_impl.destructModule(m_render_graph_runner);
+	m_render_graph.reset();
 
 	m_impl.destructModule(m_pipeline_layout_collection);
 	m_impl.destructModule(m_descriptor_set_layout_collection);

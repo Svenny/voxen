@@ -4,6 +4,7 @@
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_swapchain.hpp>
 
 #include "vk_private_consts.hpp"
 
@@ -64,12 +65,17 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
-	explicit RenderGraphPrivate(Device &device) : device(device), fctx_ring(device, Consts::GRAPH_CONTEXT_RING_SIZE) {}
+	explicit RenderGraphPrivate(Device &device, client::Window &window)
+		: device(device), fctx_ring(device, Consts::GRAPH_CONTEXT_RING_SIZE), swapchain(device, window)
+	{}
 	RenderGraphPrivate(RenderGraphPrivate &&) = delete;
 	RenderGraphPrivate(const RenderGraphPrivate &) = delete;
 	RenderGraphPrivate &operator=(RenderGraphPrivate &&) = delete;
 	RenderGraphPrivate &operator=(const RenderGraphPrivate &) = delete;
 	~RenderGraphPrivate() noexcept;
+
+	// Remove all commands and resources, preparing for graph rebuild
+	void clear() noexcept;
 
 	struct BufferBarrier {
 		RenderGraphBuffer::Private *buffer = nullptr;
@@ -111,6 +117,7 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 
 	Device &device;
 	FrameContextRing fctx_ring;
+	Swapchain swapchain;
 
 	// Private parts of buffer resources. Using deque to always preserve pointers.
 	std::deque<RenderGraphBuffer::Private> buffers;
@@ -119,7 +126,11 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 	// High-level "commands" defining the graph execution.
 	std::vector<Command> commands;
 
-	RenderGraphImage output_image;
+	VkFormat last_known_swapchain_format = VK_FORMAT_UNDEFINED;
+	VkExtent2D last_known_swapchain_resolution = {};
+
+	RenderGraphImage::Private output_image;
+	RenderGraphImageView::Private output_rtv;
 };
 
 } // namespace voxen::gfx::vk

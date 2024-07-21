@@ -7,7 +7,6 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/src/extras PREFIX Sources FILES ${EXTRAS_S
 
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
-	src/client/vulkan/high/main_loop.cpp
 	src/client/vulkan/high/terrain_synchronizer.cpp
 	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
@@ -18,9 +17,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/common.cpp
 	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
-	src/client/vulkan/framebuffer.cpp
-	src/client/vulkan/image.cpp
-	src/client/vulkan/image_view.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
 	src/client/vulkan/pipeline_layout.cpp
@@ -67,6 +63,7 @@ set(VOXEN_SOURCES
 	src/util/log.cpp
 	src/voxen/common/uid.cpp
 	src/voxen/gfx/vk/frame_context.cpp
+	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph_builder.cpp
 	src/voxen/gfx/vk/render_graph_execution.cpp
 	src/voxen/gfx/vk/render_graph_private.cpp

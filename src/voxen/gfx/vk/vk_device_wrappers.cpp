@@ -64,4 +64,10 @@ void Device::vkDestroySwapchain(VkSwapchainKHR swapchain) noexcept
 	m_dt.vkDestroySwapchainKHR(m_handle, swapchain, nullptr);
 }
 
+void Device::vkUpdateDescriptorSets(uint32_t num_writes, const VkWriteDescriptorSet *writes, uint32_t num_copies,
+	const VkCopyDescriptorSet *copies) noexcept
+{
+	m_dt.vkUpdateDescriptorSets(m_handle, num_writes, writes, num_copies, copies);
+}
+
 } // namespace voxen::gfx::vk

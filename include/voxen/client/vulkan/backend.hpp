@@ -12,8 +12,9 @@ namespace voxen::gfx::vk
 
 class Device;
 class Instance;
+class LegacyRenderGraph;
 class PhysicalDevice;
-class Swapchain;
+class RenderGraphRunner;
 
 } // namespace voxen::gfx::vk
 
@@ -21,8 +22,6 @@ namespace voxen::client::vulkan
 {
 
 class DescriptorSetLayoutCollection;
-class FramebufferCollection;
-class MainLoop;
 class PipelineCache;
 class PipelineCollection;
 class PipelineLayoutCollection;
@@ -73,15 +72,13 @@ public:
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
-	gfx::vk::Swapchain &swapchain() noexcept { return *m_swapchain; }
-	const gfx::vk::Swapchain &swapchain() const noexcept { return *m_swapchain; }
+	gfx::vk::LegacyRenderGraph &renderGraph() noexcept { return *m_render_graph; }
+	const gfx::vk::LegacyRenderGraph &renderGraph() const noexcept { return *m_render_graph; }
+	gfx::vk::RenderGraphRunner &renderGraphRunner() noexcept { return *m_render_graph_runner; }
+	const gfx::vk::RenderGraphRunner &renderGraphRunner() const noexcept { return *m_render_graph_runner; }
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
-	FramebufferCollection &framebufferCollection() noexcept { return *m_framebuffer_collection; }
-	const FramebufferCollection &framebufferCollection() const noexcept { return *m_framebuffer_collection; }
 
-	MainLoop &mainLoop() noexcept { return *m_main_loop; }
-	const MainLoop &mainLoop() const noexcept { return *m_main_loop; }
 	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
 	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
 
@@ -114,11 +111,10 @@ private:
 	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 
-	gfx::vk::Swapchain *m_swapchain = nullptr;
+	std::shared_ptr<gfx::vk::LegacyRenderGraph> m_render_graph;
+	gfx::vk::RenderGraphRunner *m_render_graph_runner = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
-	FramebufferCollection *m_framebuffer_collection = nullptr;
 
-	MainLoop *m_main_loop = nullptr;
 	TerrainRenderer *m_terrain_renderer = nullptr;
 
 	static constinit Backend s_instance;

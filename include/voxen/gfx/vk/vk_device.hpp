@@ -182,6 +182,9 @@ public:
 	void vkDestroyImageView(VkImageView view) noexcept;
 	void vkDestroySemaphore(VkSemaphore semaphore) noexcept;
 	void vkDestroySwapchain(VkSwapchainKHR swapchain) noexcept;
+
+	void vkUpdateDescriptorSets(uint32_t num_writes, const VkWriteDescriptorSet *writes, uint32_t num_copies = 0,
+		const VkCopyDescriptorSet *copies = nullptr) noexcept;
 #pragma endregion
 
 private:
