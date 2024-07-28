@@ -23,15 +23,14 @@ World::~World() noexcept
 
 std::shared_ptr<const WorldState> World::getLastState() const
 {
-	std::lock_guard lock(m_last_state_ptr_lock);
-	return std::shared_ptr<const WorldState> { m_last_state_ptr };
+	return std::atomic_load(&m_last_state_ptr);
 }
 
 void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nano> tick_inverval)
 {
 	const WorldState &last_state = *m_last_state_ptr;
-	m_next_state_ptr = std::make_shared<WorldState>(last_state);
-	WorldState &next_state = *m_next_state_ptr;
+	auto next_state_ptr = std::make_shared<WorldState>(last_state);
+	WorldState &next_state = *next_state_ptr;
 
 	next_state.setTickId(last_state.tickId() + 1);
 
@@ -54,8 +53,7 @@ void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nan
 	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());
 
-	std::lock_guard lock(m_last_state_ptr_lock);
-	m_last_state_ptr = std::move(m_next_state_ptr);
+	std::atomic_store(&m_last_state_ptr, std::move(next_state_ptr));
 }
 
 } // namespace voxen::server

@@ -5,7 +5,6 @@
 #include <voxen/visibility.hpp>
 
 #include <memory>
-#include <mutex>
 
 namespace voxen::server
 {
@@ -19,6 +18,8 @@ public:
 	World &operator=(const World &) = delete;
 	~World() noexcept;
 
+	// Acquire a reference to the last complete state.
+	// This function is thread-safe.
 	std::shared_ptr<const WorldState> getLastState() const;
 
 	double secondsPerTick() const noexcept { return 1.0 / 100.0; } // 100 UPS
@@ -29,12 +30,8 @@ private:
 	terrain::Controller m_terrain_controller;
 
 	// `getLastState()` and `update()` may be called from different
-	// threads simultaneously. This mutex protects from data race
-	// which may be caused by these methods executing non-atomic
-	// operations (copying/changing owned object) on `m_last_state_ptr`.
-	// TODO: replace with std::atomic<std::shared_ptr> when it's supported
-	mutable std::mutex m_last_state_ptr_lock;
-	std::shared_ptr<WorldState> m_next_state_ptr;
+	// threads simultaneously. Therefore this pointer must be updated
+	// atomically (see `std::atomic_load, std::atomic_store`).
 	std::shared_ptr<WorldState> m_last_state_ptr;
 
 	glm::dvec3 m_chunk_loading_position;
