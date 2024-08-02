@@ -42,6 +42,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/assets/png_tools.hpp
+	include/voxen/common/land/cube_array.hpp
 	include/voxen/common/msg/config.hpp
 	include/voxen/common/msg/message.hpp
 	include/voxen/common/msg/queue.hpp
