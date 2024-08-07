@@ -69,6 +69,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/threadpool.hpp
 	include/voxen/common/uid.hpp
+	include/voxen/common/v8g_concepts.hpp
 	include/voxen/common/world_state.hpp
 	include/voxen/gfx/vk/frame_context.hpp
 	include/voxen/gfx/vk/legacy_render_graph.hpp
