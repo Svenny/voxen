@@ -93,6 +93,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/exception.hpp
 	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
+	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
 	include/voxen/visibility.hpp
 )
