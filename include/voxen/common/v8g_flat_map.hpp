@@ -127,6 +127,8 @@ public:
 	// greater than or equal to the largest one passed to any prior call.
 	void erase(Key key) noexcept
 		requires(MUTABLE);
+	ConstIterator erase(ConstIterator iter) noexcept
+		requires(MUTABLE);
 
 	// Find value to alter (mutate) it. Returns null if `key` is not found.
 	// This function is not available for stealable containers as they can

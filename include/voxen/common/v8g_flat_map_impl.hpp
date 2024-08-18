@@ -225,6 +225,13 @@ void V8gFlatMap<Key, Value, Policy>::erase(Key key) noexcept
 }
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
+V8gFlatMap<Key, Value, Policy>::ConstIterator V8gFlatMap<Key, Value, Policy>::erase(ConstIterator iter) noexcept
+	requires(MUTABLE)
+{
+	return m_items.erase(iter);
+}
+
+template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
 Value *V8gFlatMap<Key, Value, Policy>::find(uint64_t timeline, Key key) noexcept
 	requires(MUTABLE && Policy != V8gStoragePolicy::Stealable)
 {
