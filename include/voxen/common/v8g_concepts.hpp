@@ -77,21 +77,17 @@ concept CV8gCopyableValue = CV8gValue<T> && CV8gValue<U>
 // copies of data, both in time and memory, when this data needs not
 // remain in the mutable object.
 //
-// It's very likely that "damaging" copy of a container will only "forward" to
-// "stealing" copy of some of its nested containers, see `CV8gStealingCopyableValue`.
-//
 // Also see `V8gStoragePolicy::DmgCopyable`.
 template<typename T, typename U>
 concept CV8gDmgCopyableValue = CV8gValue<T> && CV8gValue<U>
 	&& (std::constructible_from<U, T &, const U *> || std::constructible_from<U, T &>);
 
-// Value type T in a mutable versioning data structure supporting "stealing"
-// kind of copy to a value type U in immutable variant (snapshot) of this structure.
-// Such copy will transfer ownership of values from the mutable container
-// into the immutable one, leaving null pointers in the former.
+// Value type T in a mutable versioning data structure supporting shared storage with
+// a value type U in immutable variant (snapshot) of this structure.
+// These values don't have multiple copies but must be completely replaced on every update.
 //
-// Also see `V8gStoragePolicy::Stealable`.
+// Also see `V8gStoragePolicy::Shared`.
 template<typename T, typename U>
-concept CV8gStealableValue = CV8gValue<T> && CV8gValue<U> && (std::convertible_to<T *, U *>);
+concept CV8gSharedValue = CV8gValue<T> && CV8gValue<U> && (std::convertible_to<T *, U *>);
 
 } // namespace voxen

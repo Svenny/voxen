@@ -118,7 +118,7 @@ TEST_CASE("'V8gFlatMap' sanity check", "[voxen::v8g_flat_map]")
 
 	using DiffTuple = std::tuple<uint32_t, const SimpleItem *, const SimpleItem *>;
 	std::vector<DiffTuple> diff;
-	ivfm2.visitDiff(ivfm1, [&](uint32_t key, const SimpleItem *new_item, const SimpleItem *old_item) {
+	ivfm2.visitDiff(&ivfm1, [&](uint32_t key, const SimpleItem *new_item, const SimpleItem *old_item) {
 		diff.emplace_back(key, new_item, old_item);
 		return true;
 	});
@@ -212,7 +212,7 @@ TEST_CASE("'V8gFlatMap' storage policies sanity check", "[voxen::v8g_flat_map]")
 	}
 
 	{
-		V8gFlatMap<uint32_t, Item, V8gStoragePolicy::Stealable> svfm;
+		V8gFlatMap<uint32_t, Item, V8gStoragePolicy::Shared> svfm;
 		svfm.insert(1, 1, svfm.makeValuePtr(10, false, false));
 
 		IVFM ivfm(svfm);
@@ -222,9 +222,9 @@ TEST_CASE("'V8gFlatMap' storage policies sanity check", "[voxen::v8g_flat_map]")
 
 		CHECK(siter != svfm.end());
 		CHECK(iiter != ivfm.end());
-		// Value ownership must have been stolen
-		CHECK(siter->hasValue() == false);
-		CHECK(iiter->hasValue() == true);
+
+		// Value ownership must be shared
+		CHECK(siter->valueAddr() == iiter->valueAddr());
 
 		CHECK(iiter->value().sub_item != nullptr);
 		CHECK(iiter->value().sub_item->values[0] == 10);

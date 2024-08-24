@@ -24,17 +24,17 @@ namespace voxen
 //
 // Supports efficient versioning-optimized operations:
 // - Mutable-to-immutable container copy, possibly with value type conversion,
-//   possibly reusing unchanged contents from any previous copy, and possibly
-//   modifying the mutable container (e.g. "stealing" its values ownership).
+//   possibly reusing unchanged contents from any previous copy.
 // - Visit different (added, removed, updated) objects relative to
-//   another container made from the same mutable map (see `visitDiff`).
+//   another container made from the same "origin" (see `visitDiff`).
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy = V8gStoragePolicy::Copyable>
 class V8gFlatMap {
 public:
 	constexpr static bool IMMUTABLE = Policy == V8gStoragePolicy::Immutable;
 	constexpr static bool MUTABLE = !IMMUTABLE;
+	constexpr static bool SHARED = Policy == V8gStoragePolicy::Immutable || Policy == V8gStoragePolicy::Shared;
 
-	using ValuePtr = std::conditional_t<IMMUTABLE, std::shared_ptr<Value>, std::unique_ptr<Value>>;
+	using ValuePtr = std::conditional_t<SHARED, std::shared_ptr<Value>, std::unique_ptr<Value>>;
 	using Item = V8gMapItem<Key, ValuePtr>;
 	using Storage = std::conditional_t<IMMUTABLE, extras::dyn_array<Item>, std::vector<Item>>;
 
@@ -80,8 +80,7 @@ public:
 
 	// See regular (copying) constructor description above.
 	// The only difference is that mutable container is passed as non-const reference,
-	// allowing to alter ("damage") its values. This will very likely "forward" to
-	// "stealing" copy of some nested container.
+	// allowing to alter ("damage") its values.
 	//
 	// NOTE: this copy can result in incomplete values being stored in this container.
 	// This will happen if a previous copy has already "damaged" them.
@@ -91,15 +90,11 @@ public:
 	explicit V8gFlatMap(V8gFlatMap<Key, MutValue, V8gStoragePolicy::DmgCopyable> &mut, const V8gFlatMap *old = nullptr)
 		requires(IMMUTABLE);
 
-	// Optimized copy construction from a mutable container, "stealing" ownership
-	// of its value objects, or reusing previous ones where their versions did not change.
-	//
-	// NOTE: this copy can result in null pointers being stored in this container.
-	// This will happen if a previous copy has already "stolen" them.
-	// Pointers to older (unchanged) value objects can only be recovered from
-	// the previous copy, so generally `old` should never be null here.
-	template<CV8gStealableValue<Value> MutValue>
-	explicit V8gFlatMap(V8gFlatMap<Key, MutValue, V8gStoragePolicy::Stealable> &mut, const V8gFlatMap *old = nullptr)
+	// Copy construction from a mutable container with shared storage.
+	// Does not need the previous container as only pointers are copied,
+	// no new value objects are constructed.
+	template<CV8gSharedValue<Value> MutValue>
+	explicit V8gFlatMap(const V8gFlatMap<Key, MutValue, V8gStoragePolicy::Shared> &mut)
 		requires(IMMUTABLE);
 
 #pragma endregion
@@ -111,14 +106,17 @@ public:
 	// as pointer type is an implementation detail which might change later.
 	//
 	// `timeline` value must be greater than or equal to the largest one passed to
-	// any prior mutating function call, otherwise container rbehavior is undefined.
+	// any prior mutating function call (and strictly greater for `key`), otherwise
+	// container behavior is undefined. This applies even if `key` was erased.
 	void insert(uint64_t timeline, Key key, ValuePtr value_ptr)
 		requires(MUTABLE);
 
 	// Insert an entry, potentially updating it in-place. Might avoid pointer reallocation
 	// if the entry is already present; otherwise equal to the first `insert` variant.
+	//
+	// Not supported with shared storage, it only allows to fully replace the values.
 	void insert(uint64_t timeline, Key key, Value &&value)
-		requires(MUTABLE && std::is_nothrow_move_constructible_v<Value>);
+		requires(!SHARED && std::is_nothrow_move_constructible_v<Value>);
 
 	// Remove an entry from the map.
 	//
@@ -131,22 +129,24 @@ public:
 		requires(MUTABLE);
 
 	// Find value to alter (mutate) it. Returns null if `key` is not found.
-	// This function is not available for stealable containers as they can
-	// lose value ownership upon mutable-to-immutable copies.
+	// Not available with shared storage, its values can't be altered after insertion.
 	//
 	// `timeline` value must be greater than or equal to the largest one passed to
 	// any prior mutating function call, otherwise container behavior is undefined.
 	Value *find(uint64_t timeline, Key key) noexcept
-		requires(MUTABLE && Policy != V8gStoragePolicy::Stealable);
+		requires(!SHARED);
 
 	// Construct value pointer for insertion.
-	// Use this wrapper, as the underlying pointer type (`std::unique_ptr`)
+	// Use this wrapper, the underlying pointer type (`std::unique_ptr`/`std::shared_ptr`)
 	// is an implementation detail which might change later.
 	template<typename... Args>
 	static ValuePtr makeValuePtr(Args &&...args)
-		requires(MUTABLE)
 	{
-		return std::make_unique<Value>(std::forward<Args>(args)...);
+		if constexpr (SHARED) {
+			return std::make_shared<Value>(std::forward<Args>(args)...);
+		} else {
+			return std::make_unique<Value>(std::forward<Args>(args)...);
+		}
 	}
 
 #pragma endregion
@@ -163,7 +163,7 @@ public:
 	// functor as per the following pseudocode:
 	//
 	//     const Value *new_value = /*`this` has `key` ? pointer : nullptr*/
-	//     const Value *old_value = /*`older` has `key` ? pointer : nullptr*/
+	//     const Value *old_value = /*`old` has `key` ? pointer : nullptr*/
 	//     bool proceed = visitor(key, new_value, old_value)
 	//     if (!proceed) {
 	//         /*stop iteration*/
@@ -176,10 +176,10 @@ public:
 	// (non-hierarchical) nature of this container, visit complexity is still linear in
 	// the whole container size, not in the number of updated keys.
 	//
-	// `older` must be constructed from the same mutable container as `this`,
+	// `old` must be constructed from the same mutable container as `this`,
 	// otherwise the whole versioning logic will not make sense.
-	//
-	void visitDiff(const V8gFlatMap &older, extras::function_ref<bool(Key, const Value *, const Value *)> visitor) const;
+	// It can also be a null pointer, which is equal to an empty map.
+	void visitDiff(const V8gFlatMap *old, extras::function_ref<bool(Key, const Value *, const Value *)> visitor) const;
 
 private:
 	Storage m_items;

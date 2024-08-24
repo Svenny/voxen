@@ -130,44 +130,18 @@ V8gFlatMap<Key, Value, Policy>::V8gFlatMap(V8gFlatMap<Key, MutValue, V8gStorageP
 }
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
-template<CV8gStealableValue<Value> MutValue>
-V8gFlatMap<Key, Value, Policy>::V8gFlatMap(V8gFlatMap<Key, MutValue, V8gStoragePolicy::Stealable> &mut,
-	const V8gFlatMap *old)
+template<CV8gSharedValue<Value> MutValue>
+V8gFlatMap<Key, Value, Policy>::V8gFlatMap(const V8gFlatMap<Key, MutValue, V8gStoragePolicy::Shared> &mut)
 	requires(IMMUTABLE)
 {
 	// Leverage our direct access to mutable's underlying storage
 	auto &mut_items = mut.m_items;
 
-	// Try to reuse old items. We have two sorted arrays, and will search for
-	// keys from `mut_items` in `old_items` while iterating over `mut_items`.
-	// It's enough to keep one ever-advancing pointer into `old_items`.
-	const Item *old_item = old ? old->m_items.data() : nullptr;
-	const Item *const old_end = old ? (old_item + old->m_items.size()) : nullptr;
-
 	// Create storage using generator lambda
 	m_items = Storage(mut_items.size(), [&](void *place, size_t index) {
-		// `index` always points to the current mutable item,
-		// try to find it in old storage and attempt reusing.
+		// Copy everything from the mutable item, sharing a value storage
 		auto &[mut_version, mut_key, mut_value_ptr] = mut_items[index];
-
-		// Rewind through all elements with key less than `mut_key`,
-		// we won't ever need them because next keys will be larger.
-		while (old_item != old_end && old_item->key() < mut_key) {
-			old_item++;
-		}
-
-		ValuePtr new_value_ptr;
-
-		if (old_item != old_end && old_item->key() == mut_key && old_item->version() == mut_version) {
-			// Found old item with the same key and version, reuse it
-			new_value_ptr = old_item->valuePtr();
-		} else {
-			// Steal new value ownership (unique->shared pointer conversion)
-			new_value_ptr = std::move(mut_value_ptr);
-		}
-
-		// Construct the stored item
-		new (place) Item(mut_version, mut_key, std::move(new_value_ptr));
+		new (place) Item(mut_version, mut_key, mut_value_ptr);
 	});
 }
 
@@ -192,7 +166,7 @@ void V8gFlatMap<Key, Value, Policy>::insert(uint64_t timeline, Key key, ValuePtr
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
 void V8gFlatMap<Key, Value, Policy>::insert(uint64_t timeline, Key key, Value &&value)
-	requires(MUTABLE && std::is_nothrow_move_constructible_v<Value>)
+	requires(!SHARED && std::is_nothrow_move_constructible_v<Value>)
 {
 	auto iter = std::ranges::lower_bound(m_items, key, {}, itemKey);
 	if (iter != m_items.end() && iter->key() == key) {
@@ -200,9 +174,8 @@ void V8gFlatMap<Key, Value, Policy>::insert(uint64_t timeline, Key key, Value &&
 		assert(iter->version() <= timeline);
 		iter->version() = timeline;
 
-		if constexpr (std::is_nothrow_move_assignable_v<Value> && Policy != V8gStoragePolicy::Stealable) {
-			// Modify value in-place; not doing this for stealable policy
-			// as value pointer might (and usually will) be null.
+		if constexpr (std::is_nothrow_move_assignable_v<Value>) {
+			// Modify value in-place with move assignment
 			iter->value() = std::move(value);
 		} else {
 			// Recreate value pointer
@@ -233,7 +206,7 @@ V8gFlatMap<Key, Value, Policy>::ConstIterator V8gFlatMap<Key, Value, Policy>::er
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
 Value *V8gFlatMap<Key, Value, Policy>::find(uint64_t timeline, Key key) noexcept
-	requires(MUTABLE && Policy != V8gStoragePolicy::Stealable)
+	requires(!SHARED)
 {
 	auto iter = std::ranges::lower_bound(m_items, key, {}, itemKey);
 	if (iter != m_items.end() && iter->key() == key) {
@@ -261,11 +234,11 @@ V8gFlatMap<Key, Value, Policy>::ConstIterator V8gFlatMap<Key, Value, Policy>::fi
 }
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
-void V8gFlatMap<Key, Value, Policy>::visitDiff(const V8gFlatMap &older,
+void V8gFlatMap<Key, Value, Policy>::visitDiff(const V8gFlatMap *old,
 	extras::function_ref<bool(Key, const Value *, const Value *)> visitor) const
 {
-	const Item *old_item = older.m_items.data();
-	const Item *const old_end = old_item + older.m_items.size();
+	const Item *old_item = old ? old->m_items.data() : nullptr;
+	const Item *const old_end = old ? (old_item + old->m_items.size()) : nullptr;
 
 	for (const auto &[version, key, value_ptr] : m_items) {
 		// Rewind through elements with key less than `key`.
