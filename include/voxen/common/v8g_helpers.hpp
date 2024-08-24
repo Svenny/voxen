@@ -41,25 +41,15 @@ enum class V8gStoragePolicy {
 	// previous copy as well. Be very careful when using this policy.
 	// It is strognly recommended to perform copies in a single place, in order,
 	// and always pass in the previous copy (retaining it between the copies).
-	//
-	// Choose this policy when your value object has a versioning container with
-	// `Stealable` policy as a subobject, or in semantically similar cases.
-	// Then the policy allows to "forward" non-const access
 	DmgCopyable,
-	// This storage policy of a mutable container has no value object
-	// copies at all. Instead, when creating an immutable container, their
-	// ownership is "stolen" from the mutable one, leaving null pointers but
-	// present (version; key) pairs. Obviously this operation is damaging.
+	// This storage policy of a mutable container shared value objects storage
+	// with its immutable copies. Thus there is no value copying at all, but altering
+	// the already inserted value is impossible. This policy is very similar to `Immutable`
+	// but allows inserting/erasing items - i.e. modifying the container itself.
 	//
-	// Creating a valid immutable container again will be impossible (specifically
-	// it will not have all the value objects) if you don't pass in the previous copy
-	// as well. Be very careful when using this policy.
-	// It is strognly recommended to perform copies in a single place, in order,
-	// and always pass in the previous copy (retaining it between the copies).
-	//
-	// Choose this policy if you intend to follow "write-only" logical model
-	// where any mutable object update requires regenerating it completely.
-	Stealable,
+	// Choose this policy if any modifications to the value objects require regenerating
+	// them completely, e.g. if they hold compressed (in a broad sense) data.
+	Shared,
 };
 
 // Tuple-like element of map-type container with convenient access methods.
@@ -72,13 +62,12 @@ enum class V8gStoragePolicy {
 template<typename K, typename VP>
 class V8gMapItem : public std::tuple<uint64_t, K, VP> {
 public:
-	V8gMapItem(uint64_t version, K key, VP value_ptr)
-		: std::tuple<uint64_t, K, VP>(version, key, std::move(value_ptr))
+	V8gMapItem(uint64_t version, K key, VP value_ptr) : std::tuple<uint64_t, K, VP>(version, key, std::move(value_ptr))
 	{}
 
-	// Whether the value object exists. This can be false
-	// only with `V8gStoragePolicy::Stealable` containers and
-	// occasionally their immutable copies if used improperly.
+	// Whether the value object exists. This can be false only if
+	// a null pointer was explicitly inserted into the container.
+	// Then this item merely indicates key presence.
 	bool hasValue() const noexcept { return std::get<2>(*this) != nullptr; }
 
 	uint64_t version() const noexcept { return std::get<0>(*this); }
