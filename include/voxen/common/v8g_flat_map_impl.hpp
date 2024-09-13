@@ -198,7 +198,7 @@ void V8gFlatMap<Key, Value, Policy>::erase(Key key) noexcept
 }
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
-V8gFlatMap<Key, Value, Policy>::ConstIterator V8gFlatMap<Key, Value, Policy>::erase(ConstIterator iter) noexcept
+auto V8gFlatMap<Key, Value, Policy>::erase(ConstIterator iter) noexcept -> ConstIterator
 	requires(MUTABLE)
 {
 	return m_items.erase(iter);
@@ -223,7 +223,7 @@ Value *V8gFlatMap<Key, Value, Policy>::find(uint64_t timeline, Key key) noexcept
 // Common operations
 
 template<CV8gKey Key, CV8gValue Value, V8gStoragePolicy Policy>
-V8gFlatMap<Key, Value, Policy>::ConstIterator V8gFlatMap<Key, Value, Policy>::find(Key key) const noexcept
+auto V8gFlatMap<Key, Value, Policy>::find(Key key) const noexcept -> ConstIterator
 {
 	auto iter = std::ranges::lower_bound(m_items, key, {}, itemKey);
 	if (iter != m_items.end() && itemKey(*iter) == key) {

@@ -108,6 +108,8 @@ public:
 	// `timeline` value must be greater than or equal to the largest one passed to
 	// any prior mutating function call (and strictly greater for `key`), otherwise
 	// container behavior is undefined. This applies even if `key` was erased.
+	//
+	// All iterators are invalidated after this call.
 	void insert(uint64_t timeline, Key key, ValuePtr value_ptr)
 		requires(MUTABLE);
 
@@ -115,6 +117,8 @@ public:
 	// if the entry is already present; otherwise equal to the first `insert` variant.
 	//
 	// Not supported with shared storage, it only allows to fully replace the values.
+	//
+	// All iterators are invalidated after this call.
 	void insert(uint64_t timeline, Key key, Value &&value)
 		requires(!SHARED && std::is_nothrow_move_constructible_v<Value>);
 
@@ -123,6 +127,8 @@ public:
 	// NOTE: even after removing an entry, any future mutating function,
 	// including inserting `key` again, must be called with `timeline` value
 	// greater than or equal to the largest one passed to any prior call.
+	//
+	// All iterators are invalidated after this call.
 	void erase(Key key) noexcept
 		requires(MUTABLE);
 	ConstIterator erase(ConstIterator iter) noexcept

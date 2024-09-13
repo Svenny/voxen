@@ -65,6 +65,12 @@ public:
 	V8gMapItem(uint64_t version, K key, VP value_ptr) : std::tuple<uint64_t, K, VP>(version, key, std::move(value_ptr))
 	{}
 
+	V8gMapItem(V8gMapItem &&) = default;
+	V8gMapItem(const V8gMapItem &) = default;
+	V8gMapItem &operator=(V8gMapItem &&) = default;
+	V8gMapItem &operator=(const V8gMapItem &) = default;
+	~V8gMapItem() = default;
+
 	// Whether the value object exists. This can be false only if
 	// a null pointer was explicitly inserted into the container.
 	// Then this item merely indicates key presence.

@@ -70,6 +70,10 @@ set(VOXEN_HEADERS
 	include/voxen/common/threadpool.hpp
 	include/voxen/common/uid.hpp
 	include/voxen/common/v8g_concepts.hpp
+	include/voxen/common/v8g_flat_map.hpp
+	include/voxen/common/v8g_flat_map_impl.hpp
+	include/voxen/common/v8g_hash_trie.hpp
+	include/voxen/common/v8g_hash_trie_impl.hpp
 	include/voxen/common/world_state.hpp
 	include/voxen/gfx/vk/frame_context.hpp
 	include/voxen/gfx/vk/legacy_render_graph.hpp

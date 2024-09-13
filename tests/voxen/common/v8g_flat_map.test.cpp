@@ -1,6 +1,5 @@
 #include <voxen/common/v8g_flat_map.hpp>
 #include <voxen/common/v8g_flat_map_impl.hpp>
-#include <voxen/common/v8g_helpers.hpp>
 
 #include <catch2/catch.hpp>
 
