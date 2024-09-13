@@ -26,9 +26,11 @@ concept CV8gBase = std::is_nothrow_destructible_v<T> && !std::is_array_v<T>
 //
 // Keys are expected to be small (up to a few QWORDs),
 // so they are always stored inline and passed by value.
+// Alignment requirement (at most uint64_t) is needed to simplify
+// implementation of data structures with custom storage packing.
 template<typename T>
 concept CV8gKey = CV8gBase<T> && std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>
-	&& requires(const T &a, const T &b) {
+	&& alignof(T) <= alignof(uint64_t) && requires(const T &a, const T &b) {
 			{ a == b } noexcept -> std::convertible_to<bool>;
 			{ a != b } noexcept -> std::convertible_to<bool>;
 			{ a < b } noexcept -> std::convertible_to<bool>;
@@ -89,5 +91,20 @@ concept CV8gDmgCopyableValue = CV8gValue<T> && CV8gValue<U>
 // Also see `V8gStoragePolicy::Shared`.
 template<typename T, typename U>
 concept CV8gSharedValue = CV8gValue<T> && CV8gValue<U> && (std::convertible_to<T *, U *>);
+
+// Key type hashable to 64 bits without collisions.
+// This means key space can't be larger than 64 bits.
+//
+// Semantically it's a regular hash - must always return the same value for equal keys
+// while different keys should have a very low probability of yielding the same hash.
+//
+// Sometimes "completely random" hashing is not desirable, and having some degree of
+// hash bits correlation might improve cache locality for related objects (accessed together).
+// This totally depends on the specific data structure (see its description), and correlation
+// should always be introduced with care, as it deteriorates "load balancing" at the same time.
+template<typename T>
+concept CV8gUniqueHashableKey = CV8gKey<T> && requires(const T &key) {
+	{ key.hash() } noexcept -> std::convertible_to<uint64_t>;
+};
 
 } // namespace voxen
