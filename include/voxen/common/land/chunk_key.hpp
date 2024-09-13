@@ -6,6 +6,7 @@
 #include <glm/vec3.hpp>
 
 #include <bit>
+#include <functional>
 
 namespace voxen::land
 {
@@ -51,6 +52,9 @@ struct ChunkKey {
 		return result;
 	}
 
+	// Hash is bijective and guarantees no collisions
+	uint64_t hash() const noexcept { return Hash::xxh64Fixed(packed()); }
+
 	uint64_t scale_log2 : Consts::CHUNK_KEY_SCALE_BITS;
 	int64_t x : Consts::CHUNK_KEY_XZ_BITS;
 	int64_t y : Consts::CHUNK_KEY_Y_BITS;
@@ -58,3 +62,13 @@ struct ChunkKey {
 };
 
 } // namespace voxen::land
+
+namespace std
+{
+
+template<>
+struct hash<voxen::land::ChunkKey> {
+	size_t operator()(const voxen::land::ChunkKey &ck) const noexcept { return size_t(ck.hash()); }
+};
+
+} // namespace std
