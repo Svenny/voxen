@@ -1,6 +1,6 @@
 #include <extras/function_ref.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 static int testFunction(int a, int b)
 {

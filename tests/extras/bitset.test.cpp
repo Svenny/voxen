@@ -1,6 +1,6 @@
 #include <extras/bitset.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 TEST_CASE("'bitset' free-list features work properly", "[extras::bitset]")
 {

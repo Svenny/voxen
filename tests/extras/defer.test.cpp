@@ -1,6 +1,6 @@
 #include <extras/defer.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 TEST_CASE("'defer' works properly", "[extras::defer]")
 {

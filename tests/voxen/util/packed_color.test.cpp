@@ -1,6 +1,6 @@
 #include <voxen/util/packed_color.hpp>
 
-#include <catch2/catch.hpp>
+#include "../../test_common.hpp"
 
 namespace voxen
 {

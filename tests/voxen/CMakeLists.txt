@@ -1,4 +1,4 @@
-voxen_add_executable(test-voxen test_voxen_main.cpp)
+voxen_add_executable(test-voxen "")
 
 target_sources(test-voxen PRIVATE
 	common/land/cube_array.test.cpp
@@ -8,7 +8,7 @@ target_sources(test-voxen PRIVATE
 )
 
 target_link_libraries(test-voxen PRIVATE
-	3rdparty::catch2
+	test-common
 	voxen
 )
 

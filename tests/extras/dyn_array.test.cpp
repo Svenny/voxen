@@ -1,6 +1,6 @@
 #include <extras/dyn_array.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 #include <unordered_set>
 

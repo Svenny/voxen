@@ -1,6 +1,6 @@
 #include <extras/source_location.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 TEST_CASE("'source_location' works properly", "[extras::source_location]")
 {
