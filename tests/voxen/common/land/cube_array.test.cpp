@@ -1,6 +1,6 @@
 #include <voxen/common/land/cube_array.hpp>
 
-#include <catch2/catch.hpp>
+#include "../../../test_common.hpp"
 
 namespace voxen::land
 {

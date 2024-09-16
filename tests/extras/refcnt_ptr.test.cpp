@@ -1,6 +1,6 @@
 #include <extras/refcnt_ptr.hpp>
 
-#include <catch2/catch.hpp>
+#include "../test_common.hpp"
 
 static void managerFunction(int *value, extras::refcnt_ptr_action action) noexcept
 {

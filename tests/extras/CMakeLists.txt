@@ -1,4 +1,4 @@
-voxen_add_executable(test-extras test_extras_main.cpp)
+voxen_add_executable(test-extras "")
 
 target_sources(test-extras PRIVATE
 	bitset.test.cpp
@@ -12,9 +12,8 @@ target_sources(test-extras PRIVATE
 )
 
 target_link_libraries(test-extras PRIVATE
+	test-common
 	extras
-	3rdparty::catch2
-	3rdparty::glm
 )
 
 add_test(NAME extras-bitset COMMAND test-extras "[extras::bitset]")

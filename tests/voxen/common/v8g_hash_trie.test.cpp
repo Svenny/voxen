@@ -3,7 +3,7 @@
 
 #include <voxen/common/land/chunk_key.hpp>
 
-#include <catch2/catch.hpp>
+#include "../../test_common.hpp"
 
 #include <map>
 #include <random>
