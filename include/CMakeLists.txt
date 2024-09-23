@@ -95,6 +95,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/elapsed_timer.hpp
 	include/voxen/util/error_condition.hpp
 	include/voxen/util/exception.hpp
+	include/voxen/util/futex_work_counter.hpp
 	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
 	include/voxen/util/packed_color.hpp
