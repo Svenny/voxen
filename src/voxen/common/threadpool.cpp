@@ -1,13 +1,14 @@
 #include <voxen/common/threadpool.hpp>
 
-#include <atomic>
 #include <cassert>
-#include <condition_variable>
 #include <future>
 #include <thread>
 
 #include <voxen/util/exception.hpp>
+#include <voxen/util/futex_work_counter.hpp>
 #include <voxen/util/log.hpp>
+
+#include <extras/futex.hpp>
 
 namespace voxen
 {
@@ -20,11 +21,9 @@ constexpr static size_t STD_THREAD_COUNT_OFFSET = 2;
 constexpr static size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
 
 struct ThreadPool::ReportableWorkerState {
-	std::mutex semaphore_mutex;
-	std::condition_variable semaphore;
-	std::atomic_bool is_exit;
+	FutexWorkCounter work_counter;
 
-	std::mutex state_mutex;
+	extras::futex queue_futex;
 	std::queue<std::packaged_task<void()>> tasks_queue;
 };
 
@@ -55,10 +54,7 @@ ThreadPool::ThreadPool(size_t thread_count)
 ThreadPool::~ThreadPool() noexcept
 {
 	for (ReportableWorker* worker : m_workers) {
-		std::unique_lock lock(worker->state.semaphore_mutex);
-
-		worker->state.is_exit.store(true);
-		worker->state.semaphore.notify_one();
+		worker->state.work_counter.requestStop();
 	}
 
 	for (ReportableWorker* worker : m_workers) {
@@ -82,12 +78,7 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_tas
 	ReportableWorker* min_job_thread = nullptr;
 
 	for (ReportableWorker* worker : m_workers) {
-		size_t job_count;
-
-		{
-			std::unique_lock<std::mutex> lock(worker->state.state_mutex);
-			job_count = worker->state.tasks_queue.size();
-		}
+		size_t job_count = worker->state.work_counter.loadRelaxed().first;
 
 		if (job_count < min_job_count) {
 			min_job_count = job_count;
@@ -96,36 +87,58 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_tas
 	}
 	assert(min_job_thread);
 
-	std::unique_lock<std::mutex> lock(min_job_thread->state.state_mutex);
-	min_job_thread->state.tasks_queue.emplace(std::move(task));
-	min_job_thread->state.semaphore.notify_one();
+	{
+		std::lock_guard lock(min_job_thread->state.queue_futex);
+		min_job_thread->state.tasks_queue.emplace(std::move(task));
+	}
+
+	min_job_thread->state.work_counter.addWork(1);
 }
 
 void ThreadPool::workerFunction(ReportableWorkerState* state)
 {
-	std::unique_lock semaphore_lock(state->semaphore_mutex);
+	uint32_t work_remaining = 0;
+	bool exit = false;
 
-	while (!state->is_exit.load()) {
-		state->semaphore.wait(semaphore_lock);
+	while (!exit || work_remaining > 0) {
+		std::tie(work_remaining, exit) = state->work_counter.wait();
 
-		while (task_queue_size(state) != 0) {
-			std::packaged_task<void()> task;
-			{
-				std::unique_lock<std::mutex> lock(state->state_mutex);
+		std::packaged_task<void()> task;
+		uint32_t popped = 0;
+
+		// Take the first task from the queue
+		{
+			std::lock_guard lock(state->queue_futex);
+			if (!state->tasks_queue.empty()) {
 				task = std::move(state->tasks_queue.front());
 				state->tasks_queue.pop();
+				popped++;
 			}
-
-			task();
 		}
-		state->state_mutex.unlock();
+
+		while (task.valid()) {
+			task();
+
+			// Take the next task from the queue
+			{
+				std::lock_guard lock(state->queue_futex);
+				if (state->tasks_queue.empty()) {
+					task = {};
+				} else {
+					task = std::move(state->tasks_queue.front());
+					state->tasks_queue.pop();
+					popped++;
+				}
+			}
+		}
+
+		std::tie(work_remaining, exit) = state->work_counter.removeWork(popped);
 	}
 }
 
 ThreadPool::ReportableWorker* ThreadPool::make_worker()
 {
 	auto new_worker = new ReportableWorker();
-	new_worker->state.is_exit.store(false);
 	m_workers.push_back(new_worker);
 	return new_worker;
 }
@@ -135,27 +148,9 @@ void ThreadPool::run_worker(ReportableWorker* worker)
 	worker->worker = std::thread(&ThreadPool::workerFunction, &worker->state);
 }
 
-void ThreadPool::cleanup_finished_workers()
-{
-	for (auto iter = m_workers.begin(); iter != m_workers.end(); /* no iteration here */) {
-		if ((*iter)->state.is_exit.load()) {
-			delete *iter;
-			iter = m_workers.erase(iter);
-		} else {
-			iter++;
-		}
-	}
-}
-
 size_t ThreadPool::threads_count() const
 {
 	return m_workers.size();
-}
-
-size_t ThreadPool::task_queue_size(ReportableWorkerState* state)
-{
-	std::unique_lock<std::mutex> lock(state->state_mutex);
-	return state->tasks_queue.size();
 }
 
 void ThreadPool::initGlobalVoxenPool(size_t thread_count)

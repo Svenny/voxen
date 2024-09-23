@@ -73,25 +73,10 @@ public:
 	{
 		using R = std::invoke_result_t<F, Args...>;
 
-		std::promise<R> promise;
-		std::future<R> future = promise.get_future();
+		std::packaged_task<R()> task { std::bind(std::forward<F>(f), std::forward<Args>(args)...) };
+		std::future<R> future = task.get_future();
 
-		doEnqueueTask(type,
-			std::packaged_task<void()> {
-				[promise = std::move(promise),
-					task = std::bind(std::forward<F>(f), std::forward<Args>(args)...)]() mutable {
-					try {
-						if constexpr (std::is_same_v<R, void>) {
-							task();
-							promise.set_value();
-						} else {
-							promise.set_value(task());
-						}
-					}
-					catch (...) {
-						promise.set_exception(std::current_exception());
-					}
-				} });
+		doEnqueueTask(type, std::packaged_task<void()> { std::move(task) });
 
 		return future;
 	}
@@ -109,10 +94,8 @@ private:
 	void doEnqueueTask(TaskType type, std::packaged_task<void()> task);
 
 	static void workerFunction(ReportableWorkerState* state);
-	static size_t task_queue_size(ReportableWorkerState* state);
 	ReportableWorker* make_worker();
 	void run_worker(ReportableWorker* worker);
-	void cleanup_finished_workers();
 
 private:
 	std::vector<ReportableWorker*> m_workers;
