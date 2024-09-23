@@ -50,7 +50,6 @@ set(VOXEN_SOURCES
 	src/common/gameview.cpp
 	src/common/player.cpp
 	src/common/runtime_config.cpp
-	src/common/threadpool.cpp
 	src/common/world_state.cpp
 	src/server/world.cpp
 	src/util/aabb.cpp
@@ -61,6 +60,7 @@ set(VOXEN_SOURCES
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
+	src/voxen/common/threadpool.cpp
 	src/voxen/common/uid.cpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
