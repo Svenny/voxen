@@ -41,16 +41,11 @@ function(voxen_setup_target target is_executable)
 		# when calling them from the same library (a frequent case for us).
 		# Might be enabled in Clang by default but let's be sure.
 		-fno-semantic-interposition
-
-		# These flags will only be applied when compiling C++ code
-		$<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++> # Always use libc++ as a runtime
 	)
 
 	target_link_options(${target} PRIVATE
 		# Always use LLD for linking speed and LTO
 		-fuse-ld=lld
-		# Always use libc++ as a runtime
-		-stdlib=libc++
 
 		# Directly bind locally defined function symbols. Similar to
 		# `-fno-semantic-interposition` but works at link time.
