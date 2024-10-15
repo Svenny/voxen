@@ -19,6 +19,8 @@ namespace voxen::terrain
 
 std::vector<Controller::ChunkPtr> Controller::doTick()
 {
+	return {};
+
 	garbageCollectPointsOfInterest();
 	engageSuperchunks();
 

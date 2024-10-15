@@ -16,6 +16,9 @@
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/util/log.hpp>
 
+#include <voxen/gfx/vk/async_dma.hpp>
+#include <voxen/gfx/gfx_land_loader.hpp>
+
 #include <GLFW/glfw3.h>
 
 #include <cassert>
@@ -33,7 +36,7 @@ struct Backend::Impl {
 	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<TransferManager>,
 		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
 		Storage<PipelineLayoutCollection>, Storage<gfx::vk::RenderGraphRunner>, Storage<PipelineCollection>,
-		Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
+		Storage<TerrainSynchronizer>, Storage<TerrainRenderer>, Storage<gfx::vk::AsyncDma>, Storage<gfx::LandLoader>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -103,7 +106,7 @@ void Backend::stop() noexcept
 	m_state = State::NotStarted;
 }
 
-bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
+bool Backend::drawFrame(std::shared_ptr<const WorldState> state, const GameView &view) noexcept
 {
 	if (!m_render_graph_runner) {
 		Log::error("No RenderGraphRunner - refusing to draw the frame");
@@ -111,7 +114,13 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 	}
 
 	try {
-		m_render_graph->setGameState(state, view);
+		m_land_loader->onNewState(state, *m_async_dma);
+		m_land_loader->onNewFrame();
+
+		std::vector<gfx::LandLoader::RenderCmd> rlist;
+		m_land_loader->makeRenderList(view.cameraPosition(), rlist);
+
+		m_render_graph->setGameState(*state, view);
 		m_render_graph_runner->executeGraph();
 		return true;
 	}
@@ -176,6 +185,8 @@ bool Backend::doStart(Window &window) noexcept
 		m_impl.constructModule(m_pipeline_collection);
 
 		m_impl.constructModule(m_terrain_renderer);
+		m_impl.constructModule(m_async_dma, *m_device);
+		m_impl.constructModule(m_land_loader, *m_device);
 
 		return true;
 	}
@@ -207,6 +218,8 @@ void Backend::doStop() noexcept
 		}
 	}
 
+	m_impl.destructModule(m_land_loader);
+	m_impl.destructModule(m_async_dma);
 	m_impl.destructModule(m_terrain_renderer);
 
 	m_impl.destructModule(m_pipeline_collection);
@@ -281,6 +294,7 @@ gfx::vk::PhysicalDevice *Backend::selectPhysicalDevice(extras::dyn_array<gfx::vk
 			integrated = &dev;
 		} else if (!other) {
 			Log::debug("'{}' is neither iGPU nor dGPU, might take it if won't find one", name);
+			other = &dev;
 		}
 	}
 

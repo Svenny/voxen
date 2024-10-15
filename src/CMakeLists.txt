@@ -53,8 +53,17 @@ set(VOXEN_SOURCES
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
+	src/voxen/common/land/block.cpp
+	src/voxen/common/land/block_registry.cpp
+	src/voxen/common/land/fake_chunk_data.cpp
+	src/voxen/common/land/land.cpp
+	src/voxen/common/land/land_chunk.cpp
+	src/voxen/common/land/land_chunk_storage.cpp
+	src/voxen/common/land/land_private_consts.hpp
+	src/voxen/common/land/land_utils.cpp
 	src/voxen/common/threadpool.cpp
 	src/voxen/common/uid.cpp
+	src/voxen/gfx/vk/async_dma.cpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp
@@ -64,6 +73,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/standard_render_graph.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
 	src/voxen/gfx/vk/vk_device_wrappers.cpp
@@ -72,9 +82,11 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/gfx/gfx_land_loader.cpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
+	src/voxen/util/concentric_octahedron_walker.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/packed_color.cpp
 )
@@ -94,9 +106,13 @@ endif()
 set(VOXEN_SHADERS
 	debug/octree.vert
 	debug/octree.frag
+	debug/torus.vert
+	debug/torus.frag
 	terrain/frustum_cull.comp
 	terrain/simple.vert
 	terrain/simple.frag
+	land/impostor.vert
+	land/impostor.frag
 )
 
 set(VOXEN_SHADER_COMPILER_OPTIONS

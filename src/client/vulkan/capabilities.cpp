@@ -18,6 +18,7 @@ namespace voxen::client::vulkan
 //   - Intel UHD Graphics 630
 //   - AMD Radeon RX Vega 5
 //   - AMD Radeon RX 5700
+//   - AMD Radeon RX 6900 XT
 //   - NVIDIA GeForce 1060 GTX
 //   - NVIDIA GeForce 1650 GTX
 
@@ -33,7 +34,7 @@ constexpr static const char *MANDATORY_DEVICE_EXTENSIONS[] = {
 	// by GLFW-provided required instance extensions list.
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	// Needed to monitor memory usage, implemented by all sane drivers
-	VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+	//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
 };
 
 bool Capabilities::selectPhysicalDevice(VkPhysicalDevice device)

@@ -27,6 +27,7 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 		QefSolver3D qef_solver;
 		glm::vec3 normal { 0.0f };
 		float count = 0.0f;
+		voxel_t material;
 	};
 
 	std::unordered_map<uint32_t, VertexAccumulator> cell_to_accumulator;
@@ -41,6 +42,7 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 		accum.qef_solver.addPlane(entry.surfacePoint(), normal);
 		accum.normal += normal;
 		accum.count += 1.0f;
+		accum.material = entry.solidEndpointVoxel();
 	};
 
 	auto add_edge = [&](const HermiteDataEntry &entry, int axis) {
@@ -94,10 +96,12 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 			|| glm::any(glm::greaterThanEqual(cell_coord, glm::ivec3(Config::CHUNK_SIZE)));
 
 		auto &accum = cell_to_accumulator[key];
-		SurfaceVertex vtx {};
-		vtx.position = accum.qef_solver.solve(min_point, max_point);
-		vtx.normal = glm::normalize(accum.normal / accum.count);
-		vtx.flags = uint8_t(corner ? 1u : 0u);
+		SurfaceVertex vtx {
+			.position = accum.qef_solver.solve(min_point, max_point),
+			.normal = glm::normalize(accum.normal / accum.count),
+			.materials = { accum.material, 0, 0 },
+			.flags = uint8_t(corner ? 1u : 0u),
+		};
 
 		uint32_t id = surface.addVertex(vtx);
 		cell_to_vertex_id[key] = id;
@@ -128,12 +132,27 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 			return;
 		}
 
-		if (entry.isLesserEndpointSolid()) {
-			surface.addTriangle(id0, id1, id2);
-			surface.addTriangle(id1, id3, id2);
+		voxel_t mat0 = surface.vertices()[id0].materials[0];
+		voxel_t mat3 = surface.vertices()[id3].materials[0];
+
+		// 23
+		// 01
+		if (mat0 == mat3) {
+			if (entry.isLesserEndpointSolid()) {
+				surface.addTriangle(id0, id1, id3);
+				surface.addTriangle(id0, id3, id2);
+			} else {
+				surface.addTriangle(id1, id0, id3);
+				surface.addTriangle(id3, id0, id2);
+			}
 		} else {
-			surface.addTriangle(id1, id0, id2);
-			surface.addTriangle(id3, id1, id2);
+			if (entry.isLesserEndpointSolid()) {
+				surface.addTriangle(id0, id1, id2);
+				surface.addTriangle(id1, id3, id2);
+			} else {
+				surface.addTriangle(id1, id0, id2);
+				surface.addTriangle(id3, id1, id2);
+			}
 		}
 	};
 
@@ -148,6 +167,8 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 	for (const auto &entry : hermite_z) {
 		add_triangles(entry, 2);
 	}
+
+	surface.relaxMaterials();
 }
 
 } // namespace voxen::terrain

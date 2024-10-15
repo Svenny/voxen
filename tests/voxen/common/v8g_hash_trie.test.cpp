@@ -240,4 +240,86 @@ TEST_CASE("'V8gHashTrie' diff", "[voxen::v8g_hash_trie]")
 	CHECK(found_remove == expected_remove);
 }
 
+#if 0
+TEST_CASE("'V8gHashTrie' under ultra-large load", "[voxen::v8g_hash_trie]")
+{
+	std::vector<std::tuple<uint64_t, uint64_t, uint64_t>> data;
+	std::mt19937_64 rng(0xDEADBEEF);
+
+	for (uint64_t timeline = 0; timeline < 1'500; timeline++) {
+		for (int j = 0; j < 15'000; j++) {
+			uint64_t key = rng();
+			uint64_t value = rng();
+			data.emplace_back(timeline, key, value);
+		}
+	}
+
+	V8gHashTrie<TrivialKey, uint64_t> vht;
+	auto t1 = std::chrono::steady_clock::now();
+
+	for (size_t i = 0; i < data.size(); i++) {
+		auto &[timeline, key, value] = data[i];
+		vht.insert(timeline, TrivialKey(key), vht.makeValuePtr(value));
+	}
+
+	auto t2 = std::chrono::steady_clock::now();
+	size_t correct = 0;
+
+	for (size_t i = 0; i < data.size(); i++) {
+		const auto *item = vht.find(TrivialKey(std::get<1>(data[i])));
+		if (item != nullptr) {
+			correct += item->value() == std::get<2>(data[i]);
+		}
+	}
+
+	auto t3 = std::chrono::steady_clock::now();
+
+	CHECK(vht.size() == data.size());
+	for (size_t i = 0; i < data.size(); i++) {
+		vht.erase(1'000'000, TrivialKey(std::get<1>(data[i])));
+	}
+	CHECK(vht.size() == 0);
+
+	auto t4 = std::chrono::steady_clock::now();
+
+	double ms1 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+	double ms2 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t3 - t2).count();
+	double ms3 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t4 - t3).count();
+	printf("VHT: %f ms fill, %f ms query, %f ms erase, %zu correct\n", ms1, ms2, ms3, correct);
+
+	std::unordered_map<uint64_t, uint64_t> verification;
+	t1 = std::chrono::steady_clock::now();
+
+	for (size_t i = 0; i < data.size(); i++) {
+		auto &[timeline, key, value] = data[i];
+		verification.insert_or_assign(key, value);
+	}
+
+	t2 = std::chrono::steady_clock::now();
+	correct = 0;
+
+	for (size_t i = 0; i < data.size(); i++) {
+		const auto iter = verification.find(std::get<1>(data[i]));
+		if (iter != verification.end()) {
+			correct += iter->second == std::get<2>(data[i]);
+		}
+	}
+
+	t3 = std::chrono::steady_clock::now();
+
+	CHECK(verification.size() == data.size());
+	for (size_t i = 0; i < data.size(); i++) {
+		verification.erase(std::get<1>(data[i]));
+	}
+	CHECK(verification.size() == 0);
+
+	t4 = std::chrono::steady_clock::now();
+
+	ms1 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+	ms2 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t3 - t2).count();
+	ms3 = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t4 - t3).count();
+	printf("UMap: %f ms fill, %f ms query, %f ms erase, %zu correct\n", ms1, ms2, ms3, correct);
+}
+#endif
+
 } // namespace voxen

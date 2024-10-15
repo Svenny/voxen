@@ -421,4 +421,21 @@ void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), m_num_active_chunks, 0, 0, 0);
 }
 
+void TerrainRenderer::drawFuckingTorus(VkCommandBuffer cmdbuf)
+{
+	auto &backend = Backend::backend();
+	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
+	auto &pipeline_collection = backend.pipelineCollection();
+
+	VkPipeline pipeline = pipeline_collection[PipelineCollection::DEBUG_TORUS_PIPELINE];
+	VkPipelineLayout pipeline_layout = pipeline_layout_collection.terrainBasicLayout();
+	VkDescriptorSet descriptor_set = m_main_scene_dset;
+
+	backend.vkCmdBindPipeline(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0,
+		nullptr);
+
+	backend.vkCmdDraw(cmdbuf, 6 * 128 * 64, 1, 0, 0);
+}
+
 } // namespace voxen::client::vulkan

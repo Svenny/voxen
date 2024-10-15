@@ -122,6 +122,8 @@ public:
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
 	void waitForTimeline(Queue queue, uint64_t value);
 
+	uint64_t getCompletedTimeline(Queue queue);
+
 	// Call `vkDeviceWaitIdle` to force completion of any pending GPU work.
 	// Intended to be used only in object destructors. Any error
 	// is only logged and ignored, so the function is nothrow.

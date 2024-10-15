@@ -11,6 +11,7 @@ World::World()
 
 	auto initial_state_ptr = std::make_shared<WorldState>();
 	initial_state_ptr->setActiveChunks(m_terrain_controller.doTick());
+	initial_state_ptr->setLandState(m_land_controller.stateForCopy());
 	m_last_state_ptr.store(std::move(initial_state_ptr), std::memory_order_release);
 
 	Log::debug("Server World created successfully");
@@ -47,6 +48,13 @@ void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nan
 		player.updateState(pos, queue.player_orientation);
 	}
 
+	if (next_state.tickId() % 550 == 0) {
+		//glm::dvec3 velocity = (player.position() - last_state.player().position()) / dt;
+		//Log::info("Velocity {} m/s", glm::length(velocity));
+		//glm::dvec3 chunk = glm::floor(player.position() / 24.0);
+		//Log::info("Chunk in - {} {} {}", chunk.x, chunk.y, chunk.z);
+	}
+
 	// Update chunks
 	if (!queue.lock_chunk_loading_position) {
 		m_chunk_loading_position = pos;
@@ -54,6 +62,10 @@ void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nan
 
 	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());
+
+	m_land_controller.setLoadingPoint(m_chunk_loading_position);
+	m_land_controller.tick();
+	next_state.setLandState(m_land_controller.stateForCopy());
 
 	m_last_state_ptr.store(std::move(next_state_ptr), std::memory_order_release);
 }

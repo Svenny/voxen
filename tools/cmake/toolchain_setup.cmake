@@ -40,6 +40,9 @@ function(voxen_setup_target target is_executable)
 		${CLANG_OPTION_PREFIX}-fno-signed-zeros # Assume +0.0 and -0.0 are the same
 		${CLANG_OPTION_PREFIX}-fno-trapping-math # Assume there are no floating point exceptions
 		${CLANG_OPTION_PREFIX}-ffp-contract=fast # Allow fusing multiply+add to FMA
+
+		${CLANG_OPTION_PREFIX}-march=x86-64-v3
+		#-fopenmp
 	)
 
 	if(LINUX)

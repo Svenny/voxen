@@ -213,6 +213,26 @@ public:
 		return &ref_node_item;
 	}
 
+#if 0
+	void validateHashes()
+	{
+		int32_t count = 0;
+
+		for (uint64_t i = 0; i < 64; i++) {
+			uint64_t bit = uint64_t(1) << i;
+			if (!(m_item_bitmap & bit)) {
+				continue;
+			}
+
+			uint64_t key_hash = refItemIndex(count).key().hash();
+			uint64_t check_bits = (key_hash << m_consumed_hash_bits) >> (64 - 6);
+			assert(check_bits == i);
+
+			count++;
+		}
+	}
+#endif
+
 	// Try shrinking `NodeItem` indexed by `bit`, which must be set in `m_node_bitmap`.
 	// If it contains just one item, then `NodeItem` can be demoted to just `Item`.
 	// If it is empty we can remove it altogether.

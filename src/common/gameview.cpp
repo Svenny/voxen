@@ -28,7 +28,12 @@ GameView::GameView(client::Window& window)
 	m_prev_ypos = pos.second;
 
 	m_fov_x = 1.5;
+#if 1
+	double ar = (double) window.height() / (double) window.width();
+	m_fov_y = 2.0 * std::atan(std::tan(m_fov_x * 0.5) * ar);
+#else
 	m_fov_y = 1.5 * (double) window.height() / (double) window.width();
+#endif
 
 	Config* main_config = Config::mainConfig();
 	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");

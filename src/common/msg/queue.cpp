@@ -74,6 +74,16 @@ public:
 		return std::nullopt;
 	}
 
+	// Returns `true` if at least one message is pending
+	bool hasMessages() noexcept
+	{
+		if (!resetFullyConsumedSegment()) {
+			return false;
+		}
+
+		return m_consume_pos < m_consume_segment->produce_pos.load(std::memory_order_acquire);
+	}
+
 	// Put a message in queue
 	void produce(const Message &msg)
 	{
@@ -150,14 +160,32 @@ private:
 
 		return true;
 	}
+
+public:
+	std::atomic_uint32_t m_wait_state = 0;
 };
 
 Queue::Queue() = default;
 Queue::~Queue() noexcept = default;
 
+constexpr static uint32_t WAIT_STATE_PASSIVE = 0;
+constexpr static uint32_t WAIT_STATE_ACTIVE = 1;
+
 void Queue::send(const Message &msg)
 {
 	m_shards[thisThreadShard()].object().produce(msg);
+
+	auto &wait_state = m_shards[0].object().m_wait_state;
+
+	uint32_t old_state = wait_state.load(std::memory_order_relaxed);
+	if (old_state != WAIT_STATE_ACTIVE) {
+		return;
+	}
+
+	if (wait_state.compare_exchange_strong(old_state, WAIT_STATE_PASSIVE, std::memory_order_release,
+			 std::memory_order_relaxed)) {
+		wait_state.notify_one();
+	}
 }
 
 void Queue::drain(extras::function_ref<void(Message &)> handler)
@@ -181,6 +209,22 @@ std::optional<Message> Queue::receiveOne()
 	}
 
 	return std::nullopt;
+}
+
+void Queue::wait()
+{
+	auto &wait_state = m_shards[0].object().m_wait_state;
+
+	wait_state.store(WAIT_STATE_ACTIVE);
+
+	for (auto &pshard : m_shards) {
+		if (pshard.object().hasMessages()) {
+			wait_state.store(WAIT_STATE_PASSIVE);
+			return;
+		}
+	}
+
+	wait_state.wait(WAIT_STATE_ACTIVE);
 }
 
 uint32_t Queue::thisThreadShard() noexcept

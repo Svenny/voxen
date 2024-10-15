@@ -1,6 +1,10 @@
 #pragma once
 
+#include <extras/source_location.hpp>
+
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace voxen
 {
@@ -21,6 +25,14 @@ public:
 	{
 		return demangle(typeid(T).name());
 	}
+
+	static std::vector<std::string> stackTrace();
+
+	// This function should be called when a known bug happens.
+	// It prints log message with stacktrace and explanatory text,
+	// requests user to create a bugreport and then calls `abort()`.
+	[[noreturn]] static void bugFound(const char *text,
+		extras::source_location where = extras::source_location::current());
 };
 
 } // namespace voxen

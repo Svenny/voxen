@@ -50,6 +50,9 @@ public:
 	// Extract one message sent to this moment. Returns `std::nullopt` if there are none.
 	// NOTE: this method can't be called by multiple threads simultaneously.
 	std::optional<Message> receiveOne();
+	// Wait until at least one message arrives to the queue.
+	// NOTE: this method can't be called by multiple threads simultaneously.
+	void wait();
 
 private:
 	class Shard;

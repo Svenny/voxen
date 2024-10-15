@@ -52,6 +52,7 @@ public:
 	void launchFrustumCull(VkCommandBuffer cmdbuf);
 	void drawChunksInFrustum(VkCommandBuffer cmdbuf);
 	void drawDebugChunkBorders(VkCommandBuffer cmdbuf);
+	void drawFuckingTorus(VkCommandBuffer cmdbuf);
 
 private:
 	const WorldState *m_last_state = nullptr;

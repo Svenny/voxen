@@ -68,8 +68,8 @@ Config::Scheme Config::mainConfigScheme()
 	Config::Scheme s;
 
 	s.push_back({ "dev", "fps_logging", "Enable FPS and UPS logging", false });
-	s.push_back({ "window", "width", "Voxen window width", 1600L });
-	s.push_back({ "window", "height", "Voxen window height", 900L });
+	s.push_back({ "window", "width", "Voxen window width", 1920L });
+	s.push_back({ "window", "height", "Voxen window height", 1080L });
 	s.push_back({ "window", "fullscreen", "Enable fullscreen for Voxen window", false });
 	s.push_back({ "controller", "mouse_sensitivity", "Mouse sensitivity", 1.5 });
 	s.push_back({ "controller", "forward_speed", "Player forward speed", 100.0 });
