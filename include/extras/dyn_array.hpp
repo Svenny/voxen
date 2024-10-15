@@ -3,6 +3,7 @@
 #pragma once
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <span>
 
@@ -147,10 +148,10 @@ public:
 		uninitialized_construct(count, std::forward<F>(generator));
 	}
 
-	template<typename InputIt>
+	template<std::forward_iterator InputIt>
 	constexpr explicit dyn_array(InputIt first, InputIt last, const Allocator &alloc = Allocator()) : m_alloc(alloc)
 	{
-		uninitialized_construct(std::distance(first, last), [&first](void *place, size_type) {
+		uninitialized_construct(static_cast<size_t>(std::distance(first, last)), [&first](void *place, size_type) {
 			::new (place) T(*first);
 			++first;
 		});
