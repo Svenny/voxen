@@ -48,11 +48,14 @@ public:
 	constexpr pimpl &operator=(const pimpl &other);
 	constexpr ~pimpl() noexcept;
 
-	constexpr T &object() noexcept;
-	constexpr const T &object() const noexcept;
+	constexpr T &object() noexcept { return *std::launder(reinterpret_cast<T *>(m_storage)); }
+	constexpr const T &object() const noexcept { return *std::launder(reinterpret_cast<const T *>(m_storage)); }
+
+	constexpr T *operator->() noexcept { return std::launder(reinterpret_cast<T *>(m_storage)); }
+	constexpr const T *operator->() const noexcept { return std::launder(reinterpret_cast<const T *>(m_storage)); }
 
 private:
-	std::aligned_storage_t<S, A> m_storage;
+	alignas(A) std::byte m_storage[S];
 };
 
 template<typename T, size_t S, size_t A>
@@ -61,7 +64,7 @@ constexpr pimpl<T, S, A>::pimpl(Args &&...args)
 {
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
-	new (&m_storage) T(std::forward<Args>(args)...);
+	new (m_storage) T(std::forward<Args>(args)...);
 }
 
 template<typename T, size_t S, size_t A>
@@ -70,7 +73,7 @@ constexpr pimpl<T, S, A>::pimpl(pimpl &&other) noexcept
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
 	static_assert(std::is_nothrow_move_constructible_v<T>, "Type must be nothrow move-constructible");
-	new (&m_storage) T(std::move(other.object()));
+	new (m_storage) T(std::move(other.object()));
 }
 
 template<typename T, size_t S, size_t A>
@@ -79,7 +82,7 @@ constexpr pimpl<T, S, A>::pimpl(const pimpl &other)
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
 	static_assert(std::is_copy_constructible_v<T>, "Type must be copy-constructible");
-	new (&m_storage) T(other);
+	new (m_storage) T(other);
 }
 
 template<typename T, size_t S, size_t A>
@@ -103,18 +106,6 @@ constexpr pimpl<T, S, A>::~pimpl() noexcept
 {
 	static_assert(std::is_nothrow_destructible_v<T>, "Type must be nothrow destructible");
 	object().~T();
-}
-
-template<typename T, size_t S, size_t A>
-constexpr T &pimpl<T, S, A>::object() noexcept
-{
-	return *std::launder(reinterpret_cast<T *>(&m_storage));
-}
-
-template<typename T, size_t S, size_t A>
-constexpr const T &pimpl<T, S, A>::object() const noexcept
-{
-	return *std::launder(reinterpret_cast<const T *>(&m_storage));
 }
 
 } // namespace extras
