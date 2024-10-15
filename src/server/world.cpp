@@ -9,9 +9,9 @@ World::World()
 {
 	Log::debug("Creating server World");
 
-	m_last_state_ptr = std::make_shared<WorldState>();
-	WorldState &initial_state = *m_last_state_ptr;
-	initial_state.setActiveChunks(m_terrain_controller.doTick());
+	auto initial_state_ptr = std::make_shared<WorldState>();
+	initial_state_ptr->setActiveChunks(m_terrain_controller.doTick());
+	m_last_state_ptr.store(std::move(initial_state_ptr), std::memory_order_release);
 
 	Log::debug("Server World created successfully");
 }
@@ -23,12 +23,14 @@ World::~World() noexcept
 
 std::shared_ptr<const WorldState> World::getLastState() const
 {
-	return std::atomic_load(&m_last_state_ptr);
+	return m_last_state_ptr.load(std::memory_order_acquire);
 }
 
 void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nano> tick_inverval)
 {
-	const WorldState &last_state = *m_last_state_ptr;
+	auto last_state_ptr = getLastState();
+	const WorldState &last_state = *last_state_ptr;
+
 	auto next_state_ptr = std::make_shared<WorldState>(last_state);
 	WorldState &next_state = *next_state_ptr;
 
@@ -53,7 +55,7 @@ void World::update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nan
 	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());
 
-	std::atomic_store(&m_last_state_ptr, std::move(next_state_ptr));
+	m_last_state_ptr.store(std::move(next_state_ptr), std::memory_order_release);
 }
 
 } // namespace voxen::server

@@ -35,7 +35,6 @@ jobs:
         run: |
           sudo apt install ninja-build shaderc
           sudo apt install libglfw3-dev
-          sudo apt install libc++-dev libc++abi-dev
 
       - name: Build Voxen
         run: |

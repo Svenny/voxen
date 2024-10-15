@@ -22,15 +22,14 @@ FutexWorkCounter::Value unpackValue(uint32_t value) noexcept
 
 void futexWake(std::atomic_uint32_t *counter) noexcept
 {
-	[[maybe_unused]] long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(counter), FUTEX_WAKE_PRIVATE, 1, nullptr,
-		nullptr, 0);
+	[[maybe_unused]] long r = syscall(SYS_futex, counter, FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
 	// Can FUTEX_WAKE even fail?
 	assert(r != -1);
 }
 
 void futexWaitNonzero(std::atomic_uint32_t *counter) noexcept
 {
-	long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(counter), FUTEX_WAIT_PRIVATE, 0, nullptr, nullptr, 0);
+	long r = syscall(SYS_futex, counter, FUTEX_WAIT_PRIVATE, 0, nullptr, nullptr, 0);
 	if (r == -1) {
 		// Are other errors even possible?
 		assert(errno == EAGAIN || errno == EINTR);

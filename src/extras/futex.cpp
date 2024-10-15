@@ -12,15 +12,6 @@
 namespace extras
 {
 
-static_assert(std::atomic_uint32_t::is_always_lock_free, "Futex payload type must be lock-free");
-// Might avoid cast if using `std::atomic_ref`, but it's not supported as of libc++ 13
-static_assert(sizeof(std::atomic_uint32_t) == sizeof(uint32_t) && alignof(std::atomic_uint32_t) == alignof(uint32_t),
-	"atomic_uint32_t must be interconvertible with uint32_t");
-
-#if defined(__cpp_lib_atomic_ref) && __cpp_lib_atomic_ref >= 201806L
-	#error 'std::atomic_ref' has arrived, rewrite this code
-#endif
-
 void futex::lock() noexcept
 {
 	constexpr uint32_t MAX_SPIN_COUNT = 16;
@@ -46,8 +37,7 @@ void futex::lock() noexcept
 		// Store 2 in the payload to mark there is at least one thread waiting on it
 		if (expected == 2 || m_payload.compare_exchange_weak(expected, 2, std::memory_order_relaxed)) [[likely]] {
 			// We are not the first to wait for this lock, go straight to waiting
-			long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAIT_PRIVATE, 2, nullptr, nullptr,
-				0);
+			long r = syscall(SYS_futex, &m_payload, FUTEX_WAIT_PRIVATE, 2, nullptr, nullptr, 0);
 			if (r == -1) {
 				// Are other errors even possible?
 				assert(errno == EAGAIN || errno == EINTR);
@@ -72,8 +62,7 @@ void futex::unlock() noexcept
 		// At least one other thread is waiting on this lock, wake someone up
 		m_payload.store(0, std::memory_order_release);
 
-		[[maybe_unused]] long r = syscall(SYS_futex, reinterpret_cast<uint32_t *>(&m_payload), FUTEX_WAKE_PRIVATE, 1,
-			nullptr, nullptr, 0);
+		[[maybe_unused]] long r = syscall(SYS_futex, &m_payload, FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
 		// Can FUTEX_WAKE even fail?
 		assert(r != -1);
 	}

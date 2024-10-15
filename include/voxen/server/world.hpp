@@ -30,9 +30,8 @@ private:
 	terrain::Controller m_terrain_controller;
 
 	// `getLastState()` and `update()` may be called from different
-	// threads simultaneously. Therefore this pointer must be updated
-	// atomically (see `std::atomic_load, std::atomic_store`).
-	std::shared_ptr<WorldState> m_last_state_ptr;
+	// threads simultaneously. Therefore this pointer is atomic.
+	std::atomic<std::shared_ptr<WorldState>> m_last_state_ptr;
 
 	glm::dvec3 m_chunk_loading_position;
 };
