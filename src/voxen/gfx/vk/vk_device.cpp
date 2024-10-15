@@ -444,12 +444,13 @@ void Device::createDevice()
 	features.features.samplerAnisotropy = VK_TRUE;
 	features.features.textureCompressionBC = VK_TRUE;
 
+	// Not that these device-local queue priorities matter much...
+	// Don't move to inner scope, this is referenced by `vkCreateDevice`.
+	constexpr float QUEUE_PRIORITY = 0.5f;
+
 	// Fill VkDeviceQueueCreateInfo's
 	std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
 	{
-		// Not that these device-local queue priorities matter much...
-		constexpr float QUEUE_PRIORITY = 0.5f;
-
 		VkDeviceQueueCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		info.queueCount = 1;
