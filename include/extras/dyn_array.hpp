@@ -202,16 +202,16 @@ public:
 
 	[[nodiscard]] std::span<const std::byte> as_bytes() const noexcept
 	{
-		return std::as_bytes(std::span(m_data, m_size));
+		return std::as_bytes(std::span<const T, std::dynamic_extent>(m_data, m_size));
 	}
 
 	[[nodiscard]] std::span<std::byte> as_writable_bytes() noexcept
 	{
-		return std::as_writable_bytes(std::span(m_data, m_size));
+		return std::as_writable_bytes(std::span<T, std::dynamic_extent>(m_data, m_size));
 	}
 
-	operator std::span<const T>() const noexcept { return std::span(m_data, m_size); }
-	operator std::span<T>() noexcept { return std::span(m_data, m_size); }
+	operator std::span<const T>() const noexcept { return { m_data, m_size }; }
+	operator std::span<T>() noexcept { return { m_data, m_size }; }
 
 	[[nodiscard]] constexpr T &operator[](size_type pos) noexcept { return m_data[pos]; }
 	[[nodiscard]] constexpr const T &operator[](size_type pos) const noexcept { return m_data[pos]; }

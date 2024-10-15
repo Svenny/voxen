@@ -51,6 +51,9 @@ public:
 		using other = DomainAllocator<U, D>;
 	};
 
+	template<typename U>
+	constexpr DomainAllocator(const DomainAllocator<U, D> &) noexcept {}
+
 	constexpr DomainAllocator() = default;
 	constexpr DomainAllocator(DomainAllocator &&) = default;
 	constexpr DomainAllocator(const DomainAllocator &) = default;

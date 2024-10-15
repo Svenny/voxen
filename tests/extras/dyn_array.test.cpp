@@ -2,6 +2,7 @@
 
 #include "../test_common.hpp"
 
+#include <array>
 #include <unordered_set>
 
 namespace

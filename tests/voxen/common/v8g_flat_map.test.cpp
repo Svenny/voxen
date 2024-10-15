@@ -3,6 +3,8 @@
 
 #include "../../test_common.hpp"
 
+#include <numeric>
+
 namespace voxen
 {
 
