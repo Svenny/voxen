@@ -22,11 +22,6 @@ public:
 
 	// --- Memory allocation parameters ---
 
-	// If set to `true` then `HostAllocator::callbacks()` will return a valid instance of
-	// Vulkan allocation callbacks structure. Otherwise it will return null pointer.
-	// Tracking allocations can help detect Vulkan resource leaks (or driver bugs).
-	constexpr static bool TRACK_HOST_ALLOCATIONS = false;
-
 	// This is the starting size of arena for each memory type. It should be
 	// pretty small to avoid large memory waste for rarely-used memory types.
 	constexpr static VkDeviceSize ARENA_SIZE_INITIAL_GUESS = 32 * 1024 * 1024; // 32 MB

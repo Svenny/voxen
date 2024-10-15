@@ -52,24 +52,12 @@ public:
 	VkResult result() const noexcept;
 };
 
+// This is leftover from host memory allocation tracker.
+// Removed as it was pretty useless, though maybe could be reinstated later.
+// Remove these lines after purging remaining `callbacks()` call sites.
 class HostAllocator {
 public:
-	HostAllocator() noexcept;
-	HostAllocator(HostAllocator &&) = delete;
-	HostAllocator(const HostAllocator &) = delete;
-	HostAllocator &operator=(HostAllocator &&) = delete;
-	HostAllocator &operator=(const HostAllocator &) = delete;
-	~HostAllocator() noexcept;
-
-	static HostAllocator &instance() noexcept { return g_instance; }
-	static const VkAllocationCallbacks *callbacks() noexcept;
-	static size_t allocated() noexcept { return g_instance.m_allocated.load(); }
-
-private:
-	static HostAllocator g_instance;
-
-	VkAllocationCallbacks m_callbacks;
-	std::atomic_size_t m_allocated;
+	static const VkAllocationCallbacks *callbacks() noexcept { return nullptr; }
 };
 
 } // namespace voxen::client::vulkan
