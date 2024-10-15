@@ -64,6 +64,7 @@ set(VOXEN_SOURCES
 	src/voxen/common/uid.cpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
+	src/voxen/gfx/vk/render_graph.cpp
 	src/voxen/gfx/vk/render_graph_builder.cpp
 	src/voxen/gfx/vk/render_graph_execution.cpp
 	src/voxen/gfx/vk/render_graph_private.cpp
