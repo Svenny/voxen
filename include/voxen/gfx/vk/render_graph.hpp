@@ -10,7 +10,7 @@ class RenderGraphExecution;
 
 class VOXEN_API IRenderGraph {
 public:
-	virtual ~IRenderGraph() noexcept = default;
+	virtual ~IRenderGraph() noexcept;
 
 	// Will be called when attaching a new render graph to an executor
 	// or on explicit request (e.g. when static rendering options change).
