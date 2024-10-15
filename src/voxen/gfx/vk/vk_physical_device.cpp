@@ -3,6 +3,8 @@
 #include <voxen/client/vulkan/common.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 
+#include <cstring>
+
 namespace voxen::gfx::vk
 {
 

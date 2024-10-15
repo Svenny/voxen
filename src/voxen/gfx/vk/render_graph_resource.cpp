@@ -2,6 +2,8 @@
 
 #include "render_graph_private.hpp"
 
+#include <cassert>
+
 namespace voxen::gfx::vk
 {
 

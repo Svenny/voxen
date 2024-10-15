@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <utility>
 
 namespace voxen
 {

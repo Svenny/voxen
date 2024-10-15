@@ -2,6 +2,16 @@
 
 #include <voxen/visibility.hpp>
 
+// Work around clang bug (emits warning for some deprecated shit in std headers)
+// Like this: https://github.com/llvm/llvm-project/issues/76515
+//
+// Wrapping just problematic `std::bind` usage is not enough,
+// warning triggers at `enqueueTask()` call sites.
+// I have no idea how this works... note I'm setting it to error, basically should change
+// nothing as we're already building with -Werror. But somehow it does suppress warning
+// from std headers while retaining errors in user code (try adding [[deprecated]] somewhere).
+#pragma clang diagnostic error "-Wdeprecated-declarations"
+
 #include <functional>
 #include <future>
 #include <memory>

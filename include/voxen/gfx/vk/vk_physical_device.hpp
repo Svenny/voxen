@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <utility>
+
 namespace voxen::gfx::vk
 {
 

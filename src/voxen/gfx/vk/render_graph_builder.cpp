@@ -2,6 +2,10 @@
 
 #include "render_graph_private.hpp"
 
+#include <fmt/format.h>
+
+#include <cassert>
+
 namespace voxen::gfx::vk
 {
 

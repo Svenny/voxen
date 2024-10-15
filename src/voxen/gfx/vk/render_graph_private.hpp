@@ -9,6 +9,7 @@
 #include "vk_private_consts.hpp"
 
 #include <deque>
+#include <variant>
 #include <vector>
 
 namespace voxen::gfx::vk

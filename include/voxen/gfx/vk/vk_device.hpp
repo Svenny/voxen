@@ -4,6 +4,11 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
 
+#include <extras/source_location.hpp>
+
+#include <variant>
+#include <vector>
+
 namespace voxen::gfx::vk
 {
 

@@ -2,6 +2,7 @@
 
 #include <cinttypes>
 #include <cstdio>
+#include <cstring>
 #include <random>
 
 namespace voxen
