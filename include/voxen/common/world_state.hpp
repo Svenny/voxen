@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/land/land.hpp>
 #include <voxen/common/player.hpp>
 
 #include <extras/function_ref.hpp>
@@ -45,6 +46,9 @@ public:
 
 	void setActiveChunks(ChunkPtrVector value) noexcept { m_active_chunks = std::move(value); }
 
+	const land::LandState &landState() const noexcept { return m_land_state; }
+	void setLandState(const land::LandState &state) { m_land_state = state; }
+
 	uint64_t tickId() const noexcept { return m_tick_id; }
 	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
 
@@ -56,6 +60,7 @@ public:
 private:
 	Player m_player;
 	ChunkPtrVector m_active_chunks;
+	land::LandState m_land_state;
 	uint64_t m_tick_id = 0;
 };
 

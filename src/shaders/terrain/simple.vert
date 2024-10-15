@@ -9,19 +9,22 @@ layout(set = 0, binding = 0, std140) uniform CameraParameters {
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
-layout(location = 2) in float in_primary_mat;
+layout(location = 2) in uvec3 in_materials;
 layout(location = 3) in uint in_flags;
-layout(location = 4) in float in_secondary_mats_weight;
-layout(location = 5) in float in_secondary_mats_ratio;
-layout(location = 6) in float in_secondary_mat_a;
-layout(location = 7) in float in_secondary_mat_b;
-layout(location = 8) in vec4 in_chunk_base_scale;
+layout(location = 4) in vec4 in_chunk_base_scale;
 
 layout(location = 0) out vec3 out_normal;
+layout(location = 1) out uvec3 out_materials;
+layout(location = 2) out vec3 out_material_weights;
 
 void main()
 {
 	out_normal = in_normal;
+	out_materials = in_materials;
+
+	vec3 mat_weights = vec3(0.0);
+	mat_weights[bitfieldExtract(in_flags, 1, 2)] = 1.0;
+	out_material_weights = mat_weights;
 
 	vec4 base_scale = in_chunk_base_scale;
 	vec3 pos = in_position;

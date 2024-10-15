@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/land/land.hpp>
 #include <voxen/common/terrain/controller.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/visibility.hpp>
@@ -28,6 +29,7 @@ public:
 
 private:
 	terrain::Controller m_terrain_controller;
+	land::Land m_land_controller;
 
 	// `getLastState()` and `update()` may be called from different
 	// threads simultaneously. Therefore this pointer is atomic.

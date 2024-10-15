@@ -42,7 +42,17 @@ set(VOXEN_HEADERS
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/assets/png_tools.hpp
+	include/voxen/common/land/block.hpp
+	include/voxen/common/land/block_registry.hpp
+	include/voxen/common/land/chunk_key.hpp
 	include/voxen/common/land/cube_array.hpp
+	include/voxen/common/land/fake_chunk_data.hpp
+	include/voxen/common/land/land.hpp
+	include/voxen/common/land/land_chunk.hpp
+	include/voxen/common/land/land_chunk_storage.hpp
+	include/voxen/common/land/land_public_consts.hpp
+	include/voxen/common/land/land_utils.hpp
+	include/voxen/common/msg/messages/file_read_done.hpp
 	include/voxen/common/msg/config.hpp
 	include/voxen/common/msg/message.hpp
 	include/voxen/common/msg/queue.hpp
@@ -75,6 +85,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/v8g_hash_trie.hpp
 	include/voxen/common/v8g_hash_trie_impl.hpp
 	include/voxen/common/world_state.hpp
+	include/voxen/gfx/vk/async_dma.hpp
 	include/voxen/gfx/vk/frame_context.hpp
 	include/voxen/gfx/vk/legacy_render_graph.hpp
 	include/voxen/gfx/vk/render_graph.hpp
@@ -82,15 +93,18 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/standard_render_graph.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
+	include/voxen/gfx/gfx_land_loader.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp
+	include/voxen/util/concentric_octahedron_walker.hpp
 	include/voxen/util/debug.hpp
 	include/voxen/util/elapsed_timer.hpp
 	include/voxen/util/error_condition.hpp

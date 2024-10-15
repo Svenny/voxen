@@ -12,6 +12,7 @@
 namespace voxen::gfx::vk
 {
 
+class AsyncDma;
 class Device;
 class Instance;
 class LegacyRenderGraph;
@@ -19,6 +20,13 @@ class PhysicalDevice;
 class RenderGraphRunner;
 
 } // namespace voxen::gfx::vk
+
+namespace voxen::gfx
+{
+
+class LandLoader;
+
+}
 
 namespace voxen::client::vulkan
 {
@@ -45,7 +53,7 @@ public:
 	bool start(Window &window) noexcept;
 	void stop() noexcept;
 
-	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
+	bool drawFrame(std::shared_ptr<const WorldState> state, const GameView &view) noexcept;
 
 	State state() const noexcept { return m_state; }
 
@@ -83,6 +91,7 @@ public:
 
 	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
 	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
+	gfx::LandLoader &landLoader() noexcept { return *m_land_loader; }
 
 	// Declare pointers to Vulkan API entry points, moved
 	// into a separate file because of size and ugliness
@@ -118,6 +127,8 @@ private:
 	PipelineCollection *m_pipeline_collection = nullptr;
 
 	TerrainRenderer *m_terrain_renderer = nullptr;
+	gfx::vk::AsyncDma *m_async_dma = nullptr;
+	gfx::LandLoader *m_land_loader = nullptr;
 
 	static constinit Backend s_instance;
 

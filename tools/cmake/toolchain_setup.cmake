@@ -41,6 +41,9 @@ function(voxen_setup_target target is_executable)
 		# when calling them from the same library (a frequent case for us).
 		# Might be enabled in Clang by default but let's be sure.
 		-fno-semantic-interposition
+
+		-march=x86-64-v3
+		#-fopenmp
 	)
 
 	target_link_options(${target} PRIVATE
@@ -56,6 +59,9 @@ function(voxen_setup_target target is_executable)
 		# Treat unresolved symbols as errors when linking shared libraries.
 		# Useful to catch missing dependencies a bit faster.
 		--no-undefined
+
+		-march=x86-64-v3
+		#-fopenmp
 	)
 
 	set_target_properties(${target} PROPERTIES

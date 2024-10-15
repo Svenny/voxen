@@ -236,12 +236,12 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 	// Is it signaled now?
 	// In CPU-bound scenarios we will probably always exit here.
 	if (value <= m_last_completed_timelines[queue]) {
-		// Process destroy queue as we've updated some completion values
+		// Process destroy queue as we've (likely) updated some completion values
 		processDestroyQueue();
 		return;
 	}
 
-	// Still not signaled, we have to block
+	// Still not signaled, we have to block (GPU-bound or non-pipelined workload)
 	VkSemaphoreWaitInfo wait_info {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
 		.pNext = nullptr,
@@ -259,6 +259,26 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 	// Don't forget to process destroy queue (must do it after any completion value update)
 	m_last_completed_timelines[queue] = value;
 	processDestroyQueue();
+}
+
+uint64_t Device::getCompletedTimeline(Queue queue)
+{
+	assert(queue < QueueCount);
+
+	uint64_t value = 0;
+
+	VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[queue], &value);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw VulkanException(res, "vkGetSemaphoreCounterValue");
+	}
+
+	// Don't forget to process destroy queue (must do it after any completion value update)
+	if (value > m_last_completed_timelines[queue]) {
+		m_last_completed_timelines[queue] = value;
+		processDestroyQueue();
+	}
+
+	return value;
 }
 
 void Device::forceCompletion() noexcept
@@ -320,7 +340,7 @@ bool Device::isSupported(PhysicalDevice &pd)
 	auto &ext_info = pd.extInfo();
 
 	if (!ext_info.have_maintenance5) {
-		missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 	}
 	if (!ext_info.have_push_descriptor) {
 		missing.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -416,6 +436,7 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan13Features features13 = {};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	features13.pNext = &features_maintenance5;
+	features13.pNext = nullptr;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
 	features13.maintenance4 = VK_TRUE;
@@ -491,7 +512,7 @@ void Device::createDevice()
 	VkPhysicalDeviceMeshShaderFeaturesEXT features_mesh_shader = {};
 	{
 		// Required extensions
-		ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 

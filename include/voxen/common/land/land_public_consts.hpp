@@ -20,4 +20,13 @@ constexpr uint32_t CHUNK_KEY_Y_BITS = 16;
 // Limits the maximal chunk aggregation (LOD) level
 constexpr uint32_t CHUNK_KEY_SCALE_BITS = 4;
 
+constexpr uint32_t REGION_SIZE_LOG2_CHUNKS = 4;
+constexpr int32_t REGION_SIZE_CHUNKS = 1 << REGION_SIZE_LOG2_CHUNKS;
+constexpr int32_t REGION_SIZE_BLOCKS = CHUNK_SIZE_BLOCKS * REGION_SIZE_CHUNKS;
+constexpr double REGION_SIZE_METRES = BLOCK_SIZE_METRES * REGION_SIZE_BLOCKS;
+
+constexpr uint32_t NUM_IMPOSTOR_LEVELS = REGION_SIZE_LOG2_CHUNKS + 1;
+constexpr uint32_t NUM_LOD_LEVELS = NUM_IMPOSTOR_LEVELS + 1;
+constexpr uint32_t IMPOSTOR_SIZE_PIXELS = 32;
+
 } // namespace voxen::land::Consts

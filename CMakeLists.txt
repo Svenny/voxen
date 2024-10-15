@@ -44,6 +44,8 @@ target_link_libraries(voxen PUBLIC
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
+	dw
+	3rdparty::backward
 	3rdparty::glfw
 	3rdparty::platform-folders
 	3rdparty::vma

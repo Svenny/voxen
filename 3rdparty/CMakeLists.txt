@@ -15,6 +15,7 @@ target_link_libraries(zlib-wrapper INTERFACE ZLIB::ZLIB)
 add_library(3rdparty::zlib ALIAS zlib-wrapper)
 
 # Embedded dependencies (sources in tree)
+include(backward.cmake)
 include(catch.cmake)
 include(cxxopts.cmake)
 include(fmt.cmake)

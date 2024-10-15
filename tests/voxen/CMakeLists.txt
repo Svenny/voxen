@@ -5,6 +5,7 @@ target_sources(test-voxen PRIVATE
 	common/land/cube_array.test.cpp
 	common/v8g_flat_map.test.cpp
 	common/v8g_hash_trie.test.cpp
+	util/concentric_octahedron_walker.test.cpp
 	util/hash.test.cpp
 	util/packed_color.test.cpp
 )
@@ -18,5 +19,6 @@ add_test(NAME voxen-land-chunk-key COMMAND test-voxen "[voxen::land::chunk_key]"
 add_test(NAME voxen-land-cube-array COMMAND test-voxen "[voxen::land::cube_array]")
 add_test(NAME voxen-v8g-flat-map COMMAND test-voxen "[voxen::v8g_flat_map]")
 add_test(NAME voxen-v8g-hash-trie COMMAND test-voxen "[voxen::v8g_hash_trie]")
+add_test(NAME voxen-concentric-octahedron-walker COMMAND test-voxen "[voxen::concentric_octahedron_walker]")
 add_test(NAME voxen-hash COMMAND test-voxen "[voxen::hash]")
 add_test(NAME voxen-packed-color COMMAND test-voxen "[voxen::packed_color]")

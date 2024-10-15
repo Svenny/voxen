@@ -7,6 +7,7 @@
 #include <voxen/common/threadpool.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/server/world.hpp>
+#include <voxen/util/allocator.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
@@ -116,12 +117,34 @@ void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_wo
 	}
 }
 
+#include <voxen/common/assets/png_tools.hpp>
+#include <voxen/common/terrain/allocator.hpp>
+#include <voxen/common/terrain/generator.hpp>
+#include <voxen/util/debug.hpp>
+
+template<voxen::AllocationDomain D>
+static double domainMemoryUsage() noexcept
+{
+	size_t usage = voxen::AllocationTracker<D>::currentlyUsedMemory();
+	return double(usage) / double(1 << 20);
+}
+
+[[maybe_unused]] static glm::dvec3 hv2rgb(double hue, double value)
+{
+	glm::dvec3 K(1.0, 2.0 / 3.0, 1.0 / 3.0);
+	glm::dvec3 p = glm::abs(glm::fract(glm::dvec3(hue) + K) * 6.0 - 3.0);
+	return value * glm::clamp(p - 1.0, 0.0, 1.0);
+}
+
 int main(int argc, char *argv[])
 {
 	using voxen::Log;
 	using namespace std::chrono;
 
 	Log::info("Starting Voxen {}", voxen::Version::STRING);
+
+	//TODO: log everything for debug
+	//Log::setLevel(Log::Level::Info);
 
 	try {
 		cxxopts::Options options = initCli();
@@ -160,6 +183,15 @@ int main(int argc, char *argv[])
 			// Write all possibly buffered log messages
 			fflush(stdout);
 
+#if 0
+			auto ptr = voxen::terrain::PoolAllocator::allocatePrimaryData();
+
+			Log::info("Domain memory usage: mesh {:.2f} MB, primary {:.2f} MB, standby {:.2f} MB",
+				domainMemoryUsage<voxen::AllocationDomain::TerrainMesh>(),
+				domainMemoryUsage<voxen::AllocationDomain::TerrainPrimary>(),
+				domainMemoryUsage<voxen::AllocationDomain::StandbyCache>());
+#endif
+
 			if (isLoggingFPSEnable) {
 				duration<double> dur = (high_resolution_clock::now() - time_point_counter);
 				double elapsed = dur.count();
@@ -172,15 +204,14 @@ int main(int argc, char *argv[])
 			}
 
 			auto last_state_ptr = world.getLastState();
-			const voxen::WorldState &last_state = *last_state_ptr;
 			// Input handle
 			wnd.pollEvents();
-			gui->update(last_state, render_to_world_queue);
+			gui->update(*last_state_ptr, render_to_world_queue);
 			// GUI now handled a lot of callbacks (events) from Window
 			// and update world via queue
 
 			// Do render
-			render->drawFrame(last_state, gui->view());
+			render->drawFrame(last_state_ptr, gui->view());
 			fps_counter++;
 		}
 

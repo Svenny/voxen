@@ -31,13 +31,16 @@ public:
 
 	PipelineLayout &terrainBasicLayout() noexcept { return m_terrain_basic_layout; }
 	PipelineLayout &terrainFrustumCullLayout() noexcept { return m_terrain_frustum_cull_layout; }
+	PipelineLayout &landImpostorLayout() noexcept { return m_land_impostor_layout; }
 
 private:
 	PipelineLayout m_terrain_basic_layout;
 	PipelineLayout m_terrain_frustum_cull_layout;
+	PipelineLayout m_land_impostor_layout;
 
 	PipelineLayout createTerrainBasicLayout();
 	PipelineLayout createTerrainFrustumCullLayout();
+	PipelineLayout createLandImpostorLayout();
 };
 
 } // namespace voxen::client::vulkan
