@@ -1,5 +1,8 @@
 #include <voxen/util/packed_color.hpp>
 
+#include <algorithm>
+#include <cmath>
+
 namespace voxen
 {
 

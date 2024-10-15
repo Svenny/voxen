@@ -12,6 +12,8 @@
 
 #include <vma/vk_mem_alloc.h>
 
+#include <cassert>
+
 namespace voxen::gfx::vk
 {
 

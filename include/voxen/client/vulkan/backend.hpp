@@ -5,6 +5,8 @@
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
 
+#include <extras/dyn_array.hpp>
+
 #include <string_view>
 
 namespace voxen::gfx::vk

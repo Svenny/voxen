@@ -3,6 +3,7 @@
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 
 #include <extras/dyn_array.hpp>
+#include <extras/source_location.hpp>
 
 namespace voxen::gfx::vk
 {
