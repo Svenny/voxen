@@ -88,6 +88,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/os/futex.hpp
+	include/voxen/os/process.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

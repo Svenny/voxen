@@ -1,10 +1,10 @@
 #include <voxen/util/log.hpp>
 
+#include <voxen/os/process.hpp>
+
 #include <fmt/chrono.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
-
-#include <unistd.h>
 
 #include <cassert>
 #include <cstdio>
@@ -83,8 +83,8 @@ void Log::doLog(Level level, extras::source_location where, std::string_view for
 	}
 
 	// Now try to print this text
-	const auto pid = getpid();
-	const auto tid = gettid();
+	const int32_t pid = os::Process::getProcessId();
+	const int32_t tid = os::Process::getThreadId();
 
 	try {
 		// Select the sink (stdout for `X <= Info`, stderr for `X >= Warn`)
