@@ -184,6 +184,8 @@ void Config::patch(string_view section, string_view parameter_name, string_view 
 				const std::string& str = Config::optionToString(it_inter->second);
 				m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
 			}
+
+			return;
 		}
 	}
 

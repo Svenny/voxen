@@ -60,7 +60,7 @@ static void rotate(glm::mat<3, 3, T> &A, glm::mat<3, 3, T> &H, T c, T s, int i, 
 }
 
 template<typename T>
-static void rotate(glm::mat<4, 4, T> &A, glm::mat<4, 4, T> &H, T c, T s, int i, int j)
+[[maybe_unused]] static void rotate(glm::mat<4, 4, T> &A, glm::mat<4, 4, T> &H, T c, T s, int i, int j)
 {
 #define jacobiRotate(i, j, k) \
 	{ \

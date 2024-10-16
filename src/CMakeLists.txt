@@ -103,6 +103,7 @@ set(VOXEN_SHADER_COMPILER_OPTIONS
 )
 
 add_custom_target(voxen-shaders)
+set_target_properties(voxen-shaders PROPERTIES FOLDER codegen)
 
 foreach(SHADER ${VOXEN_SHADERS})
 	# Input GLSL file
@@ -113,7 +114,7 @@ foreach(SHADER ${VOXEN_SHADERS})
 	set(SHADER_DEPFILE shader_depfiles/${SHADER}.d)
 
 	add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
-		BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
+			${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
 		MAIN_DEPENDENCY ${SHADER_SOURCE}
 		DEPFILE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
 		COMMENT "Building SPIR-V for shader ${SHADER}"

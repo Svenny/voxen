@@ -10,6 +10,11 @@ class RenderGraphExecution;
 
 class VOXEN_API IRenderGraph {
 public:
+	IRenderGraph() = default;
+	IRenderGraph(IRenderGraph &&) = default;
+	IRenderGraph(const IRenderGraph &) = default;
+	IRenderGraph &operator=(IRenderGraph &&) = default;
+	IRenderGraph &operator=(const IRenderGraph &) = default;
 	virtual ~IRenderGraph() noexcept;
 
 	// Will be called when attaching a new render graph to an executor

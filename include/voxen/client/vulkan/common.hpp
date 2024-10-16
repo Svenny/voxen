@@ -47,6 +47,10 @@ class VOXEN_API VulkanException final : public Exception {
 public:
 	explicit VulkanException(VkResult result, std::string_view api,
 		extras::source_location loc = extras::source_location::current());
+	VulkanException(VulkanException &&) = default;
+	VulkanException(const VulkanException &) = default;
+	VulkanException &operator=(VulkanException &&) = default;
+	VulkanException &operator=(const VulkanException &) = default;
 	~VulkanException() noexcept override;
 
 	VkResult result() const noexcept;

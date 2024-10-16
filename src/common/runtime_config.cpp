@@ -11,6 +11,9 @@ struct RuntimeConfig::Impl {
 
 static RuntimeConfig g_instance;
 
+RuntimeConfig::RuntimeConfig() = default;
+RuntimeConfig::~RuntimeConfig() noexcept = default;
+
 const client::GfxRuntimeConfig &RuntimeConfig::gfxConfig() const noexcept
 {
 	return m_impl.object().gfx_config;

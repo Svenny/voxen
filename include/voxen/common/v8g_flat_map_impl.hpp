@@ -36,12 +36,12 @@ V8gFlatMap<Key, Value, Policy>::V8gFlatMap(const V8gFlatMap<Key, MutValue, V8gSt
 			old_item++;
 		}
 
-		auto make_value_ptr = [](const MutValue &mut, const Value *old) {
+		auto make_value_ptr = [](const MutValue &mut_val, const Value *old_val) {
 			if constexpr (std::is_constructible_v<Value, const MutValue &, const Value *>) {
-				return std::make_shared<Value>(mut, old);
+				return std::make_shared<Value>(mut_val, old_val);
 			} else {
 				static_assert(std::is_constructible_v<Value, const MutValue &>);
-				return std::make_shared<Value>(mut);
+				return std::make_shared<Value>(mut_val);
 			}
 		};
 
@@ -96,12 +96,12 @@ V8gFlatMap<Key, Value, Policy>::V8gFlatMap(V8gFlatMap<Key, MutValue, V8gStorageP
 			old_item++;
 		}
 
-		auto make_value_ptr = [](MutValue &mut, const Value *old) {
+		auto make_value_ptr = [](MutValue &mut_val, const Value *old_val) {
 			if constexpr (std::is_constructible_v<Value, MutValue &, const Value *>) {
-				return std::make_shared<Value>(mut, old);
+				return std::make_shared<Value>(mut_val, old_val);
 			} else {
 				static_assert(std::is_constructible_v<Value, MutValue &>);
-				return std::make_shared<Value>(mut);
+				return std::make_shared<Value>(mut_val);
 			}
 		};
 

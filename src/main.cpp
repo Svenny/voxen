@@ -24,7 +24,7 @@
 
 static const std::string kCliSectionSeparator = "__";
 
-cxxopts::Options initCli()
+static cxxopts::Options initCli()
 {
 	using namespace voxen;
 
@@ -75,7 +75,7 @@ cxxopts::Options initCli()
 	return options;
 }
 
-void patchConfig(const cxxopts::ParseResult &result, voxen::Config *config)
+static void patchConfig(const cxxopts::ParseResult &result, voxen::Config *config)
 {
 	for (const auto &keyvalue : result.arguments()) {
 		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
@@ -91,10 +91,10 @@ void patchConfig(const cxxopts::ParseResult &result, voxen::Config *config)
 }
 
 // TODO: use queue or some "inter-thread data exchange" object
-std::atomic_bool g_stop { false };
-std::atomic_int64_t g_ups_counter { 0 };
+static std::atomic_bool g_stop { false };
+static std::atomic_int64_t g_ups_counter { 0 };
 
-void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_world_queue)
+static void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_world_queue)
 {
 	using namespace std::chrono;
 

@@ -24,6 +24,13 @@ class GfxRuntimeConfig;
 
 class VOXEN_API RuntimeConfig final {
 public:
+	RuntimeConfig();
+	RuntimeConfig(RuntimeConfig &&) = delete;
+	RuntimeConfig(const RuntimeConfig &) = delete;
+	RuntimeConfig &operator=(RuntimeConfig &&) = delete;
+	RuntimeConfig &operator=(const RuntimeConfig &) = delete;
+	~RuntimeConfig() noexcept;
+
 	// Sub-config for graphics subsystem
 	const client::GfxRuntimeConfig &gfxConfig() const noexcept;
 

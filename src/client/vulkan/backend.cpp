@@ -238,8 +238,6 @@ std::string_view Backend::stateToString(State state) noexcept
 		return "Started"sv;
 	case State::Broken:
 		return "Broken"sv;
-	default:
-		return "UNKNOWN STATE"sv;
 	}
 }
 

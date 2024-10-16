@@ -115,6 +115,7 @@ add_custom_target(voxen-version-file
 	BYPRODUCTS ${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
 	COMMENT "Generating version.hpp file"
 )
+set_target_properties(voxen-version-file PROPERTIES FOLDER codegen)
 add_dependencies(voxen voxen-version-file)
 
 # Include directory with generated headers

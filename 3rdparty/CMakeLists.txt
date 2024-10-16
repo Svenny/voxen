@@ -1,5 +1,8 @@
 # This directory manages third-party Voxen dependencies
 
+# Make all targets created here appear in a folder in VS
+set(CMAKE_FOLDER 3rdparty)
+
 # External dependencies (system libraries)
 # Imported targets created by `find_package` are not visible in
 # parent directory so use an additional `-wrapper` pseudo target
