@@ -51,5 +51,7 @@ if out_file.is_file():
 		if f.read() == data:
 			sys.exit(0)
 
+out_file.parent.mkdir(parents=True, exist_ok=True)
+
 with open(out_file, 'w') as f:
 	f.write(data)

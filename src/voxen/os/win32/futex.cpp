@@ -1,6 +1,6 @@
 #include <voxen/os/futex.hpp>
 
-#include <windows.h>
+#include <Windows.h>
 // --- dont reorder
 #include <synchapi.h>
 

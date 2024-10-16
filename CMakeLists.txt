@@ -14,6 +14,11 @@ else()
 	endif()
 endif()
 
+# Enable hierarchical project view in VS sln
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+# Set game executable startup by default in VS sln
+set_directory_properties(PROPERTIES VS_STARTUP_PROJECT game)
+
 # Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX "pre-alpha")

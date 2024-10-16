@@ -2,13 +2,24 @@ voxen_add_library(vma STATIC)
 add_library(3rdparty::vma ALIAS vma)
 
 target_compile_options(vma PRIVATE
+	-Wno-cast-align
+	-Wno-cast-function-type-strict
+	-Wno-covered-switch-default
+	-Wno-extra-semi-stmt
+	-Wno-inconsistent-missing-destructor-override
 	-Wno-missing-field-initializers
 	-Wno-nullability-completeness
 	-Wno-nullability-extension
+	-Wno-old-style-cast
 	-Wno-sign-conversion
+	-Wno-suggest-destructor-override
+	-Wno-switch-default
+	-Wno-switch-enum
 	-Wno-undef
+	-Wno-unreachable-code-fallthrough
 	-Wno-unused-function
 	-Wno-unused-parameter
+	-Wno-unused-template
 	-Wno-unused-variable
 	-Wno-weak-vtables
 )

@@ -504,7 +504,7 @@ public:
 	bool visitDiffItem(const Item *item,
 		extras::function_ref<bool(const Item *node_item, const Item *passed_item)> visitor) const
 	{
-		auto unary_adapter = [&](const Item *item) { return visitor(item, nullptr); };
+		auto unary_adapter = [&](const Item *callee) { return visitor(callee, nullptr); };
 
 		const uint64_t item_bit = uint64_t(1) << ((item->key().hash() << m_consumed_hash_bits) >> (64 - 6));
 

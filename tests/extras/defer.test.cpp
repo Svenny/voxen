@@ -32,7 +32,7 @@ TEST_CASE("'defer' works properly", "[extras::defer]")
 
 			throw 0;
 		}
-		catch (int ex) {
+		catch (int) {
 			REQUIRE(flag == true);
 		}
 	}
@@ -58,7 +58,7 @@ TEST_CASE("'defer_fail' works properly", "[extras::defer]")
 
 			throw 0;
 		}
-		catch (int ex) {
+		catch (int) {
 			REQUIRE(flag == true);
 		}
 	}
