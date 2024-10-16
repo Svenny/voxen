@@ -1,11 +1,6 @@
 #include <voxen/util/futex_work_counter.hpp>
 
-#include <cassert>
-
-// TODO: system-dependent includes; wrap in conditional
-#include <linux/futex.h>
-#include <sys/syscall.h>
-#include <unistd.h>
+#include <voxen/os/futex.hpp>
 
 namespace voxen
 {
@@ -20,22 +15,6 @@ FutexWorkCounter::Value unpackValue(uint32_t value) noexcept
 	return { value & (STOP_BIT - 1u), !!(value & STOP_BIT) };
 }
 
-void futexWake(std::atomic_uint32_t *counter) noexcept
-{
-	[[maybe_unused]] long r = syscall(SYS_futex, counter, FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
-	// Can FUTEX_WAKE even fail?
-	assert(r != -1);
-}
-
-void futexWaitNonzero(std::atomic_uint32_t *counter) noexcept
-{
-	long r = syscall(SYS_futex, counter, FUTEX_WAIT_PRIVATE, 0, nullptr, nullptr, 0);
-	if (r == -1) {
-		// Are other errors even possible?
-		assert(errno == EAGAIN || errno == EINTR);
-	}
-}
-
 } // namespace
 
 auto FutexWorkCounter::loadRelaxed() const noexcept -> Value
@@ -46,7 +25,7 @@ auto FutexWorkCounter::loadRelaxed() const noexcept -> Value
 void FutexWorkCounter::addWork(uint32_t amount) noexcept
 {
 	if (m_counter.fetch_add(amount) == 0) {
-		futexWake(&m_counter);
+		os::Futex::wakeSingle(&m_counter);
 	}
 }
 
@@ -60,7 +39,7 @@ auto FutexWorkCounter::removeWork(uint32_t amount) noexcept -> Value
 void FutexWorkCounter::requestStop() noexcept
 {
 	if (m_counter.fetch_or(STOP_BIT) == 0) {
-		futexWake(&m_counter);
+		os::Futex::wakeSingle(&m_counter);
 	}
 }
 
@@ -69,7 +48,7 @@ auto FutexWorkCounter::wait() noexcept -> Value
 	uint32_t value = m_counter.load();
 
 	while (value == 0) {
-		futexWaitNonzero(&m_counter);
+		os::Futex::waitInfinite(&m_counter, value);
 		value = m_counter.load();
 	}
 

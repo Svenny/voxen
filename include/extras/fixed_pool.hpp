@@ -1,7 +1,6 @@
 #pragma once
 
 #include <extras/bitset.hpp>
-#include <extras/futex.hpp>
 #include <extras/refcnt_ptr.hpp>
 
 #include <array>
@@ -169,7 +168,7 @@ public:
 	}
 
 private:
-	futex m_lock;
+	std::mutex m_lock;
 	bitset<N> m_used_bitmap;
 	std::array<std::atomic_uint8_t, N> m_usage_counts;
 	typename detail::fixed_pool_storage<T, N, R>::type m_objects;

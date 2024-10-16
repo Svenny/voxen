@@ -1,14 +1,13 @@
 #include <voxen/common/threadpool.hpp>
 
-#include <cassert>
-#include <future>
-#include <thread>
-
+#include <voxen/os/futex.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/futex_work_counter.hpp>
 #include <voxen/util/log.hpp>
 
-#include <extras/futex.hpp>
+#include <cassert>
+#include <future>
+#include <thread>
 
 namespace voxen
 {
@@ -23,7 +22,7 @@ constexpr static size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
 struct ThreadPool::ReportableWorkerState {
 	FutexWorkCounter work_counter;
 
-	extras::futex queue_futex;
+	os::FutexLock queue_futex;
 	std::queue<std::packaged_task<void()>> tasks_queue;
 };
 

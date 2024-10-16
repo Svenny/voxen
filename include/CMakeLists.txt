@@ -5,7 +5,6 @@ set(EXTRAS_HEADERS
 	include/extras/enum_utils.hpp
 	include/extras/fixed_pool.hpp
 	include/extras/function_ref.hpp
-	include/extras/futex.hpp
 	include/extras/hardware_params.hpp
 	include/extras/linear_allocator.hpp
 	include/extras/math.hpp
@@ -15,7 +14,7 @@ set(EXTRAS_HEADERS
 	include/extras/string_utils.hpp
 )
 
-target_include_directories(extras PUBLIC include)
+target_include_directories(extras INTERFACE include)
 target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
@@ -88,6 +87,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
+	include/voxen/os/futex.hpp
 	include/voxen/server/world.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp

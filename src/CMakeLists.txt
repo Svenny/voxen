@@ -1,10 +1,3 @@
-set(EXTRAS_SOURCES
-	src/extras/futex.cpp
-)
-
-target_sources(extras PRIVATE ${EXTRAS_SOURCES})
-source_group(TREE ${CMAKE_SOURCE_DIR}/src/extras PREFIX Sources FILES ${EXTRAS_SOURCES})
-
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
 	src/client/vulkan/high/terrain_synchronizer.cpp
@@ -79,6 +72,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/os/futex.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/packed_color.cpp
 )
