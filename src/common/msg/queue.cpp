@@ -1,6 +1,6 @@
 #include <voxen/common/msg/queue.hpp>
 
-#include <extras/futex.hpp>
+#include <voxen/os/futex.hpp>
 
 #include <mutex>
 #include <thread>
@@ -112,7 +112,7 @@ private:
 		Message data[Config::QUEUE_SEGMENT_SIZE];
 	};
 
-	extras::futex m_lock;
+	os::FutexLock m_lock;
 	uint32_t m_consume_pos = 0;
 	Segment *m_consume_segment = nullptr;
 	Segment *m_produce_segment = nullptr;

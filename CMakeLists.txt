@@ -28,7 +28,7 @@ include(tools/cmake/toolchain_setup.cmake)
 add_subdirectory(3rdparty)
 
 # CMake target setup
-voxen_add_library(extras STATIC)
+voxen_add_library(extras INTERFACE)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
