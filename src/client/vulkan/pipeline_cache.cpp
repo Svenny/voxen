@@ -67,7 +67,7 @@ bool PipelineCache::dump() noexcept
 	}
 
 	Log::debug("Saving {} bytes of pipeline cache data to {}", buffer_size, m_save_path);
-	return FileManager::writeUserFile(m_save_path, buffer, buffer_size);
+	return FileManager::writeUserFile(m_save_path, std::span(static_cast<std::byte *>(buffer), buffer_size));
 }
 
 PipelineCache::~PipelineCache() noexcept

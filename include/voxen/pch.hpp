@@ -25,6 +25,7 @@
 #include <fmt/color.h>
 #include <fmt/compile.h>
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 // Hope all std headers are listed here :)
 #include <algorithm>
