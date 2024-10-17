@@ -2,6 +2,8 @@
  * creation time. Fills in the gap between std::vector and std::array. */
 #pragma once
 
+#include <extras/attributes.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <memory>
@@ -234,7 +236,7 @@ public:
 private:
 	size_type m_size = 0;
 	T *m_data = nullptr;
-	[[no_unique_address]] Allocator m_alloc = {};
+	[[EXTRAS_NO_UNIQUE_ADDRESS]] Allocator m_alloc = {};
 
 	template<typename F>
 	void uninitialized_construct(size_type count, F &&generator)
