@@ -1,22 +1,21 @@
 #include <voxen/common/filemanager.hpp>
 
+#include <voxen/os/stdlib.hpp>
+#include <voxen/util/log.hpp>
+
+#include <extras/defer.hpp>
+
+#include <sago/platform_folders.h>
+
 #include <atomic>
 #include <cassert>
 #include <fstream>
 #include <functional>
 #include <future>
 #include <queue>
+#include <system_error>
 #include <thread>
 #include <vector>
-
-#include <extras/defer.hpp>
-#include <voxen/util/log.hpp>
-
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <sago/platform_folders.h>
 
 using extras::dyn_array;
 using std::atomic_bool;
@@ -32,106 +31,104 @@ using std::vector;
 
 using namespace std::chrono_literals;
 
+namespace voxen
+{
+
 namespace
 {
 
-static void printErrno(const char* message, const string& path) noexcept
+void printErrno(const char* message, const path& filepath) noexcept
 {
-	int code = errno;
-	char buf[1024];
-	char* desc = strerror_r(code, buf, std::size(buf));
-	voxen::Log::error("{} `{}`, error code {} ({})", message, path, code, desc);
+	auto ec = std::make_error_code(std::errc(errno));
+	Log::error("{} `{}`, error: {}", message, filepath, ec);
 }
 
 struct RawBytesStorage {
-	void set_size(size_t size)
-	{
-		std::allocator<std::byte> alloc;
-		m_data = alloc.allocate(size);
-		m_size = size;
-	}
-	void* data() noexcept { return m_data; }
+	void setSize(size_t size) { m_data = extras::dyn_array<std::byte>(size); }
+	void* data() noexcept { return m_data.data(); }
 
-	std::byte* m_data = nullptr;
-	size_t m_size = 0UL;
+	extras::dyn_array<std::byte> m_data;
 };
 
 struct StringStorage {
-	void set_size(size_t size) noexcept { m_string.resize(size, ' '); }
+	void setSize(size_t size) noexcept { m_string.resize(size, ' '); }
 	void* data() noexcept { return m_string.data(); }
 
 	string m_string;
 };
 
 template<typename T>
-bool readAbsPath(const string& path, T& storageObject) noexcept
+bool readAbsPath(const path& filepath, T& storageObject)
 {
-	// TODO: handle EINTR
-	int fd = open(path.c_str(), O_RDONLY);
-	if (fd < 0) {
-		printErrno("Can't open file", path);
+	FILE* pfile = fopen(filepath.string().c_str(), "rb");
+	if (!pfile) {
+		printErrno("Can't open file", filepath);
 		return false;
 	}
-	defer { close(fd); };
+	// Don't forget to close when leaving the scope
+	defer { fclose(pfile); };
 
-	struct stat file_stat;
-	if (fstat(fd, &file_stat) != 0) {
-		printErrno("Can't stat file", path);
+	int64_t ssize = os::Stdlib::fileSize(pfile);
+	if (ssize < 0) {
+		printErrno("Can't get file size", filepath);
 		return false;
 	}
 
-	size_t size = size_t(file_stat.st_size);
-	try {
-		//NOTE(sirgienko) Maybe there is a better solution
-		storageObject.set_size(size);
-
-		// TODO: handle EINTR
-		if (read(fd, storageObject.data(), size) < 0) {
-			printErrno("Can't read file", path);
-			return false;
-		}
+	if (ssize == 0) {
+		// Empty file
 		return true;
 	}
-	catch (const std::bad_alloc& e) {
-		voxen::Log::error("Out of memory: {}", e.what());
+
+	const size_t size = size_t(ssize);
+	storageObject.setSize(size);
+
+	size_t read = fread(storageObject.data(), 1, size, pfile);
+	if (read != size) {
+		printErrno("Can't read file", filepath);
+		Log::error("{}/{} bytes read", read, size);
 		return false;
 	}
+
+	return true;
 }
 
-static bool writeAbsPathFile(const string& path, const void* data, size_t size) noexcept
+bool writeAbsPathFile(const path& filepath, std::span<const std::byte> data)
 {
-	string temp_path_s;
-	try {
-		temp_path_s = path;
-		temp_path_s += ".XXXXXX";
-	}
-	catch (const std::bad_alloc& e) {
-		voxen::Log::error("Out of memory: {}", e.what());
+	// To be "atomic", first write to a temporary
+	// file, then rename it to the target name.
+	path temp_path = filepath;
+	temp_path += ".write-tmp";
+
+	// TODO (Svenny): should we consider races (several threads opening the same file?)
+	FILE* pfile = fopen(temp_path.string().c_str(), "wb");
+	if (!pfile) {
+		printErrno("Can't open temporary file", temp_path);
 		return false;
 	}
 
-	// TODO: handle EINTR
-	int fd = mkstemp(temp_path_s.data());
-	const char* temp_path = temp_path_s.c_str();
-	if (fd < 0) {
-		printErrno("Can't mkstemp file", temp_path);
-		return false;
-	}
-	defer { close(fd); };
+	defer {
+		// Can be closed manually below
+		if (pfile) {
+			fclose(pfile);
+		}
+	};
 
-	// TODO: handle EINTR
-	ssize_t written = write(fd, data, size);
-	if (written < 0) {
+	size_t written = fwrite(data.data(), 1, data.size(), pfile);
+	if (written != data.size()) {
 		printErrno("Can't write file", temp_path);
-		return false;
-	} else if (size_t(written) != size) {
-		printErrno("Can't fully write file", temp_path);
-		voxen::Log::error("{}/{} bytes written", written, size);
+		Log::error("{}/{} bytes written", written, data.size());
 		return false;
 	}
 
-	if (rename(temp_path, path.c_str()) != 0) {
-		printErrno("Can't rename file", temp_path);
+	// Close before renaming
+	fclose(pfile);
+	pfile = nullptr;
+
+	std::error_code ec;
+	std::filesystem::rename(temp_path, filepath, ec);
+	if (ec.value() != 0) {
+		Log::error("Failed renaming `{}` to `{}`", temp_path, filepath);
+		Log::error("Error code: {} ({})", ec, ec.default_error_condition().message());
 		return false;
 	}
 
@@ -292,9 +289,6 @@ private:
 
 static FileIoThreadPool file_manager_threadpool;
 
-namespace voxen
-{
-
 path FileManager::user_data_path;
 path FileManager::game_data_path;
 
@@ -303,11 +297,11 @@ void FileManager::setProfileName(const std::string& path_to_binary, const std::s
 	// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
 	auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
 
-	user_data_path = install_root / "data/user" / profile_name;
-	game_data_path = install_root / "data";
+	user_data_path = (install_root / "data" / "user" / profile_name).lexically_normal();
+	game_data_path = (install_root / "data").lexically_normal();
 }
 
-optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_path) noexcept
+optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_path)
 {
 	if (relative_path.empty()) {
 		return std::nullopt;
@@ -315,13 +309,10 @@ optional<dyn_array<std::byte>> FileManager::readUserFile(const path& relative_pa
 
 	RawBytesStorage storage;
 	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
-	return success
-		? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>()))
-		: std::nullopt;
+	return success ? optional<dyn_array<std::byte>>(std::move(storage.m_data)) : std::nullopt;
 }
 
-bool FileManager::writeUserFile(const path& relative_path, const void* data, size_t size,
-	bool create_directories) noexcept
+bool FileManager::writeUserFile(const path& relative_path, std::span<const std::byte> data, bool create_directories)
 {
 	path filepath = FileManager::userDataPath() / relative_path;
 	if (create_directories) {
@@ -330,10 +321,10 @@ bool FileManager::writeUserFile(const path& relative_path, const void* data, siz
 		}
 	}
 
-	return writeAbsPathFile(filepath, data, size);
+	return writeAbsPathFile(filepath, data);
 }
 
-optional<string> FileManager::readUserTextFile(const path& relative_path) noexcept
+optional<string> FileManager::readUserTextFile(const path& relative_path)
 {
 	if (relative_path.empty()) {
 		return std::nullopt;
@@ -341,10 +332,10 @@ optional<string> FileManager::readUserTextFile(const path& relative_path) noexce
 
 	StringStorage storage;
 	bool success = readAbsPath(FileManager::userDataPath() / relative_path, storage);
-	return success ? optional(storage.m_string) : std::nullopt;
+	return success ? optional(std::move(storage.m_string)) : std::nullopt;
 }
 
-bool FileManager::writeUserTextFile(const path& relative_path, const string& text, bool create_directories) noexcept
+bool FileManager::writeUserTextFile(const path& relative_path, const string& text, bool create_directories)
 {
 	path filepath = FileManager::userDataPath() / relative_path;
 	if (create_directories) {
@@ -353,10 +344,10 @@ bool FileManager::writeUserTextFile(const path& relative_path, const string& tex
 		}
 	}
 
-	return writeAbsPathFile(filepath, text.data(), text.size());
+	return writeAbsPathFile(filepath, std::as_bytes(std::span(text.data(), text.size())));
 }
 
-optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path) noexcept
+optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path)
 {
 	if (relative_path.empty()) {
 		return std::nullopt;
@@ -364,12 +355,10 @@ optional<dyn_array<std::byte>> FileManager::readFile(const path& relative_path) 
 
 	RawBytesStorage storage;
 	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
-	return success
-		? optional(dyn_array<std::byte>(storage.m_data, storage.m_size, std::allocator<std::byte>()))
-		: std::nullopt;
+	return success ? optional(dyn_array<std::byte>(std::move(storage.m_data))) : std::nullopt;
 }
 
-optional<string> FileManager::readTextFile(const path& relative_path) noexcept
+optional<string> FileManager::readTextFile(const path& relative_path)
 {
 	if (relative_path.empty()) {
 		return std::nullopt;
@@ -377,17 +366,13 @@ optional<string> FileManager::readTextFile(const path& relative_path) noexcept
 
 	StringStorage storage;
 	bool success = readAbsPath(FileManager::gameDataPath() / relative_path, storage);
-	return success ? optional(storage.m_string) : std::nullopt;
+	return success ? optional(std::move(storage.m_string)) : std::nullopt;
 }
 
-bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path) noexcept
+bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path)
 {
 	try {
 		std::filesystem::create_directories(relative_path.parent_path());
-	}
-	catch (const std::bad_alloc& e) {
-		voxen::Log::error("Out of memory: {}", e.what());
-		return false;
 	}
 	catch (const std::filesystem::filesystem_error& e) {
 		voxen::Log::error("Directory creation error: {}", e.what());
@@ -397,91 +382,66 @@ bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path) no
 	return true;
 }
 
-path FileManager::userDataPath() noexcept
-{
-	return user_data_path;
-}
-
-path FileManager::gameDataPath() noexcept
-{
-	return game_data_path;
-}
-
-std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(
-	std::filesystem::path relative_path) noexcept
+std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(std::filesystem::path relative_path)
 {
 	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
 		new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
 	std::function<void()> task_function(
-		[filapath = std::move(relative_path), p = promise]() mutable { p->set_value(FileManager::readFile(filapath)); });
+		[filepath = std::move(relative_path), p = promise]() mutable { p->set_value(FileManager::readFile(filepath)); });
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
 std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readUserFileAsync(
-	std::filesystem::path relative_path) noexcept
+	std::filesystem::path relative_path)
 {
 	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
 		new std::promise<optional<dyn_array<std::byte>>>);
 	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readUserFile(filapath));
+	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
+		p->set_value(FileManager::readUserFile(filepath));
 	});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-std::future<std::optional<std::string>> FileManager::readTextFileAsync(std::filesystem::path relative_path) noexcept
+std::future<std::optional<std::string>> FileManager::readTextFileAsync(std::filesystem::path relative_path)
 {
 	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
 	std::future<optional<string>> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readTextFile(filapath));
+	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
+		p->set_value(FileManager::readTextFile(filepath));
 	});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::filesystem::path relative_path) noexcept
+std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::filesystem::path relative_path)
 {
 	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
 	std::future<optional<string>> result = promise->get_future();
 
-	std::function<void()> task_function([filapath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readUserTextFile(filapath));
+	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
+		p->set_value(FileManager::readUserTextFile(filepath));
 	});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;
 }
 
-std::future<bool> FileManager::writeUserFileAsync(std::filesystem::path relative_path, const void* data, size_t size,
-	bool create_directories) noexcept
+std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, std::string text,
+	bool create_directories)
 {
 	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
 	std::future<bool> result = promise->get_future();
 
 	std::function<void()> task_function(
-		[filapath = std::move(relative_path), p = std::move(promise), data, size, create_directories]() mutable {
-			p->set_value(FileManager::writeUserFile(filapath, data, size, create_directories));
-		});
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
-}
-
-std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, const std::string&& text,
-	bool create_directories) noexcept
-{
-	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
-	std::future<bool> result = promise->get_future();
-
-	std::function<void()> task_function(
-		[filapath = std::move(relative_path), p = std::move(promise), txt = std::move(text),
+		[filepath = std::move(relative_path), p = std::move(promise), txt = std::move(text),
 			create_directories]() mutable {
-			p->set_value(FileManager::writeUserTextFile(filapath, std::move(txt), create_directories));
+			p->set_value(FileManager::writeUserTextFile(filepath, std::move(txt), create_directories));
 		});
 	file_manager_threadpool.enqueueTask(std::move(task_function));
 	return result;

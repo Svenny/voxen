@@ -69,6 +69,12 @@ function(voxen_setup_target target is_executable)
 			--no-undefined
 		)
 	elseif(WIN32)
+		# Stop windows crt from bitching about innocent C functions
+		target_compile_definitions(${target} PRIVATE
+			-D_CRT_NONSTDC_NO_WARNINGS
+			-D_CRT_SECURE_NO_WARNINGS
+		)
+
 		# Disable nonsensical warnings triggering only on clang-cl for some reason
 		target_compile_options(${target} PRIVATE
 			# WTF? We're not compiling in C++98 mode...
