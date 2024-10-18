@@ -83,10 +83,35 @@ public:
 	{
 		using R = std::invoke_result_t<F, Args...>;
 
+#ifndef _WIN32
 		std::packaged_task<R()> task { std::bind(std::forward<F>(f), std::forward<Args>(args)...) };
 		std::future<R> future = task.get_future();
 
 		doEnqueueTask(type, std::packaged_task<void()> { std::move(task) });
+#else
+		// MS STL bug that remains unfixed for years:
+		// https://developercommunity.visualstudio.com/t/unable-to-move-stdpackaged-task-into-any-stl-conta/108672
+		// Ugly workaround for now, we'll replace this whole part with custom function storage later.
+		std::promise<R> prom;
+		std::future<R> future = prom.get_future();
+
+		auto task = [tprom = std::move(prom), tf = std::forward<F>(f), ... targs = std::forward<Args>(args)]() mutable {
+			try {
+				if constexpr (std::is_void_v<R>) {
+					std::invoke(std::forward<F>(tf), std::forward<Args>(targs)...);
+					tprom.set_value();
+				} else {
+					tprom.set_value(std::invoke(std::forward<F>(tf), std::forward<Args>(targs)...));
+				}
+			}
+			catch (...) {
+				tprom.set_exception(std::current_exception());
+			}
+		};
+		auto taskptr = std::make_shared<decltype(task)>(std::move(task));
+
+		doEnqueueTask(type, std::packaged_task<void()>([taskptr] { taskptr->operator()(); }));
+#endif
 
 		return future;
 	}
