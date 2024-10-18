@@ -6,6 +6,7 @@
 #include <extras/source_location.hpp>
 
 #include <fmt/core.h>
+#include <fmt/std.h>
 
 namespace voxen
 {
