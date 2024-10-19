@@ -12,11 +12,6 @@ add_library(glfw-wrapper INTERFACE)
 target_link_libraries(glfw-wrapper INTERFACE glfw)
 add_library(3rdparty::glfw ALIAS glfw-wrapper)
 
-find_package(ZLIB 1.2.11 REQUIRED)
-add_library(zlib-wrapper INTERFACE)
-target_link_libraries(zlib-wrapper INTERFACE ZLIB::ZLIB)
-add_library(3rdparty::zlib ALIAS zlib-wrapper)
-
 # Embedded dependencies (sources in tree)
 include(catch.cmake)
 include(cxxopts.cmake)
@@ -27,3 +22,4 @@ include(simpleini.cmake)
 include(vulkan-headers.cmake)
 # Depends on `vulkan-headers`, include after them
 include(vma.cmake)
+include(zlib.cmake)
