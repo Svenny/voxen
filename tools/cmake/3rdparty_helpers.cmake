@@ -8,8 +8,10 @@ add_library(dummy_suppress_3rdparty_warnings INTERFACE)
 target_compile_options(dummy_suppress_3rdparty_warnings INTERFACE
 	-Wno-extra-semi
 	-Wno-implicit-fallthrough
+	-Wno-implicit-int-conversion
 	-Wno-nonportable-system-include-path
 	-Wno-sign-conversion
+	-Wno-shorten-64-to-32
 	-Wno-switch-default
 	-Wno-zero-as-null-pointer-constant
 )
