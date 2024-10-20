@@ -34,7 +34,7 @@ jobs:
       - name: Install required packages
         run: |
           sudo apt install ninja-build shaderc
-          sudo apt install libglfw3-dev
+          sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
 
       - name: Build Voxen
         run: |
