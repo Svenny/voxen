@@ -25,9 +25,16 @@ void Window::start(int width, int height)
 	if (mIsStarted) {
 		return;
 	}
+
 	Log::info("Starting window and GLFW library");
 	logGlfwVersion();
 	glfwSetErrorCallback(&Window::glfwErrorCallback);
+
+	if (glfwPlatformSupported(GLFW_PLATFORM_X11)) {
+		// TODO (Svenny): use xwayland, I don't want to deal with wayland scaling now
+		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+	}
+
 	if (glfwInit() != GLFW_TRUE) {
 		Log::fatal("Couldn't init GLFW!");
 		throw std::runtime_error("GLFW init failed");
