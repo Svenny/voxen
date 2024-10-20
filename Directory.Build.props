@@ -1,0 +1,7 @@
+<!-- For windows clang-cl build, default LLVM location -->
+<Project>
+  <PropertyGroup>
+    <LLVMInstallDir>C:\Program Files\LLVM</LLVMInstallDir>
+    <LLVMToolsVersion>18</LLVMToolsVersion>
+  </PropertyGroup>
+</Project>
