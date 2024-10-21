@@ -53,6 +53,7 @@ set(VOXEN_SOURCES
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
+	src/voxen/common/pipe_memory_allocator.cpp
 	src/voxen/common/threadpool.cpp
 	src/voxen/common/uid.cpp
 	src/voxen/gfx/vk/frame_context.cpp
