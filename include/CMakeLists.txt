@@ -65,6 +65,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
 	include/voxen/common/gameview.hpp
+	include/voxen/common/pipe_memory_allocator.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/threadpool.hpp
