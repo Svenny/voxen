@@ -70,7 +70,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/pipe_memory_allocator.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/runtime_config.hpp
-	include/voxen/common/threadpool.hpp
+	include/voxen/common/thread_pool.hpp
 	include/voxen/common/uid.hpp
 	include/voxen/common/v8g_concepts.hpp
 	include/voxen/common/v8g_flat_map.hpp
@@ -96,6 +96,7 @@ set(VOXEN_HEADERS
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
 	include/voxen/server/world.hpp
+	include/voxen/svc/engine.hpp
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp
 	include/voxen/util/aabb.hpp

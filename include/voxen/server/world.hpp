@@ -6,12 +6,19 @@
 
 #include <memory>
 
+namespace voxen::svc
+{
+
+class ServiceLocator;
+
+}
+
 namespace voxen::server
 {
 
 class VOXEN_API World {
 public:
-	World();
+	World(svc::ServiceLocator &svc);
 	World(World &&) = delete;
 	World(const World &) = delete;
 	World &operator=(World &&) = delete;

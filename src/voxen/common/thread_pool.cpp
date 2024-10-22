@@ -1,12 +1,13 @@
-#include <voxen/common/threadpool.hpp>
+#include <voxen/common/thread_pool.hpp>
 
+#include <voxen/debug/debug_uid_registry.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/svc/service_locator.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/futex_work_counter.hpp>
 #include <voxen/util/log.hpp>
 
 #include <cassert>
-#include <future>
 #include <thread>
 
 namespace voxen
@@ -16,7 +17,7 @@ namespace
 {
 
 // This number is subtracted from threads count returned by `std`.
-// 2 loaded threads are used by Voxen: World thread and GUI thread.
+// 2 loaded threads are used by Voxen: World thread and Render thread.
 constexpr size_t STD_THREAD_COUNT_OFFSET = 2;
 // The number of threads started in case no explicit request was made and `std`
 // didn't return meaningful value. Assuming an "average" 8-threaded machine.
@@ -25,7 +26,7 @@ constexpr size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
 } // namespace
 
 struct ThreadPool::PipedTaskDeleter {
-	void operator()(IPipedTask* task) noexcept
+	void operator()(IPipedTask *task) noexcept
 	{
 		// Deallocates itself
 		task->~IPipedTask();
@@ -51,44 +52,43 @@ struct ThreadPool::ReportableWorker {
 	ReportableWorkerState state;
 };
 
-ThreadPool* ThreadPool::global_voxen_pool = nullptr;
-
-ThreadPool::ThreadPool(size_t thread_count)
+ThreadPool::ThreadPool(svc::ServiceLocator &svc, Config cfg)
 {
-	if (thread_count == 0) {
+	svc.requestService<PipeMemoryAllocator>();
+
+	debug::UidRegistry::registerLiteral(SERVICE_UID, "voxen/service/ThreadPool");
+
+	if (cfg.thread_count == 0) {
 		size_t std_hint = std::thread::hardware_concurrency();
 		if (std_hint <= STD_THREAD_COUNT_OFFSET) {
-			thread_count = DEFAULT_THREAD_COUNT;
+			cfg.thread_count = DEFAULT_THREAD_COUNT;
 		} else {
-			thread_count = std_hint - STD_THREAD_COUNT_OFFSET;
+			cfg.thread_count = std_hint - STD_THREAD_COUNT_OFFSET;
 		}
 	}
 
-	Log::info("Starting thread pool with {} threads", thread_count);
-	for (size_t i = 0; i < thread_count; i++) {
-		run_worker(make_worker());
+	Log::info("Starting thread pool with {} threads", cfg.thread_count);
+	for (size_t i = 0; i < cfg.thread_count; i++) {
+		makeWorker();
 	}
 }
 
 ThreadPool::~ThreadPool() noexcept
 {
-	for (ReportableWorker* worker : m_workers) {
+	for (auto &worker : m_workers) {
 		worker->state.work_counter.requestStop();
 	}
 
-	for (ReportableWorker* worker : m_workers) {
+	for (auto &worker : m_workers) {
 		if (worker->worker.joinable()) {
 			worker->worker.join();
 		}
 	}
 
-	while (!m_workers.empty()) {
-		delete m_workers.back();
-		m_workers.pop_back();
-	}
+	m_workers.clear();
 }
 
-void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask* raw_task_ptr)
+void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask *raw_task_ptr)
 {
 	// Wrap it in RAII immediately
 	PipedTaskPtr task(raw_task_ptr);
@@ -97,14 +97,14 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask* raw_t
 	assert(type == TaskType::Standard);
 
 	size_t min_job_count = SIZE_MAX;
-	ReportableWorker* min_job_thread = nullptr;
+	ReportableWorker *min_job_thread = nullptr;
 
-	for (ReportableWorker* worker : m_workers) {
+	for (auto &worker : m_workers) {
 		size_t job_count = worker->state.work_counter.loadRelaxed().first;
 
 		if (job_count < min_job_count) {
 			min_job_count = job_count;
-			min_job_thread = worker;
+			min_job_thread = worker.get();
 		}
 	}
 	assert(min_job_thread);
@@ -117,7 +117,14 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask* raw_t
 	min_job_thread->state.work_counter.addWork(1);
 }
 
-void ThreadPool::workerFunction(ReportableWorkerState* state)
+void ThreadPool::makeWorker()
+{
+	auto worker = std::make_unique<ReportableWorker>();
+	worker->worker = std::thread(&ThreadPool::workerFunction, &worker->state);
+	m_workers.push_back(std::move(worker));
+}
+
+void ThreadPool::workerFunction(ReportableWorkerState *state)
 {
 	uint32_t work_remaining = 0;
 	bool exit = false;
@@ -153,43 +160,6 @@ void ThreadPool::workerFunction(ReportableWorkerState* state)
 
 		std::tie(work_remaining, exit) = state->work_counter.removeWork(popped);
 	}
-}
-
-ThreadPool::ReportableWorker* ThreadPool::make_worker()
-{
-	auto new_worker = new ReportableWorker();
-	m_workers.push_back(new_worker);
-	return new_worker;
-}
-
-void ThreadPool::run_worker(ReportableWorker* worker)
-{
-	worker->worker = std::thread(&ThreadPool::workerFunction, &worker->state);
-}
-
-size_t ThreadPool::threads_count() const
-{
-	return m_workers.size();
-}
-
-void ThreadPool::initGlobalVoxenPool(size_t thread_count)
-{
-	assert(global_voxen_pool == nullptr);
-	global_voxen_pool = new ThreadPool(thread_count);
-	Log::info("Create global voxen ThreadPool with {} threads", global_voxen_pool->threads_count());
-}
-
-void ThreadPool::releaseGlobalVoxenPool()
-{
-	assert(global_voxen_pool);
-	delete global_voxen_pool;
-	global_voxen_pool = nullptr;
-}
-
-ThreadPool& ThreadPool::globalVoxenPool()
-{
-	assert(global_voxen_pool);
-	return *global_voxen_pool;
 }
 
 } // namespace voxen
