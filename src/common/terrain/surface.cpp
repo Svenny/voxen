@@ -1,7 +1,7 @@
 #include <voxen/common/terrain/surface.hpp>
 
+#include <algorithm>
 #include <cassert>
-#include <limits>
 
 namespace voxen::terrain
 {
