@@ -3,6 +3,7 @@
 #include <voxen/client/window.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
+#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/common/threadpool.hpp>
 #include <voxen/common/world_state.hpp>
@@ -10,6 +11,8 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
+
+#include <extras/defer.hpp>
 
 #include <cxxopts/cxxopts.hpp>
 
@@ -122,6 +125,10 @@ int main(int argc, char *argv[])
 	using namespace std::chrono;
 
 	Log::info("Starting Voxen {}", voxen::Version::STRING);
+
+	// TODO: convert it to services startup system
+	voxen::PipeMemoryAllocator::startService();
+	defer { voxen::PipeMemoryAllocator::stopService(); };
 
 	try {
 		cxxopts::Options options = initCli();
