@@ -62,13 +62,13 @@ private:
 
 [[maybe_unused]] static struct {
 	template<typename F>
-	defer_finalizer<F> operator<<(F &&f) noexcept
+	[[maybe_unused]] defer_finalizer<F> operator<<(F &&f) noexcept
 	{
 		return defer_finalizer<F>(std::forward<F>(f));
 	}
 
 	template<typename F>
-	defer_finalizer<F, true> operator>>(F &&f) noexcept
+	[[maybe_unused]] defer_finalizer<F, true> operator>>(F &&f) noexcept
 	{
 		return defer_finalizer<F, true>(std::forward<F>(f));
 	}

@@ -6,6 +6,8 @@
 
 #include <extras/source_location.hpp>
 
+#include <array>
+#include <span>
 #include <variant>
 #include <vector>
 
