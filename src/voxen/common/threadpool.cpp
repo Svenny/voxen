@@ -12,18 +12,38 @@
 namespace voxen
 {
 
+namespace
+{
+
 // This number is subtracted from threads count returned by `std`.
 // 2 loaded threads are used by Voxen: World thread and GUI thread.
-constexpr static size_t STD_THREAD_COUNT_OFFSET = 2;
+constexpr size_t STD_THREAD_COUNT_OFFSET = 2;
 // The number of threads started in case no explicit request was made and `std`
 // didn't return meaningful value. Assuming an "average" 8-threaded machine.
-constexpr static size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
+constexpr size_t DEFAULT_THREAD_COUNT = 8 - STD_THREAD_COUNT_OFFSET;
+
+} // namespace
+
+struct ThreadPool::PipedTaskDeleter {
+	void operator()(IPipedTask* task) noexcept
+	{
+		// Deallocates itself
+		task->~IPipedTask();
+	}
+};
+
+ThreadPool::IPipedTask::~IPipedTask() noexcept
+{
+	// Deallocate here, not in `PipedTaskDeleter` - this way we will
+	// not leak even if `TPipedTask` ctor fails (throws something).
+	PipeMemoryAllocator::deallocate(this);
+}
 
 struct ThreadPool::ReportableWorkerState {
 	FutexWorkCounter work_counter;
 
 	os::FutexLock queue_futex;
-	std::queue<std::packaged_task<void()>> tasks_queue;
+	std::queue<PipedTaskPtr> tasks_queue;
 };
 
 struct ThreadPool::ReportableWorker {
@@ -68,8 +88,11 @@ ThreadPool::~ThreadPool() noexcept
 	}
 }
 
-void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, std::packaged_task<void()> task)
+void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask* raw_task_ptr)
 {
+	// Wrap it in RAII immediately
+	PipedTaskPtr task(raw_task_ptr);
+
 	// non-standard tasks are not supported yet
 	assert(type == TaskType::Standard);
 
@@ -102,7 +125,7 @@ void ThreadPool::workerFunction(ReportableWorkerState* state)
 	while (!exit || work_remaining > 0) {
 		std::tie(work_remaining, exit) = state->work_counter.wait();
 
-		std::packaged_task<void()> task;
+		PipedTaskPtr task;
 		uint32_t popped = 0;
 
 		// Take the first task from the queue
@@ -115,19 +138,16 @@ void ThreadPool::workerFunction(ReportableWorkerState* state)
 			}
 		}
 
-		while (task.valid()) {
-			task();
+		while (task) {
+			task->call();
+			task.reset();
 
 			// Take the next task from the queue
-			{
-				std::lock_guard lock(state->queue_futex);
-				if (state->tasks_queue.empty()) {
-					task = {};
-				} else {
-					task = std::move(state->tasks_queue.front());
-					state->tasks_queue.pop();
-					popped++;
-				}
+			std::lock_guard lock(state->queue_futex);
+			if (!state->tasks_queue.empty()) {
+				task = std::move(state->tasks_queue.front());
+				state->tasks_queue.pop();
+				popped++;
 			}
 		}
 

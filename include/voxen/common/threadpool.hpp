@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/visibility.hpp>
 
 // Work around clang bug (emits warning for some deprecated shit in std headers)
@@ -78,40 +79,16 @@ public:
 	ThreadPool& operator=(const ThreadPool&) = delete;
 	~ThreadPool() noexcept;
 
-	template<typename F, typename... Args>
-	std::future<std::invoke_result_t<F, Args...>> enqueueTask(TaskType type, F&& f, Args&&... args)
+	template<typename F>
+	std::future<std::invoke_result_t<F>> enqueueTask(TaskType type, F&& f)
 	{
-		using R = std::invoke_result_t<F, Args...>;
+		using R = std::invoke_result_t<F>;
+		std::promise<R> promise(std::allocator_arg, TPipeMemoryAllocator<void>());
+		std::future<R> future = promise.get_future();
 
-#ifndef _WIN32
-		std::packaged_task<R()> task { std::bind(std::forward<F>(f), std::forward<Args>(args)...) };
-		std::future<R> future = task.get_future();
-
-		doEnqueueTask(type, std::packaged_task<void()> { std::move(task) });
-#else
-		// MS STL bug that remains unfixed for years:
-		// https://developercommunity.visualstudio.com/t/unable-to-move-stdpackaged-task-into-any-stl-conta/108672
-		// Ugly workaround for now, we'll replace this whole part with custom function storage later.
-		std::promise<R> prom;
-		std::future<R> future = prom.get_future();
-
-		auto task = [tprom = std::move(prom), tf = std::forward<F>(f), ... targs = std::forward<Args>(args)]() mutable {
-			try {
-				if constexpr (std::is_void_v<R>) {
-					std::invoke(std::forward<F>(tf), std::forward<Args>(targs)...);
-					tprom.set_value();
-				} else {
-					tprom.set_value(std::invoke(std::forward<F>(tf), std::forward<Args>(targs)...));
-				}
-			}
-			catch (...) {
-				tprom.set_exception(std::current_exception());
-			}
-		};
-		auto taskptr = std::make_shared<decltype(task)>(std::move(task));
-
-		doEnqueueTask(type, std::packaged_task<void()>([taskptr] { taskptr->operator()(); }));
-#endif
+		using PT = TPipedTask<R, F>;
+		void* lpptr = PipeMemoryAllocator::allocate(sizeof(PT), alignof(PT));
+		doEnqueueTask(type, new (lpptr) PT(std::move(promise), std::forward<F>(f)));
 
 		return future;
 	}
@@ -123,10 +100,55 @@ public:
 	static ThreadPool& globalVoxenPool();
 
 private:
+	struct PipedTaskDeleter;
 	struct ReportableWorkerState;
 	struct ReportableWorker;
 
-	void doEnqueueTask(TaskType type, std::packaged_task<void()> task);
+	// Extensible interface for tasks sent to thread pool.
+	// Erases the underlying type (`TPipedTask` instantiation).
+	// Assumes to be backed by a single `PipeMemoryAllocator` allocation.
+	class IPipedTask {
+	public:
+		// Frees pipe memory allocation internally
+		virtual ~IPipedTask() noexcept;
+
+		// Execute the task, fulfilling its promise with value/exception.
+		// Should not throw (to a slave thread) unless the failure is
+		// related to the task execution system itself.
+		virtual void call() = 0;
+	};
+
+	using PipedTaskPtr = std::unique_ptr<IPipedTask, PipedTaskDeleter>;
+
+	// Actual (erased) type of `IPipedTask` implementation.
+	// Behaves very much like `std::packaged_task<R()>`.
+	template<typename R, typename F>
+	class TPipedTask final : public IPipedTask {
+	public:
+		TPipedTask(std::promise<R>&& promise, F&& fn) : m_promise(std::move(promise)), m_fn(std::forward<F>(fn)) {}
+		~TPipedTask() override = default;
+
+		void call() override
+		{
+			try {
+				if constexpr (std::is_void_v<R>) {
+					m_fn();
+					m_promise.set_value();
+				} else {
+					m_promise.set_value(m_fn());
+				}
+			}
+			catch (...) {
+				m_promise.set_exception(std::current_exception());
+			}
+		}
+
+	private:
+		std::promise<R> m_promise;
+		F m_fn;
+	};
+
+	void doEnqueueTask(TaskType type, IPipedTask* raw_task_ptr);
 
 	static void workerFunction(ReportableWorkerState* state);
 	ReportableWorker* make_worker();
