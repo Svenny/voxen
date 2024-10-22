@@ -5,7 +5,7 @@
 namespace voxen::server
 {
 
-World::World()
+World::World(svc::ServiceLocator &svc) : m_terrain_controller(svc)
 {
 	Log::debug("Creating server World");
 

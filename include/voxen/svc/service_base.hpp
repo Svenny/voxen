@@ -6,6 +6,9 @@
 namespace voxen::svc
 {
 
+// Forward-declared here - this declaration is used by virtually any service
+class ServiceLocator;
+
 class VOXEN_API IService {
 public:
 	IService() = default;

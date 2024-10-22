@@ -3,7 +3,8 @@
 #include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/coord.hpp>
-#include <voxen/common/threadpool.hpp>
+#include <voxen/common/thread_pool.hpp>
+#include <voxen/svc/service_locator.hpp>
 #include <voxen/util/hash.hpp>
 
 #include <glm/common.hpp>
@@ -16,6 +17,8 @@
 
 namespace voxen::terrain
 {
+
+Controller::Controller(svc::ServiceLocator &svc) : m_thread_pool(svc.requestService<ThreadPool>()) {}
 
 std::vector<Controller::ChunkPtr> Controller::doTick()
 {
@@ -204,7 +207,7 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
 	});
 
 	assert(!m_async_chunk_loads.contains(id));
-	m_async_chunk_loads[id] = ThreadPool::globalVoxenPool().enqueueTask(ThreadPool::TaskType::Standard,
+	m_async_chunk_loads[id] = m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
 		[this, chunk_ptr]() { m_loader.load(*chunk_ptr); });
 
 	auto cb_ptr = std::make_unique<ChunkControlBlock>();

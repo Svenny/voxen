@@ -15,6 +15,20 @@
 #include <unordered_set>
 #include <vector>
 
+namespace voxen
+{
+
+class ThreadPool;
+
+}
+
+namespace voxen::svc
+{
+
+class ServiceLocator;
+
+}
+
 namespace voxen::terrain
 {
 
@@ -26,7 +40,7 @@ public:
 	using ChunkPtr = extras::refcnt_ptr<Chunk>;
 	using ControlBlockPtr = std::unique_ptr<ChunkControlBlock>;
 
-	Controller() = default;
+	Controller(svc::ServiceLocator &svc);
 	Controller(Controller &&) = delete;
 	Controller(const Controller &&) = delete;
 	Controller &operator=(Controller &&) = delete;
@@ -62,6 +76,7 @@ private:
 		size_t operator()(const glm::ivec3 &v) const noexcept;
 	};
 
+	ThreadPool &m_thread_pool;
 	TerrainLoader m_loader;
 	std::vector<PointOfInterest> m_points_of_interest;
 	std::unordered_map<glm::ivec3, SuperchunkInfo, VecHasher> m_superchunks;

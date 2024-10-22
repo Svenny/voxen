@@ -1,6 +1,9 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 
+#include <voxen/debug/debug_uid_registry.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <atomic>
@@ -97,6 +100,8 @@ void deleteSlab(PipeMemorySlab* slab) noexcept
 	operator delete(slab, std::align_val_t(SLAB_SIZE));
 }
 
+PipeMemoryAllocator::Config g_service_config;
+
 // We might use several instances of this struct
 // to distribute lock contention among threads
 class SlabCollection {
@@ -149,20 +154,18 @@ public:
 
 	void reclaimFreedSlabs() noexcept
 	{
-		// Don't keep too many free slabs, they can be allocated after
-		// a memory usage spike and will simply waste memory afterwards.
-		//
-		// TODO: this has an implicit dependency on GC call period.
-		// Need to count free slabs over some larger time interval, like 1-2 seconds.
-		constexpr size_t ALREADY_FREE_SLABS_THRESHOLD = 5;
-
 		PipeMemorySlab* slab_to_delete = nullptr;
 
 		// Scoped lock - `deleteSlab()` is slow and needs no locking
 		{
 			std::lock_guard lk(m_lock);
 
-			if (m_free_slabs.size() > ALREADY_FREE_SLABS_THRESHOLD) {
+			// Don't keep too many free slabs, they can be allocated after
+			// a memory usage spike and will simply waste memory afterwards.
+			//
+			// TODO: this has an implicit dependency on GC call period.
+			// Need to count free slabs over some larger time interval, like 1-2 seconds.
+			if (m_free_slabs.size() > g_service_config.destroy_free_slabs_threshold) {
 				slab_to_delete = m_free_slabs.back();
 				m_free_slabs.pop_back();
 			}
@@ -213,12 +216,12 @@ void gcThreadProc()
 	// it's extremely unlikely that this thread creates any noticeable load).
 	// Similarly, when garbage submission is high, we might reduce GC interval
 	// to reclaim slabs faster and avoid some excessive memory allocations.
-	constexpr auto GC_PERIOD = std::chrono::milliseconds(20);
+	const auto gc_period = std::chrono::milliseconds(g_service_config.gc_period_msec);
 
 	Log::info("Pipe memory allocator GC thread started");
 
 	while (g_slab_gc_run_flag.load(std::memory_order_relaxed)) {
-		std::this_thread::sleep_for(GC_PERIOD);
+		std::this_thread::sleep_for(gc_period);
 		g_slab_collection.reclaimFreedSlabs();
 	}
 
@@ -252,16 +255,21 @@ thread_local std::unique_ptr<PipeMemorySlab, ThreadSlabDeleter> t_this_thread_sl
 
 } // anonymous namespace
 
-void PipeMemoryAllocator::startService()
+PipeMemoryAllocator::PipeMemoryAllocator(svc::ServiceLocator& /*svc*/, Config cfg)
 {
-	assert(!g_slab_gc_run_flag.load(std::memory_order_acquire));
-	assert(!g_slab_gc_thread.joinable());
+	if (g_slab_gc_run_flag.load(std::memory_order_acquire)) {
+		Log::error("PipeMemoryAllocator service is already started!");
+		throw Exception::fromError(VoxenErrc::AlreadyRegistered, "PipeMemoryAllocator singleton violated");
+	}
 
+	debug::UidRegistry::registerLiteral(SERVICE_UID, "voxen/service/PipeMemoryAllocator");
+
+	g_service_config = cfg;
 	g_slab_gc_run_flag.store(true, std::memory_order_release);
 	g_slab_gc_thread = std::thread(gcThreadProc);
 }
 
-void PipeMemoryAllocator::stopService() noexcept
+PipeMemoryAllocator::~PipeMemoryAllocator() noexcept
 {
 	assert(g_slab_gc_run_flag.load(std::memory_order_acquire));
 	assert(g_slab_gc_thread.joinable());
@@ -311,11 +319,6 @@ void PipeMemoryAllocator::deallocate(void* ptr) noexcept
 	uintptr_t slab_ptr = uintptr_t(ptr) & ~(SLAB_SIZE - 1u);
 	std::launder(reinterpret_cast<PipeMemorySlab*>(slab_ptr))
 		->ctl.deallocated_items.fetch_add(1, std::memory_order_release);
-}
-
-void PipeMemoryAllocator::dropThreadCache() noexcept
-{
-	t_this_thread_slab.reset();
 }
 
 } // namespace voxen

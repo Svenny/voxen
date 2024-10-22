@@ -1,17 +1,8 @@
 #pragma once
 
 #include <voxen/common/pipe_memory_allocator.hpp>
+#include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
-
-// Work around clang bug (emits warning for some deprecated shit in std headers)
-// Like this: https://github.com/llvm/llvm-project/issues/76515
-//
-// Wrapping just problematic `std::bind` usage is not enough,
-// warning triggers at `enqueueTask()` call sites.
-// I have no idea how this works... note I'm setting it to error, basically should change
-// nothing as we're already building with -Werror. But somehow it does suppress warning
-// from std headers while retaining errors in user code (try adding [[deprecated]] somewhere).
-#pragma clang diagnostic error "-Wdeprecated-declarations"
 
 #include <functional>
 #include <future>
@@ -22,62 +13,27 @@
 namespace voxen
 {
 
-template<typename T>
-class ThreadPoolResultsQueue {
+class VOXEN_API ThreadPool final : public svc::IService {
 public:
-	ThreadPoolResultsQueue(const ThreadPoolResultsQueue& other) = delete;
-	ThreadPoolResultsQueue(ThreadPoolResultsQueue&& other) = default;
-	~ThreadPoolResultsQueue() noexcept {}
+	constexpr static UID SERVICE_UID = UID("340d78cd-5a543514-8d4a8a15-de39ab3c");
 
-	static std::shared_ptr<ThreadPoolResultsQueue<T>> createPoolQueue()
-	{
-		return std::shared_ptr<ThreadPoolResultsQueue<T>>(new ThreadPoolResultsQueue());
-	}
-
-	bool isEmpty()
-	{
-		std::unique_lock<std::mutex> lock(m_mutex);
-
-		return m_data.size() == 0;
-	}
-
-	void push(T&& obj)
-	{
-		std::unique_lock<std::mutex> lock(m_mutex);
-
-		m_data.push(obj);
-	}
-
-	T pop()
-	{
-		std::unique_lock<std::mutex> lock(m_mutex);
-
-		T value = m_data.front();
-		m_data.pop();
-		return value;
-	}
-
-private:
-	ThreadPoolResultsQueue() = default;
-
-private:
-	std::queue<T> m_data;
-	std::mutex m_mutex;
-};
-
-class VOXEN_API ThreadPool {
-public:
 	enum class TaskType {
 		// This is a CPU-bound task without particular timing restrictions
 		Standard
 	};
 
-	explicit ThreadPool(size_t thread_count = 0);
+	struct Config {
+		size_t thread_count = 0;
+	};
+
+	explicit ThreadPool(svc::ServiceLocator& svc, Config cfg);
 	ThreadPool(ThreadPool&&) = delete;
 	ThreadPool(const ThreadPool&) = delete;
 	ThreadPool& operator=(ThreadPool&&) = delete;
 	ThreadPool& operator=(const ThreadPool&) = delete;
-	~ThreadPool() noexcept;
+	~ThreadPool() noexcept override;
+
+	UID serviceUid() const noexcept override { return SERVICE_UID; }
 
 	template<typename F>
 	std::future<std::invoke_result_t<F>> enqueueTask(TaskType type, F&& f)
@@ -92,12 +48,6 @@ public:
 
 		return future;
 	}
-
-	size_t threads_count() const;
-
-	static void initGlobalVoxenPool(size_t thread_count = 0);
-	static void releaseGlobalVoxenPool();
-	static ThreadPool& globalVoxenPool();
 
 private:
 	struct PipedTaskDeleter;
@@ -149,14 +99,12 @@ private:
 	};
 
 	void doEnqueueTask(TaskType type, IPipedTask* raw_task_ptr);
+	void makeWorker();
 
 	static void workerFunction(ReportableWorkerState* state);
-	ReportableWorker* make_worker();
-	void run_worker(ReportableWorker* worker);
 
 private:
-	std::vector<ReportableWorker*> m_workers;
-	static ThreadPool* global_voxen_pool;
+	std::vector<std::unique_ptr<ReportableWorker>> m_workers;
 };
 
 } // namespace voxen

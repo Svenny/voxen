@@ -3,11 +3,10 @@
 #include <voxen/client/window.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/runtime_config.hpp>
-#include <voxen/common/threadpool.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/server/world.hpp>
+#include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
@@ -127,10 +126,6 @@ int main(int argc, char *argv[])
 	Log::info("Starting Voxen {}", voxen::Version::STRING);
 	Log::info("Started at: {:%c UTC%z (%Z)}", fmt::localtime(std::time(nullptr)));
 
-	// TODO: convert it to services startup system
-	voxen::PipeMemoryAllocator::startService();
-	defer { voxen::PipeMemoryAllocator::stopService(); };
-
 	try {
 		cxxopts::Options options = initCli();
 		auto result = options.parse(argc, argv);
@@ -141,8 +136,7 @@ int main(int argc, char *argv[])
 
 		voxen::RuntimeConfig::instance().fill(result);
 
-		//TODO(sirgienko) add profile option for threads count in profile scheme?
-		voxen::ThreadPool::initGlobalVoxenPool();
+		auto engine = voxen::svc::Engine::create();
 
 		voxen::FileManager::setProfileName(argv[0], result["profile"].as<std::string>());
 
@@ -155,7 +149,7 @@ int main(int argc, char *argv[])
 		wnd.start(main_voxen_config->getInt32("window", "width"), main_voxen_config->getInt32("window", "height"));
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
-		voxen::server::World world;
+		voxen::server::World world(engine->serviceLocator());
 		auto gui = std::make_unique<voxen::client::Gui>(wnd);
 		gui->init(*world.getLastState());
 		voxen::DebugQueueRtW render_to_world_queue;
@@ -200,7 +194,6 @@ int main(int argc, char *argv[])
 		render.reset();
 		gui.reset();
 		wnd.stop();
-		voxen::ThreadPool::releaseGlobalVoxenPool();
 	}
 	catch (const voxen::Exception &e) {
 		Log::fatal("Unchaught voxen::Exception instance");

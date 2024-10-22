@@ -106,7 +106,7 @@ public:
 
 	// Typed helper for `requestService`
 	template<CService Service>
-	IService &requestService()
+	Service &requestService()
 	{
 		return static_cast<Service &>(requestService(Service::SERVICE_UID));
 	}
