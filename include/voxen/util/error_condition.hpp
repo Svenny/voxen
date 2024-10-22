@@ -24,6 +24,12 @@ enum class VoxenErrc : int {
 	DataTooLarge = 7,
 	// Call to external library failed for library-specific reasons
 	ExternalLibFailure = 8,
+	// Attempt to double-register an entity that should be unique
+	AlreadyRegistered = 9,
+	// Requested an (registerable) entity that is not yet registered
+	NotRegistered = 10,
+	// A circular data/control dependency not allowed in this context was encountered
+	CircularDependency = 11,
 };
 
 // ADL-accessible factory for `std::error_condition { VoxenErrc }`
