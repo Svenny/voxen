@@ -96,7 +96,12 @@ void Log::doLog(Level level, extras::source_location where, std::string_view for
 			sink = stderr;
 		}
 
-		fmt::print(sink, "[{:%F %T}][{} {}][{:s}:{:d}][{:s}] {:s}\n", std::chrono::system_clock::now(), pid, tid,
+		// TODO: use current_zone()->to_local() when fmt supports formatting local time.
+		// TODO: cache timezone offset, no need to update it for every log call.
+		// (these todos look kinda mutually exclusive though)
+		auto sys_time = std::chrono::system_clock::now();
+		auto local_time = sys_time + std::chrono::current_zone()->get_info(sys_time).offset;
+		fmt::print(sink, "[{:%F %T}][{} {}][{:s}:{:d}][{:s}] {:s}\n", local_time, pid, tid,
 			where.file_name(), where.line(), fmt::styled(extras::enum_name(level), styleForLevel(level)), text);
 	}
 	catch (const std::system_error &err) {
