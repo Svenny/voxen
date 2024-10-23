@@ -93,6 +93,8 @@ set(VOXEN_HEADERS
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
 	include/voxen/server/world.hpp
+	include/voxen/svc/service_base.hpp
+	include/voxen/svc/service_locator.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp
 	include/voxen/util/debug.hpp

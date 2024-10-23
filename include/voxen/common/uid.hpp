@@ -2,7 +2,10 @@
 
 #include <voxen/visibility.hpp>
 
+#include <fmt/base.h>
+
 #include <cstdint>
+#include <functional>
 #include <span>
 
 namespace voxen
@@ -81,3 +84,27 @@ consteval UID::UID(std::span<const char, CHAR_REPR_LENGTH> in) noexcept
 }
 
 } // namespace voxen
+
+namespace fmt
+{
+
+template<>
+struct VOXEN_API formatter<voxen::UID> : formatter<string_view> {
+	format_context::iterator format(voxen::UID id, format_context &ctx) const;
+};
+
+} // namespace fmt
+
+namespace std
+{
+
+template<>
+struct hash<voxen::UID> {
+	size_t operator()(const voxen::UID &uid) const noexcept
+	{
+		// No special hashing is needed, UIDs are already random
+		return static_cast<size_t>(uid.v0 ^ uid.v1);
+	}
+};
+
+} // namespace std

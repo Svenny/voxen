@@ -1,5 +1,7 @@
 #include <voxen/common/uid.hpp>
 
+#include <fmt/format.h>
+
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
@@ -51,3 +53,15 @@ UID UID::generateRandom()
 }
 
 } // namespace voxen
+
+namespace fmt
+{
+
+format_context::iterator formatter<voxen::UID>::format(voxen::UID id, format_context &ctx) const
+{
+	char uid_chars[voxen::UID::CHAR_REPR_LENGTH];
+	id.toChars(uid_chars);
+	return formatter<string_view>::format(uid_chars, ctx);
+}
+
+} // namespace fmt
