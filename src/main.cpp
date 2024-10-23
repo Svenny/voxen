@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
 	using namespace std::chrono;
 
 	Log::info("Starting Voxen {}", voxen::Version::STRING);
+	Log::info("Started at: {:%c UTC%z (%Z)}", fmt::localtime(std::time(nullptr)));
 
 	// TODO: convert it to services startup system
 	voxen::PipeMemoryAllocator::startService();
