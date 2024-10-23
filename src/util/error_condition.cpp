@@ -30,8 +30,8 @@ struct VoxenErrorCategory : std::error_category {
 			return "Call to external library failed for library-specific reasons";
 		case VoxenErrc::AlreadyRegistered:
 			return "Attempt to double-register an entity that should be unique";
-		case VoxenErrc::NotRegistered:
-			return "Requested an (registerable) entity that is not yet registered";
+		case VoxenErrc::UnresolvedDependency:
+			return "A data/control dependency was not resolved";
 		case VoxenErrc::CircularDependency:
 			return "A circular data/control dependency not allowed in this context was encountered";
 		} // No `default` to make `-Werror -Wswitch` protection work

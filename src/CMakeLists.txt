@@ -76,6 +76,8 @@ set(VOXEN_SOURCES
 	src/voxen/os/futex.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
+	src/voxen/svc/service_base.cpp
+	src/voxen/svc/service_locator.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/packed_color.cpp
 )

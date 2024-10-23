@@ -1,5 +1,6 @@
 #pragma once
 
+#define CATCH_CONFIG_EXPERIMENTAL_REDIRECT
 #include <catch2/catch.hpp>
 
 #include <glm/glm.hpp>
