@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <system_error>
 
 namespace voxen
@@ -26,14 +28,14 @@ enum class VoxenErrc : int {
 	ExternalLibFailure = 8,
 	// Attempt to double-register an entity that should be unique
 	AlreadyRegistered = 9,
-	// Requested an (registerable) entity that is not yet registered
-	NotRegistered = 10,
+	// A data/control dependency was not resolved
+	UnresolvedDependency = 10,
 	// A circular data/control dependency not allowed in this context was encountered
 	CircularDependency = 11,
 };
 
 // ADL-accessible factory for `std::error_condition { VoxenErrc }`
-std::error_condition make_error_condition(VoxenErrc errc) noexcept;
+VOXEN_API std::error_condition make_error_condition(VoxenErrc errc) noexcept;
 
 } // namespace voxen
 
