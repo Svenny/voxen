@@ -56,6 +56,7 @@ set(VOXEN_SOURCES
 	src/voxen/common/pipe_memory_allocator.cpp
 	src/voxen/common/threadpool.cpp
 	src/voxen/common/uid.cpp
+	src/voxen/debug/debug_uid_registry.cpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp
