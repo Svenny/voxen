@@ -19,6 +19,10 @@ void waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept;
 // This is a syscall so it's not particularly fast.
 void wakeSingle(std::atomic_uint32_t *addr) noexcept;
 
+// Wake all threads (if any) waiting on `addr`.
+// This is a syscall so it's not particularly fast.
+void wakeAll(std::atomic_uint32_t *addr) noexcept;
+
 } // namespace Futex
 
 // A lightweight alternative to `std::mutex` (4 bytes versus ~40-80).
@@ -35,6 +39,31 @@ public:
 	void lock() noexcept;
 	bool try_lock() noexcept;
 	void unlock() noexcept;
+
+private:
+	std::atomic_uint32_t m_payload = 0;
+};
+
+// A lightweight alternative to `std::shared_mutex`.
+// Trivial to create/destroy, can be used for fine-grained locks.
+// NOTE: its exclusive-only locking performance is worse
+// than `FutexLock`. Do not use it if shared locking is not needed.
+class FutexRWLock {
+public:
+	FutexRWLock() = default;
+	FutexRWLock(FutexRWLock &&) = delete;
+	FutexRWLock(const FutexRWLock &) = delete;
+	FutexRWLock &operator=(FutexRWLock &&) = delete;
+	FutexRWLock &operator=(const FutexRWLock &) = delete;
+	~FutexRWLock() = default;
+
+	void lock() noexcept;
+	bool try_lock() noexcept;
+	void unlock() noexcept;
+
+	void lock_shared() noexcept;
+	bool try_lock_shared() noexcept;
+	void unlock_shared() noexcept;
 
 private:
 	std::atomic_uint32_t m_payload = 0;

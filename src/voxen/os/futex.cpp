@@ -36,6 +36,13 @@ void Futex::wakeSingle(std::atomic_uint32_t *addr) noexcept
 	assert(res != -1);
 }
 
+void Futex::wakeAll(std::atomic_uint32_t *addr) noexcept
+{
+	[[maybe_unused]] long res = syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, INT32_MAX, nullptr, nullptr, 0);
+	// Nothing to fail here
+	assert(res != -1);
+}
+
 #else // _WIN32
 
 void Futex::waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept
@@ -50,7 +57,14 @@ void Futex::wakeSingle(std::atomic_uint32_t *addr) noexcept
 	WakeByAddressSingle(addr);
 }
 
+void Futex::wakeAll(std::atomic_uint32_t *addr) noexcept
+{
+	WakeByAddressAll(addr);
+}
+
 #endif // _WIN32
+
+// --- FutexLock ---
 
 void FutexLock::lock() noexcept
 {
@@ -96,8 +110,10 @@ void FutexLock::lock() noexcept
 		}
 
 		expected = 0;
-		// Try acquiring the lock after wakeup
-	} while (!m_payload.compare_exchange_weak(expected, 1, std::memory_order_acquire, std::memory_order_relaxed));
+		// Try acquiring the lock after wakeup.
+		// We don't know if there are any other waiting threads,
+		// so we have to be conservative and write 2 instead of 1.
+	} while (!m_payload.compare_exchange_weak(expected, 2, std::memory_order_acquire, std::memory_order_relaxed));
 }
 
 bool FutexLock::try_lock() noexcept
@@ -108,9 +124,118 @@ bool FutexLock::try_lock() noexcept
 
 void FutexLock::unlock() noexcept
 {
-	if (m_payload.fetch_sub(1, std::memory_order_release) == 2) {
+	if (m_payload.exchange(0, std::memory_order_release) == 2) {
 		// Someone is waiting on this lock, wake him up
-		m_payload.store(0, std::memory_order_release);
+		Futex::wakeSingle(&m_payload);
+	}
+}
+
+// --- FutexRWLock ---
+
+constexpr static uint32_t RWLOCK_EXCLUSIVE_BIT = 1u << 31;
+constexpr static uint32_t RWLOCK_WAITING_BIT = 1u << 30;
+
+void FutexRWLock::lock() noexcept
+{
+	// Optimistically assume the lock is free
+	uint32_t expected = 0;
+	if (m_payload.compare_exchange_strong(expected, RWLOCK_EXCLUSIVE_BIT, std::memory_order_acquire,
+			 std::memory_order_relaxed)) [[likely]] {
+		// The lock is ours!
+		return;
+	}
+
+	// TODO: we could spin a bit (see `FutexLock::lock()`) assuming the lock will get released soon
+
+	do {
+		// We might have either some shared locks or an exclusive one.
+		// In either case try to insert the waiting bit and then, well, wait.
+		// CAS might fail - no problem, we will just try again in the next iteration.
+		uint32_t desired = expected | RWLOCK_WAITING_BIT;
+		if (expected == desired || m_payload.compare_exchange_weak(expected, desired, std::memory_order_relaxed))
+			[[likely]] {
+			// Wait until it gets some other value
+			Futex::waitInfinite(&m_payload, desired);
+		}
+
+		expected = 0;
+		// Try acquiring the lock after wakeup.
+		// We don't know if there are any other waiting threads,
+		// so we have to be conservative and retain the waiting bit.
+	} while (!m_payload.compare_exchange_weak(expected, RWLOCK_EXCLUSIVE_BIT | RWLOCK_WAITING_BIT,
+		std::memory_order_acquire, std::memory_order_relaxed));
+}
+
+bool FutexRWLock::try_lock() noexcept
+{
+	uint32_t expected = 0;
+	return m_payload.compare_exchange_strong(expected, RWLOCK_EXCLUSIVE_BIT, std::memory_order_acquire,
+		std::memory_order_relaxed);
+}
+
+void FutexRWLock::unlock() noexcept
+{
+	if (m_payload.exchange(0, std::memory_order_release) & RWLOCK_WAITING_BIT) {
+		// Someone is waiting on this lock.
+		// *All* shared lock attempts should be woken up here,
+		// there will be no other place where we can do it.
+		// If those are exclusive ones... well, not enough information to discern.
+		Futex::wakeAll(&m_payload);
+	}
+}
+
+void FutexRWLock::lock_shared() noexcept
+{
+	while (true) {
+		uint32_t expected = m_payload.load(std::memory_order_relaxed);
+
+		// Assume there is no exclusive lock (waiting bit doesn't matter)
+		// Loop because CAS might fail - this might be only because someone
+		// else is taking a shared lock too or setting a waiting bit.
+		while (!(expected & RWLOCK_EXCLUSIVE_BIT)) [[likely]] {
+			if (m_payload.compare_exchange_weak(expected, expected + 1, std::memory_order_acquire,
+					 std::memory_order_relaxed)) [[likely]] {
+				// Welcome to the club, buddy!
+				return;
+			}
+
+			// Just slightly relax CPU before trying again
+			_mm_pause();
+		}
+
+		// TODO: we could spin a bit (see `FutexLock::lock()`) assuming the lock will get released soon
+
+		// There is an exclusive lock held.
+		// Try to insert the waiting bit and then, well, wait.
+		// CAS might fail - no problem, we will just try again in the next iteration.
+		uint32_t desired = expected | RWLOCK_WAITING_BIT;
+		if (expected == desired || m_payload.compare_exchange_weak(expected, desired, std::memory_order_relaxed))
+			[[likely]] {
+			// Wait until it gets some other value
+			Futex::waitInfinite(&m_payload, desired);
+		}
+	}
+}
+
+bool FutexRWLock::try_lock_shared() noexcept
+{
+	uint32_t expected = m_payload.load(std::memory_order_relaxed);
+	if (expected & RWLOCK_EXCLUSIVE_BIT) [[unlikely]] {
+		return false;
+	}
+
+	// Not in exclusive lock state - try adding one more shared lock user
+	return m_payload.compare_exchange_strong(expected, expected + 1, std::memory_order_acquire,
+		std::memory_order_relaxed);
+}
+
+void FutexRWLock::unlock_shared() noexcept
+{
+	// Remove one shared lock user
+	if (m_payload.fetch_sub(1, std::memory_order_release) & RWLOCK_WAITING_BIT) {
+		// Someone is waiting on this lock, wake him up.
+		// It can only be an exclusive lock attempt (shared wouldn't wait).
+		m_payload.fetch_and(~RWLOCK_WAITING_BIT, std::memory_order_release);
 		Futex::wakeSingle(&m_payload);
 	}
 }
