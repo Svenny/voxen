@@ -20,9 +20,6 @@ set(VOXEN_SOURCES
 	src/client/window.cpp
 	src/client/input_event_adapter.cpp
 	src/common/assets/png_tools.cpp
-	src/common/msg/config.cpp
-	src/common/msg/message.cpp
-	src/common/msg/queue.cpp
 	src/common/terrain/allocator.cpp
 	src/common/terrain/cache.cpp
 	src/common/terrain/chunk.cpp
