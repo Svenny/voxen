@@ -94,6 +94,10 @@ set(VOXEN_HEADERS
 	include/voxen/os/stdlib.hpp
 	include/voxen/server/world.hpp
 	include/voxen/svc/engine.hpp
+	include/voxen/svc/message_handling.hpp
+	include/voxen/svc/message_queue.hpp
+	include/voxen/svc/message_types.hpp
+	include/voxen/svc/messaging_service.hpp
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp
 	include/voxen/util/aabb.hpp

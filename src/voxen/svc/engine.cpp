@@ -2,12 +2,18 @@
 
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/thread_pool.hpp>
+#include <voxen/svc/messaging_service.hpp>
 
 namespace voxen::svc
 {
 
 namespace
 {
+
+auto makeMsgService(ServiceLocator &svc)
+{
+	return std::make_unique<MessagingService>(svc, MessagingService::Config {});
+}
 
 auto makePipeAllocService(ServiceLocator &svc)
 {
@@ -23,6 +29,7 @@ auto makeThreadPoolService(ServiceLocator &svc)
 
 Engine::Engine()
 {
+	m_service_locator.registerServiceFactory<MessagingService>(makeMsgService);
 	m_service_locator.registerServiceFactory<PipeMemoryAllocator>(makePipeAllocService);
 	m_service_locator.registerServiceFactory<ThreadPool>(makeThreadPoolService);
 }
