@@ -75,6 +75,11 @@ set(VOXEN_SOURCES
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
 	src/voxen/svc/engine.cpp
+	src/voxen/svc/message_handling.cpp
+	src/voxen/svc/message_queue.cpp
+	src/voxen/svc/messaging_private.cpp
+	src/voxen/svc/messaging_private.hpp
+	src/voxen/svc/messaging_service.cpp
 	src/voxen/svc/service_base.cpp
 	src/voxen/svc/service_locator.cpp
 	src/voxen/util/futex_work_counter.cpp
