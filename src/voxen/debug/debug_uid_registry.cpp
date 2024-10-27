@@ -2,6 +2,8 @@
 
 #include <voxen/os/futex.hpp>
 
+#include <fmt/format.h>
+
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -120,7 +122,7 @@ void UidRegistry::unregister(UID id) noexcept
 	shard.data.erase(id);
 }
 
-void UidRegistry::lookup(UID id, std::string &out)
+void UidRegistry::lookup(UID id, std::string &out, Format format)
 {
 	out.clear();
 
@@ -128,19 +130,19 @@ void UidRegistry::lookup(UID id, std::string &out)
 	std::lock_guard lk(shard.lock);
 
 	auto iter = shard.data.find(id);
+
 	if (iter != shard.data.end()) {
-		out = std::string_view(iter->second);
-	}
-}
-
-void UidRegistry::lookupOrPrint(UID id, std::string &out)
-{
-	lookup(id, out);
-
-	if (out.empty()) {
-		char uid_chars[UID::CHAR_REPR_LENGTH];
-		id.toChars(uid_chars);
-		out = uid_chars;
+		if (format == FORMAT_STRING_AND_UID) {
+			out = fmt::format("{} ({})", std::string_view(iter->second), id);
+		} else {
+			out = std::string_view(iter->second);
+		}
+	} else {
+		if (format != FORMAT_STRING_ONLY) {
+			char uid_chars[UID::CHAR_REPR_LENGTH];
+			id.toChars(uid_chars);
+			out = uid_chars;
+		}
 	}
 }
 

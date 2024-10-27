@@ -16,6 +16,17 @@ namespace voxen::debug
 namespace UidRegistry
 {
 
+// Controls how `lookup()` will format its output
+enum Format {
+	// `<string> (<uid>)` if found, `<uid>` otherwise.
+	// This is the default mode as it's the most informative.
+	FORMAT_STRING_AND_UID = 0,
+	// `<string>` if found, `<uid>` otherwise
+	FORMAT_STRING_OR_UID = 1,
+	// `<string>` if found, empty string otherwise
+	FORMAT_STRING_ONLY = 2,
+};
+
 // Register string associated with `id`, overwriting the previous one, if any.
 // String pointed to by `view` must remain allocated until either the
 // next registration of `id`, call to `unregister(id)` or the program exit.
@@ -39,30 +50,16 @@ VOXEN_API void registerString(UID id, std::string_view view);
 VOXEN_API void unregister(UID id) noexcept;
 
 // Find the string associated with `id` and copy it to `out`.
-// Makes an empty string if no registered string is found.
+// See `Format` for the description of available format modes.
 //
 // Takes output by reference to reduce reallocations in bulk queries.
-VOXEN_API void lookup(UID id, std::string &out);
+VOXEN_API void lookup(UID id, std::string &out, Format format = FORMAT_STRING_AND_UID);
 
-// Simpler form of `lookup(id, out)`
-inline std::string lookup(UID id)
+// Simpler form of `lookup(id, out, format)`
+inline std::string lookup(UID id, Format format = FORMAT_STRING_AND_UID)
 {
 	std::string str;
-	lookup(id, str);
-	return str;
-}
-
-// Same as `lookup` but (instead of an empty string) writes `id`
-// converted to string (see `UID::toChars()`) if nothing is found.
-//
-// Takes output by reference to reduce reallocations in bulk queries.
-VOXEN_API void lookupOrPrint(UID id, std::string &out);
-
-// Simpler form of `lookupOrPrint(id, out)`
-inline std::string lookupOrPrint(UID id)
-{
-	std::string str;
-	lookupOrPrint(id, str);
+	lookup(id, str, format);
 	return str;
 }
 
