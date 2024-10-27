@@ -54,9 +54,9 @@ struct ThreadPool::ReportableWorker {
 
 ThreadPool::ThreadPool(svc::ServiceLocator &svc, Config cfg)
 {
-	svc.requestService<PipeMemoryAllocator>();
-
 	debug::UidRegistry::registerLiteral(SERVICE_UID, "voxen/service/ThreadPool");
+
+	svc.requestService<PipeMemoryAllocator>();
 
 	if (cfg.thread_count == 0) {
 		size_t std_hint = std::thread::hardware_concurrency();

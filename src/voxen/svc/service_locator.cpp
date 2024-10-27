@@ -1,5 +1,6 @@
 #include <voxen/svc/service_locator.hpp>
 
+#include <voxen/debug/debug_uid_registry.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -53,11 +54,12 @@ struct ServiceLocator::Impl {
 
 		for (auto iter = pending_services.rbegin(); iter != pending_services.rend(); ++iter) {
 			size_t index = static_cast<size_t>(std::distance(pending_services.rbegin(), iter));
+			std::string str = debug::UidRegistry::lookup(*iter);
 
 			if (index == 0) {
-				Log::error("    {}, dependency chain end (failure point)", *iter);
+				Log::error("    {}, dependency chain end (failure point)", str);
 			} else {
-				Log::error("    {}, dependency level {}", *iter, pending_services.size() - index);
+				Log::error("    {}, dependency level {}", str, pending_services.size() - index);
 			}
 		}
 	}
@@ -74,7 +76,7 @@ ServiceLocator::~ServiceLocator() noexcept
 
 	Log::debug("Destroying services");
 	for (auto iter = m_impl->start_order.rbegin(); iter != m_impl->start_order.rend(); ++iter) {
-		Log::debug("Destroying service {}", *iter);
+		Log::debug("Destroying service {}", debug::UidRegistry::lookup(*iter));
 
 		// Remove this service from the set (make it non-accessible)
 		auto service_iter = m_impl->active_services.find(*iter);
@@ -128,7 +130,7 @@ IService &ServiceLocator::requestService(UID id)
 		// This can happen only once per call chain, no need to check this flag
 		m_impl->request_service_fail_logged = true;
 
-		Log::error("Circular service dependency! UID {} needs itself to start", id);
+		Log::error("Circular service dependency! Service {} needs itself to start", debug::UidRegistry::lookup(id));
 		m_impl->errorLogDependencyChain();
 		throw Exception::fromError(VoxenErrc::CircularDependency, "circular service dependency");
 	}
@@ -149,7 +151,7 @@ IService &ServiceLocator::requestService(UID id)
 		// This can happen only once per dependency chain, no need to check this flag
 		m_impl->request_service_fail_logged = true;
 
-		Log::error("No factory registered for requested service UID {}!", id);
+		Log::error("No factory registered for requested service {}!", debug::UidRegistry::lookup(id));
 		m_impl->errorLogDependencyChain();
 		throw Exception::fromError(VoxenErrc::UnresolvedDependency, "requested non-registered service");
 	}
@@ -175,11 +177,11 @@ IService &ServiceLocator::requestService(UID id)
 			// Bottom of dependency chain (original failure)
 			m_impl->request_service_fail_logged = true;
 
-			Log::error("Factory of service UID {} failed!", id);
+			Log::error("Factory of service {} failed!", debug::UidRegistry::lookup(id));
 			m_impl->errorLogDependencyChain();
 		} else {
 			// Transitive failure
-			Log::error("Can't start service UID {} because starting its dependency failed!", id);
+			Log::error("Can't start service {} because starting its dependency failed!", debug::UidRegistry::lookup(id));
 		}
 
 		throw;
@@ -191,7 +193,7 @@ IService &ServiceLocator::requestService(UID id)
 
 	m_impl->active_services.emplace(id, std::move(service));
 	m_impl->start_order.emplace_back(id);
-	Log::debug("Started service {}", id);
+	Log::debug("Started service {}", debug::UidRegistry::lookup(id));
 
 	return *constructed_service;
 }
@@ -202,7 +204,7 @@ void ServiceLocator::registerServiceFactory(UID id, ServiceFactoryFunction facto
 	std::lock_guard lk(m_impl->lock);
 
 	if (!m_impl->factory_map.emplace(id, std::move(factory)).second) {
-		Log::error("Factory is already registered for service UID {}!", id);
+		Log::error("Factory is already registered for service UID {}!", debug::UidRegistry::lookup(id));
 		throw Exception::fromError(VoxenErrc::AlreadyRegistered, "double-register service factory");
 	}
 }
