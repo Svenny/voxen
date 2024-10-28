@@ -48,11 +48,22 @@ public:
 	constexpr pimpl &operator=(const pimpl &other);
 	constexpr ~pimpl() noexcept;
 
-	constexpr T &object() noexcept { return *std::launder(reinterpret_cast<T *>(m_storage)); }
-	constexpr const T &object() const noexcept { return *std::launder(reinterpret_cast<const T *>(m_storage)); }
+	[[clang::always_inline]] constexpr T &object() noexcept { return *std::launder(reinterpret_cast<T *>(m_storage)); }
 
-	constexpr T *operator->() noexcept { return std::launder(reinterpret_cast<T *>(m_storage)); }
-	constexpr const T *operator->() const noexcept { return std::launder(reinterpret_cast<const T *>(m_storage)); }
+	[[clang::always_inline]] constexpr const T &object() const noexcept
+	{
+		return *std::launder(reinterpret_cast<const T *>(m_storage));
+	}
+
+	[[clang::always_inline]] constexpr T *operator->() noexcept
+	{
+		return std::launder(reinterpret_cast<T *>(m_storage));
+	}
+
+	[[clang::always_inline]] constexpr const T *operator->() const noexcept
+	{
+		return std::launder(reinterpret_cast<const T *>(m_storage));
+	}
 
 private:
 	alignas(A) std::byte m_storage[S];
