@@ -3,6 +3,7 @@
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/qef_solver.hpp>
 
+#include <algorithm>
 #include <unordered_map>
 
 namespace voxen::terrain
