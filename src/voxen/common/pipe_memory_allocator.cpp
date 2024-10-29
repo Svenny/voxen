@@ -1,6 +1,5 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 
-#include <voxen/debug/debug_uid_registry.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -261,8 +260,6 @@ PipeMemoryAllocator::PipeMemoryAllocator(svc::ServiceLocator& /*svc*/, Config cf
 		Log::error("PipeMemoryAllocator service is already started!");
 		throw Exception::fromError(VoxenErrc::AlreadyRegistered, "PipeMemoryAllocator singleton violated");
 	}
-
-	debug::UidRegistry::registerLiteral(SERVICE_UID, "voxen/service/PipeMemoryAllocator");
 
 	g_service_config = cfg;
 	g_slab_gc_run_flag.store(true, std::memory_order_release);

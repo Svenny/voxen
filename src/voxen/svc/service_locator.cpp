@@ -112,6 +112,14 @@ IService &ServiceLocator::requestService(UID id)
 	// functions, their service dependencies will make recursive calls here.
 	std::unique_lock lock(m_impl->lock);
 
+	// Check again - there is an exteremly low chance that another thread has
+	// started this service between our first check and taking the exclusive lock.
+	if (auto iter = m_impl->active_services.find(id); iter != m_impl->active_services.end()) {
+		return *iter->second;
+	}
+
+	Log::debug("Requested start of service {}", debug::UidRegistry::lookup(id));
+
 	// Reset "fail logged" flag - there can't be failures while we're still entering this section
 	m_impl->request_service_fail_logged = false;
 
