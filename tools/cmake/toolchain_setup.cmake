@@ -109,6 +109,11 @@ function(voxen_setup_target target is_executable)
 			-Wno-unneeded-member-function
 			# Triggers on ~any unchecked array access, total nonsense
 			-Wno-unsafe-buffer-usage
+
+			# Display names of files being compiled (makes VS output window informative)
+			/showFilenames
+			# Compile multiple source files in parallel (why it's not the default?!)
+			/MP
 		)
 
 		target_link_libraries(${target} PRIVATE
