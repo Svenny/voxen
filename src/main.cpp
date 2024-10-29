@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 		wnd.start(main_voxen_config->getInt32("window", "width"), main_voxen_config->getInt32("window", "height"));
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
-		voxen::server::World world(engine->serviceLocator());
+		auto &world = engine->serviceLocator().requestService<voxen::server::World>();
 		auto gui = std::make_unique<voxen::client::Gui>(wnd);
 		gui->init(*world.getLastState());
 		voxen::DebugQueueRtW render_to_world_queue;

@@ -7,6 +7,7 @@
 #include <cstring>
 #include <limits>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 #include <utility>
 
@@ -82,8 +83,7 @@ private:
 };
 
 struct DataShard {
-	// TODO: use shared (reader-writer) futex lock when it's implemented
-	os::FutexLock lock;
+	os::FutexRWLock lock;
 	// TODO: use more memory-efficient container, maybe something like HAMT (+ less sparse string storage?)
 	// This feature is debug-only and we want its memory footprint to be as small as possible.
 	std::unordered_map<UID, StringOrLiteral> data;
@@ -127,7 +127,7 @@ void UidRegistry::lookup(UID id, std::string &out, Format format)
 	out.clear();
 
 	auto &shard = selectShard(id);
-	std::lock_guard lk(shard.lock);
+	std::shared_lock lk(shard.lock);
 
 	auto iter = shard.data.find(id);
 

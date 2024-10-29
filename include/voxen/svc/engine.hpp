@@ -28,7 +28,7 @@ public:
 	Engine(const Engine &) = delete;
 	Engine &operator=(Engine &&) = delete;
 	Engine &operator=(const Engine &) = delete;
-	~Engine() noexcept = default;
+	~Engine() noexcept;
 
 	// Factory function. Ensures no other instance is currently created,
 	// otherwise throws `Exception` with `VoxenErrc::AlreadyRegistered`.

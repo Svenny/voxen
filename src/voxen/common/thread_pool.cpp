@@ -1,6 +1,5 @@
 #include <voxen/common/thread_pool.hpp>
 
-#include <voxen/debug/debug_uid_registry.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/exception.hpp>
@@ -54,8 +53,6 @@ struct ThreadPool::ReportableWorker {
 
 ThreadPool::ThreadPool(svc::ServiceLocator &svc, Config cfg)
 {
-	debug::UidRegistry::registerLiteral(SERVICE_UID, "voxen/service/ThreadPool");
-
 	svc.requestService<PipeMemoryAllocator>();
 
 	if (cfg.thread_count == 0) {
