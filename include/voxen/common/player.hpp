@@ -10,14 +10,14 @@ class Player {
 public:
 	Player();
 
-	glm::dvec3 position() const noexcept { return m_position; }
-	glm::dquat orientation() const noexcept { return m_orientation; }
+	const glm::dvec3 &position() const noexcept { return m_position; }
+	const glm::dquat &orientation() const noexcept { return m_orientation; }
 
 	void updateState(glm::dvec3 new_pos, glm::dquat new_rot) noexcept;
 
-	glm::dvec3 lookVector() const noexcept { return m_look_vector; }
-	glm::dvec3 upVector() const noexcept { return m_up_vector; }
-	glm::dvec3 rightVector() const noexcept { return m_right_vector; }
+	const glm::dvec3 &lookVector() const noexcept { return m_look_vector; }
+	const glm::dvec3 &upVector() const noexcept { return m_up_vector; }
+	const glm::dvec3 &rightVector() const noexcept { return m_right_vector; }
 
 private:
 	glm::dvec3 m_position { 100, 600, -1100 };

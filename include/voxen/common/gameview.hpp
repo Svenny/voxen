@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/client/player_action_events.hpp>
+#include <voxen/common/player.hpp>
 #include <voxen/os/glfw_window.hpp>
 
 #include <glm/glm.hpp>
@@ -9,15 +10,19 @@
 namespace voxen
 {
 
-class Player;
-struct DebugQueueRtW;
+namespace svc
+{
+
+class MessageQueue;
+
+}
 
 class GameView {
 public:
 	GameView(os::GlfwWindow& window);
 
 	void init(const Player& player) noexcept;
-	void update(const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept;
+	void update(const Player& player, uint64_t tick_id, double dt, svc::MessageQueue& mq) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
@@ -28,7 +33,7 @@ public:
 	const glm::mat4& viewToClip() const noexcept { return m_view_to_clip; }
 	const glm::mat4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
 	const glm::mat4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
-	const glm::dvec3& cameraPosition() const noexcept { return m_cam_position; }
+	const glm::dvec3& cameraPosition() const noexcept { return m_local_player.position(); }
 
 private:
 	enum Direction : int {
@@ -57,16 +62,14 @@ private:
 	// Mouse position at the time of the latest call to `update`
 	double m_prev_xpos;
 	double m_prev_ypos;
-	// Player orientation
-	glm::dvec3 m_player_dir;
-	glm::dvec3 m_player_up;
-	glm::dvec3 m_player_right;
 	// Gamer view data and parameters
 	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;
 
-	glm::dvec3 m_cam_position;
-	glm::dquat m_cam_orientation;
+	// Local copy of player state - updated directly here instead of
+	// requesting it from world, eliminates lag from messaging latency.
+	Player m_local_player;
+
 	glm::mat4 m_view_to_clip;
 	glm::mat4 m_tr_world_to_view;
 	glm::mat4 m_tr_world_to_clip;

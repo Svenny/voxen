@@ -39,6 +39,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/gfx_runtime_config.hpp
 	include/voxen/client/gui.hpp
+	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/render.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
@@ -65,6 +66,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/gameview.hpp
 	include/voxen/common/pipe_memory_allocator.hpp
 	include/voxen/common/player.hpp
+	include/voxen/common/player_state_message.hpp
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/thread_pool.hpp
 	include/voxen/common/uid.hpp

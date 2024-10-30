@@ -49,6 +49,7 @@ set(VOXEN_SOURCES
 	src/util/exception.cpp
 	src/util/hash.cpp
 	src/util/log.cpp
+	src/voxen/client/main_thread_service.cpp
 	src/voxen/common/pipe_memory_allocator.cpp
 	src/voxen/common/thread_pool.cpp
 	src/voxen/common/uid.cpp

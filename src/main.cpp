@@ -1,5 +1,4 @@
-#include <voxen/client/gui.hpp>
-#include <voxen/client/render.hpp>
+#include <voxen/client/main_thread_service.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
 #include <voxen/common/runtime_config.hpp>
@@ -92,32 +91,6 @@ static void patchConfig(const cxxopts::ParseResult &result, voxen::Config *confi
 	}
 }
 
-// TODO: use queue or some "inter-thread data exchange" object
-static std::atomic_bool g_stop { false };
-static std::atomic_int64_t g_ups_counter { 0 };
-
-static void worldThread(voxen::server::World &world, voxen::DebugQueueRtW &render_to_world_queue)
-{
-	using namespace std::chrono;
-
-	auto last_tick_time = high_resolution_clock::now();
-	const duration<int64_t, std::nano> tick_inverval { int64_t(world.secondsPerTick() * 1'000'000'000.0) };
-	auto next_tick_time = last_tick_time + tick_inverval;
-
-	while (!g_stop.load()) {
-		auto cur_time = high_resolution_clock::now();
-		while (cur_time >= next_tick_time) {
-			world.update(render_to_world_queue, tick_inverval);
-			next_tick_time += tick_inverval;
-			g_ups_counter.fetch_add(1, std::memory_order_relaxed);
-			if (g_stop.load()) {
-				break;
-			}
-		}
-		std::this_thread::sleep_until(next_tick_time - milliseconds(1));
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	using voxen::Log;
@@ -143,61 +116,12 @@ int main(int argc, char *argv[])
 		voxen::Config *main_voxen_config = voxen::Config::mainConfig();
 		patchConfig(result, main_voxen_config);
 
-		bool isLoggingFPSEnable = main_voxen_config->getBool("dev", "fps_logging");
+		// This will start world thread automatically
+		engine->serviceLocator().requestService<voxen::server::World>();
 
-		voxen::os::GlfwWindow::initGlfw();
-		voxen::os::GlfwWindow wnd({
-			.width = main_voxen_config->getInt32("window", "width"),
-			.height = main_voxen_config->getInt32("window", "height"),
-			.title = "Voxen",
-			.fullscreen = main_voxen_config->getBool("window", "fullscreen"),
-		});
-		auto render = std::make_unique<voxen::client::Render>(wnd);
-
-		auto &world = engine->serviceLocator().requestService<voxen::server::World>();
-		auto gui = std::make_unique<voxen::client::Gui>(wnd);
-		gui->init(*world.getLastState());
-		voxen::DebugQueueRtW render_to_world_queue;
-
-		std::thread world_thread(worldThread, std::ref(world), std::ref(render_to_world_queue));
-
-		int64_t fps_counter = 0;
-		auto time_point_counter = high_resolution_clock::now();
-		while (!wnd.shouldClose()) {
-			// Write all possibly buffered log messages
-			fflush(stdout);
-
-			if (isLoggingFPSEnable) {
-				duration<double> dur = (high_resolution_clock::now() - time_point_counter);
-				double elapsed = dur.count();
-				if (elapsed > 2) {
-					int64_t ups_counter = g_ups_counter.exchange(0, std::memory_order_relaxed);
-					Log::info("FPS: {:.1f} UPS: {:.1f}", double(fps_counter) / elapsed, double(ups_counter) / elapsed);
-					fps_counter = 0;
-					time_point_counter = high_resolution_clock::now();
-				}
-			}
-
-			auto last_state_ptr = world.getLastState();
-			const voxen::WorldState &last_state = *last_state_ptr;
-			// Input handle
-			wnd.pollEvents();
-			gui->update(last_state, render_to_world_queue);
-			// GUI now handled a lot of callbacks (events) from Window
-			// and update world via queue
-
-			// Do render
-			render->drawFrame(last_state, gui->view());
-			fps_counter++;
-		}
-
-		g_stop.store(true);
-		world_thread.join();
-
-		// `render` and `gui` must be destroyed before calling `wnd.stop()`
-		// TODO: do something about Window's lifetime management?
-		render.reset();
-		gui.reset();
+		auto &main_thread = engine->serviceLocator().requestService<voxen::client::MainThreadService>();
+		// Will stay inside this function until the game is ordered to exit
+		main_thread.doMainLoop();
 	}
 	catch (const voxen::Exception &e) {
 		Log::fatal("Unchaught voxen::Exception instance");
@@ -220,5 +144,5 @@ int main(int argc, char *argv[])
 	}
 
 	Log::info("Exiting");
-	return 0;
+	return EXIT_SUCCESS;
 }

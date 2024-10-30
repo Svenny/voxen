@@ -25,10 +25,11 @@ public:
 		bool fullscreen = false;
 	};
 
+	GlfwWindow() = default;
 	explicit GlfwWindow(Config cfg);
-	GlfwWindow(GlfwWindow &&) = delete;
+	GlfwWindow(GlfwWindow &&other) noexcept;
 	GlfwWindow(const GlfwWindow &) = delete;
-	GlfwWindow &operator=(GlfwWindow &&) = delete;
+	GlfwWindow &operator=(GlfwWindow &&other) noexcept;
 	GlfwWindow &operator=(const GlfwWindow &) = delete;
 	~GlfwWindow() noexcept;
 
@@ -66,8 +67,6 @@ public:
 private:
 	GLFWwindow *m_window = nullptr;
 	client::Gui *m_attached_gui = nullptr;
-
-	VOXEN_LOCAL void createWindow(int width, int height);
 
 	VOXEN_LOCAL static void globalKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) noexcept;
 	VOXEN_LOCAL static void globalMouseMovement(GLFWwindow *window, double xpos, double ypos) noexcept;
