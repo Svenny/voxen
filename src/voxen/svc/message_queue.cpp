@@ -14,10 +14,16 @@ using detail::MessageHeader;
 using detail::MessageRouter;
 
 struct MessageQueue::Impl {
-	Impl(MessageRouter &router, UID &my_uid) : router(router), my_uid(my_uid) {}
+	Impl() = default;
+	Impl(MessageRouter &router, UID &my_uid) : router(&router), my_uid(my_uid) {}
+	Impl(Impl &&other) = default;
+	Impl(const Impl &) = delete;
+	Impl &operator=(Impl &&other) = default;
+	Impl &operator=(const Impl &) = delete;
+	~Impl() = default;
 
-	MessageRouter &router;
-	const UID my_uid;
+	MessageRouter *router = nullptr;
+	UID my_uid;
 	// Sorted array of message UID => handler functions.
 	// Slow insertions but quite fast and cache-efficient lookups.
 	// TODO: use something with even faster/simpler lookups? Semi-perfect hashing?
@@ -26,14 +32,26 @@ struct MessageQueue::Impl {
 	detail::InboundQueue *inbound_queue = nullptr;
 };
 
+MessageQueue::MessageQueue() noexcept = default;
+
 MessageQueue::MessageQueue(MessageRouter &router, UID my_uid) : m_impl(router, my_uid)
 {
 	m_impl->inbound_queue = router.registerAgent(my_uid);
 }
 
+MessageQueue::MessageQueue(MessageQueue &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+
+MessageQueue &MessageQueue::operator=(MessageQueue &&other) noexcept
+{
+	std::swap(m_impl.object(), other.m_impl.object());
+	return *this;
+}
+
 MessageQueue::~MessageQueue() noexcept
 {
-	m_impl->router.unregisterAgent(m_impl->my_uid);
+	if (m_impl->router) {
+		m_impl->router->unregisterAgent(m_impl->my_uid);
+	}
 }
 
 void MessageQueue::receiveAll()
@@ -94,7 +112,7 @@ void MessageQueue::doSend(UID to, UID msg_uid, void *alloc, PayloadDeleter delet
 		.queue_link = nullptr,
 	};
 
-	m_impl->router.send(to, hdr);
+	m_impl->router->send(to, hdr);
 }
 
 void MessageQueue::doRegisterHandler(UID msg_uid, MessageHandler handler)

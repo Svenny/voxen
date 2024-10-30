@@ -3,16 +3,14 @@
 #include <voxen/common/config.hpp>
 #include <voxen/common/player.hpp>
 #include <voxen/common/world_state.hpp>
-
+#include <voxen/server/world.hpp>
+#include <voxen/svc/message_queue.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/math.hpp>
 
-#include <glm/gtc/quaternion.hpp>
-
-#include <GLFW/glfw3.h>
-
-using namespace voxen;
+namespace voxen
+{
 
 GameView::GameView(os::GlfwWindow& window)
 	: m_previous_tick_id(UINT64_MAX)
@@ -42,14 +40,10 @@ GameView::GameView(os::GlfwWindow& window)
 
 void voxen::GameView::init(const voxen::Player& player) noexcept
 {
-	m_player_dir = player.lookVector();
-	m_player_up = player.upVector();
-	m_player_right = player.rightVector();
+	m_local_player = player;
 
-	m_cam_position = player.position();
-	m_cam_orientation = player.orientation();
 	m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-	m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_player_dir, m_player_up);
+	m_tr_world_to_view = extras::lookAt(glm::dvec3(0), player.lookVector(), player.upVector());
 	m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
 
 	resetKeyState();
@@ -149,12 +143,8 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const Player& player, DebugQueueRtW& queue, uint64_t tick_id) noexcept
+void GameView::update(const Player& player, uint64_t tick_id, double dt, svc::MessageQueue& mq) noexcept
 {
-	std::lock_guard<std::mutex> lock { queue.mutex };
-
-	queue.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
-
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {
 			m_window.useRegularCursor();
@@ -164,9 +154,6 @@ void GameView::update(const Player& player, DebugQueueRtW& queue, uint64_t tick_
 		std::pair<double, double> pos = m_window.cursorPos();
 		m_prev_xpos = pos.first;
 		m_prev_ypos = pos.second;
-
-		queue.player_forward_movement_direction = glm::dvec3 { 0.0 };
-		queue.player_strafe_movement_direction = glm::dvec3 { 0.0 };
 	} else {
 		if (m_is_used_orientation_cursor) {
 			m_window.useGrabbedCursor();
@@ -177,40 +164,38 @@ void GameView::update(const Player& player, DebugQueueRtW& queue, uint64_t tick_
 		glm::dvec3 move_strafe_direction { 0.0 };
 
 		if (m_previous_tick_id < tick_id) {
-			m_player_dir = player.lookVector();
-			m_player_up = player.upVector();
-			m_player_right = player.rightVector();
-
-			m_cam_position = player.position();
-			m_cam_orientation = player.orientation();
+			// TODO: there might be a divergence between client and server.
+			// We have `m_local_player` but world state has its own player.
+			// Need to somehow track state change history between players and reconverge it.
+			(void) player;
 		}
 
 		double dx = 0;
 		if (m_state[Direction::Left]) {
-			dx -= 1;
+			dx -= dt;
 		}
 		if (m_state[Direction::Right]) {
-			dx += 1;
+			dx += dt;
 		}
-		move_strafe_direction += dx * m_player_right;
+		move_strafe_direction += dx * m_local_player.rightVector();
 
 		double dy = 0;
 		if (m_state[Direction::Down]) {
-			dy -= 1;
+			dy -= dt;
 		}
 		if (m_state[Direction::Up]) {
-			dy += 1;
+			dy += dt;
 		}
-		move_strafe_direction += dy * m_player_up;
+		move_strafe_direction += dy * m_local_player.upVector();
 
 		double dl = 0;
 		if (m_state[Direction::Backward]) {
-			dl -= 1;
+			dl -= dt;
 		}
 		if (m_state[Direction::Forward]) {
-			dl += 1;
+			dl += dt;
 		}
-		move_forward_direction += dl * m_player_dir;
+		move_forward_direction += dl * m_local_player.lookVector();
 
 		dx = (m_prev_xpos - m_newest_xpos) * m_mouse_sensitivity;
 		m_prev_xpos = m_newest_xpos;
@@ -224,29 +209,34 @@ void GameView::update(const Player& player, DebugQueueRtW& queue, uint64_t tick_
 
 		double rollAngle = 0;
 		if (m_state[Direction::RollLeft]) {
-			rollAngle -= m_roll_speed;
+			rollAngle -= m_roll_speed * dt;
 		}
 		if (m_state[Direction::RollRight]) {
-			rollAngle += m_roll_speed;
+			rollAngle += m_roll_speed * dt;
 		}
 
 		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
-		m_cam_orientation = glm::normalize(rotQuat * m_cam_orientation);
 
-		glm::dmat3 rot_mat = glm::mat3_cast(m_cam_orientation);
-		m_player_dir = extras::dirFromOrientation(rot_mat);
-		m_player_right = extras::rightFromOrientation(rot_mat);
-		m_player_up = extras::upFromOrientation(rot_mat);
+		glm::dvec3 new_position = m_local_player.position();
+		new_position += move_forward_direction * m_forward_speed;
+		new_position += move_strafe_direction * m_strafe_speed;
+
+		glm::dquat new_orientation = glm::normalize(rotQuat * m_local_player.orientation());
+		m_local_player.updateState(new_position, new_orientation);
 
 		m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-		m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_player_dir, m_player_up);
+		m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_local_player.lookVector(), m_local_player.upVector());
 		m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
 
-		queue.player_forward_movement_direction = move_forward_direction;
-		queue.player_strafe_movement_direction = move_strafe_direction;
-		queue.player_orientation = m_cam_orientation;
-		queue.forward_speed = m_forward_speed;
-		queue.strafe_speed = m_strafe_speed;
 		m_previous_tick_id = tick_id;
 	}
+
+	PlayerStateMessage message;
+	message.player_position = m_local_player.position();
+	message.player_orientation = m_local_player.orientation();
+	message.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
+
+	mq.send<PlayerStateMessage>(server::World::SERVICE_UID, message);
 }
+
+} // namespace voxen

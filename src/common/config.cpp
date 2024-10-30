@@ -74,7 +74,7 @@ Config::Scheme Config::mainConfigScheme()
 	s.push_back({ "controller", "mouse_sensitivity", "Mouse sensitivity", 1.5 });
 	s.push_back({ "controller", "forward_speed", "Player forward speed", 100.0 });
 	s.push_back({ "controller", "strafe_speed", "Player strafe speed", 50.0 });
-	s.push_back({ "controller", "roll_speed", "Player roll speed", 1.5 * 0.01 });
+	s.push_back({ "controller", "roll_speed", "Player roll speed", 1.5 });
 
 	return s;
 }

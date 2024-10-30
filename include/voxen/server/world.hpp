@@ -1,11 +1,15 @@
 #pragma once
 
+#include <voxen/common/player_state_message.hpp>
 #include <voxen/common/terrain/controller.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/svc/message_queue.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
 
+#include <atomic>
 #include <memory>
+#include <thread>
 
 namespace voxen::server
 {
@@ -29,7 +33,7 @@ public:
 
 	double secondsPerTick() const noexcept { return 1.0 / 100.0; } // 100 UPS
 
-	void update(DebugQueueRtW &queue, std::chrono::duration<int64_t, std::nano> tick_inverval);
+	void update();
 
 private:
 	terrain::Controller m_terrain_controller;
@@ -39,6 +43,14 @@ private:
 	std::atomic<std::shared_ptr<WorldState>> m_last_state_ptr;
 
 	glm::dvec3 m_chunk_loading_position;
+	WorldState *m_next_state = nullptr;
+
+	svc::MessageQueue m_message_queue;
+	std::thread m_world_thread;
+	std::atomic_bool m_thread_stop = false;
+
+	VOXEN_LOCAL void handlePlayerInputMessage(PlayerStateMessage &msg, svc::MessageInfo &info) noexcept;
+	VOXEN_LOCAL static void worldThreadProc(World &me);
 };
 
 } // namespace voxen::server

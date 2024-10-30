@@ -7,6 +7,13 @@
 
 struct GLFWwindow;
 
+namespace voxen::svc
+{
+
+class MessageQueue;
+
+}
+
 namespace voxen::client
 {
 
@@ -21,8 +28,7 @@ public:
 	void handleMouseScroll(double xoffset, double yoffset);
 
 	void init(const WorldState& world_start_state);
-	// TODO send update to world via message
-	void update(const WorldState& lastState, DebugQueueRtW& queue);
+	void update(const WorldState& lastState, double dt, svc::MessageQueue& mq);
 
 	GameView& view();
 

@@ -20,10 +20,11 @@ class MessageRouter;
 
 class VOXEN_API MessageQueue {
 public:
+	MessageQueue() noexcept;
 	MessageQueue(detail::MessageRouter &router, UID my_uid);
-	MessageQueue(MessageQueue &&) = delete;
+	MessageQueue(MessageQueue &&) noexcept;
 	MessageQueue(const MessageQueue &) = delete;
-	MessageQueue &operator=(MessageQueue &&) = delete;
+	MessageQueue &operator=(MessageQueue &&) noexcept;
 	MessageQueue &operator=(const MessageQueue &) = delete;
 	~MessageQueue() noexcept;
 

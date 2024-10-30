@@ -16,17 +16,6 @@ namespace terrain
 class Chunk;
 }
 
-//TODO actual real queue
-struct DebugQueueRtW {
-	std::mutex mutex;
-	glm::dvec3 player_forward_movement_direction { 0.0 };
-	glm::dvec3 player_strafe_movement_direction { 0.0 };
-	glm::dquat player_orientation = glm::identity<glm::dquat>();
-	double strafe_speed { 50 };
-	double forward_speed { 25 };
-	bool lock_chunk_loading_position;
-};
-
 class WorldState {
 public:
 	using ChunkPtrVector = std::vector<extras::refcnt_ptr<terrain::Chunk>>;

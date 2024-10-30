@@ -23,6 +23,24 @@ void logGlfwVersion()
 	Log::debug("Voxen is running against GLFW {}.{}.{} ({})", major, minor, revision, glfwGetVersionString());
 }
 
+// Swap window handles and their user pointers (pointing to `this`).
+// Call like `swapHandles(this->m_window, other->m_window, this, other)`.
+void swapHandles(GLFWwindow*& a, GLFWwindow*& b, void* user_a, void* user_b) noexcept
+{
+	if (a) {
+		// `a` gets user pointer from `b`
+		glfwSetWindowUserPointer(a, user_b);
+	}
+
+	if (b) {
+		// `b` gets user pointer from `a`
+		glfwSetWindowUserPointer(b, user_a);
+	}
+
+	// And swap handles themselves
+	std::swap(a, b);
+}
+
 } // namespace
 
 GlfwWindow::GlfwWindow(Config cfg)
@@ -61,6 +79,19 @@ GlfwWindow::GlfwWindow(Config cfg)
 
 	glfwSetWindowUserPointer(m_window, this);
 	useRegularCursor();
+}
+
+GlfwWindow::GlfwWindow(GlfwWindow&& other) noexcept
+{
+	swapHandles(m_window, other.m_window, this, &other);
+	std::swap(m_attached_gui, other.m_attached_gui);
+}
+
+GlfwWindow& GlfwWindow::operator=(GlfwWindow&& other) noexcept
+{
+	swapHandles(m_window, other.m_window, this, &other);
+	std::swap(m_attached_gui, other.m_attached_gui);
+	return *this;
 }
 
 GlfwWindow::~GlfwWindow() noexcept
