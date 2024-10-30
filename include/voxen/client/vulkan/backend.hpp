@@ -1,7 +1,7 @@
 #pragma once
 
 #include <voxen/client/vulkan/common.hpp>
-#include <voxen/client/window.hpp>
+#include <voxen/os/glfw_window.hpp>
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
 
@@ -42,7 +42,7 @@ public:
 		Broken,
 	};
 
-	bool start(Window &window) noexcept;
+	bool start(os::GlfwWindow &window) noexcept;
 	void stop() noexcept;
 
 	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
@@ -130,7 +130,7 @@ private:
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadDeviceLevelApi() noexcept;
 
-	bool doStart(Window &window) noexcept;
+	bool doStart(os::GlfwWindow &window) noexcept;
 	void doStop() noexcept;
 
 	constexpr Backend(Impl &impl) noexcept;

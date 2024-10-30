@@ -8,8 +8,6 @@
 namespace voxen::svc
 {
 
-class ServiceLocator;
-
 namespace detail
 {
 

@@ -65,7 +65,7 @@ Backend::~Backend() noexcept
 	assert(m_state == State::NotStarted);
 }
 
-bool Backend::start(Window &window) noexcept
+bool Backend::start(os::GlfwWindow &window) noexcept
 {
 	if (m_state != State::NotStarted) {
 		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
@@ -140,7 +140,7 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 	return false;
 }
 
-bool Backend::doStart(Window &window) noexcept
+bool Backend::doStart(os::GlfwWindow &window) noexcept
 {
 	try {
 		m_impl.constructModule(m_instance);

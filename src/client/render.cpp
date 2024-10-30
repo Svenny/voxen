@@ -8,7 +8,7 @@
 namespace voxen::client
 {
 
-Render::Render(Window &window) : m_window(window)
+Render::Render(os::GlfwWindow &window) : m_window(window)
 {
 	if (!vulkan::Backend::backend().start(m_window)) {
 		Log::error("Render subsystem couldn't launch");

@@ -17,7 +17,6 @@ set(VOXEN_SOURCES
 	src/client/gfx_runtime_config.cpp
 	src/client/gui.cpp
 	src/client/render.cpp
-	src/client/window.cpp
 	src/client/input_event_adapter.cpp
 	src/common/assets/png_tools.cpp
 	src/common/terrain/allocator.cpp
@@ -72,6 +71,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
 	src/voxen/os/futex.cpp
+	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
 	src/voxen/svc/engine.cpp

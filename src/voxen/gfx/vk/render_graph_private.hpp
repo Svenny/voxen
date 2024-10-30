@@ -66,7 +66,7 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
-	explicit RenderGraphPrivate(Device &device, client::Window &window)
+	explicit RenderGraphPrivate(Device &device, os::GlfwWindow &window)
 		: device(device), fctx_ring(device, Consts::GRAPH_CONTEXT_RING_SIZE), swapchain(device, window)
 	{}
 	RenderGraphPrivate(RenderGraphPrivate &&) = delete;

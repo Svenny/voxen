@@ -14,21 +14,22 @@
 
 using namespace voxen;
 
-GameView::GameView(client::Window& window)
+GameView::GameView(os::GlfwWindow& window)
 	: m_previous_tick_id(UINT64_MAX)
 	, m_window(window)
 	, m_is_pause(true)
 	, m_is_chunk_loading_point_locked(false)
 	, m_is_used_orientation_cursor(false)
 {
-	m_width = window.width();
-	m_height = window.height();
+	std::tie(m_width, m_height) = window.windowSize();
 	std::pair<double, double> pos = window.cursorPos();
 	m_prev_xpos = pos.first;
 	m_prev_ypos = pos.second;
 
-	m_fov_x = 1.5;
-	m_fov_y = 1.5 * (double) window.height() / (double) window.width();
+	m_fov_y = glm::radians(70.0);
+	double tan_half_fovy = std::tan(m_fov_y / 2.0);
+	double aspect = (double) m_width / (double) m_height;
+	m_fov_x = 2.0 * std::atan(aspect * tan_half_fovy);
 
 	Config* main_config = Config::mainConfig();
 	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");
@@ -53,6 +54,7 @@ void voxen::GameView::init(const voxen::Player& player) noexcept
 
 	resetKeyState();
 }
+
 bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) noexcept
 {
 	switch (event) {
@@ -167,7 +169,7 @@ void GameView::update(const Player& player, DebugQueueRtW& queue, uint64_t tick_
 		queue.player_strafe_movement_direction = glm::dvec3 { 0.0 };
 	} else {
 		if (m_is_used_orientation_cursor) {
-			m_window.useOrientationCursor();
+			m_window.useGrabbedCursor();
 			m_is_used_orientation_cursor = false;
 		}
 

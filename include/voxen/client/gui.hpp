@@ -1,8 +1,8 @@
 #pragma once
 
-#include <voxen/client/window.hpp>
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/os/glfw_window.hpp>
 #include <voxen/visibility.hpp>
 
 struct GLFWwindow;
@@ -12,7 +12,7 @@ namespace voxen::client
 
 class VOXEN_API Gui {
 public:
-	Gui(Window& window);
+	Gui(os::GlfwWindow& window);
 	~Gui() noexcept;
 
 	void handleKey(int key, int scancode, int action, int mods);

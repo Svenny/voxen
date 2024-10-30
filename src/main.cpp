@@ -1,10 +1,10 @@
 #include <voxen/client/gui.hpp>
 #include <voxen/client/render.hpp>
-#include <voxen/client/window.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/os/glfw_window.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
@@ -145,8 +145,13 @@ int main(int argc, char *argv[])
 
 		bool isLoggingFPSEnable = main_voxen_config->getBool("dev", "fps_logging");
 
-		auto &wnd = voxen::client::Window::instance();
-		wnd.start(main_voxen_config->getInt32("window", "width"), main_voxen_config->getInt32("window", "height"));
+		voxen::os::GlfwWindow::initGlfw();
+		voxen::os::GlfwWindow wnd({
+			.width = main_voxen_config->getInt32("window", "width"),
+			.height = main_voxen_config->getInt32("window", "height"),
+			.title = "Voxen",
+			.fullscreen = main_voxen_config->getBool("window", "fullscreen"),
+		});
 		auto render = std::make_unique<voxen::client::Render>(wnd);
 
 		auto &world = engine->serviceLocator().requestService<voxen::server::World>();
@@ -193,7 +198,6 @@ int main(int argc, char *argv[])
 		// TODO: do something about Window's lifetime management?
 		render.reset();
 		gui.reset();
-		wnd.stop();
 	}
 	catch (const voxen::Exception &e) {
 		Log::fatal("Unchaught voxen::Exception instance");

@@ -5,10 +5,10 @@
 
 #include <memory>
 
-namespace voxen::client
+namespace voxen::os
 {
 
-class Window;
+class GlfwWindow;
 
 }
 
@@ -24,7 +24,7 @@ class VOXEN_API RenderGraphRunner {
 public:
 	// Creates a swapchain attached to the window.
 	// This window must not be in use by any other swapchain.
-	RenderGraphRunner(Device &device, client::Window &window);
+	RenderGraphRunner(Device &device, os::GlfwWindow &window);
 	RenderGraphRunner(RenderGraphRunner &&) = delete;
 	RenderGraphRunner(const RenderGraphRunner &) = delete;
 	RenderGraphRunner &operator=(RenderGraphRunner &&) = delete;
@@ -43,7 +43,7 @@ public:
 
 private:
 	Device &m_device;
-	client::Window &m_window;
+	os::GlfwWindow &m_window;
 
 	std::shared_ptr<RenderGraphPrivate> m_private;
 	std::shared_ptr<IRenderGraph> m_graph;
