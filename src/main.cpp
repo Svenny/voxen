@@ -2,25 +2,16 @@
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
 #include <voxen/common/runtime_config.hpp>
-#include <voxen/common/world_state.hpp>
-#include <voxen/os/glfw_window.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 
-#include <extras/defer.hpp>
-
 #include <cxxopts/cxxopts.hpp>
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
 #include <iostream>
-#include <set>
 #include <string>
-#include <thread>
 #include <variant>
 
 static const std::string kCliSectionSeparator = "__";
@@ -94,7 +85,6 @@ static void patchConfig(const cxxopts::ParseResult &result, voxen::Config *confi
 int main(int argc, char *argv[])
 {
 	using voxen::Log;
-	using namespace std::chrono;
 
 	Log::info("Starting Voxen {}", voxen::Version::STRING);
 	Log::info("Started at: {:%c UTC%z (%Z)}", fmt::localtime(std::time(nullptr)));
