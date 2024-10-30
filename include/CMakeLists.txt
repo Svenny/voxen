@@ -40,7 +40,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/gfx_runtime_config.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/render.hpp
-	include/voxen/client/window.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/assets/png_tools.hpp
@@ -90,6 +89,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/os/futex.hpp
+	include/voxen/os/glfw_window.hpp
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
 	include/voxen/server/world.hpp

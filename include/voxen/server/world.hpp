@@ -7,13 +7,6 @@
 
 #include <memory>
 
-namespace voxen::svc
-{
-
-class ServiceLocator;
-
-}
-
 namespace voxen::server
 {
 

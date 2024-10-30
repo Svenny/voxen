@@ -1,9 +1,9 @@
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 
 #include <voxen/client/vulkan/common.hpp>
-#include <voxen/client/window.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
+#include <voxen/os/glfw_window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -21,7 +21,7 @@ namespace voxen::gfx::vk
 using client::vulkan::VulkanException;
 using client::vulkan::VulkanUtils;
 
-Swapchain::Swapchain(Device &device, client::Window &window) : m_device(device), m_window(window)
+Swapchain::Swapchain(Device &device, os::GlfwWindow &window) : m_device(device), m_window(window)
 {
 	if (!isCompatible(device)) {
 		Log::error("Tried to create swapchain from device that can't present!");
