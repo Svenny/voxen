@@ -12,7 +12,6 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace voxen
@@ -45,7 +44,7 @@ public:
 	Controller(const Controller &&) = delete;
 	Controller &operator=(Controller &&) = delete;
 	Controller &operator=(const Controller &) = delete;
-	~Controller() = default;
+	~Controller();
 
 	std::vector<ChunkPtr> doTick();
 	void setPointOfInterest(uint32_t id, const glm::dvec3 &position);

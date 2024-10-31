@@ -20,6 +20,16 @@ namespace voxen::terrain
 
 Controller::Controller(svc::ServiceLocator &svc) : m_thread_pool(svc.requestService<ThreadPool>()) {}
 
+Controller::~Controller()
+{
+	// Wait for pending async operations before destroying - they reference class members
+	for (auto iter = m_async_chunk_loads.begin(); iter != m_async_chunk_loads.end(); /*nothing*/) {
+		assert(iter->second.valid());
+		iter->second.wait();
+		iter = m_async_chunk_loads.erase(iter);
+	}
+}
+
 std::vector<Controller::ChunkPtr> Controller::doTick()
 {
 	garbageCollectPointsOfInterest();
