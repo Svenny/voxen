@@ -19,8 +19,7 @@ namespace
 
 struct PipeMemorySlabControl {
 	uint32_t allocated_bytes = 0;
-	uint32_t allocated_items = 0;
-	std::atomic_uint32_t deallocated_items = 0;
+	std::atomic_uint32_t live_allocations = 0;
 };
 
 // Whole slab size, must be a large power of two to nicely align with hugepages
@@ -50,7 +49,9 @@ struct PipeMemorySlab {
 		if (ptr >= bottom) [[likely]] {
 			// In bounds, enough space for this allocation
 			ctl.allocated_bytes = static_cast<uint32_t>(end - ptr);
-			ctl.allocated_items++;
+			// Relaxed - counter ordering is not needed until we move this slab
+			// to the garbage list; but then we won't reach this line anymore.
+			ctl.live_allocations.fetch_add(1, std::memory_order_relaxed);
 			return reinterpret_cast<void*>(ptr);
 		}
 
@@ -61,8 +62,7 @@ struct PipeMemorySlab {
 	void reset() noexcept
 	{
 		ctl.allocated_bytes = 0;
-		ctl.allocated_items = 0;
-		ctl.deallocated_items.store(0, std::memory_order_release);
+		// No need to reset `live_allocations`, must already be zero
 	}
 
 	PipeMemorySlabControl ctl;
@@ -82,14 +82,13 @@ PipeMemorySlab* newSlab()
 void deleteSlab(PipeMemorySlab* slab) noexcept
 {
 	// Ensure no live allocations remain
-	uint32_t allocated = slab->ctl.allocated_items;
-	uint32_t deallocated = slab->ctl.deallocated_items.load(std::memory_order_acquire);
-	assert(allocated == deallocated);
+	uint32_t live_allocs = slab->ctl.live_allocations.load(std::memory_order_acquire);
+	assert(live_allocs == 0);
 
-	if (deallocated < allocated) [[unlikely]] {
+	if (live_allocs != 0) [[unlikely]] {
 		// TODO: call bugreport function?
-		Log::fatal("PipeMemoryAllocator bug: deleting slab ({}, {} allocated bytes) with {}/{} items deallocated",
-			fmt::ptr(slab), slab->ctl.allocated_bytes, deallocated, allocated);
+		Log::fatal("PipeMemoryAllocator bug: deleting slab ({}, {} allocated bytes) with {} live allocations remaining",
+			fmt::ptr(slab), slab->ctl.allocated_bytes, live_allocs);
 		Log::fatal("Live allocations remain => your memory is corrupted, buckle up!");
 	}
 
@@ -172,7 +171,9 @@ public:
 			for (size_t i = 0; i < m_gc_slabs.size(); /*nothing*/) {
 				PipeMemorySlab* slab = m_gc_slabs[i];
 
-				if (slab->ctl.deallocated_items.load(std::memory_order_relaxed) == slab->ctl.allocated_items) {
+				// Relaxed ordering - we simply need to observe zero at some point.
+				// There is no chance of it increasing until we reset the slab.
+				if (slab->ctl.live_allocations.load(std::memory_order_relaxed) == 0) {
 					slab->reset();
 
 					// Order does not matter, swap with the last one and pop it
@@ -236,7 +237,7 @@ struct ThreadSlabDeleter {
 		// It's very likely that the whole program is about to exit too (no problem
 		// even if it's not) so there is no need to reclaim this slab anymore.
 		// Try deleting it right here to reduce cleanup workload for the main thread.
-		if (slab->ctl.deallocated_items.load(std::memory_order_acquire) == slab->ctl.allocated_items) {
+		if (slab->ctl.live_allocations.load(std::memory_order_acquire) == 0) {
 			// No live allocations, safe to delete
 			deleteSlab(slab);
 			return;
@@ -315,7 +316,7 @@ void PipeMemoryAllocator::deallocate(void* ptr) noexcept
 	// Simply mask off lower bits to get slab base address
 	uintptr_t slab_ptr = uintptr_t(ptr) & ~(SLAB_SIZE - 1u);
 	std::launder(reinterpret_cast<PipeMemorySlab*>(slab_ptr))
-		->ctl.deallocated_items.fetch_add(1, std::memory_order_release);
+		->ctl.live_allocations.fetch_sub(1, std::memory_order_release);
 }
 
 } // namespace voxen
