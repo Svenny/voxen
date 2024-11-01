@@ -6,6 +6,7 @@ target_sources(test-voxen PRIVATE
 	common/v8g_flat_map.test.cpp
 	common/v8g_hash_trie.test.cpp
 	debug/debug_uid_registry.test.cpp
+	svc/message_queue.test.cpp
 	svc/service_locator.test.cpp
 	util/hash.test.cpp
 	util/packed_color.test.cpp
@@ -21,6 +22,7 @@ add_test(NAME voxen-land-cube-array COMMAND test-voxen "[voxen::land::cube_array
 add_test(NAME voxen-v8g-flat-map COMMAND test-voxen "[voxen::v8g_flat_map]")
 add_test(NAME voxen-v8g-hash-trie COMMAND test-voxen "[voxen::v8g_hash_trie]")
 add_test(NAME voxen-debug-uid-registry COMMAND test-voxen "[voxen::debug::debug_uid_registry]")
+add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_queue]")
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
 add_test(NAME voxen-hash COMMAND test-voxen "[voxen::hash]")
 add_test(NAME voxen-packed-color COMMAND test-voxen "[voxen::packed_color]")

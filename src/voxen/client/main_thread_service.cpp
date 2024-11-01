@@ -96,7 +96,7 @@ void MainThreadService::doMainLoop()
 		// Receive incoming messages.
 		// Not does nothing (drops all), we don't register any message handler.
 		// But we must do it anyway or we'll have memory leaks.
-		impl.message_queue.receiveAll();
+		impl.message_queue.pollMessages();
 
 		// Receive the latest world state
 		last_state_ptr = world.getLastState();
