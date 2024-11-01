@@ -1,5 +1,6 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 
+#include <voxen/debug/thread_name.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -211,6 +212,8 @@ std::atomic_bool g_slab_gc_run_flag = false;
 
 void gcThreadProc()
 {
+	debug::setThreadName("PipeAlloc GC");
+
 	// TODO: we might want to scale this period depending on GC load.
 	// When few garbage slabs are submitted we can wake even less often (though
 	// it's extremely unlikely that this thread creates any noticeable load).

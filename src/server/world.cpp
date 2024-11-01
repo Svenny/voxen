@@ -1,6 +1,7 @@
 #include <voxen/server/world.hpp>
 
 #include <voxen/common/player_state_message.hpp>
+#include <voxen/debug/thread_name.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/log.hpp>
@@ -72,6 +73,8 @@ void World::handlePlayerInputMessage(PlayerStateMessage &msg, svc::MessageInfo &
 
 void World::worldThreadProc(World &me)
 {
+	debug::setThreadName("World Thread");
+
 	auto last_tick_time = std::chrono::steady_clock::now();
 	const std::chrono::duration<int64_t, std::nano> tick_inverval { int64_t(me.secondsPerTick() * 1'000'000'000.0) };
 	auto next_tick_time = last_tick_time + tick_inverval;

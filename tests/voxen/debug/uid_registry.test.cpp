@@ -1,4 +1,4 @@
-#include <voxen/debug/debug_uid_registry.hpp>
+#include <voxen/debug/uid_registry.hpp>
 
 #include "../../voxen_test_common.hpp"
 
@@ -28,7 +28,7 @@ struct TestFixture {
 
 } // namespace
 
-TEST_CASE_METHOD(TestFixture, "'debug_uid_registry' basic test case", "[voxen::debug::debug_uid_registry]")
+TEST_CASE_METHOD(TestFixture, "'UidRegistry' basic test case", "[voxen::debug::uid_registry]")
 {
 	UidRegistry::registerLiteral(U1, "U1");
 	UidRegistry::registerLiteral(U2, "U2");
@@ -79,7 +79,7 @@ TEST_CASE_METHOD(TestFixture, "'debug_uid_registry' basic test case", "[voxen::d
 	CHECK(UidRegistry::lookup(U4, UidRegistry::FORMAT_STRING_ONLY) == "");
 }
 
-TEST_CASE_METHOD(TestFixture, "'debug_uid_registry' test lookup formats", "[voxen::debug::debug_uid_registry]")
+TEST_CASE_METHOD(TestFixture, "'UidRegistry' test lookup formats", "[voxen::debug::uid_registry]")
 {
 	UidRegistry::registerLiteral(U1, "U1");
 	UidRegistry::registerLiteral(U2, "c2b6fae1-a1aded58-0f054134-53d47bec");

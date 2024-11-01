@@ -82,6 +82,7 @@ function(voxen_setup_target target is_executable)
 			-Wno-c++98-compat -Wno-c++98-compat-pedantic
 
 			# We're doing A LOT of incompatible function pointer casts in vulkan code
+			-Wno-cast-function-type
 			-Wno-cast-function-type-strict
 			# It thinks I shouldn't use automatic template deduction...
 			-Wno-ctad-maybe-unsupported

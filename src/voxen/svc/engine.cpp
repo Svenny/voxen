@@ -3,7 +3,7 @@
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/thread_pool.hpp>
-#include <voxen/debug/debug_uid_registry.hpp>
+#include <voxen/debug/uid_registry.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/util/error_condition.hpp>
