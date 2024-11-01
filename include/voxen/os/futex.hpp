@@ -15,6 +15,11 @@ namespace Futex
 // This is a syscall so it's not particularly fast.
 void waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept;
 
+// Wait (block thread) until value at `addr` changes to something
+// other than `value` or `timeout_msec` milliseconds pass, whichever comes first.
+// Just the same as `waitInfinite()` but with a timeout.
+void waitFor(std::atomic_uint32_t *addr, uint32_t value, uint32_t timeout_msec) noexcept;
+
 // Wake at least one thread (if any) waiting on `addr`.
 // This is a syscall so it's not particularly fast.
 void wakeSingle(std::atomic_uint32_t *addr) noexcept;

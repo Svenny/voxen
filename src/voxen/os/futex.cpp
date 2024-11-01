@@ -1,6 +1,7 @@
 #include <voxen/os/futex.hpp>
 
 #include <cassert>
+#include <ctime>
 
 // TODO: x86-specific include... but what, are we going to support arm?
 #include <emmintrin.h>
@@ -29,6 +30,17 @@ void Futex::waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept
 	}
 }
 
+void Futex::waitFor(std::atomic_uint32_t *addr, uint32_t value, uint32_t timeout_msec) noexcept
+{
+	std::timespec timeout { .tv_sec = timeout_msec / 1000, .tv_nsec = (timeout_msec % 1000) * 1'000'000 };
+
+	long res = syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, value, &timeout, nullptr, 0);
+	if (res == -1) {
+		// These codes are not harmful; are other even possible?
+		assert(errno == EAGAIN || errno == EINTR || errno == ETIMEDOUT);
+	}
+}
+
 void Futex::wakeSingle(std::atomic_uint32_t *addr) noexcept
 {
 	[[maybe_unused]] long res = syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
@@ -50,6 +62,13 @@ void Futex::waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept
 	[[maybe_unused]] BOOL res = WaitOnAddress(addr, &value, 4, INFINITE);
 	// Nothing should fail here
 	assert(res == TRUE);
+}
+
+void Futex::waitFor(std::atomic_uint32_t *addr, uint32_t value, uint32_t timeout_msec) noexcept
+{
+	[[maybe_unused]] BOOL res = WaitOnAddress(addr, &value, 4, timeout_msec);
+	// Nothingh should fail here
+	assert(res == TRUE || GetLastError() == ERROR_TIMEOUT);
 }
 
 void Futex::wakeSingle(std::atomic_uint32_t *addr) noexcept

@@ -8,6 +8,8 @@
 
 #include <extras/defer.hpp>
 
+#include <atomic>
+#include <chrono>
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
@@ -16,14 +18,66 @@ namespace voxen::svc::detail
 {
 
 static_assert(std::is_trivially_destructible_v<MessageHeader>);
+static_assert(std::is_trivially_destructible_v<MessageDeleterBlock>);
+static_assert(std::is_nothrow_destructible_v<MessageRequestBlock>);
 
-void MessageHeader::destroy() noexcept
+MessageHeader::MessageHeader(bool deleter, bool request) noexcept
 {
-	if (payload_deleter) {
-		payload_deleter(payload());
+	aux_data.has_deleter_block = deleter;
+	aux_data.has_request_block = request;
+
+	uint32_t payload_offset = 0;
+	if (deleter) {
+		payload_offset += sizeof(MessageDeleterBlock);
+		new (deleterBlock()) MessageDeleterBlock;
 	}
 
-	PipeMemoryAllocator::deallocate(this);
+	if (request) {
+		payload_offset += sizeof(MessageRequestBlock);
+		new (requestBlock()) MessageRequestBlock;
+	}
+
+	aux_data.payload_offset = payload_offset;
+}
+
+void MessageHeader::releaseRef() noexcept
+{
+	// Refcount is stored in low 16 bits
+	if ((aux_data.atomic_word.fetch_sub(1, std::memory_order_acq_rel) & 0xFFFF) == 1) {
+		// Released the last reference, delete it
+
+		if (aux_data.has_deleter_block) {
+			deleterBlock()->deleter(payload());
+		}
+
+		if (aux_data.has_request_block) {
+			// Request block is not trivially destructible
+			requestBlock()->~MessageRequestBlock();
+		}
+
+		PipeMemoryAllocator::deallocate(this);
+	}
+}
+
+MessageDeleterBlock *MessageHeader::deleterBlock() noexcept
+{
+	// Deleter block is always the first optional block
+	return reinterpret_cast<MessageDeleterBlock *>(this + 1);
+}
+
+MessageRequestBlock *MessageHeader::requestBlock() noexcept
+{
+	// Request block is the second optional block (after deleter)
+	if (aux_data.has_deleter_block) {
+		return reinterpret_cast<MessageRequestBlock *>(reinterpret_cast<MessageDeleterBlock *>(this + 1) + 1);
+	}
+	return reinterpret_cast<MessageRequestBlock *>(this + 1);
+}
+
+void *MessageHeader::payload() noexcept
+{
+	uintptr_t ptr = reinterpret_cast<uintptr_t>(this + 1) + aux_data.payload_offset;
+	return reinterpret_cast<void *>(ptr);
 }
 
 // --- InboundQueue ---
@@ -38,12 +92,19 @@ void InboundQueue::push(MessageHeader *hdr) noexcept
 		// Empty queue
 		m_newest = hdr;
 		m_oldest = hdr;
-		return;
+	} else {
+		// Non-empty queue
+		m_newest->queue_link = hdr;
+		m_newest = hdr;
 	}
 
-	// Non-empty queue
-	m_newest->queue_link = hdr;
-	m_newest = hdr;
+	// Notify waiting thread that messages have arrived.
+	// Relaxed order - no extra sync is needed inside critical section.
+	if (m_wait_word.exchange(0, std::memory_order_relaxed) == 1) {
+		// Note - waking while still holding a lock.
+		// It eliminates any chance of double wake-up.
+		os::Futex::wakeSingle(&m_wait_word);
+	}
 }
 
 MessageHeader *InboundQueue::pop() noexcept
@@ -69,7 +130,7 @@ size_t InboundQueue::pop(std::span<MessageHeader *> msgs) noexcept
 {
 	std::lock_guard lk(m_lock);
 
-	size_t popped = 0;
+	uint32_t popped = 0;
 	while (popped < msgs.size()) {
 		if (!m_oldest) {
 			break;
@@ -89,10 +150,53 @@ size_t InboundQueue::pop(std::span<MessageHeader *> msgs) noexcept
 
 void InboundQueue::clear() noexcept
 {
-	MessageHeader *msg = pop();
-	while (msg) {
-		msg->destroy();
-		msg = pop();
+	std::lock_guard lk(m_lock);
+
+	while (m_oldest) {
+		MessageHeader *msg = std::exchange(m_oldest, m_oldest->queue_link);
+		msg->releaseRef();
+	}
+
+	m_newest = nullptr;
+}
+
+void InboundQueue::wait(uint32_t timeout_msec) noexcept
+{
+	auto time_point_now = std::chrono::steady_clock::now();
+	auto target_time_point = time_point_now + std::chrono::milliseconds(timeout_msec);
+
+	while (true) {
+		// No `lock_guard` - be careful
+		m_lock.lock();
+
+		if (m_oldest != nullptr) {
+			// Already got some messages
+			m_lock.unlock();
+			return;
+		}
+
+		// Check if the timeout has expired.
+		// Update time point as taking lock could take some time.
+		time_point_now = std::chrono::steady_clock::now();
+		if (time_point_now >= target_time_point) {
+			// Timeout expired
+			m_lock.unlock();
+			return;
+		}
+
+		// Set waiting flag. Note that we should hold the lock,
+		// otherwise a pushing thread can miss this value.
+		// Relaxed order - no extra sync is needed inside critical section.
+		m_wait_word.store(1, std::memory_order_relaxed);
+		// Note - dropping the lock just before waiting
+		m_lock.unlock();
+
+		auto time_diff = target_time_point - time_point_now;
+		auto timeout = std::chrono::duration_cast<std::chrono::duration<uint32_t, std::milli>>(time_diff);
+		// Wait until it is reset back to zero by a pushing thread.
+		// As we're not holding the lock it can happen right before entering
+		// the function - that's ok, then it will return immediately.
+		os::Futex::waitFor(&m_wait_word, 1, timeout.count());
 	}
 }
 
@@ -190,8 +294,42 @@ void MessageRouter::send(UID to, MessageHeader *msg) noexcept
 		q->push(msg);
 	} else {
 		// No recipient, drop the message
-		msg->destroy();
+		if (msg->aux_data.has_request_block) {
+			completeRequest(msg, RequestStatus::Dropped);
+		} else {
+			msg->releaseRef();
+		}
 	}
+}
+
+void MessageRouter::completeRequest(MessageHeader *msg, RequestStatus status) noexcept
+{
+	constexpr uint32_t WAIT_BIT = 1u << 16;
+
+	// Convert to bitmask (bits [18:17]) and write it with OR (there were zeros before)
+	uint32_t mask = extras::to_underlying(status) << 17;
+	uint32_t word = msg->aux_data.atomic_word.fetch_or(mask, std::memory_order_acq_rel);
+
+	if (word & WAIT_BIT) {
+		// Sender waits on completion, wake him up.
+		// Clearing wait flag is not necessary - there will be no more waits.
+		os::Futex::wakeSingle(&msg->aux_data.atomic_word);
+	}
+
+	if (msg->aux_data.needs_completion_message) {
+		// Sender wants completion message, forward it back to him
+		msg->aux_data.is_completion_message = 1;
+
+		InboundQueue *q = getShard(msg->from_uid).findRoute(msg->from_uid);
+		if (q) {
+			q->push(msg);
+			return;
+		}
+	}
+
+	// Message is no longer needed or could not be forwarded back, drop it.
+	// No need to change request status to `Dropped` in this case.
+	msg->releaseRef();
 }
 
 } // namespace voxen::svc::detail

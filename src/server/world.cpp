@@ -49,7 +49,7 @@ void World::update()
 
 	// Receive player input messages
 	m_next_state = &next_state;
-	m_message_queue.receiveAll();
+	m_message_queue.pollMessages();
 	m_next_state = nullptr;
 
 	// Update chunks

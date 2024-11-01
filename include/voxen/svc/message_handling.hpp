@@ -13,18 +13,20 @@ struct MessageHeader;
 
 }
 
-// Indicates the result of request-class message processing
-enum class RequestResult {
+// Indicates the status of request-class message processing
+enum class RequestStatus : uint32_t {
+	// The request is awaiting processing - its handler function has not been called yet.
+	Pending = 0,
 	// The request was successfully processed. It only means the request handler function
 	// has returned normally, payload might still have a message-specific error state.
-	Ok,
+	Complete = 1,
 	// The request handler function has exited by throwing an exception.
 	// You can access and rethrow this exception into your thread.
-	Failed,
+	Failed = 2,
 	// Request was dropped before reaching its destination.
 	// Either recipient UID is invalid (it could have went offline)
 	// or it has no registered handler for this message type.
-	Dropped,
+	Dropped = 3,
 };
 
 // Helper class spawned by the system during message handler invocation.
@@ -45,8 +47,45 @@ public:
 	// even right while you are handling this message.
 	UID senderUid() const noexcept;
 
-private:
+protected:
 	detail::MessageHeader *m_hdr = nullptr;
+};
+
+class VOXEN_API RequestCompletionInfo : public MessageInfo {
+public:
+	using MessageInfo::MessageInfo;
+
+	RequestStatus status() const noexcept;
+	void rethrowIfFailed();
+};
+
+class VOXEN_API RequestHandleBase {
+public:
+	RequestHandleBase() = default;
+	explicit RequestHandleBase(detail::MessageHeader *hdr) noexcept;
+	RequestHandleBase(RequestHandleBase &&other) noexcept;
+	RequestHandleBase(const RequestHandleBase &) = delete;
+	RequestHandleBase &operator=(RequestHandleBase &&other) noexcept;
+	RequestHandleBase &operator=(const RequestHandleBase &) = delete;
+	~RequestHandleBase() noexcept;
+
+	bool valid() const noexcept { return m_hdr != nullptr; }
+	void *payload() const noexcept;
+
+	RequestStatus wait() noexcept;
+	RequestStatus status() noexcept;
+	void rethrowIfFailed();
+
+protected:
+	detail::MessageHeader *m_hdr = nullptr;
+};
+
+template<CRequestType Msg>
+class VOXEN_API RequestHandle : public RequestHandleBase {
+public:
+	using RequestHandleBase::RequestHandleBase;
+
+	Msg &payload() { return *static_cast<Msg *>(RequestHandleBase::payload()); }
 };
 
 // Handler of a "regular", non-empty unicast message.
@@ -63,6 +102,11 @@ concept CSignalHandler = CSignalType<Msg> && std::is_invocable_r_v<void, F, Mess
 // Has non-const payload access and can freely modify it.
 template<typename F, typename Msg>
 concept CRequestHandler = CRequestType<Msg> && std::is_invocable_r_v<void, F, Msg &, MessageInfo &>;
+
+// Completion handler of a request-class message.
+// Has non-const payload access and can freely modify it.
+template<typename F, typename Msg>
+concept CRequestCompletionHandler = CRequestType<Msg> && std::is_invocable_r_v<void, F, Msg &, RequestCompletionInfo &>;
 
 // Handler of a non-empty broadcast message.
 // Has const payload access and can not modify it.

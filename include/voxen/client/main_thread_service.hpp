@@ -29,7 +29,7 @@ public:
 
 private:
 	struct Impl;
-	extras::pimpl<Impl, 128, 8> m_impl;
+	extras::pimpl<Impl, 160, 8> m_impl;
 };
 
 } // namespace voxen::client
