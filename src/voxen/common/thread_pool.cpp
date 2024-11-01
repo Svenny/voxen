@@ -1,5 +1,6 @@
 #include <voxen/common/thread_pool.hpp>
 
+#include <voxen/debug/thread_name.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/exception.hpp>
@@ -117,12 +118,14 @@ void ThreadPool::doEnqueueTask([[maybe_unused]] TaskType type, IPipedTask *raw_t
 void ThreadPool::makeWorker()
 {
 	auto worker = std::make_unique<ReportableWorker>();
-	worker->worker = std::thread(&ThreadPool::workerFunction, &worker->state);
+	worker->worker = std::thread(&ThreadPool::workerFunction, m_workers.size(), &worker->state);
 	m_workers.push_back(std::move(worker));
 }
 
-void ThreadPool::workerFunction(ReportableWorkerState *state)
+void ThreadPool::workerFunction(size_t worker_index, ReportableWorkerState *state)
 {
+	debug::setThreadName("ThreadPool@%zu", worker_index);
+
 	uint32_t work_remaining = 0;
 	bool exit = false;
 

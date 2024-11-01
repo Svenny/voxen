@@ -1,6 +1,6 @@
 #include <voxen/svc/service_locator.hpp>
 
-#include <voxen/debug/debug_uid_registry.hpp>
+#include <voxen/debug/uid_registry.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>

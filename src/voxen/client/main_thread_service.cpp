@@ -4,6 +4,7 @@
 #include <voxen/client/render.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/debug/thread_name.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/messaging_service.hpp>
@@ -71,6 +72,8 @@ MainThreadService::~MainThreadService() noexcept = default;
 
 void MainThreadService::doMainLoop()
 {
+	debug::setThreadName("Main Thread");
+
 	auto &impl = m_impl.object();
 
 	auto &world = impl.svc.requestService<server::World>();

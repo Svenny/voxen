@@ -1,4 +1,4 @@
-#include <voxen/debug/debug_uid_registry.hpp>
+#include <voxen/debug/uid_registry.hpp>
 
 #include <voxen/os/futex.hpp>
 

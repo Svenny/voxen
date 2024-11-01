@@ -101,7 +101,7 @@ private:
 	void doEnqueueTask(TaskType type, IPipedTask* raw_task_ptr);
 	void makeWorker();
 
-	static void workerFunction(ReportableWorkerState* state);
+	static void workerFunction(size_t worker_index, ReportableWorkerState* state);
 
 private:
 	std::vector<std::unique_ptr<ReportableWorker>> m_workers;
