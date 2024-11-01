@@ -1,1 +1,2 @@
+add_subdirectory(build)
 add_subdirectory(dev)
