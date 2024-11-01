@@ -1,0 +1,21 @@
+{
+	table_name: "GfxOptions",
+	namespace: "voxen::gfx",
+	path_base: "voxen/gfx/gfx_options",
+
+	options: [
+		{
+			name: "use_debugging",
+			comment: "Whether to enable graphics API debugging extensions\n"
+				"(debug callbacks, object naming, cmdstream labels etc.)",
+			type: "bool",
+			default: false
+		},
+		{
+			name: "use_validation",
+			comment: "Whether to enable validation layers for graphics API",
+			type: "bool",
+			default: false
+		},
+	],
+}
