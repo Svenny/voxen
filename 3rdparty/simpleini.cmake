@@ -1,5 +1,3 @@
-include(${CMAKE_SOURCE_DIR}/tools/cmake/3rdparty_helpers.cmake)
-
 voxen_add_library(simpleini STATIC)
 add_library(3rdparty::simpleini ALIAS simpleini)
 
