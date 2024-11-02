@@ -51,17 +51,23 @@ protected:
 	detail::MessageHeader *m_hdr = nullptr;
 };
 
+// Extension of `MessageInfo` for request completion handler invocations
 class VOXEN_API RequestCompletionInfo : public MessageInfo {
 public:
 	using MessageInfo::MessageInfo;
 
+	// Result of message processing, can't be `Pending`
 	RequestStatus status() const noexcept;
+	// If `status() == Failed` the stored exception will be rethrown in the current thread
 	void rethrowIfFailed();
 };
 
+// Base class for `RequestHandle<T>`, see its description
 class VOXEN_API RequestHandleBase {
 public:
+	// Default constructor creates an invalid (unusable) handle
 	RequestHandleBase() = default;
+	// Implementation-specific constructor, use `MessageQueue::request()`
 	explicit RequestHandleBase(detail::MessageHeader *hdr) noexcept;
 	RequestHandleBase(RequestHandleBase &&other) noexcept;
 	RequestHandleBase(const RequestHandleBase &) = delete;
@@ -69,23 +75,46 @@ public:
 	RequestHandleBase &operator=(const RequestHandleBase &) = delete;
 	~RequestHandleBase() noexcept;
 
+	// True if this handle points to a valid request message
 	bool valid() const noexcept { return m_hdr != nullptr; }
-	void *payload() const noexcept;
 
+	// Drop message reference, `valid()` becomes false after this call
+	void reset() noexcept;
+
+	// Raw payload address, use `RequestHandle<T>` for convenience.
+	// Behavior is undefined if `valid() == false`.
+	void *payload() noexcept;
+
+	// Block until message processing completes, i.e. `status()` becomes not equal to `Pending`.
+	// Behavior is undefined if `valid() == false`.
 	RequestStatus wait() noexcept;
+	// Asynchronously check the current message processing status.
+	// Initially it is `Pending`, and when it changes to any othe value,
+	// that value will remain unchanged as long as this handle is valid.
+	// Behavior is undefined if `valid() == false`.
 	RequestStatus status() noexcept;
+	// If `status() == Failed` the stored exception will be rethrown in the current thread.
+	// Behavior is undefined if `status() == Pending` or `valid() == false`.
 	void rethrowIfFailed();
 
 protected:
 	detail::MessageHeader *m_hdr = nullptr;
 };
 
+// Provides payload access and status tracking for a sent request message.
+//
+// NOTE: message payload and some control data remains allocated while
+// this handle is valid. Don't store it for indefinite periods, eliminate
+// ownership as soon as you can by destroying the handle or calling `reset()`.
 template<CRequestType Msg>
 class VOXEN_API RequestHandle : public RequestHandleBase {
 public:
 	using RequestHandleBase::RequestHandleBase;
 
-	Msg &payload() { return *static_cast<Msg *>(RequestHandleBase::payload()); }
+	// Read-write access to payload is always available while this handle is valid.
+	// NOTE: payload can be concurrently accessed by the recipient until request
+	// processing has finished, i.e. while `status() == Pending`.
+	Msg &payload() noexcept { return *static_cast<Msg *>(RequestHandleBase::payload()); }
 };
 
 // Handler of a "regular", non-empty unicast message.
