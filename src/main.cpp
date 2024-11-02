@@ -20,7 +20,7 @@ static cxxopts::Options initCli()
 {
 	using namespace voxen;
 
-	cxxopts::Options options("voxen", "VOXEN - avesome VOXel ENgine and game");
+	cxxopts::Options options("voxen", "Voxen - awesome VOXel ENgine");
 	Config::Scheme scheme = Config::mainConfigScheme();
 
 	for (Config::SchemeEntry &entry : scheme) {
