@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
 #ifndef _WIN32
 	#include <pthread.h>
