@@ -28,3 +28,21 @@ function(voxen_fixup_3rdparty_intellisense target)
 		endforeach()
 	endif()
 endfunction()
+
+# Call this to tweak some properties of externally-created targets to better align with Voxen
+function(voxen_fixup_3rdparty_target target)
+	# TODO: partially duplicates `toolchain_setup.cmake` - factor out to common function?
+	set_target_properties(${target} PROPERTIES
+		# Strip unnecessary dependence on paths in built libraries
+		INSTALL_RPATH "\$ORIGIN"
+		BUILD_WITH_INSTALL_RPATH ON
+
+		# Use predefined binary output directories
+		# XXX: shouldn't we do this at install stage?
+		ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/lib
+		LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
+		RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIG>/bin
+	)
+
+	target_link_libraries(${target} PRIVATE dummy_suppress_3rdparty_warnings)
+endfunction()
