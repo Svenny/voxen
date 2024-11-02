@@ -58,12 +58,18 @@ RequestHandleBase& RequestHandleBase::operator=(RequestHandleBase&& other) noexc
 
 RequestHandleBase::~RequestHandleBase() noexcept
 {
+	reset();
+}
+
+void RequestHandleBase::reset() noexcept
+{
 	if (m_hdr) {
 		m_hdr->releaseRef();
+		m_hdr = nullptr;
 	}
 }
 
-void* RequestHandleBase::payload() const noexcept
+void* RequestHandleBase::payload() noexcept
 {
 	assert(m_hdr);
 	return m_hdr->payload();
