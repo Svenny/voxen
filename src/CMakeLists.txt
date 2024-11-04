@@ -85,6 +85,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/messaging_service.cpp
 	src/voxen/svc/service_base.cpp
 	src/voxen/svc/service_locator.cpp
+	src/voxen/util/concentric_octahedra_walker.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/packed_color.cpp
 )
