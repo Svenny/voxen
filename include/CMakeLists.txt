@@ -44,7 +44,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/assets/png_tools.hpp
-	include/voxen/common/land/cube_array.hpp
 	include/voxen/common/terrain/allocator.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
@@ -91,6 +90,8 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
+	include/voxen/land/chunk_key.hpp
+	include/voxen/land/cube_array.hpp
 	include/voxen/os/futex.hpp
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/process.hpp

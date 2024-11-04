@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/land/land_public_consts.hpp>
+#include <voxen/land/land_public_consts.hpp>
 #include <voxen/util/hash.hpp>
 
 #include <glm/vec3.hpp>

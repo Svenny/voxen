@@ -1,6 +1,6 @@
-#include <voxen/common/land/chunk_key.hpp>
+#include <voxen/land/chunk_key.hpp>
 
-#include "../../../test_common.hpp"
+#include "../../test_common.hpp"
 
 namespace voxen::land
 {
