@@ -79,6 +79,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/engine.cpp
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp
+	src/voxen/svc/message_sender.cpp
 	src/voxen/svc/messaging_private.cpp
 	src/voxen/svc/messaging_private.hpp
 	src/voxen/svc/messaging_service.cpp

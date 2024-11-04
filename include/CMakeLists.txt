@@ -100,6 +100,7 @@ set(VOXEN_HEADERS
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp
 	include/voxen/svc/message_queue.hpp
+	include/voxen/svc/message_sender.hpp
 	include/voxen/svc/message_types.hpp
 	include/voxen/svc/messaging_service.hpp
 	include/voxen/svc/service_base.hpp

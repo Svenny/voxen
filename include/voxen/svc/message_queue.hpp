@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/svc/message_handling.hpp>
+#include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/message_types.hpp>
 #include <voxen/visibility.hpp>
 
@@ -10,17 +11,9 @@
 namespace voxen::svc
 {
 
-namespace detail
-{
-
-struct MessageHeader;
-class MessageRouter;
-
-} // namespace detail
-
 // NOTE: this object is NOT thread-safe at all. In fact, using one
 // message queue from several threads is strongly discouraged.
-class VOXEN_API MessageQueue {
+class VOXEN_API MessageQueue : public MessageSender {
 public:
 	// Default-initialized message queue is not usable.
 	// All functions except ctor/assignment/dtor have undefined behavior.
@@ -34,39 +27,6 @@ public:
 	MessageQueue &operator=(const MessageQueue &) = delete;
 	// All unprocessed incoming messages are dropped by destructor
 	~MessageQueue() noexcept;
-
-	// Send a unicast message
-	template<CUnicastMessageBase Msg, typename... Args>
-	void send(UID to, Args &&...args)
-	{
-		detail::MessageHeader *header = makeMessageHeader<Msg>(false, std::forward<Args>(args)...);
-
-		if constexpr (std::is_trivially_destructible_v<Msg>) {
-			// Don't instantiate empty deleter for trivially destructible payloads
-			doSend(to, Msg::MESSAGE_UID, header, nullptr);
-		} else {
-			doSend(to, Msg::MESSAGE_UID, header, &destroyPayload<Msg>);
-		}
-	}
-
-	// Send a request message with handle-based tracking.
-	// You will receive an `std::future`-like object `RequestHandle`
-	// and use it to either periodically check or wait for completion.
-	template<CRequestType Msg, typename... Args>
-	RequestHandle<Msg> requestWithHandle(UID to, Args &&...args)
-	{
-		detail::MessageHeader *header = makeMessageHeader<Msg>(true, std::forward<Args>(args)...);
-		RequestHandle<Msg> handle(header);
-
-		if constexpr (std::is_trivially_destructible_v<Msg>) {
-			// Don't instantiate empty deleter for trivially destructible payloads
-			doSend(to, Msg::MESSAGE_UID, header, nullptr);
-		} else {
-			doSend(to, Msg::MESSAGE_UID, header, &destroyPayload<Msg>);
-		}
-
-		return handle;
-	}
 
 	// Send a request message with completion message-based tracking.
 	// Once the message processing has finished in any way (i.e. changes `RequestStatus`
@@ -179,61 +139,23 @@ public:
 	void waitMessages(uint32_t timeout_msec = UINT32_MAX);
 
 private:
-	using PayloadDeleter = void (*)(void *) noexcept;
 	using MessageHandler = extras::move_only_function<void(MessageInfo &, void *)>;
 	using CompletionHandler = extras::move_only_function<void(RequestCompletionInfo &, void *)>;
 	using HandlerItem = std::pair<UID, MessageHandler>;
 	using CompletionHandlerItem = std::pair<UID, CompletionHandler>;
 
 	struct Impl;
-	extras::pimpl<Impl, 96, 8> m_impl;
+	extras::pimpl<Impl, 72, 8> m_impl;
 
-	static std::pair<detail::MessageHeader *, void *> allocateStorage(size_t size, bool deleter, bool request);
-	static void freeStorage(detail::MessageHeader *header) noexcept;
 	static bool handlerComparator(const HandlerItem &a, const HandlerItem &b) noexcept;
 	static bool completionHandlerComparator(const CompletionHandlerItem &a, const CompletionHandlerItem &b) noexcept;
 
-	void doSend(UID to, UID msg_uid, detail::MessageHeader *header, PayloadDeleter deleter);
 	void doRequestWithCompletion(UID to, UID msg_uid, detail::MessageHeader *header, PayloadDeleter deleter);
 
 	void doRegisterHandler(UID msg_uid, MessageHandler handler);
 	void doRegisterCompletionHandler(UID msg_uid, CompletionHandler handler);
 	void doUnregisterHandler(UID msg_uid) noexcept;
 	void doUnregisterCompletionHandler(UID msg_uid) noexcept;
-
-	template<CMessageBase Msg, typename... Args>
-	static detail::MessageHeader *makeMessageHeader(bool request, Args &&...args)
-	{
-		if constexpr (std::is_empty_v<Msg>) {
-			// Empty messages (signals) need no payload storage
-			static_assert(std::is_trivially_destructible_v<Msg>, "Empty type must be trivially destructible");
-			return allocateStorage(0, false, request).first;
-		} else {
-			bool has_deleter = !std::is_trivially_destructible_v<Msg>;
-			auto [header, payload] = allocateStorage(sizeof(Msg), has_deleter, request);
-
-			if constexpr (std::is_nothrow_constructible_v<Msg, Args...>) {
-				// Don't generate unneeded try-catch code for nothrow constructors
-				new (payload) Msg(std::forward<Args>(args)...);
-			} else {
-				try {
-					new (payload) Msg(std::forward<Args>(args)...);
-				}
-				catch (...) {
-					freeStorage(header);
-					throw;
-				}
-			}
-
-			return header;
-		}
-	}
-
-	template<CMessageBase Msg>
-	static void destroyPayload(void *payload) noexcept
-	{
-		static_cast<Msg *>(payload)->~Msg();
-	}
 };
 
 } // namespace voxen::svc
