@@ -82,7 +82,7 @@ void MainThreadService::doMainLoop()
 	impl.gui->init(*last_state_ptr);
 
 	int64_t fps_counter = 0;
-	uint64_t tick_id_counter = last_state_ptr->tickId();
+	WorldTickId tick_id_counter = last_state_ptr->tickId();
 
 	auto last_fps_log_time = std::chrono::steady_clock::now();
 	auto last_input_sample_time = last_fps_log_time;
@@ -109,8 +109,8 @@ void MainThreadService::doMainLoop()
 			std::chrono::duration<double> dur = (input_sample_time - last_fps_log_time);
 			double elapsed = dur.count();
 			if (elapsed > 2.0) {
-				uint64_t tick_id = last_state.tickId();
-				uint64_t ups_counter = tick_id - tick_id_counter;
+				WorldTickId tick_id = last_state.tickId();
+				int64_t ups_counter = tick_id - tick_id_counter;
 
 				Log::info("FPS: {:.1f} UPS: {:.1f}", double(fps_counter) / elapsed, double(ups_counter) / elapsed);
 

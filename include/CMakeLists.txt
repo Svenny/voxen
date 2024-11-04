@@ -116,6 +116,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/log.hpp
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
+	include/voxen/util/tagged_tick_id.hpp
 	include/voxen/visibility.hpp
 )
 

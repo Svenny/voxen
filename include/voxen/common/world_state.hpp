@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/common/player.hpp>
+#include <voxen/util/tagged_tick_id.hpp>
 
 #include <extras/function_ref.hpp>
 #include <extras/refcnt_ptr.hpp>
@@ -15,6 +16,10 @@ namespace terrain
 {
 class Chunk;
 }
+
+struct WorldTickTag {};
+
+using WorldTickId = TaggedTickId<WorldTickTag>;
 
 class WorldState {
 public:
@@ -34,8 +39,8 @@ public:
 
 	void setActiveChunks(ChunkPtrVector value) noexcept { m_active_chunks = std::move(value); }
 
-	uint64_t tickId() const noexcept { return m_tick_id; }
-	void setTickId(uint64_t value) noexcept { m_tick_id = value; }
+	WorldTickId tickId() const noexcept { return m_tick_id; }
+	void setTickId(WorldTickId value) noexcept { m_tick_id = value; }
 
 	void walkActiveChunks(ChunkVisitor visitor) const;
 	// Same as `walkActiveChunks()`, but callback takes refcounted pointer to chunk instead of a reference.
@@ -45,7 +50,7 @@ public:
 private:
 	Player m_player;
 	ChunkPtrVector m_active_chunks;
-	uint64_t m_tick_id = 0;
+	WorldTickId m_tick_id { 0 };
 };
 
 } // namespace voxen
