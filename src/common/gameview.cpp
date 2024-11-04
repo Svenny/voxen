@@ -2,7 +2,6 @@
 
 #include <voxen/common/config.hpp>
 #include <voxen/common/player.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/util/log.hpp>
@@ -13,8 +12,7 @@ namespace voxen
 {
 
 GameView::GameView(os::GlfwWindow& window)
-	: m_previous_tick_id(UINT64_MAX)
-	, m_window(window)
+	: m_window(window)
 	, m_is_pause(true)
 	, m_is_chunk_loading_point_locked(false)
 	, m_is_used_orientation_cursor(false)
@@ -143,7 +141,7 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const Player& player, uint64_t tick_id, double dt, svc::MessageQueue& mq) noexcept
+void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc::MessageQueue& mq) noexcept
 {
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {
