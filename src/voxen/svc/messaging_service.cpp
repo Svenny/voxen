@@ -21,4 +21,9 @@ MessageQueue MessagingService::registerAgent(UID id)
 	return MessageQueue(*m_router, id);
 }
 
+MessageSender MessagingService::createSender(UID id)
+{
+	return MessageSender(*m_router, id);
+}
+
 } // namespace voxen::svc

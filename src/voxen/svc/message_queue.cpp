@@ -13,26 +13,26 @@ namespace voxen::svc
 {
 
 using detail::InboundQueue;
-using detail::MessageAuxData;
-using detail::MessageDeleterBlock;
 using detail::MessageHeader;
-using detail::MessageRequestBlock;
 using detail::MessageRouter;
 
 struct MessageQueue::Impl {
 	Impl() = default;
-	Impl(MessageRouter &router, InboundQueue *queue, UID &my_uid) : router(&router), inbound_queue(queue), my_uid(my_uid)
-	{}
-	Impl(Impl &&other) = default;
+	Impl(Impl &&other) noexcept { *this = std::move(other); }
 	Impl(const Impl &) = delete;
-	Impl &operator=(Impl &&other) = default;
+
+	Impl &operator=(Impl &&other) noexcept
+	{
+		std::swap(inbound_queue, other.inbound_queue);
+		std::swap(handlers, other.handlers);
+		std::swap(completion_handlers, other.completion_handlers);
+		return *this;
+	}
+
 	Impl &operator=(const Impl &) = delete;
 	~Impl() = default;
 
-	MessageRouter *router = nullptr;
 	InboundQueue *inbound_queue = nullptr;
-
-	UID my_uid;
 	// Sorted array of message UID => handler functions.
 	// Slow insertions but quite fast and cache-efficient lookups.
 	// TODO: use something with even faster/simpler lookups? Semi-perfect hashing?
@@ -43,20 +43,26 @@ struct MessageQueue::Impl {
 
 MessageQueue::MessageQueue() noexcept = default;
 
-MessageQueue::MessageQueue(MessageRouter &router, UID my_uid) : m_impl(router, router.registerAgent(my_uid), my_uid) {}
+MessageQueue::MessageQueue(MessageRouter &router, UID my_uid) : MessageSender(router, my_uid)
+{
+	m_impl->inbound_queue = router.registerAgent(my_uid);
+}
 
-MessageQueue::MessageQueue(MessageQueue &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+MessageQueue::MessageQueue(MessageQueue &&other) noexcept
+	: MessageSender(std::move(other)), m_impl(std::move(other.m_impl))
+{}
 
 MessageQueue &MessageQueue::operator=(MessageQueue &&other) noexcept
 {
+	MessageSender::operator=(std::move(other));
 	std::swap(m_impl.object(), other.m_impl.object());
 	return *this;
 }
 
 MessageQueue::~MessageQueue() noexcept
 {
-	if (m_impl->router) {
-		m_impl->router->unregisterAgent(m_impl->my_uid);
+	if (m_impl->inbound_queue) {
+		m_router->unregisterAgent(m_my_uid);
 	}
 }
 
@@ -105,14 +111,14 @@ void MessageQueue::pollMessages()
 					try {
 						MessageInfo info(hdr);
 						handler_iter->second(info, hdr->payload());
-						impl.router->completeRequest(hdr, RequestStatus::Complete);
+						m_router->completeRequest(hdr, RequestStatus::Complete);
 					}
 					catch (...) {
 						hdr->requestBlock()->exception = std::current_exception();
-						impl.router->completeRequest(hdr, RequestStatus::Failed);
+						m_router->completeRequest(hdr, RequestStatus::Failed);
 					}
 				} else {
-					impl.router->completeRequest(hdr, RequestStatus::Dropped);
+					m_router->completeRequest(hdr, RequestStatus::Dropped);
 				}
 			} else {
 				// Release ref even if the handler throws
@@ -135,37 +141,6 @@ void MessageQueue::waitMessages(uint32_t timeout_msec)
 	pollMessages();
 }
 
-std::pair<MessageHeader *, void *> MessageQueue::allocateStorage(size_t size, bool deleter, bool request)
-{
-	static_assert(alignof(MessageHeader) <= alignof(void *), "Payload header is over-aligned");
-	static_assert(alignof(MessageDeleterBlock) <= alignof(void *), "Deleter block is over-aligned");
-	static_assert(alignof(MessageRequestBlock) <= alignof(void *), "Request block is over-aligned");
-
-	static_assert(sizeof(MessageHeader) % alignof(void *) == 0, "Payload start is not aligned with message header");
-	static_assert(sizeof(MessageDeleterBlock) % alignof(void *) == 0, "Payload is not aligned with deleter block");
-	static_assert(sizeof(MessageRequestBlock) % alignof(void *) == 0, "Payload is not aligned with request block");
-
-	size += sizeof(MessageHeader);
-
-	if (deleter) {
-		size += sizeof(MessageDeleterBlock);
-	}
-
-	if (request) {
-		size += sizeof(MessageRequestBlock);
-	}
-
-	void *alloc = PipeMemoryAllocator::allocate(size, alignof(void *));
-	MessageHeader *header = new (alloc) MessageHeader(deleter, request);
-
-	return { header, header->payload() };
-}
-
-void MessageQueue::freeStorage(MessageHeader *header) noexcept
-{
-	header->releaseRef();
-}
-
 bool MessageQueue::handlerComparator(const HandlerItem &a, const HandlerItem &b) noexcept
 {
 	return a.first < b.first;
@@ -174,18 +149,6 @@ bool MessageQueue::handlerComparator(const HandlerItem &a, const HandlerItem &b)
 bool MessageQueue::completionHandlerComparator(const CompletionHandlerItem &a, const CompletionHandlerItem &b) noexcept
 {
 	return a.first < b.first;
-}
-
-void MessageQueue::doSend(UID to, UID msg_uid, MessageHeader *header, PayloadDeleter deleter)
-{
-	header->from_uid = m_impl->my_uid;
-	header->msg_uid = msg_uid;
-
-	if (deleter) {
-		header->deleterBlock()->deleter = deleter;
-	}
-
-	m_impl->router->send(to, header);
 }
 
 void MessageQueue::doRequestWithCompletion(UID to, UID msg_uid, MessageHeader *header, PayloadDeleter deleter)
