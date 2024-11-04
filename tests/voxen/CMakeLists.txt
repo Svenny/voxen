@@ -8,6 +8,7 @@ target_sources(test-voxen PRIVATE
 	land/cube_array.test.cpp
 	svc/message_queue.test.cpp
 	svc/service_locator.test.cpp
+	util/concentric_octahedra_walker.test.cpp
 	util/hash.test.cpp
 	util/packed_color.test.cpp
 )
@@ -24,5 +25,6 @@ add_test(NAME voxen-land-chunk-key COMMAND test-voxen "[voxen::land::chunk_key]"
 add_test(NAME voxen-land-cube-array COMMAND test-voxen "[voxen::land::cube_array]")
 add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_queue]")
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
+add_test(NAME voxen-concentric-octahedra-walker COMMAND test-voxen "[voxen::concentric_octahedra_walker]")
 add_test(NAME voxen-hash COMMAND test-voxen "[voxen::hash]")
 add_test(NAME voxen-packed-color COMMAND test-voxen "[voxen::packed_color]")
