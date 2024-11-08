@@ -114,6 +114,7 @@ set(VOXEN_HEADERS
 	include/voxen/util/futex_work_counter.hpp
 	include/voxen/util/hash.hpp
 	include/voxen/util/log.hpp
+	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
 	include/voxen/util/tagged_tick_id.hpp
