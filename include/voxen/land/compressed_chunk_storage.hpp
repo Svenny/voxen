@@ -138,8 +138,8 @@ private:
 	std::unique_ptr<Node[]> m_nodes;
 };
 
-extern template class CompressedChunkStorage<uint8_t>;
-extern template class CompressedChunkStorage<uint16_t>;
-extern template class CompressedChunkStorage<uint32_t>;
+extern template class VOXEN_API CompressedChunkStorage<uint8_t>;
+extern template class VOXEN_API CompressedChunkStorage<uint16_t>;
+extern template class VOXEN_API CompressedChunkStorage<uint32_t>;
 
 } // namespace voxen::land

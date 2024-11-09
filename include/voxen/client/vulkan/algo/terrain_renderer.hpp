@@ -2,7 +2,6 @@
 
 #include <voxen/client/vulkan/buffer.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/common/terrain/chunk_id.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
 
 #include <extras/refcnt_ptr.hpp>

@@ -46,4 +46,31 @@ TEST_CASE("'ChunkKey' with negative values", "[voxen::land::chunk_key]")
 	CHECK(ChunkKey(parent2.packed()) == parent2);
 }
 
+TEST_CASE("'ChunkKey' child key calculations", "[voxen::land::chunk_key]")
+{
+	ChunkKey ck(glm::ivec3(0, 0, 0), 1);
+	CHECK(ck.childLodKey(0).scale_log2 == 0);
+
+	CHECK(ck.childLodKey(0).base() == glm::ivec3(0, 0, 0));
+	CHECK(ck.childLodKey(1).base() == glm::ivec3(0, 0, 1));
+	CHECK(ck.childLodKey(2).base() == glm::ivec3(1, 0, 0));
+	CHECK(ck.childLodKey(3).base() == glm::ivec3(1, 0, 1));
+	CHECK(ck.childLodKey(4).base() == glm::ivec3(0, 1, 0));
+	CHECK(ck.childLodKey(5).base() == glm::ivec3(0, 1, 1));
+	CHECK(ck.childLodKey(6).base() == glm::ivec3(1, 1, 0));
+	CHECK(ck.childLodKey(7).base() == glm::ivec3(1, 1, 1));
+
+	ck = ChunkKey(glm::ivec3(32, -48, -16), 4);
+	CHECK(ck.childLodKey(5).scale_log2 == 3);
+
+	CHECK(ck.childLodKey(0).base() == glm::ivec3(32, -48, -16));
+	CHECK(ck.childLodKey(1).base() == glm::ivec3(32, -48, -8));
+	CHECK(ck.childLodKey(2).base() == glm::ivec3(40, -48, -16));
+	CHECK(ck.childLodKey(3).base() == glm::ivec3(40, -48, -8));
+	CHECK(ck.childLodKey(4).base() == glm::ivec3(32, -40, -16));
+	CHECK(ck.childLodKey(5).base() == glm::ivec3(32, -40, -8));
+	CHECK(ck.childLodKey(6).base() == glm::ivec3(40, -40, -16));
+	CHECK(ck.childLodKey(7).base() == glm::ivec3(40, -40, -8));
+}
+
 } // namespace voxen::land

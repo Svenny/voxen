@@ -69,7 +69,7 @@ private:
 		uint32_t slot_switch_age = UINT32_MAX;
 	};
 
-	terrain::ChunkId m_gc_pointer = {};
+	land::ChunkKey m_gc_pointer = {};
 
 	// Indices of used Vulkan queues: { graphics, transfer }.
 	// If they are different then GPU has a dedicated DMA engine.
@@ -78,7 +78,7 @@ private:
 	bool m_index_uma = false;
 	std::list<TerrainDataArena> m_vertex_arenas;
 	std::list<TerrainDataArena> m_index_arenas;
-	std::unordered_map<terrain::ChunkId, PerChunkData> m_per_chunk_data;
+	std::unordered_map<land::ChunkKey, PerChunkData> m_per_chunk_data;
 
 	void clearSlot(ChunkSlotSyncData &slot) noexcept;
 	void allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx_size, VkDeviceSize idx_size);

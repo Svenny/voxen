@@ -111,16 +111,16 @@ static glm::dvec3 df(double x, double /*y*/, double z) noexcept
 	return glm::dvec3(dx, 1.0, dz);
 }
 
-void TerrainGenerator::generate(ChunkId id, ChunkPrimaryData &output) const
+void TerrainGenerator::generate(land::ChunkKey id, ChunkPrimaryData &output) const
 {
 	constexpr uint32_t GRID_SIZE = VoxelGrid::GRID_SIZE;
 	using coord_t = HermiteDataEntry::coord_t;
 	using ValuesArray = std::array<std::array<std::array<double, GRID_SIZE>, GRID_SIZE>, GRID_SIZE>;
 
-	const int64_t base_x = id.base_x * int64_t(Config::CHUNK_SIZE);
-	const int64_t base_y = id.base_y * int64_t(Config::CHUNK_SIZE);
-	const int64_t base_z = id.base_z * int64_t(Config::CHUNK_SIZE);
-	const uint32_t scale = (1u << id.lod);
+	const int64_t base_x = id.x * int64_t(Config::CHUNK_SIZE);
+	const int64_t base_y = id.y * int64_t(Config::CHUNK_SIZE);
+	const int64_t base_z = id.z * int64_t(Config::CHUNK_SIZE);
+	const uint32_t scale = (1u << id.scale_log2);
 
 	// TODO: this is a temporary stub, add real land generator
 

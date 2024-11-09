@@ -94,14 +94,14 @@ void TerrainRenderer::onNewWorldState(const WorldState &state)
 	m_last_state = &state;
 }
 
-static glm::vec4 calcChunkBaseScale(terrain::ChunkId id, const GameView &view) noexcept
+static glm::vec4 calcChunkBaseScale(land::ChunkKey id, const GameView &view) noexcept
 {
 	glm::dvec3 base_pos;
-	base_pos.x = double(id.base_x * int32_t(terrain::Config::CHUNK_SIZE));
-	base_pos.y = double(id.base_y * int32_t(terrain::Config::CHUNK_SIZE));
-	base_pos.z = double(id.base_z * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.x = double(id.x * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.y = double(id.y * int32_t(terrain::Config::CHUNK_SIZE));
+	base_pos.z = double(id.z * int32_t(terrain::Config::CHUNK_SIZE));
 
-	const float size = float(1u << id.lod);
+	const float size = float(1u << id.scale_log2);
 	return glm::vec4(base_pos - view.cameraPosition(), size);
 }
 
@@ -233,7 +233,7 @@ void TerrainRenderer::onFrameBegin(const GameView &view, VkDescriptorSet main_sc
 
 	auto last_info = render_infos.begin() + m_num_active_chunks;
 	std::sort(render_infos.begin(), last_info, [&](const auto &a, const auto &b) {
-		return renderInfoComparator(a.second, a.first->id().lod, b.second, b.first->id().lod);
+		return renderInfoComparator(a.second, a.first->id().scale_log2, b.second, b.first->id().scale_log2);
 	});
 
 	m_draw_setups.clear();

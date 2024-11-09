@@ -29,7 +29,7 @@ public:
 	// if chunk with the same ID is already in the cache.
 	void insert(extras::refcnt_ptr<Chunk> ptr) noexcept;
 	// Remove chunk with given ID from the cache (if present)
-	void invalidate(ChunkId id) noexcept;
+	void invalidate(land::ChunkKey id) noexcept;
 
 private:
 	// The cache does not have its own storage, but it does merely reuse chunk pool.
@@ -38,7 +38,7 @@ private:
 
 	extras::dyn_array<Set, DomainAllocator<Set, AllocationDomain::StandbyCache>> m_sets;
 
-	std::pair<size_t, size_t> findSetAndIndex(ChunkId id) const noexcept;
+	std::pair<size_t, size_t> findSetAndIndex(land::ChunkKey id) const noexcept;
 };
 
 } // namespace voxen::terrain

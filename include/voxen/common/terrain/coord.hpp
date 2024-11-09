@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk_id.hpp>
+#include <voxen/land/chunk_key.hpp>
 
 #include <glm/vec3.hpp>
 
@@ -14,9 +14,9 @@ public:
 	CoordUtils() = delete;
 
 	// Convert world-space point to chunk-local [0..CHUNK_SIZE) for a given chunk
-	static glm::dvec3 worldToChunkLocal(ChunkId id, const glm::dvec3 &world) noexcept;
+	static glm::dvec3 worldToChunkLocal(land::ChunkKey id, const glm::dvec3 &world) noexcept;
 	// Convert chunk-local [0..CHUNK_SIZE) point to world-space for a given chunk
-	static glm::dvec3 chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) noexcept;
+	static glm::dvec3 chunkLocalToWorld(land::ChunkKey id, const glm::dvec3 &local) noexcept;
 };
 
 } // namespace voxen::terrain

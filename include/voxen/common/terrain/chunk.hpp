@@ -1,9 +1,9 @@
 #pragma once
 
-#include <voxen/common/terrain/chunk_id.hpp>
 #include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/primary_data.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/land/chunk_key.hpp>
 
 namespace voxen::terrain
 {
@@ -12,7 +12,7 @@ class Chunk final {
 public:
 	struct CreationInfo final {
 		// ID of the chunk to be created
-		ChunkId id;
+		land::ChunkKey id;
 		// Version is set externally. Any newly created chunk must have its version strictly greater
 		// than any previous one with the same ID. Otherwise undefined caching behavior will occur.
 		chunk_ver_t version;
@@ -30,7 +30,7 @@ public:
 	// This method can be used during (and after) contouring, as it only checks primary data.
 	bool hasSurface() const noexcept;
 
-	const ChunkId &id() const noexcept { return m_id; }
+	const land::ChunkKey &id() const noexcept { return m_id; }
 	chunk_ver_t version() const noexcept { return m_version; }
 
 	ChunkPrimaryData &primaryData() noexcept { return m_primary_data; }
@@ -40,7 +40,7 @@ public:
 	const ChunkSurface &surface() const noexcept { return m_surface; }
 
 private:
-	const ChunkId m_id;
+	const land::ChunkKey m_id;
 	chunk_ver_t m_version;
 
 	ChunkPrimaryData m_primary_data;
