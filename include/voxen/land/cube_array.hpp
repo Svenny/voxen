@@ -8,6 +8,11 @@ namespace voxen::land
 {
 
 template<typename T, uint32_t N>
+struct CubeArray;
+
+// View of an YXZ-ordered 3D array (three-dimensional span).
+// Needed mainly to operate on sub-arrays of a `CubeArray`.
+template<typename T, uint32_t N>
 struct CubeArrayView {
 	T *data = nullptr;
 	uint32_t y_stride = 0;
@@ -52,6 +57,16 @@ struct CubeArrayView {
 		}
 	}
 
+	void fill(glm::uvec3 begin, glm::uvec3 size, T value) noexcept
+	{
+		for (uint32_t y = begin.y; y < begin.y + size.y; y++) {
+			for (uint32_t x = begin.x; x < begin.x + size.x; x++) {
+				T *ptr = data + y * y_stride + x * x_stride + begin.z;
+				std::fill_n(ptr, size.z, value);
+			}
+		}
+	}
+
 	void fillFrom(const CubeArrayView<const T, N> &in) noexcept
 	{
 		for (uint32_t y = 0; y < N; y++) {
@@ -63,6 +78,9 @@ struct CubeArrayView {
 			}
 		}
 	}
+
+	template<uint32_t M>
+	void extractTo(glm::uvec3 base, CubeArray<std::remove_const_t<T>, M> &out) const noexcept;
 };
 
 // YXZ-ordered POD 3D array with equal dimensions.
@@ -73,14 +91,20 @@ struct CubeArray {
 
 	T data[N][N][N];
 
+	bool operator==(const CubeArray &other) const noexcept = default;
+
 	T operator[](glm::ivec3 c) const noexcept { return data[c.y][c.x][c.z]; }
 	T operator[](glm::uvec3 c) const noexcept { return data[c.y][c.x][c.z]; }
 	T &operator[](glm::ivec3 c) noexcept { return data[c.y][c.x][c.z]; }
 	T &operator[](glm::uvec3 c) noexcept { return data[c.y][c.x][c.z]; }
 
+	T load(int32_t x, int32_t y, int32_t z) const noexcept { return data[y][x][z]; }
 	T load(uint32_t x, uint32_t y, uint32_t z) const noexcept { return data[y][x][z]; }
+	void store(int32_t x, int32_t y, int32_t z, T value) noexcept { data[y][x][z] = value; }
 	void store(uint32_t x, uint32_t y, uint32_t z, T value) noexcept { data[y][x][z] = value; }
 
+	T *begin() noexcept { return &data[0][0][0]; }
+	T *end() noexcept { return &data[0][0][0] + N * N * N; }
 	const T *begin() const noexcept { return &data[0][0][0]; }
 	const T *end() const noexcept { return &data[0][0][0] + N * N * N; }
 	size_t size() const noexcept { return N * N * N; }
@@ -113,7 +137,7 @@ struct CubeArray {
 	}
 
 	template<uint32_t M>
-	void gather(glm::uvec3 base, CubeArray<T, M> &out) const noexcept
+	void extractTo(glm::uvec3 base, CubeArray<T, M> &out) const noexcept
 	{
 		static_assert(M <= N);
 		for (uint32_t y = 0; y < M; y++) {
@@ -127,7 +151,7 @@ struct CubeArray {
 	}
 
 	template<uint32_t M>
-	void scatter(glm::uvec3 base, const CubeArray<T, M> &in) noexcept
+	void insertFrom(glm::uvec3 base, const CubeArray<T, M> &in) noexcept
 	{
 		static_assert(M <= N);
 		for (uint32_t y = 0; y < M; y++) {
@@ -140,5 +164,20 @@ struct CubeArray {
 		}
 	}
 };
+
+template<typename T, uint32_t N>
+template<uint32_t M>
+void CubeArrayView<T, N>::extractTo(glm::uvec3 base, CubeArray<std::remove_const_t<T>, M> &out) const noexcept
+{
+	static_assert(M <= N);
+	for (uint32_t y = 0; y < M; y++) {
+		for (uint32_t x = 0; x < M; x++) {
+			for (uint32_t z = 0; z < M; z++) {
+				glm::uvec3 c(x, y, z);
+				out[c] = operator[](base + c);
+			}
+		}
+	}
+}
 
 } // namespace voxen::land
