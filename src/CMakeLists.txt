@@ -72,6 +72,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp

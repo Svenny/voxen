@@ -91,7 +91,9 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/land/chunk_key.hpp
+	include/voxen/land/compressed_chunk_storage.hpp
 	include/voxen/land/cube_array.hpp
+	include/voxen/land/land_utils.hpp
 	include/voxen/os/futex.hpp
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/process.hpp
