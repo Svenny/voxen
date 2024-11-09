@@ -37,7 +37,7 @@ void ChunkCache::insert(extras::refcnt_ptr<Chunk> ptr) noexcept
 {
 	assert(ptr);
 
-	const size_t set_id = ptr->id().fastHash() % m_sets.size();
+	const size_t set_id = ptr->id().hash() % m_sets.size();
 	Set &set = m_sets[set_id];
 
 	size_t empty_pos_in_set = SET_SIZE;
@@ -68,7 +68,7 @@ void ChunkCache::insert(extras::refcnt_ptr<Chunk> ptr) noexcept
 	std::rotate(set.begin(), set.begin() + 1, set.end());
 }
 
-void ChunkCache::invalidate(ChunkId id) noexcept
+void ChunkCache::invalidate(land::ChunkKey id) noexcept
 {
 	auto [set_id, chunk_pos_in_set] = findSetAndIndex(id);
 
@@ -77,9 +77,9 @@ void ChunkCache::invalidate(ChunkId id) noexcept
 	}
 }
 
-std::pair<size_t, size_t> ChunkCache::findSetAndIndex(ChunkId id) const noexcept
+std::pair<size_t, size_t> ChunkCache::findSetAndIndex(land::ChunkKey id) const noexcept
 {
-	const size_t set_id = id.fastHash() % m_sets.size();
+	const size_t set_id = id.hash() % m_sets.size();
 	const Set &set = m_sets[set_id];
 
 	for (size_t i = 0; i < SET_SIZE; i++) {

@@ -47,7 +47,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/allocator.hpp
 	include/voxen/common/terrain/cache.hpp
 	include/voxen/common/terrain/chunk.hpp
-	include/voxen/common/terrain/chunk_id.hpp
 	include/voxen/common/terrain/config.hpp
 	include/voxen/common/terrain/controller.hpp
 	include/voxen/common/terrain/control_block.hpp

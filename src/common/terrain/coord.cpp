@@ -7,19 +7,19 @@
 namespace voxen::terrain
 {
 
-glm::dvec3 CoordUtils::worldToChunkLocal(ChunkId id, const glm::dvec3 &world) noexcept
+glm::dvec3 CoordUtils::worldToChunkLocal(land::ChunkKey id, const glm::dvec3 &world) noexcept
 {
-	glm::ivec3 base(id.base_x, id.base_y, id.base_z);
+	glm::ivec3 base(id.x, id.y, id.z);
 	base *= Config::CHUNK_SIZE;
-	base >>= id.lod;
-	return world / double(1u << id.lod) - glm::dvec3(base);
+	base >>= id.scale_log2;
+	return world / double(1u << id.scale_log2) - glm::dvec3(base);
 }
 
-glm::dvec3 CoordUtils::chunkLocalToWorld(ChunkId id, const glm::dvec3 &local) noexcept
+glm::dvec3 CoordUtils::chunkLocalToWorld(land::ChunkKey id, const glm::dvec3 &local) noexcept
 {
-	glm::ivec3 base(id.base_x, id.base_y, id.base_z);
+	glm::ivec3 base(id.x, id.y, id.z);
 	base *= Config::CHUNK_SIZE;
-	return local * double(1u << id.lod) + glm::dvec3(base);
+	return local * double(1u << id.scale_log2) + glm::dvec3(base);
 }
 
 } // namespace voxen::terrain

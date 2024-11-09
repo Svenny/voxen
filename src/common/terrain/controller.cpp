@@ -125,7 +125,7 @@ void Controller::setPointOfInterest(uint32_t id, const glm::dvec3 &position)
 	});
 }
 
-uint32_t Controller::calcLodDirection(ChunkId id) const
+uint32_t Controller::calcLodDirection(land::ChunkKey id) const
 {
 	// This value multiplied by chunk side size gives an
 	// average of inscribed and circumscribed spheres' radii
@@ -134,7 +134,7 @@ uint32_t Controller::calcLodDirection(ChunkId id) const
 	const double OPTIMAL_TAN_HALF_PHI = glm::tan(OPTIMAL_PHI * 0.5);
 
 	// Radius of a sphere used to approximate angular diameter of a chunk
-	const double delta = double(Config::CHUNK_SIZE << id.lod) * PSEUDORADIUS_MULT;
+	const double delta = double(Config::CHUNK_SIZE << id.scale_log2) * PSEUDORADIUS_MULT;
 	// Center of chunk in world-space coordinates
 	const glm::dvec3 center = CoordUtils::chunkLocalToWorld(id, glm::dvec3(Config::CHUNK_SIZE >> 1u));
 
@@ -200,15 +200,10 @@ void Controller::engageSuperchunks()
 Controller::ControlBlockPtr Controller::loadSuperchunk(glm::ivec3 base)
 {
 	base <<= Config::CHUNK_MAX_LOD;
-	return enqueueLoadingChunk(ChunkId {
-		.lod = Config::CHUNK_MAX_LOD,
-		.base_x = base.x,
-		.base_y = base.y,
-		.base_z = base.z,
-	});
+	return enqueueLoadingChunk(land::ChunkKey(base, Config::CHUNK_MAX_LOD));
 }
 
-Controller::ControlBlockPtr Controller::enqueueLoadingChunk(ChunkId id)
+Controller::ControlBlockPtr Controller::enqueueLoadingChunk(land::ChunkKey id)
 {
 	// Chunk will be filled by `TerrainLoader`
 	auto chunk_ptr = PoolAllocator::allocateChunk(Chunk::CreationInfo {
@@ -305,9 +300,9 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 		assert(parent_cmd == ParentCommand::Nothing);
 
 		// We are over active, check if LOD deterioration is possible
-		const ChunkId my_id = cb.chunk()->id();
+		const land::ChunkKey my_id = cb.chunk()->id();
 		const uint32_t my_lod_dir = calcLodDirection(my_id);
-		if (my_lod_dir < my_id.lod) {
+		if (my_lod_dir < my_id.scale_log2) {
 			// Even if all children are willing to deteriorate their LOD,
 			// this is pointless as we would then instantly improve it back
 			return { true, ParentCommand::Nothing };
@@ -322,9 +317,9 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 				return { true, ParentCommand::Nothing };
 			}
 
-			const ChunkId child_id = my_id.toChild(i);
+			const land::ChunkKey child_id = my_id.childLodKey(uint32_t(i));
 			const uint32_t child_lod_dir = calcLodDirection(child_id);
-			if (child_lod_dir <= child_id.lod) {
+			if (child_lod_dir <= child_id.scale_log2) {
 				// This child does not want to deteriorate its LOD
 				return { true, ParentCommand::Nothing };
 			}
@@ -355,9 +350,9 @@ Controller::InnerUpdateResult Controller::updateChunkStandby(ChunkControlBlock &
 		}
 	}
 
-	const ChunkId my_id = cb.chunk()->id();
+	const land::ChunkKey my_id = cb.chunk()->id();
 	const uint32_t my_lod_dir = calcLodDirection(my_id);
-	if (my_lod_dir > my_id.lod + 1) {
+	if (my_lod_dir > my_id.scale_log2 + 1) {
 		// This chunk is not expected to be needed soon, can remove it
 		m_loader.unload(cb.chunkPtr());
 		return { false, ParentCommand::Nothing };
@@ -378,9 +373,9 @@ Controller::InnerUpdateResult Controller::updateChunkActive(ChunkControlBlock &c
 
 	assert(parent_cmd == ParentCommand::Nothing);
 
-	const ChunkId my_id = cb.chunk()->id();
+	const land::ChunkKey my_id = cb.chunk()->id();
 	const uint32_t my_lod_dir = calcLodDirection(my_id);
-	if (my_lod_dir < my_id.lod && m_direct_op_quota + 8 <= Config::TERRAIN_MAX_DIRECT_OP_COUNT) {
+	if (my_lod_dir < my_id.scale_log2 && m_direct_op_quota + 8 <= Config::TERRAIN_MAX_DIRECT_OP_COUNT) {
 		// We need to improve LOD, check if we can do it
 		ControlBlockPtr new_children[8];
 		bool can_improve = true;
@@ -389,7 +384,7 @@ Controller::InnerUpdateResult Controller::updateChunkActive(ChunkControlBlock &c
 			const ChunkControlBlock *child_cb = cb.child(i);
 			if (!child_cb) {
 				// Child is not present - request loading it immediately
-				cb.setChild(i, enqueueLoadingChunk(my_id.toChild(i)));
+				cb.setChild(i, enqueueLoadingChunk(my_id.childLodKey(uint32_t(i))));
 				can_improve = false;
 			} else if (child_cb->state() == ChunkControlBlock::State::Loading) {
 				// Child is still loading

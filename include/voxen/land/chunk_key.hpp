@@ -29,6 +29,10 @@ struct ChunkKey {
 		z = base.z;
 	}
 
+	explicit ChunkKey(int64_t x, int64_t y, int64_t z, uint32_t scale_log2 = 0) noexcept
+		: scale_log2(scale_log2), x(x), y(y), z(z)
+	{}
+
 	bool operator==(const ChunkKey &other) const = default;
 	bool operator!=(const ChunkKey &other) const = default;
 	bool operator<(const ChunkKey &other) const noexcept { return packed() < other.packed(); }
@@ -50,6 +54,29 @@ struct ChunkKey {
 		result.y = (y >> nscale) << nscale;
 		result.z = (z >> nscale) << nscale;
 		return result;
+	}
+
+	// Return "child" chunk key with LOD scale one level smaller.
+	// Index can be in range [0; 7], it orders children by YXZ axes.
+	// Behavior is undefined if `scale_log2 == 0`.
+	ChunkKey childLodKey(uint32_t index) const noexcept
+	{
+		uint64_t nscale = scale_log2 - 1;
+		int64_t step = 1 << nscale;
+
+		ChunkKey result;
+		result.scale_log2 = nscale;
+		result.x = (index & 0b010) ? x + step : x;
+		result.y = (index & 0b100) ? y + step : y;
+		result.z = (index & 0b001) ? z + step : z;
+		return result;
+	}
+
+	// Check if base coordinates are valid for given LOD scale
+	bool valid() const noexcept
+	{
+		return (x >> scale_log2 << scale_log2) == x && (y >> scale_log2 << scale_log2) == y
+			&& (z >> scale_log2 << scale_log2) == z;
 	}
 
 	// Hash is bijective and guarantees no collisions

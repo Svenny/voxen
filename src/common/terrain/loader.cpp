@@ -12,7 +12,7 @@ namespace voxen::terrain
 
 void TerrainLoader::load(Chunk &chunk)
 {
-	const ChunkId id = chunk.id();
+	const land::ChunkKey id = chunk.id();
 
 #if VOXEN_DEBUG_BUILD == 1
 	{

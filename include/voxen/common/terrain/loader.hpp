@@ -25,7 +25,7 @@ private:
 	TerrainGenerator m_generator;
 
 #if VOXEN_DEBUG_BUILD == 1
-	std::unordered_set<ChunkId> m_loaded_chunks;
+	std::unordered_set<land::ChunkKey> m_loaded_chunks;
 #endif /* VOXEN_DEBUG_BUILD */
 };
 

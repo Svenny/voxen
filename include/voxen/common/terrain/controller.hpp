@@ -80,15 +80,15 @@ private:
 	std::vector<PointOfInterest> m_points_of_interest;
 	std::unordered_map<glm::ivec3, SuperchunkInfo, VecHasher> m_superchunks;
 
-	std::unordered_map<ChunkId, std::future<void>> m_async_chunk_loads;
+	std::unordered_map<land::ChunkKey, std::future<void>> m_async_chunk_loads;
 	uint32_t m_direct_op_quota = 0;
 
-	uint32_t calcLodDirection(ChunkId id) const;
+	uint32_t calcLodDirection(land::ChunkKey id) const;
 	void garbageCollectPointsOfInterest();
 	void engageSuperchunks();
 
 	ControlBlockPtr loadSuperchunk(glm::ivec3 base);
-	ControlBlockPtr enqueueLoadingChunk(ChunkId id);
+	ControlBlockPtr enqueueLoadingChunk(land::ChunkKey id);
 
 	bool updateChunk(ChunkControlBlock &cb, ParentCommand parent_cmd = ParentCommand::Nothing);
 	InnerUpdateResult updateChunkLoading(ChunkControlBlock &cb, ParentCommand parent_cmd);
