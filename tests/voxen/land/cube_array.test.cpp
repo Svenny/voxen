@@ -1,6 +1,6 @@
 #include <voxen/land/cube_array.hpp>
 
-#include "../../test_common.hpp"
+#include "../../voxen_test_common.hpp"
 
 namespace voxen::land
 {
@@ -45,7 +45,7 @@ TEST_CASE("'CubeArray' sanity check", "[voxen::land::cube_array]")
 	CHECK(arr.data[5][4][6] == A);
 }
 
-TEST_CASE("'CubeArray' gather/scatter check", "[voxen::land::cube_array]")
+TEST_CASE("'CubeArray' extract/insert check", "[voxen::land::cube_array]")
 {
 	constexpr uint32_t A = 0x1234;
 	constexpr uint32_t B = 0x4321;
@@ -56,31 +56,31 @@ TEST_CASE("'CubeArray' gather/scatter check", "[voxen::land::cube_array]")
 	CubeArray<uint32_t, 3> arr2;
 
 	arr2.fill(A);
-	arr1.scatter(glm::uvec3(0), arr2);
-	arr1.scatter(glm::uvec3(3), arr2);
+	arr1.insertFrom(glm::uvec3(0), arr2);
+	arr1.insertFrom(glm::uvec3(3), arr2);
 	CHECK(arr1.data[1][1][1] == A);
 	CHECK(arr1.data[4][4][4] == A);
 
 	arr2.fill(B);
-	arr1.scatter(glm::uvec3(3, 0, 0), arr2);
-	arr1.scatter(glm::uvec3(0, 3, 0), arr2);
+	arr1.insertFrom(glm::uvec3(3, 0, 0), arr2);
+	arr1.insertFrom(glm::uvec3(0, 3, 0), arr2);
 	CHECK(arr1.data[1][4][1] == B);
 	CHECK(arr1.data[4][1][1] == B);
 
 	arr2.fill(C);
-	arr1.scatter(glm::uvec3(0, 0, 3), arr2);
-	arr1.scatter(glm::uvec3(3, 0, 3), arr2);
+	arr1.insertFrom(glm::uvec3(0, 0, 3), arr2);
+	arr1.insertFrom(glm::uvec3(3, 0, 3), arr2);
 	CHECK(arr1.data[1][1][4] == C);
 	CHECK(arr1.data[1][4][4] == C);
 
 	arr2.fill(D);
-	arr1.scatter(glm::uvec3(3, 3, 0), arr2);
-	arr1.scatter(glm::uvec3(0, 3, 3), arr2);
+	arr1.insertFrom(glm::uvec3(3, 3, 0), arr2);
+	arr1.insertFrom(glm::uvec3(0, 3, 3), arr2);
 	CHECK(arr1.data[4][4][1] == D);
 	CHECK(arr1.data[4][1][4] == D);
 
 	CubeArray<uint32_t, 2> arr3;
-	arr1.gather(glm::uvec3(2), arr3);
+	arr1.extractTo(glm::uvec3(2), arr3);
 	CHECK(arr3.data[0][0][0] == A);
 	CHECK(arr3.data[1][1][1] == A);
 	CHECK(arr3.data[0][1][0] == B);
