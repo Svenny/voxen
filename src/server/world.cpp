@@ -2,6 +2,8 @@
 
 #include <voxen/common/player_state_message.hpp>
 #include <voxen/debug/thread_name.hpp>
+#include <voxen/debug/uid_registry.hpp>
+#include <voxen/land/land_service.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/log.hpp>
@@ -9,9 +11,23 @@
 namespace voxen::server
 {
 
+namespace
+{
+
+auto makeLandService(svc::ServiceLocator &svc)
+{
+	return std::make_unique<land::LandService>(svc);
+}
+
+} // namespace
+
 World::World(svc::ServiceLocator &svc) : m_terrain_controller(svc)
 {
 	Log::debug("Creating server World");
+
+	debug::UidRegistry::registerLiteral(land::LandService::SERVICE_UID, "voxen::land::LandService");
+	svc.registerServiceFactory<land::LandService>(makeLandService);
+	m_land_service = &svc.requestService<land::LandService>();
 
 	m_message_queue = svc.requestService<svc::MessagingService>().registerAgent(SERVICE_UID);
 	m_message_queue.registerHandler<PlayerStateMessage>(
@@ -56,6 +72,9 @@ void World::update()
 	// Update chunks
 	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());
+
+	m_land_service->doTick(next_state.tickId());
+	next_state.setLandState(m_land_service->stateForCopy());
 
 	m_last_state_ptr.store(std::move(next_state_ptr), std::memory_order_release);
 }

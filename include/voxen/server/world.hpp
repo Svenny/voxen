@@ -11,6 +11,13 @@
 #include <memory>
 #include <thread>
 
+namespace voxen::land
+{
+
+class LandService;
+
+}
+
 namespace voxen::server
 {
 
@@ -37,6 +44,7 @@ public:
 
 private:
 	terrain::Controller m_terrain_controller;
+	land::LandService *m_land_service = nullptr;
 
 	// `getLastState()` and `update()` may be called from different
 	// threads simultaneously. Therefore this pointer is atomic.
