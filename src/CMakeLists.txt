@@ -71,7 +71,15 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
+	src/voxen/land/land_chunk.cpp
+	src/voxen/land/land_private_consts.hpp
+	src/voxen/land/land_private_messages.hpp
+	src/voxen/land/land_service.cpp
+	src/voxen/land/land_state.cpp
+	src/voxen/land/pseudo_chunk_data.cpp
+	src/voxen/land/pseudo_chunk_surface.cpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
