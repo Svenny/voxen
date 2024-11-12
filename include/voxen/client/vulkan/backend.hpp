@@ -1,9 +1,9 @@
 #pragma once
 
-#include <voxen/client/vulkan/common.hpp>
-#include <voxen/os/glfw_window.hpp>
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
+#include <voxen/os/glfw_window.hpp>
 
 #include <extras/dyn_array.hpp>
 

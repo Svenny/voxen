@@ -1,6 +1,7 @@
 #include <voxen/client/vulkan/command_buffer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 
 namespace voxen::client::vulkan
 {
@@ -16,7 +17,7 @@ void CommandBuffer::reset(bool release_resources)
 
 	VkResult result = Backend::backend().vkResetCommandBuffer(m_cmd_buffer, flags);
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkResetCommandBuffer");
+		throw gfx::vk::VulkanException(result, "vkResetCommandBuffer");
 	}
 	m_state = State::Initial;
 }
@@ -27,7 +28,7 @@ void CommandBuffer::begin(const VkCommandBufferBeginInfo &info)
 
 	VkResult result = Backend::backend().vkBeginCommandBuffer(m_cmd_buffer, &info);
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkBeginCommandBuffer");
+		throw gfx::vk::VulkanException(result, "vkBeginCommandBuffer");
 	}
 	m_state = State::Recording;
 }
@@ -39,7 +40,7 @@ void CommandBuffer::end()
 	VkResult result = Backend::backend().vkEndCommandBuffer(m_cmd_buffer);
 	if (result != VK_SUCCESS) {
 		m_state = State::Invalid;
-		throw VulkanException(result, "vkEndCommandBuffer");
+		throw gfx::vk::VulkanException(result, "vkEndCommandBuffer");
 	}
 	m_state = State::Executable;
 }

@@ -1,6 +1,6 @@
 #include <voxen/gfx/vk/render_graph_execution.hpp>
 
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/log.hpp>
 
 #include "render_graph_private.hpp"
@@ -11,9 +11,6 @@
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::VulkanException;
 
 RenderGraphExecution::RenderGraphExecution(RenderGraphPrivate &priv) noexcept
 	: m_private(priv), m_frame_context(priv.fctx_ring.current())

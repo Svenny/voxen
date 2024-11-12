@@ -1,7 +1,7 @@
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
@@ -13,9 +13,6 @@
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::VulkanException;
 
 RenderGraphRunner::~RenderGraphRunner() noexcept = default;
 

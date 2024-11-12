@@ -13,17 +13,6 @@ static_assert(Config::NUM_GPU_PENDING_FRAMES > 0, "Number of GPU pending frames 
 static_assert(Config::NUM_CPU_PENDING_FRAMES >= Config::NUM_GPU_PENDING_FRAMES,
 	"Number of CPU pending frames must not be less than GPU pending frames");
 
-static_assert(Config::ARENA_SIZE_INITIAL_GUESS > 0, "Arena size initial guess must be positive");
-static_assert(Config::ARENA_SIZE_INITIAL_GUESS % Config::ARENA_SIZE_ALIGNMENT == 0,
-	"Arena size initial guess must be properly aligned");
-
-static_assert(Config::ARENA_GROW_FACTOR_DENOMINATOR > 0, "Arena grow factor denominator must be positive");
-static_assert(Config::ARENA_GROW_FACTOR_NUMERATOR > Config::ARENA_GROW_FACTOR_DENOMINATOR,
-	"Arena grow factor must be larger than one (numerator > denomenator)");
-
-static_assert(std::has_single_bit(Config::ALLOCATION_GRANULARITY), "Allocation granularity must be a power of two");
-static_assert(std::has_single_bit(Config::ARENA_SIZE_ALIGNMENT), "Arena size alignment must be a power of two");
-
 static_assert(Config::MAX_RENDERED_CHUNKS >= 2048, "It's too dangerous to set low rendered chunks counts");
 // Arbitrary value. This is to not bother with the last SIMD line possibly going out of bounds.
 static_assert(Config::MAX_RENDERED_CHUNKS % 128 == 0, "Rendered chunks count should be a multiple of 128");

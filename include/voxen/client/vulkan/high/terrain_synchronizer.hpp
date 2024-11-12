@@ -1,8 +1,8 @@
 #pragma once
 
 #include <voxen/client/vulkan/buffer.hpp>
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/common/terrain/chunk.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 

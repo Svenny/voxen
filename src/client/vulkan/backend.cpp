@@ -11,9 +11,11 @@
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
@@ -115,7 +117,7 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 		m_render_graph_runner->executeGraph();
 		return true;
 	}
-	catch (const VulkanException &e) {
+	catch (const gfx::vk::VulkanException &e) {
 		// Unhandled errors are considered non-recoverable
 		m_state = State::Broken;
 		Log::error("Vulkan error during rendering a frame");
@@ -203,7 +205,7 @@ void Backend::doStop() noexcept
 	if (m_device) {
 		VkResult res = m_device->dt().vkDeviceWaitIdle(m_device->handle());
 		if (res != VK_SUCCESS) {
-			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", VulkanUtils::getVkResultString(res));
+			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", gfx::vk::VulkanUtils::getVkResultString(res));
 		}
 	}
 

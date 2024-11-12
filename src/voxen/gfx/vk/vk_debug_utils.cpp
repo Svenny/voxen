@@ -1,7 +1,6 @@
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 
-// TODO: include not moved to `gfx/vk`
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::gfx::vk
@@ -58,7 +57,7 @@ DebugUtils::DebugUtils(VkInstance instance, PFN_vkGetInstanceProcAddr loader) : 
 	VkResult res = m_dt.vkCreateDebugUtilsMessengerEXT(instance, &msg_create_info, nullptr, &m_messenger);
 	if (res != VK_SUCCESS) {
 		// Shouldn't happen unless OOM
-		Log::warn("vkCreateDebugUtilsMessengerEXT returned {}!", client::vulkan::VulkanUtils::getVkResultString(res));
+		Log::warn("vkCreateDebugUtilsMessengerEXT returned {}!", VulkanUtils::getVkResultString(res));
 	}
 
 	m_available = true;
@@ -127,8 +126,7 @@ void DebugUtils::setObjectName(VkDevice device, uint64_t handle, VkObjectType ty
 	VkResult res = m_dt.vkSetDebugUtilsObjectNameEXT(device, &name_info);
 	if (res != VK_SUCCESS) {
 		// Shouldn't happen unless OOM
-		Log::warn("vkSetDebugUtilsObjectNameEXT({}) returned {}!", name,
-			client::vulkan::VulkanUtils::getVkResultString(res));
+		Log::warn("vkSetDebugUtilsObjectNameEXT({}) returned {}!", name, VulkanUtils::getVkResultString(res));
 	}
 }
 

@@ -1,8 +1,9 @@
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -16,10 +17,6 @@
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::VulkanException;
-using client::vulkan::VulkanUtils;
 
 Swapchain::Swapchain(Device &device, os::GlfwWindow &window) : m_device(device), m_window(window)
 {

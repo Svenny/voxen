@@ -2,7 +2,7 @@
 
 #include <voxen/client/vulkan/buffer.hpp>
 #include <voxen/client/vulkan/command_pool.hpp>
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 namespace voxen::client::vulkan
 {

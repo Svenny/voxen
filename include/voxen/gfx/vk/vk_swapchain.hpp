@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 namespace voxen::os
 {

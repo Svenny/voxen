@@ -1,8 +1,8 @@
 #pragma once
 
-#include <voxen/visibility.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
-#include <vulkan/vulkan.h>
+#include <voxen/visibility.hpp>
 
 #include <span>
 

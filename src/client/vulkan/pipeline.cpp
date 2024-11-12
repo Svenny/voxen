@@ -7,7 +7,9 @@
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 
 #include <voxen/util/log.hpp>
 
@@ -291,7 +293,7 @@ struct GraphicsPipelineParts {
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,
 		.depthAttachmentFormat = default_depth_format,
-		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(default_depth_format)
+		.stencilAttachmentFormat = gfx::vk::VulkanUtils::hasStencilComponent(default_depth_format)
 			? default_depth_format
 			: VK_FORMAT_UNDEFINED,
 	};
@@ -468,24 +470,23 @@ PipelineCollection::PipelineCollection()
 	assert(backend.pipelineCache() != nullptr);
 	VkDevice device = backend.device().handle();
 	VkPipelineCache cache = backend.pipelineCache();
-	auto allocator = HostAllocator::callbacks();
 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
 	fillPipelineParts(*graphics_parts, backend);
 
 	VkResult result = backend.vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
-		graphics_parts->create_infos, allocator, m_graphics_pipelines.data());
+		graphics_parts->create_infos, nullptr, m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreateGraphicsPipelines");
+		throw gfx::vk::VulkanException(result, "vkCreateGraphicsPipelines");
 	}
 
 	auto compute_parts = std::make_unique<ComputePipelineParts>();
 	fillPipelineParts(*compute_parts, backend);
 
-	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES, compute_parts->create_infos,
-		allocator, m_compute_pipelines.data());
+	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES, compute_parts->create_infos, nullptr,
+		m_compute_pipelines.data());
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreateComputePipelines");
+		throw gfx::vk::VulkanException(result, "vkCreateComputePipelines");
 	}
 
 	Log::debug("PipelineCollection created successfully");
@@ -513,15 +514,14 @@ void PipelineCollection::destroyPipelines() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	auto allocator = HostAllocator::callbacks();
 
 	for (VkPipeline &pipe : m_graphics_pipelines) {
-		backend.vkDestroyPipeline(device, pipe, allocator);
+		backend.vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 
 	for (VkPipeline &pipe : m_compute_pipelines) {
-		backend.vkDestroyPipeline(device, pipe, allocator);
+		backend.vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 }
