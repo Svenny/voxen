@@ -49,12 +49,16 @@ target_link_libraries(voxen PUBLIC
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
+	3rdparty::backward
 	3rdparty::glfw
 	3rdparty::platform-folders
 	3rdparty::vma
 	3rdparty::vulkan-headers
 	3rdparty::zlib
 )
+if (LINUX)
+	target_link_libraries(voxen PRIVATE dw)
+endif()
 target_link_libraries(game PRIVATE voxen)
 
 include(include/CMakeLists.txt)

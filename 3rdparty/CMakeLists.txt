@@ -4,6 +4,7 @@
 set(CMAKE_FOLDER 3rdparty)
 
 # Embedded dependencies (sources in tree)
+include(backward.cmake)
 include(catch.cmake)
 include(cxxopts.cmake)
 include(fmt.cmake)

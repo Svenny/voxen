@@ -35,6 +35,7 @@ jobs:
         run: |
           sudo apt install ninja-build shaderc
           sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
+          sudo apt install libdw-dev
 
       - name: Build Voxen
         run: |
