@@ -30,7 +30,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/capabilities.hpp
 	include/voxen/client/vulkan/command_buffer.hpp
 	include/voxen/client/vulkan/command_pool.hpp
-	include/voxen/client/vulkan/common.hpp
 	include/voxen/client/vulkan/config.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp
@@ -85,9 +84,12 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_runner.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
+	include/voxen/gfx/vk/vk_error.hpp
+	include/voxen/gfx/vk/vk_include.hpp
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
+	include/voxen/gfx/vk/vk_utils.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/land/chunk_key.hpp
 	include/voxen/land/chunk_ticket.hpp

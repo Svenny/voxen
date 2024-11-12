@@ -1,40 +1,13 @@
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 
-#include <voxen/client/vulkan/config.hpp>
-#include <voxen/util/log.hpp>
-
-#include <cassert>
-#include <cstddef>
-#include <malloc.h>
-
-namespace
+namespace voxen::gfx::vk
 {
 
-struct VulkanErrorCategory : std::error_category {
-	const char *name() const noexcept override { return "Vulkan error"; }
-
-	std::string message(int code) const override
-	{
-		return std::string(voxen::client::vulkan::VulkanUtils::getVkResultString(VkResult(code)));
-	}
-};
-
-const VulkanErrorCategory g_category;
-
-} // anonymous namespace
-
-namespace std
+bool VulkanUtils::hasStencilComponent(VkFormat format) noexcept
 {
-
-error_condition make_error_condition(VkResult result) noexcept
-{
-	return { static_cast<int>(result), g_category };
+	return format == VK_FORMAT_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT
+		|| format == VK_FORMAT_D32_SFLOAT_S8_UINT;
 }
-
-} // namespace std
-
-namespace voxen::client::vulkan
-{
 
 uint32_t VulkanUtils::alignUp(uint32_t size, uint32_t alignment) noexcept
 {
@@ -49,22 +22,6 @@ uint64_t VulkanUtils::alignUp(uint64_t size, uint64_t alignment) noexcept
 uint64_t VulkanUtils::calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept
 {
 	return (size * numerator + denomenator - 1u) / denomenator;
-}
-
-VulkanException::VulkanException(VkResult result, std::string_view api, extras::source_location loc)
-	: Exception(fmt::format("call to '{}' failed", api), std::make_error_condition(result), loc)
-{
-	assert(api.length() > 0);
-	Log::error("{} failed with error code {}", api, VulkanUtils::getVkResultString(result), loc);
-}
-
-// Not defining inline to satisfy -Wweak-vtables
-VulkanException::~VulkanException() noexcept = default;
-
-VkResult VulkanException::result() const noexcept
-{
-	// We know the error category can only be vulkan one
-	return static_cast<VkResult>(error().value());
 }
 
 std::string_view VulkanUtils::getVkResultString(VkResult result) noexcept
@@ -250,10 +207,4 @@ std::string_view VulkanUtils::getVkFormatString(VkFormat format) noexcept
 #undef CASE
 }
 
-bool VulkanUtils::hasStencilComponent(VkFormat format) noexcept
-{
-	return format == VK_FORMAT_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT
-		|| format == VK_FORMAT_D32_SFLOAT_S8_UINT;
-}
-
-} // namespace voxen::client::vulkan
+} // namespace voxen::gfx::vk

@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
@@ -11,9 +12,9 @@ WrappedVkDescriptorSetLayout::WrappedVkDescriptorSetLayout(const VkDescriptorSet
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	VkResult result = backend.vkCreateDescriptorSetLayout(device, &info, HostAllocator::callbacks(), &m_handle);
+	VkResult result = backend.vkCreateDescriptorSetLayout(device, &info, nullptr, &m_handle);
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreateDescriptorSetLayout");
+		throw gfx::vk::VulkanException(result, "vkCreateDescriptorSetLayout");
 	}
 }
 
@@ -32,7 +33,7 @@ WrappedVkDescriptorSetLayout::~WrappedVkDescriptorSetLayout() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	backend.vkDestroyDescriptorSetLayout(device, m_handle, HostAllocator::callbacks());
+	backend.vkDestroyDescriptorSetLayout(device, m_handle, nullptr);
 }
 
 DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()

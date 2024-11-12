@@ -1,12 +1,9 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::VulkanException;
 
 VkImageView Device::vkCreateImageView(const VkImageViewCreateInfo &create_info, const char *name, SLoc loc)
 {

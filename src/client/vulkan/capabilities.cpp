@@ -1,7 +1,9 @@
 #include <voxen/client/vulkan/capabilities.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
 #include <bit>
@@ -223,16 +225,17 @@ bool Capabilities::checkMandatoryFormats(VkPhysicalDevice device)
 
 		if ((props.linearTilingFeatures & req.linear) != req.linear) {
 			Log::info("Not all linear tiling features are supported for format '{}'",
-				VulkanUtils::getVkFormatString(req.format));
+				gfx::vk::VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.optimalTilingFeatures & req.optimal) != req.optimal) {
 			Log::info("Not all optimal tiling features are supported for format '{}'",
-				VulkanUtils::getVkFormatString(req.format));
+				gfx::vk::VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 		if ((props.bufferFeatures & req.buffer) != req.buffer) {
-			Log::info("Not all buffer features are supported for format '{}'", VulkanUtils::getVkFormatString(req.format));
+			Log::info("Not all buffer features are supported for format '{}'",
+				gfx::vk::VulkanUtils::getVkFormatString(req.format));
 			return false;
 		}
 	}
@@ -285,13 +288,13 @@ void Capabilities::fillPhysicalDeviceCaps(VkPhysicalDevice device)
 	uint32_t num_extensions = 0;
 	VkResult res = backend.vkEnumerateDeviceExtensionProperties(device, nullptr, &num_extensions, nullptr);
 	if (res != VK_SUCCESS) {
-		throw VulkanException(res, "vkEnumerateDeviceExtensionProperties");
+		throw gfx::vk::VulkanException(res, "vkEnumerateDeviceExtensionProperties");
 	}
 
 	c.extensions.resize(num_extensions);
 	res = backend.vkEnumerateDeviceExtensionProperties(device, nullptr, &num_extensions, c.extensions.data());
 	if (res != VK_SUCCESS) {
-		throw VulkanException(res, "vkEnumerateDeviceExtensionProperties");
+		throw gfx::vk::VulkanException(res, "vkEnumerateDeviceExtensionProperties");
 	}
 
 	// Sort extensions so binary search can be done on them

@@ -1,15 +1,12 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 
 #include <cstring>
 
 namespace voxen::gfx::vk
 {
-
-// TODO: not yet moved to voxen/gfx/vk
-using client::vulkan::VulkanException;
 
 PhysicalDevice::PhysicalDevice(const Instance &instance, VkPhysicalDevice handle) : m_handle(handle)
 {

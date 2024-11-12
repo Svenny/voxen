@@ -1,6 +1,8 @@
 #pragma once
 
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
+
+#include <string>
 
 namespace voxen::client::vulkan
 {

@@ -2,6 +2,7 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 
 #include <extras/defer.hpp>
 
@@ -34,7 +35,7 @@ FatVkBuffer::FatVkBuffer(const VkBufferCreateInfo &info, Usage usage) : m_size(i
 
 	VkResult res = vmaCreateBuffer(vma, &info, &alloc_create_info, &m_handle, &m_memory, &vma_alloc_info);
 	if (res != VK_SUCCESS) {
-		throw VulkanException(res, "vmaAllocateMemoryForBuffer");
+		throw gfx::vk::VulkanException(res, "vmaAllocateMemoryForBuffer");
 	}
 
 	m_host_pointer = vma_alloc_info.pMappedData;

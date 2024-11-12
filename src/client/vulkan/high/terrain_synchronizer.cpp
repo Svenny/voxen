@@ -6,6 +6,7 @@
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/linear_allocator.hpp>

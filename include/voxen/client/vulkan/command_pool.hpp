@@ -1,7 +1,7 @@
 #pragma once
 
 #include <voxen/client/vulkan/command_buffer.hpp>
-#include <voxen/client/vulkan/common.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 #include <extras/dyn_array.hpp>
 

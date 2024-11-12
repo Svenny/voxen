@@ -2,9 +2,10 @@
 
 #include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/client/vulkan/capabilities.hpp>
-#include <voxen/client/vulkan/common.hpp>
 #include <voxen/common/runtime_config.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
@@ -18,8 +19,6 @@ namespace voxen::gfx::vk
 
 // TODO: there parts are not yet moved to voxen/gfx/vk
 using client::vulkan::Capabilities;
-using client::vulkan::VulkanException;
-using client::vulkan::VulkanUtils;
 
 namespace
 {

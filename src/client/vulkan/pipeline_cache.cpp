@@ -1,9 +1,10 @@
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/gfx/vk/vk_device.hpp>
-
 #include <voxen/common/filemanager.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
@@ -33,9 +34,9 @@ PipelineCache::PipelineCache(const char *path) : m_save_path(path)
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	VkResult result = backend.vkCreatePipelineCache(device, &info, HostAllocator::callbacks(), &m_cache);
+	VkResult result = backend.vkCreatePipelineCache(device, &info, nullptr, &m_cache);
 	if (result != VK_SUCCESS) {
-		throw VulkanException(result, "vkCreatePipelineCache");
+		throw gfx::vk::VulkanException(result, "vkCreatePipelineCache");
 	}
 	Log::debug("PipelineCache created successfully");
 }
@@ -59,7 +60,7 @@ bool PipelineCache::dump() noexcept
 	VkDevice device = backend.device().handle();
 	VkResult result = backend.vkGetPipelineCacheData(device, m_cache, &buffer_size, buffer);
 	if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
-		Log::warn("Vulkan API error when saving pipeline cache: {}", VulkanUtils::getVkResultString(result));
+		Log::warn("Vulkan API error when saving pipeline cache: {}", gfx::vk::VulkanUtils::getVkResultString(result));
 		return false;
 	} else if (result == VK_INCOMPLETE) {
 		size_t full_size;
@@ -77,7 +78,7 @@ PipelineCache::~PipelineCache() noexcept
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	backend.vkDestroyPipelineCache(device, m_cache, HostAllocator::callbacks());
+	backend.vkDestroyPipelineCache(device, m_cache, nullptr);
 }
 
 } // namespace voxen::client::vulkan

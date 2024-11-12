@@ -7,7 +7,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/capabilities.cpp
 	src/client/vulkan/command_buffer.cpp
 	src/client/vulkan/command_pool.cpp
-	src/client/vulkan/common.cpp
 	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
 	src/client/vulkan/pipeline.cpp
@@ -66,11 +65,13 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
 	src/voxen/gfx/vk/vk_device_wrappers.cpp
+	src/voxen/gfx/vk/vk_error.cpp
 	src/voxen/gfx/vk/vk_instance.cpp
 	src/voxen/gfx/vk/vk_instance_wrappers.cpp
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/gfx/vk/vk_utils.cpp
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/land/land_chunk.cpp
