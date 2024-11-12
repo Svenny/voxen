@@ -73,6 +73,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/v8g_hash_trie.hpp
 	include/voxen/common/v8g_hash_trie_impl.hpp
 	include/voxen/common/world_state.hpp
+	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
 	include/voxen/gfx/vk/frame_context.hpp
