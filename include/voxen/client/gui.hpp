@@ -3,16 +3,10 @@
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/os/glfw_window.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 
 struct GLFWwindow;
-
-namespace voxen::svc
-{
-
-class MessageQueue;
-
-}
 
 namespace voxen::client
 {

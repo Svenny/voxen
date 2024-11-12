@@ -4,19 +4,13 @@
 #include <voxen/common/player.hpp>
 #include <voxen/common/world_state.hpp>
 #include <voxen/os/glfw_window.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 namespace voxen
 {
-
-namespace svc
-{
-
-class MessageQueue;
-
-}
 
 class GameView {
 public:
