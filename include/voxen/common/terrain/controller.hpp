@@ -2,6 +2,7 @@
 
 #include <voxen/common/terrain/control_block.hpp>
 #include <voxen/common/terrain/loader.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
@@ -18,13 +19,6 @@ namespace voxen
 {
 
 class ThreadPool;
-
-}
-
-namespace voxen::svc
-{
-
-class ServiceLocator;
 
 }
 

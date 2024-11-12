@@ -1,17 +1,11 @@
 #pragma once
 
 #include <voxen/land/chunk_key.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 
 #include <cstdint>
 #include <variant>
-
-namespace voxen::svc
-{
-
-class MessageSender;
-
-}
 
 namespace voxen::land
 {

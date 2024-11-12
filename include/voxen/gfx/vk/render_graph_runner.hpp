@@ -2,15 +2,9 @@
 
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
+#include <voxen/os/os_fwd.hpp>
 
 #include <memory>
-
-namespace voxen::os
-{
-
-class GlfwWindow;
-
-}
 
 namespace voxen::gfx::vk
 {

@@ -1,13 +1,7 @@
 #pragma once
 
 #include <voxen/gfx/vk/vk_include.hpp>
-
-namespace voxen::os
-{
-
-class GlfwWindow;
-
-}
+#include <voxen/os/os_fwd.hpp>
 
 namespace voxen::gfx::vk
 {
