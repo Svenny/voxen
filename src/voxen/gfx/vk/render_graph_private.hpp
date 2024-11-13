@@ -5,6 +5,7 @@
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
+#include <voxen/gfx/gfx_public_consts.hpp>
 
 #include "vk_private_consts.hpp"
 
@@ -67,7 +68,7 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
 	explicit RenderGraphPrivate(Device &device, os::GlfwWindow &window)
-		: device(device), fctx_ring(device, Consts::GRAPH_CONTEXT_RING_SIZE), swapchain(device, window)
+		: device(device), fctx_ring(device, gfx::Consts::MAX_PENDING_FRAMES), swapchain(device, window)
 	{}
 	RenderGraphPrivate(RenderGraphPrivate &&) = delete;
 	RenderGraphPrivate(const RenderGraphPrivate &) = delete;

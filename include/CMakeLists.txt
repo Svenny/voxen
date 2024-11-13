@@ -83,6 +83,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
 	include/voxen/gfx/vk/vk_error.hpp
@@ -90,9 +91,11 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
+	include/voxen/gfx/vk/vk_transient_buffer_allocator.hpp
 	include/voxen/gfx/vk/vk_utils.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/gfx/frame_tick_id.hpp
+	include/voxen/gfx/gfx_public_consts.hpp
 	include/voxen/gfx/gfx_system.hpp
 	include/voxen/gfx/gfx_fwd.hpp
 	include/voxen/land/chunk_key.hpp

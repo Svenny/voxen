@@ -182,7 +182,7 @@ void Swapchain::presentImage(uint64_t timeline)
 	// With other return codes the image is released and semaphore wait operation is enqueued.
 	// Therefore we can forget about image acquisition and advance the frame index right away.
 	uint32_t image_index = std::exchange(m_image_index, NO_IMAGE_MARKER);
-	uint32_t frame_index = std::exchange(m_frame_index, (m_frame_index + 1) % MAX_FRAME_LAG);
+	uint32_t frame_index = std::exchange(m_frame_index, (m_frame_index + 1) % gfx::Consts::MAX_PENDING_FRAMES);
 
 	VkPresentInfoKHR present_info {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -270,7 +270,7 @@ bool Swapchain::isCompatible(Device &device)
 
 void Swapchain::createPerFrame()
 {
-	for (uint32_t i = 0; i < MAX_FRAME_LAG; i++) {
+	for (uint32_t i = 0; i < gfx::Consts::MAX_PENDING_FRAMES; i++) {
 		VkSemaphoreCreateInfo semaphore_info {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 			.pNext = nullptr,
@@ -328,12 +328,13 @@ uint32_t Swapchain::updateSwapchainParameters()
 		Log::error("Too many swapchain images needed - {}, our limit is {}", caps.minImageCount, MAX_IMAGES);
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "too many swapchain images needed");
 	}
-	if (caps.maxImageCount != 0 && caps.maxImageCount < MAX_FRAME_LAG) {
-		Log::error("Too few swapchain images supported - {}, we need at least {}", caps.maxImageCount, MAX_FRAME_LAG);
+	if (caps.maxImageCount != 0 && caps.maxImageCount < gfx::Consts::MAX_PENDING_FRAMES) {
+		Log::error("Too few swapchain images supported - {}, we need at least {}", caps.maxImageCount,
+			gfx::Consts::MAX_PENDING_FRAMES);
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "too few swapchain images supported");
 	}
 
-	uint32_t num_images = std::max(caps.minImageCount, MAX_FRAME_LAG);
+	uint32_t num_images = std::max(caps.minImageCount, gfx::Consts::MAX_PENDING_FRAMES);
 
 	// Select image extent
 	if (caps.currentExtent.width != 0xFFFFFFFF && caps.currentExtent.height != 0xFFFFFFFF) {
@@ -481,7 +482,7 @@ void Swapchain::recreateSwapchain()
 
 void Swapchain::destroyPerFrame() noexcept
 {
-	for (uint32_t i = 0; i < MAX_FRAME_LAG; i++) {
+	for (uint32_t i = 0; i < gfx::Consts::MAX_PENDING_FRAMES; i++) {
 		m_device.vkDestroySemaphore(m_acquire_semaphores[i]);
 		m_acquire_semaphores[i] = VK_NULL_HANDLE;
 
