@@ -52,6 +52,8 @@ public:
 
 	vk::Instance* instance() noexcept { return m_vk_instance.get(); }
 	vk::Device* device() noexcept { return m_vk_device.get(); }
+	vk::CommandAllocator *commandAllocator() noexcept { return m_vk_command_allocator.get(); }
+	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
 	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
 
 private:
@@ -75,6 +77,8 @@ private:
 
 	ComponentPtr<vk::Instance> m_vk_instance;
 	ComponentPtr<vk::Device> m_vk_device;
+	ComponentPtr<vk::CommandAllocator> m_vk_command_allocator;
+	ComponentPtr<vk::TransientBufferAllocator> m_vk_transient_buffer_allocator;
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
 
 	ComponentPtr<FrameTickSource> m_frame_tick_source;

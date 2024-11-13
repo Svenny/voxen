@@ -52,9 +52,6 @@ inline VkDeviceSize addConstUploadBufferFusing(VkDeviceSize size) noexcept
 
 // Maximal number of color render targets supported by render graph
 constexpr static size_t GRAPH_MAX_RENDER_TARGETS = 8;
-// Size of frame context ring used by render graph runner.
-// Having more than 3 will probably only increase latency.
-constexpr static size_t GRAPH_CONTEXT_RING_SIZE = 3;
 
 // Debug label color to mark render passes in renderdoc
 constexpr float RENDER_PASS_LABEL_COLOR[4] = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green

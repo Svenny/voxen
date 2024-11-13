@@ -76,6 +76,10 @@ public:
 			return VK_OBJECT_TYPE_QUEUE;
 		} else if constexpr (std::is_same_v<T, VkSemaphore>) {
 			return VK_OBJECT_TYPE_SEMAPHORE;
+		} else if constexpr (std::is_same_v<T, VkCommandPool>) {
+			return VK_OBJECT_TYPE_COMMAND_POOL;
+		} else if constexpr (std::is_same_v<T, VkCommandBuffer>) {
+			return VK_OBJECT_TYPE_COMMAND_BUFFER;
 		} else {
 			static_assert(false, "Unknown handle type");
 		}

@@ -63,6 +63,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
 	src/voxen/gfx/vk/vk_device_wrappers.cpp
@@ -72,6 +73,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
+	src/voxen/gfx/vk/vk_transient_buffer_allocator.cpp
 	src/voxen/gfx/vk/vk_utils.cpp
 	src/voxen/gfx/frame_tick_source.cpp
 	src/voxen/gfx/gfx_system.cpp

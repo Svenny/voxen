@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/gfx/gfx_public_consts.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/os_fwd.hpp>
 
@@ -29,10 +30,6 @@ public:
 	// If the underlying Vulkan swapchain allocates more images, creation will fail.
 	// This is not directly related to the presentation latency.
 	constexpr static uint32_t MAX_IMAGES = 4;
-	// The maximal number of frames in flight (both CPU and GPU workloads).
-	// Independent of swapchain image count, fixed at creation time.
-	// This is directly related to the presentation latency.
-	constexpr static uint32_t MAX_FRAME_LAG = 3;
 
 	Swapchain(Device &device, os::GlfwWindow &window);
 	Swapchain(Swapchain &&) = delete;
@@ -138,9 +135,9 @@ private:
 	VkImageView m_image_rtvs[MAX_IMAGES] = {};
 
 	uint32_t m_frame_index = 0;
-	VkSemaphore m_acquire_semaphores[MAX_FRAME_LAG] = {};
-	VkSemaphore m_present_semaphores[MAX_FRAME_LAG] = {};
-	uint64_t m_prev_usage_timelines[MAX_FRAME_LAG] = {};
+	VkSemaphore m_acquire_semaphores[gfx::Consts::MAX_PENDING_FRAMES] = {};
+	VkSemaphore m_present_semaphores[gfx::Consts::MAX_PENDING_FRAMES] = {};
+	uint64_t m_prev_usage_timelines[gfx::Consts::MAX_PENDING_FRAMES] = {};
 
 	void createPerFrame();
 	void createSurface();
