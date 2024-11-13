@@ -3,6 +3,7 @@
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
+#include <voxen/gfx/frame_tick_id.hpp>
 
 #include <extras/source_location.hpp>
 
@@ -43,7 +44,7 @@ public:
 		// Set if VK_EXT_mesh_shader is enabled for this device
 		uint32_t have_mesh_shader : 1 = 0;
 
-		// Set if DMA queue is not an aliasa of the main one
+		// Set if DMA queue is not an alias of the main one
 		uint32_t dedicated_dma_queue : 1 = 0;
 		// Set if compute queue is not an alias of the main one
 		uint32_t dedicated_compute_queue : 1 = 0;
@@ -113,6 +114,7 @@ public:
 	// Upon device failure (GPU hang etc.) this function is very likely
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
 	uint64_t submitCommands(SubmitInfo info);
+
 	// Wait (block) until a given queue's timeline value is signaled as complete.
 	// Passing any value not returned from `submitCommands()` (with the
 	// same queue specified) earlier *WILL* deadlock the program.
@@ -124,17 +126,36 @@ public:
 	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
 	void waitForTimeline(Queue queue, uint64_t value);
 
+	// Wait (block) until every queue's timeline value is signaled as complete.
+	// Passing any value not returned from `submitCommands()` or `getLastSubmittedTimeline()`
+	// for the respective queue earlier *WILL* deadlock the program.
+	//
+	// Timelines in `values` must be ordered to follow `Queue` enum values.
+	//
+	// Upon device failure (GPU hang etc.) this function is very likely
+	// to be the first to throw `VulkanException` with `VK_ERROR_DEVICE_LOST`.
+	void waitForTimelines(std::span<const uint64_t, QueueCount> values);
+
+	// Get the last timeline value returned from `submitCommands()` to `queue`.
+	// Returns zero if nothing was ever submitted to the queue.
+	uint64_t getLastSubmittedTimeline(Queue queue) const noexcept { return m_last_submitted_timelines[queue]; }
+
+	// Get the last completed (on GPU) timeline value for `queue`, does not wait
+	uint64_t getCompletedTimeline(Queue queue);
+
 	// Call `vkDeviceWaitIdle` to force completion of any pending GPU work.
 	// Intended to be used only in object destructors. Any error
 	// is only logged and ignored, so the function is nothrow.
 	void forceCompletion() noexcept;
 
+	void onFrameTickBegin(FrameTickId completed_tick, FrameTickId new_tick);
+	void onFrameTickEnd(FrameTickId current_tick);
+
 	// All functions of `enqueueDestroy` family work similarly - schedule
-	// an object for deletion after the (currently) last GPU command submission
-	// on every queue completes execution. Completion can happen at any moment,
-	// even right inside this function call, so basically it is nothing more
-	// than a GPU-synchronized `vkDestroy*`. Therefore, any command buffers
-	// referencing the object are considered invalid after this call.
+	// an object for deletion after the current frame tick ID completes executing
+	// all GPU commands submitted during that frame. You can still use the object,
+	// and even record and submit GPU commands referencing it, after the call
+	// returns but before the current frame tick ends.
 
 	void enqueueDestroy(VkBuffer buffer, VmaAllocation alloc) { enqueueJunkItem(std::pair { buffer, alloc }); }
 	void enqueueDestroy(VkImage image, VmaAllocation alloc) { enqueueJunkItem(std::pair { image, alloc }); }
@@ -197,7 +218,7 @@ public:
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
 		VkCommandPool, VkDescriptorPool, VkSwapchainKHR>;
-	using JunkEnqueue = std::pair<JunkItem, std::array<uint64_t, QueueCount>>;
+	using JunkEnqueue = std::pair<JunkItem, FrameTickId>;
 
 	Instance &m_instance;
 
@@ -209,6 +230,7 @@ private:
 	uint64_t m_last_submitted_timelines[QueueCount] = {};
 	uint64_t m_last_completed_timelines[QueueCount] = {};
 
+	FrameTickId m_current_tick_id = FrameTickId::INVALID;
 	std::vector<JunkEnqueue> m_destroy_queue;
 
 	Info m_info;
@@ -222,7 +244,7 @@ private:
 	void getQueueHandles();
 	void createVma();
 	void createTimelineSemaphores();
-	void processDestroyQueue() noexcept;
+	void processDestroyQueue(FrameTickId completed_tick) noexcept;
 
 	void enqueueJunkItem(JunkItem item);
 	void destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept;

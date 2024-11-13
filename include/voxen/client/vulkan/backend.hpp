@@ -2,8 +2,10 @@
 
 #include <voxen/common/gameview.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/glfw_window.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -12,11 +14,7 @@
 namespace voxen::gfx::vk
 {
 
-class Device;
-class Instance;
 class LegacyRenderGraph;
-class PhysicalDevice;
-class RenderGraphRunner;
 
 } // namespace voxen::gfx::vk
 
@@ -42,7 +40,7 @@ public:
 		Broken,
 	};
 
-	bool start(os::GlfwWindow &window) noexcept;
+	bool start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept;
 	void stop() noexcept;
 
 	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
@@ -102,6 +100,7 @@ private:
 
 	Impl &m_impl;
 
+	gfx::GfxSystem *m_gfx_system = nullptr;
 	gfx::vk::Instance *m_instance = nullptr;
 	gfx::vk::Device *m_device = nullptr;
 
@@ -130,7 +129,7 @@ private:
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadDeviceLevelApi() noexcept;
 
-	bool doStart(os::GlfwWindow &window) noexcept;
+	bool doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept;
 	void doStop() noexcept;
 
 	constexpr Backend(Impl &impl) noexcept;

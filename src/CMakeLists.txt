@@ -73,6 +73,8 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
 	src/voxen/gfx/vk/vk_utils.cpp
+	src/voxen/gfx/frame_tick_source.cpp
+	src/voxen/gfx/gfx_system.cpp
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/land/land_chunk.cpp

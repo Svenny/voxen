@@ -216,31 +216,27 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 	assert(queue < QueueCount);
 
 	if (value <= m_last_completed_timelines[queue]) {
+		// Already complete
 		return;
 	}
 
-	// First try to do without waiting.
-	// Update values of all queues, not just this one,
-	// to guarantee forward progress for the destroy queue.
-	for (uint32_t i = 0; i < QueueCount; i++) {
-		uint64_t observed_value = 0;
-		VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[i], &observed_value);
-		if (res != VK_SUCCESS) {
-			throw VulkanException(res, "vkGetSemaphoreCounterValue");
-		}
-
-		m_last_completed_timelines[i] = observed_value;
+	// First try to check it without waiting
+	uint64_t observed_value = 0;
+	VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[queue], &observed_value);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw VulkanException(res, "vkGetSemaphoreCounterValue");
 	}
+
+	// Update without `max()`, it can only increase
+	m_last_completed_timelines[queue] = observed_value;
 
 	// Is it signaled now?
 	// In CPU-bound scenarios we will probably always exit here.
 	if (value <= m_last_completed_timelines[queue]) {
-		// Process destroy queue as we've updated some completion values
-		processDestroyQueue();
 		return;
 	}
 
-	// Still not signaled, we have to block
+	// Still not signaled, we have to block (GPU-bound or non-pipelined workload)
 	VkSemaphoreWaitInfo wait_info {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
 		.pNext = nullptr,
@@ -250,14 +246,52 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 		.pValues = &value,
 	};
 
+	res = m_dt.vkWaitSemaphores(m_handle, &wait_info, UINT64_MAX);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw VulkanException(res, "vkWaitSemaphores");
+	}
+
+	m_last_completed_timelines[queue] = value;
+}
+
+void Device::waitForTimelines(std::span<const uint64_t, QueueCount> values)
+{
+	// We could try checking without waiting first but not sure if that's really needed.
+	// Most likely this will be called just once per frame (from `FrameTickSource`).
+	VkSemaphoreWaitInfo wait_info {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.semaphoreCount = QueueCount,
+		.pSemaphores = m_timeline_semaphores,
+		.pValues = values.data(),
+	};
+
 	VkResult res = m_dt.vkWaitSemaphores(m_handle, &wait_info, UINT64_MAX);
 	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkWaitSemaphores");
 	}
 
-	// Don't forget to process destroy queue (must do it after any completion value update)
+	// Update completed timeline values.
+	// Take maximum as requested values are not necessarily the latest completed ones.
+	for (uint32_t i = 0; i < QueueCount; i++) {
+		m_last_completed_timelines[i] = std::max(m_last_completed_timelines[i], values[i]);
+	}
+}
+
+uint64_t Device::getCompletedTimeline(Queue queue)
+{
+	assert(queue < QueueCount);
+
+	uint64_t value = 0;
+	VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[queue], &value);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw VulkanException(res, "vkGetSemaphoreCounterValue");
+	}
+
+	// Update without `max()`, it can only increase
 	m_last_completed_timelines[queue] = value;
-	processDestroyQueue();
+	return value;
 }
 
 void Device::forceCompletion() noexcept
@@ -273,7 +307,19 @@ void Device::forceCompletion() noexcept
 		m_last_completed_timelines[i] = m_last_submitted_timelines[i];
 	}
 
-	processDestroyQueue();
+	// Pass bogus value to force destruction of everything
+	processDestroyQueue(FrameTickId(INT64_MAX));
+}
+
+void Device::onFrameTickBegin(FrameTickId completed_tick, FrameTickId new_tick)
+{
+	processDestroyQueue(completed_tick);
+	m_current_tick_id = new_tick;
+}
+
+void Device::onFrameTickEnd(FrameTickId /*current_tick*/)
+{
+	// Nothing
 }
 
 void Device::setObjectName(uint64_t handle, VkObjectType type, const char *name) noexcept
@@ -608,7 +654,7 @@ void Device::createTimelineSemaphores()
 	}
 }
 
-void Device::processDestroyQueue() noexcept
+void Device::processDestroyQueue(FrameTickId completed_tick) noexcept
 {
 	// Before erasing elements, check if we have too much queue capacity.
 	// This might reduce (very tiny) memory waste after a large "spike"
@@ -619,30 +665,19 @@ void Device::processDestroyQueue() noexcept
 	}
 
 	// Elements are added to the back of `m_destroy_queue`,
-	// their timeline value is in non-decreasing order
+	// their tick ID value is in non-decreasing order.
+	// After the loop this iterator will point to the first "unsafe" item.
 	auto iter = m_destroy_queue.begin();
 
-	std::array<uint64_t, QueueCount> threshold;
-	std::copy_n(m_last_completed_timelines, QueueCount, threshold.data());
-
-	auto is_safe = [&threshold](const JunkEnqueue &enq) {
-		for (uint32_t i = 0; i < QueueCount; i++) {
-			if (enq.second[i] > threshold[i]) {
-				return false;
-			}
-		}
-
-		return true;
-	};
-
 	while (iter != m_destroy_queue.end()) {
-		if (!is_safe(*iter)) {
-			// Timelines can only increase, and items are appended in chronological
-			// order. Once we get `iter->second[i] > threshold[i]` it will
-			// stay true, meaning remaining items are not yet safe to destroy.
+		if (iter->second > completed_tick) {
+			// Frame ticks can only increase, and items are appended in chronological
+			// order. Once we get recorded tick exceeding the completed one it will
+			// stay true, meaning all remaining items are not yet safe to destroy.
 			break;
 		}
 
+		// `destroy()` is overloaded for every supported handle type
 		std::visit([&](auto &&arg) { destroy(arg); }, iter->first);
 
 		++iter;
@@ -655,9 +690,7 @@ void Device::processDestroyQueue() noexcept
 
 void Device::enqueueJunkItem(JunkItem item)
 {
-	std::array<uint64_t, QueueCount> timelines;
-	std::copy_n(m_last_submitted_timelines, QueueCount, timelines.data());
-	m_destroy_queue.emplace_back(std::move(item), timelines);
+	m_destroy_queue.emplace_back(std::move(item), m_current_tick_id);
 }
 
 void Device::destroy(std::pair<VkBuffer, VmaAllocation> &obj) noexcept

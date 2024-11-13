@@ -64,7 +64,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 		.fullscreen = main_config->getBool("window", "fullscreen"),
 	});
 
-	m_impl->render_service = std::make_unique<Render>(m_impl->window);
+	m_impl->render_service = std::make_unique<Render>(m_impl->window, svc);
 	m_impl->gui = std::make_unique<Gui>(m_impl->window);
 }
 

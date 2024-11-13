@@ -93,6 +93,8 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_utils.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/gfx/frame_tick_id.hpp
+	include/voxen/gfx/gfx_system.hpp
+	include/voxen/gfx/gfx_fwd.hpp
 	include/voxen/land/chunk_key.hpp
 	include/voxen/land/chunk_ticket.hpp
 	include/voxen/land/compressed_chunk_storage.hpp
