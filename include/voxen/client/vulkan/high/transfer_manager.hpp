@@ -1,7 +1,5 @@
 #pragma once
 
-#include <voxen/client/vulkan/buffer.hpp>
-#include <voxen/client/vulkan/command_pool.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 
 namespace voxen::client::vulkan
@@ -24,13 +22,8 @@ public:
 	void ensureUploadsDone();
 
 private:
-	CommandPool m_command_pool;
-	extras::dyn_array<CommandBuffer> m_command_buffers;
-	FatVkBuffer m_staging_buffer;
-	void *m_staging_mapped_data = nullptr;
+	VkCommandBuffer m_cmd_buffer = VK_NULL_HANDLE;
 	VkDeviceSize m_staging_written = 0;
-
-	FatVkBuffer createStagingBuffer();
 };
 
 } // namespace voxen::client::vulkan

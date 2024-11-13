@@ -47,6 +47,7 @@ public:
 
 	State state() const noexcept { return m_state; }
 
+	gfx::GfxSystem &gfxSystem() noexcept { return *m_gfx_system; }
 	gfx::vk::Instance &instance() noexcept { return *m_instance; }
 	const gfx::vk::Instance &instance() const noexcept { return *m_instance; }
 	gfx::vk::Device &device() noexcept { return *m_device; }
@@ -121,7 +122,6 @@ private:
 	static constinit Backend s_instance;
 
 	static std::string_view stateToString(State state) noexcept;
-	static gfx::vk::PhysicalDevice *selectPhysicalDevice(extras::dyn_array<gfx::vk::PhysicalDevice> &devs) noexcept;
 
 	bool loadPreInstanceApi() noexcept;
 	bool loadInstanceLevelApi(VkInstance instance) noexcept;
