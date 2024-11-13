@@ -5,8 +5,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
 	src/client/vulkan/capabilities.cpp
-	src/client/vulkan/command_buffer.cpp
-	src/client/vulkan/command_pool.cpp
 	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
 	src/client/vulkan/pipeline.cpp

@@ -28,8 +28,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer.hpp
 	include/voxen/client/vulkan/capabilities.hpp
-	include/voxen/client/vulkan/command_buffer.hpp
-	include/voxen/client/vulkan/command_pool.hpp
 	include/voxen/client/vulkan/config.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp

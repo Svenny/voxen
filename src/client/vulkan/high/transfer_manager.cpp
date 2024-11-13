@@ -1,23 +1,19 @@
 #include <voxen/client/vulkan/high/transfer_manager.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
+#include <voxen/gfx/gfx_system.hpp>
+#include <voxen/gfx/vk/vk_command_allocator.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
-
+#include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/util/log.hpp>
 
 namespace voxen::client::vulkan
 {
 
 TransferManager::TransferManager()
-	: m_command_pool(Backend::backend().device().info().dma_queue_family)
-	, m_command_buffers(m_command_pool.allocateCommandBuffers(1))
-	, m_staging_buffer(createStagingBuffer())
 {
-	m_staging_mapped_data = m_staging_buffer.hostPointer();
-	// Asserting because buffer is allocated with `Upload` use case which guarantees host visibility
-	assert(m_staging_mapped_data);
-
 	Log::debug("TransferManager created successfully");
 }
 
@@ -51,29 +47,38 @@ void TransferManager::uploadToBuffer(VkBuffer buffer, VkDeviceSize offset, const
 		size -= MAX_UPLOAD_SIZE;
 	}
 
-	if (m_staging_written + size > MAX_UPLOAD_SIZE) {
-		// This write will overflow the buffer, so flush it
-		ensureUploadsDone();
-	}
+	auto &backend = Backend::backend();
+	auto &device = backend.device();
+	auto &cmd_alloc = *backend.gfxSystem().commandAllocator();
+	auto &tsb_alloc = *backend.gfxSystem().transientBufferAllocator();
 
 	if (m_staging_written == 0) {
-		// If nothing was written so far, the command buffer is guaranteed to be not started
-		VkCommandBufferBeginInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		m_command_buffers[0].begin(info);
+		m_cmd_buffer = cmd_alloc.allocate(gfx::vk::Device::QueueDma);
+
+		VkCommandBufferBeginInfo begin_info {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.pNext = nullptr,
+			.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+			.pInheritanceInfo = nullptr,
+		};
+
+		VkResult res = device.dt().vkBeginCommandBuffer(m_cmd_buffer, &begin_info);
+		if (res != VK_SUCCESS) [[unlikely]] {
+			throw gfx::vk::VulkanException(res, "vkBeginCommandBuffer");
+		}
 	}
 
-	uintptr_t ptr = uintptr_t(m_staging_mapped_data) + uintptr_t(m_staging_written);
-	memcpy(reinterpret_cast<void *>(ptr), data, size);
+	auto alloc = tsb_alloc.allocate(gfx::vk::TransientBufferAllocator::TypeUpload, size, 4);
+	assert(alloc.host_pointer);
+	memcpy(alloc.host_pointer, data, size);
 
-	auto &backend = Backend::backend();
-	VkBufferCopy copy = {};
-	copy.srcOffset = m_staging_written;
-	copy.dstOffset = offset;
-	copy.size = size;
-	// TODO: handle the case when transfer and target queues are different
-	backend.vkCmdCopyBuffer(m_command_buffers[0], m_staging_buffer, buffer, 1, &copy);
+	VkBufferCopy copy {
+		.srcOffset = alloc.buffer_offset,
+		.dstOffset = offset,
+		.size = size,
+	};
+
+	device.dt().vkCmdCopyBuffer(m_cmd_buffer, alloc.buffer, buffer, 1, &copy);
 
 	m_staging_written += size;
 }
@@ -83,31 +88,24 @@ void TransferManager::ensureUploadsDone()
 	if (m_staging_written == 0) {
 		return;
 	}
-	// TODO: call vkFlushMappedMemoryRanges if allocation is in non-coherent memory
-	m_command_buffers[0].end();
-	m_staging_written = 0;
 
 	auto &backend = Backend::backend();
 	auto &device = backend.device();
 
-	VkCommandBuffer cmd_buf = m_command_buffers[0];
+	VkResult res = device.dt().vkEndCommandBuffer(m_cmd_buffer);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw gfx::vk::VulkanException(res, "vkEndCommandBuffer");
+	}
 
 	uint64_t timeline = device.submitCommands({
 		.queue = gfx::vk::Device::QueueDma,
-		.cmds = std::span(&cmd_buf, 1),
+		.cmds = std::span(&m_cmd_buffer, 1),
 	});
 	// TODO: do it asynchronously
 	device.waitForTimeline(gfx::vk::Device::QueueDma, timeline);
-}
 
-FatVkBuffer TransferManager::createStagingBuffer()
-{
-	VkBufferCreateInfo info = {};
-	info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	info.size = MAX_UPLOAD_SIZE;
-	info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	return FatVkBuffer(info, FatVkBuffer::Usage::Staging);
+	m_cmd_buffer = VK_NULL_HANDLE;
+	m_staging_written = 0;
 }
 
 } // namespace voxen::client::vulkan
