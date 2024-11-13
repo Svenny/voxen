@@ -8,6 +8,7 @@
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
+#include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
@@ -32,10 +33,9 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<gfx::vk::Instance>, Storage<gfx::vk::Device>, Storage<TransferManager>,
-		Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
-		Storage<PipelineLayoutCollection>, Storage<gfx::vk::RenderGraphRunner>, Storage<PipelineCollection>,
-		Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
+	std::tuple<Storage<gfx::GfxSystem>, Storage<TransferManager>, Storage<ShaderModuleCollection>,
+		Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>,
+		Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -67,7 +67,7 @@ Backend::~Backend() noexcept
 	assert(m_state == State::NotStarted);
 }
 
-bool Backend::start(os::GlfwWindow &window) noexcept
+bool Backend::start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 {
 	if (m_state != State::NotStarted) {
 		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
@@ -84,7 +84,7 @@ bool Backend::start(os::GlfwWindow &window) noexcept
 		return false;
 	}
 
-	if (!doStart(window)) {
+	if (!doStart(window, svc)) {
 		stop();
 		return false;
 	}
@@ -113,6 +113,7 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 	}
 
 	try {
+		m_gfx_system->drawFrame();
 		m_render_graph->setGameState(state, view);
 		m_render_graph_runner->executeGraph();
 		return true;
@@ -142,22 +143,17 @@ bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 	return false;
 }
 
-bool Backend::doStart(os::GlfwWindow &window) noexcept
+bool Backend::doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 {
 	try {
-		m_impl.constructModule(m_instance);
+		m_impl.constructModule(m_gfx_system, svc, window);
+
+		m_instance = m_gfx_system->instance();
+		m_device = m_gfx_system->device();
 
 		if (!loadInstanceLevelApi(m_instance->handle())) {
 			return false;
 		}
-
-		auto devices = m_instance->enumeratePhysicalDevices();
-		auto *device = selectPhysicalDevice(devices);
-		if (!device) {
-			return false;
-		}
-
-		m_impl.constructModule(m_device, *m_instance, *device);
 
 		if (!loadDeviceLevelApi(m_device->handle())) {
 			return false;
@@ -172,7 +168,7 @@ bool Backend::doStart(os::GlfwWindow &window) noexcept
 		m_impl.constructModule(m_pipeline_layout_collection);
 
 		m_render_graph = std::make_shared<gfx::vk::LegacyRenderGraph>();
-		m_impl.constructModule(m_render_graph_runner, *m_device, window);
+		m_render_graph_runner = m_gfx_system->renderGraphRunner();
 		m_render_graph_runner->attachGraph(m_render_graph);
 
 		m_impl.constructModule(m_pipeline_collection);
@@ -213,7 +209,6 @@ void Backend::doStop() noexcept
 
 	m_impl.destructModule(m_pipeline_collection);
 
-	m_impl.destructModule(m_render_graph_runner);
 	m_render_graph.reset();
 
 	m_impl.destructModule(m_pipeline_layout_collection);
@@ -224,10 +219,13 @@ void Backend::doStop() noexcept
 	m_impl.destructModule(m_terrain_synchronizer);
 	m_impl.destructModule(m_transfer_manager);
 
-	m_impl.destructModule(m_device);
 	unloadDeviceLevelApi();
-	m_impl.destructModule(m_instance);
 	unloadInstanceLevelApi();
+
+	m_render_graph_runner = nullptr;
+	m_device = nullptr;
+	m_instance = nullptr;
+	m_impl.destructModule(m_gfx_system);
 }
 
 std::string_view Backend::stateToString(State state) noexcept
@@ -241,60 +239,6 @@ std::string_view Backend::stateToString(State state) noexcept
 	case State::Broken:
 		return "Broken"sv;
 	}
-}
-
-gfx::vk::PhysicalDevice *Backend::selectPhysicalDevice(extras::dyn_array<gfx::vk::PhysicalDevice> &devs) noexcept
-{
-	if (devs.empty()) {
-		Log::error("No Vulkan devices available");
-		return nullptr;
-	}
-
-	// Choose in this order:
-	// 1. The first listed discrete GPU
-	// 2. If no discrete GPUs, then any integrated one
-	// 3. If no integrated GPUs, then just the first listed device
-	//
-	// Don't do any complex "score" calculations, the user
-	// will select GPU manually if he has some unusual setup.
-	gfx::vk::PhysicalDevice *discrete = nullptr;
-	gfx::vk::PhysicalDevice *integrated = nullptr;
-	gfx::vk::PhysicalDevice *other = nullptr;
-
-	Log::debug("Auto-selecting Vulkan device");
-	for (auto &dev : devs) {
-		std::string_view name = dev.info().props.properties.deviceName;
-
-		if (!gfx::vk::Device::isSupported(dev)) {
-			Log::debug("'{}' is does not pass minimal requirements", name);
-			continue;
-		}
-
-		VkPhysicalDeviceType type = dev.info().props.properties.deviceType;
-
-		if (type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-			Log::debug("'{}' is dGPU, taking it", name);
-			discrete = &dev;
-			break;
-		}
-
-		if (type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-			Log::debug("'{}' is iGPU, might take it if won't find dGPU", name);
-			integrated = &dev;
-		} else if (!other) {
-			Log::debug("'{}' is neither iGPU nor dGPU, might take it if won't find one", name);
-		}
-	}
-
-	gfx::vk::PhysicalDevice *chosen = discrete ? discrete : (integrated ? integrated : other);
-
-	if (!chosen) {
-		Log::error("No Vulkan devices passing minimal requirements found");
-		return nullptr;
-	}
-
-	Log::debug("Auto-selected GPU: '{}'", chosen->info().props.properties.deviceName);
-	return chosen;
 }
 
 // API lodaing/unloading methods
