@@ -24,7 +24,6 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTR
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/algo/terrain_renderer.hpp
 	include/voxen/client/vulkan/high/terrain_synchronizer.hpp
-	include/voxen/client/vulkan/high/transfer_manager.hpp
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/buffer.hpp
 	include/voxen/client/vulkan/capabilities.hpp
@@ -84,6 +83,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
+	include/voxen/gfx/vk/vk_dma_system.hpp
 	include/voxen/gfx/vk/vk_error.hpp
 	include/voxen/gfx/vk/vk_include.hpp
 	include/voxen/gfx/vk/vk_instance.hpp

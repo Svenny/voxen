@@ -168,8 +168,12 @@ uint64_t Device::submitCommands(SubmitInfo info)
 
 	VkSemaphoreSubmitInfo signal_info[2];
 
-	// Always advance the timeline, even if the submission fails
-	uint64_t completion_timeline = ++m_last_submitted_timelines[info.queue];
+	// Don't advance the timeline until after the submit.
+	// Per Vulkan spec, if `vkQueueSubmit2` fails it must make sure any resource state
+	// including synchronization primitives is unaffected, otherwise VK_ERROR_DEVICE_LOST.
+	// If we advance it here and fail the submission, we will have an invalid, never
+	// submitted, timeline recorded, and someone might accidentally wait on it later.
+	uint64_t completion_timeline = m_last_submitted_timelines[info.queue] + 1;
 
 	signal_info[0] = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
@@ -208,6 +212,8 @@ uint64_t Device::submitCommands(SubmitInfo info)
 		throw VulkanException(res, "vkQueueSubmit2");
 	}
 
+	// Successfully submitted, advance the timeline
+	++m_last_submitted_timelines[info.queue];
 	return completion_timeline;
 }
 

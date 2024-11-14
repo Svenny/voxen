@@ -2,7 +2,8 @@
 
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/config.hpp>
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
+#include <voxen/gfx/gfx_system.hpp>
+#include <voxen/gfx/vk/vk_dma_system.hpp>
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -158,7 +159,8 @@ TerrainSynchronizer::ChunkRenderInfo TerrainSynchronizer::syncChunk(const extras
 
 void TerrainSynchronizer::endSyncSession()
 {
-	Backend::backend().transferManager().ensureUploadsDone();
+	auto &gfx = Backend::backend().gfxSystem();
+	gfx.device()->waitForTimeline(gfx::vk::Device::QueueDma, gfx.dmaSystem()->flush());
 }
 
 void TerrainSynchronizer::arenaFreeCallback(TerrainDataArena *arena) noexcept
@@ -264,7 +266,7 @@ void TerrainSynchronizer::allocateSlot(ChunkSlotSyncData &slot, VkDeviceSize vtx
 
 void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const terrain::Chunk &chunk)
 {
-	auto &transfer = Backend::backend().transferManager();
+	auto &dma = *Backend::backend().gfxSystem().dmaSystem();
 	const auto &surface = chunk.surface();
 
 	const VkDeviceSize vtx_size = surface.numVertices() * sizeof(terrain::SurfaceVertex);
@@ -280,7 +282,12 @@ void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const ter
 	} else {
 		VkBuffer vtx_buffer = vtx_arena.bufferHandle();
 		if (vtx_size > 0) {
-			transfer.uploadToBuffer(vtx_buffer, vtx_offset, surface.vertices(), vtx_size);
+			dma.uploadToBuffer({
+				.src_data = surface.vertices(),
+				.dst_buffer = vtx_buffer,
+				.dst_offset = vtx_offset,
+				.size = vtx_size,
+			});
 		}
 	}
 
@@ -293,7 +300,12 @@ void TerrainSynchronizer::makeSurfaceTransfer(ChunkSlotSyncData &slot, const ter
 	} else {
 		VkBuffer idx_buffer = idx_arena.bufferHandle();
 		if (idx_size > 0) {
-			transfer.uploadToBuffer(idx_buffer, idx_offset, surface.indices(), idx_size);
+			dma.uploadToBuffer({
+				.src_data = surface.indices(),
+				.dst_buffer = idx_buffer,
+				.dst_offset = idx_offset,
+				.size = idx_size,
+			});
 		}
 	}
 }

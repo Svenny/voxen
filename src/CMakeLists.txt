@@ -1,7 +1,6 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
 	src/client/vulkan/high/terrain_synchronizer.cpp
-	src/client/vulkan/high/transfer_manager.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/buffer.cpp
 	src/client/vulkan/capabilities.cpp
@@ -65,6 +64,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
 	src/voxen/gfx/vk/vk_device_wrappers.cpp
+	src/voxen/gfx/vk/vk_dma_system.cpp
 	src/voxen/gfx/vk/vk_error.cpp
 	src/voxen/gfx/vk/vk_instance.cpp
 	src/voxen/gfx/vk/vk_instance_wrappers.cpp

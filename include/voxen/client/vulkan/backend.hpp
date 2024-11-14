@@ -28,7 +28,6 @@ class PipelineLayoutCollection;
 class ShaderModuleCollection;
 class TerrainRenderer;
 class TerrainSynchronizer;
-class TransferManager;
 
 class Backend {
 public:
@@ -53,8 +52,6 @@ public:
 	gfx::vk::Device &device() noexcept { return *m_device; }
 	const gfx::vk::Device &device() const noexcept { return *m_device; }
 
-	TransferManager &transferManager() noexcept { return *m_transfer_manager; }
-	const TransferManager &transferManager() const noexcept { return *m_transfer_manager; }
 	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
 	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
@@ -105,7 +102,6 @@ private:
 	gfx::vk::Instance *m_instance = nullptr;
 	gfx::vk::Device *m_device = nullptr;
 
-	TransferManager *m_transfer_manager = nullptr;
 	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
 
 	ShaderModuleCollection *m_shader_module_collection = nullptr;

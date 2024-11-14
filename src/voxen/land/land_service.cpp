@@ -667,7 +667,7 @@ private:
 			}
 
 			// Have all dependencies, enqueue task immediately, no ticket needed
-			m.has_pending_fake_data_gen = 1;
+			m.has_pending_pseudo_surface_gen = 1;
 			m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
 				[ck, deps = std::move(dependencies), snd = &m_sender] {
 					return generatePseudoSurface(ck, std::move(deps), snd);
