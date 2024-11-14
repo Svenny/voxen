@@ -3,7 +3,6 @@
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
-#include <voxen/client/vulkan/high/transfer_manager.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
@@ -33,9 +32,9 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<gfx::GfxSystem>, Storage<TransferManager>, Storage<ShaderModuleCollection>,
-		Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>,
-		Storage<PipelineCollection>, Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
+	std::tuple<Storage<gfx::GfxSystem>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
+		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<PipelineCollection>,
+		Storage<TerrainSynchronizer>, Storage<TerrainRenderer>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -159,7 +158,6 @@ bool Backend::doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 			return false;
 		}
 
-		m_impl.constructModule(m_transfer_manager);
 		m_impl.constructModule(m_terrain_synchronizer);
 
 		m_impl.constructModule(m_shader_module_collection);
@@ -217,7 +215,6 @@ void Backend::doStop() noexcept
 	m_impl.destructModule(m_shader_module_collection);
 
 	m_impl.destructModule(m_terrain_synchronizer);
-	m_impl.destructModule(m_transfer_manager);
 
 	unloadDeviceLevelApi();
 	unloadInstanceLevelApi();

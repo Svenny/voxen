@@ -12,6 +12,7 @@ namespace vk
 class CommandAllocator;
 class DebugUtils;
 class Device;
+class DmaSystem;
 class Instance;
 class PhysicalDevice;
 class RenderGraphRunner;
