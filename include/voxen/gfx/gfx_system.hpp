@@ -55,7 +55,10 @@ public:
 	vk::CommandAllocator *commandAllocator() noexcept { return m_vk_command_allocator.get(); }
 	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
 	vk::DmaSystem* dmaSystem() noexcept { return m_vk_dma_system.get(); }
+	vk::MeshStreamer* meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
 	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
+
+	const FrameTickSource* frameTickSource() const noexcept { return m_frame_tick_source.get(); }
 
 private:
 	struct ComponentStorage;
@@ -81,6 +84,7 @@ private:
 	ComponentPtr<vk::CommandAllocator> m_vk_command_allocator;
 	ComponentPtr<vk::TransientBufferAllocator> m_vk_transient_buffer_allocator;
 	ComponentPtr<vk::DmaSystem> m_vk_dma_system;
+	ComponentPtr<vk::MeshStreamer> m_vk_mesh_streamer;
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
 
 	ComponentPtr<FrameTickSource> m_frame_tick_source;

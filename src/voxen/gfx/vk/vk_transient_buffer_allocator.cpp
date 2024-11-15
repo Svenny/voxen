@@ -3,6 +3,7 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/hash.hpp>
+#include <voxen/gfx/vk/vk_utils.hpp>
 
 #include <extras/defer.hpp>
 
@@ -186,31 +187,11 @@ void TransientBufferAllocator::addBuffer(Type type, VkDeviceSize min_size)
 	VkDeviceSize target = std::max(exp_average, min_size) + BUFFER_SIZE_STEP - 1;
 	VkDeviceSize size = target - target % BUFFER_SIZE_STEP;
 
-	auto& dev_info = m_dev.info();
-
-	// TODO: not so clean honestly
-	static_assert(Device::QueueCount == 3, "New queue families added, update this code");
-	uint32_t queue_families[3] = { dev_info.main_queue_family };
-
-	uint32_t queue_family_count = 1;
-	if (dev_info.dedicated_dma_queue) {
-		queue_families[queue_family_count++] = dev_info.dma_queue_family;
-	}
-
-	if (dev_info.dedicated_compute_queue) {
-		queue_families[queue_family_count++] = dev_info.compute_queue_family;
-	}
-
-	VkBufferCreateInfo buffer_create_info {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.size = size,
-		.usage = 0, // Filled below
-		.sharingMode = VK_SHARING_MODE_CONCURRENT,
-		.queueFamilyIndexCount = queue_family_count,
-		.pQueueFamilyIndices = queue_families,
-	};
+	// `usage` is filled below
+	VkBufferCreateInfo buffer_create_info {};
+	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffer_create_info.size = size;
+	VulkanUtils::fillBufferSharingInfo(m_dev, buffer_create_info);
 
 	VmaAllocationCreateInfo vma_alloc_info {};
 	vma_alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
@@ -242,13 +223,10 @@ void TransientBufferAllocator::addBuffer(Type type, VkDeviceSize min_size)
 
 	defer_fail{ vmaDestroyBuffer(m_dev.vma(), vk_handle, vma_handle); };
 
-	// Assign pseudo-random letter to disambiguate buffers of the same size
-	uint64_t handle_hash = Hash::xxh64Fixed(reinterpret_cast<uintptr_t>(vk_handle));
-	char letter = 'A' + handle_hash % (1 + 'z' - 'A');
-
+	auto disambig = VulkanUtils::makeHandleDisambiguationString(vk_handle);
 	char name_buf[64];
-	snprintf(name_buf, std::size(name_buf), "transient/buf_%s_%zuMB@%c", type == TypeUpload ? "upload" : "scratch",
-		size >> 20, letter);
+	snprintf(name_buf, std::size(name_buf), "transient/buf_%s_%zuMB@%s", type == TypeUpload ? "upload" : "scratch",
+		size >> 20, disambig.data());
 	m_dev.setObjectName(vk_handle, name_buf);
 
 	Buffer& buffer = m_free_list[type].emplace_front();

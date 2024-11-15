@@ -87,6 +87,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_error.hpp
 	include/voxen/gfx/vk/vk_include.hpp
 	include/voxen/gfx/vk/vk_instance.hpp
+	include/voxen/gfx/vk/vk_mesh_streamer.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vk_transient_buffer_allocator.hpp

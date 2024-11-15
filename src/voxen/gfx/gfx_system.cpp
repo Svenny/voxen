@@ -8,6 +8,7 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_dma_system.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
+#include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -94,6 +95,7 @@ struct GfxSystem::ComponentStorage {
 	alignas(vk::CommandAllocator) std::byte vk_command_allocator[sizeof(vk::CommandAllocator)];
 	alignas(vk::TransientBufferAllocator) std::byte vk_transient_buffer_allocator[sizeof(vk::TransientBufferAllocator)];
 	alignas(vk::DmaSystem) std::byte vk_dma_system[sizeof(vk::DmaSystem)];
+	alignas(vk::MeshStreamer) std::byte vk_mesh_streamer[sizeof(vk::MeshStreamer)];
 	alignas(vk::RenderGraphRunner) std::byte vk_render_graph_runner[sizeof(vk::RenderGraphRunner)];
 	alignas(FrameTickSource) std::byte frame_tick_source[sizeof(FrameTickSource)];
 };
@@ -120,6 +122,7 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 	m_vk_transient_buffer_allocator.reset(
 		new (comp.vk_transient_buffer_allocator) vk::TransientBufferAllocator(*m_vk_device));
 	m_vk_dma_system.reset(new (comp.vk_dma_system) vk::DmaSystem(*this));
+	m_vk_mesh_streamer.reset(new (comp.vk_mesh_streamer) vk::MeshStreamer(*this));
 	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*m_vk_device, main_window));
 
 	m_frame_tick_source.reset(new (comp.frame_tick_source) FrameTickSource());
@@ -157,11 +160,13 @@ void GfxSystem::notifyFrameTickBegin(FrameTickId completed_tick, FrameTickId new
 	m_vk_command_allocator->onFrameTickBegin(completed_tick, new_tick);
 	m_vk_transient_buffer_allocator->onFrameTickBegin(completed_tick, new_tick);
 	m_vk_dma_system->onFrameTickBegin(completed_tick, new_tick);
+	m_vk_mesh_streamer->onFrameTickBegin(completed_tick, new_tick);
 }
 
 void GfxSystem::notifyFrameTickEnd(FrameTickId current_tick)
 {
 	// Reverse order of `notifyFrameTickBegin`, from specific to more general ones
+	m_vk_mesh_streamer->onFrameTickEnd(current_tick);
 	m_vk_dma_system->onFrameTickEnd(current_tick);
 	m_vk_transient_buffer_allocator->onFrameTickEnd(current_tick);
 	m_vk_command_allocator->onFrameTickEnd(current_tick);
