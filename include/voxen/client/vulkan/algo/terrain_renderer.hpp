@@ -1,15 +1,12 @@
 #pragma once
 
-#include <voxen/client/vulkan/buffer.hpp>
-#include <voxen/client/vulkan/config.hpp>
+#include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
 
 #include <extras/refcnt_ptr.hpp>
 
 #include <glm/vec4.hpp>
 
-#include <memory>
-#include <unordered_map>
 #include <vector>
 
 namespace voxen
@@ -40,9 +37,7 @@ public:
 	TerrainRenderer(const TerrainRenderer &) = delete;
 	TerrainRenderer &operator=(TerrainRenderer &&) = delete;
 	TerrainRenderer &operator=(const TerrainRenderer &) = delete;
-	~TerrainRenderer() = default;
-
-	VkDeviceSize getComboBufferSize() const noexcept;
+	~TerrainRenderer();
 
 	void onNewWorldState(const WorldState &state);
 	void onFrameBegin(const GameView &view, VkDescriptorSet main_scene_dset, VkDescriptorSet frustum_cull_dset);
@@ -53,26 +48,36 @@ public:
 	void drawDebugChunkBorders(VkCommandBuffer cmdbuf);
 
 private:
+	struct ChunkRenderInfo {
+		VkBuffer vertex_buffer;
+		VkBuffer index_buffer;
+		VkIndexType index_type;
+		// Using `int32_t` to match `VkDrawIndexedIndirectCommand`
+		int32_t first_vertex;
+		uint32_t first_index;
+		uint32_t num_vertices;
+		uint32_t num_indices;
+	};
+
 	const WorldState *m_last_state = nullptr;
 
-	FatVkBuffer m_debug_octree_mesh_buffer;
-	// Stores N copies of:
-	// - Chunk transform (base+scale) instance buffer
-	// - Indirect draw commands buffer
-	// - Chunk AABB buffer
-	FatVkBuffer m_combo_buffer;
-	// Pointers into `m_combo_buffer` corresponding to different buffer subsections
-	void *m_combo_buffer_host_ptr;
-	glm::vec4 *m_chunk_transform_ptr[Config::NUM_CPU_PENDING_FRAMES];
-	VkDrawIndexedIndirectCommand *m_draw_command_ptr[Config::NUM_CPU_PENDING_FRAMES];
-	Aabb *m_chunk_aabb_ptr[Config::NUM_CPU_PENDING_FRAMES];
-	uint32_t m_combo_buffer_active_section = 0;
+	VkBuffer m_debug_octree_mesh_buffer = VK_NULL_HANDLE;
+	VmaAllocation m_debug_octree_mesh_alloc = VK_NULL_HANDLE;
 
+	VkDeviceSize m_buffer_alloc_alignment = 0;
+	gfx::vk::TransientBufferAllocator::Allocation m_chunk_transform_buffer;
+	gfx::vk::TransientBufferAllocator::Allocation m_draw_command_buffer;
+	gfx::vk::TransientBufferAllocator::Allocation m_chunk_aabb_buffer;
+
+	std::vector<std::pair<const terrain::Chunk *, ChunkRenderInfo>> m_render_infos;
 	std::vector<std::tuple<uint32_t, VkBuffer, VkBuffer, VkIndexType>> m_draw_setups;
-	uint32_t m_num_active_chunks = 0;
 
 	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
 	VkDescriptorSet m_frustum_cull_dset = VK_NULL_HANDLE;
+
+	bool streamChunk(const terrain::Chunk &chunk, ChunkRenderInfo &rinfo);
+	static bool renderInfoComparator(const ChunkRenderInfo &a, uint32_t lod_a, const ChunkRenderInfo &b,
+		uint32_t lod_b) noexcept;
 };
 
 } // namespace voxen::client::vulkan

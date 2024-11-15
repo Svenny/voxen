@@ -28,6 +28,8 @@ function(voxen_setup_target target is_executable)
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
 		-Wshadow-uncaptured-local
+		# And disable some junk warnings
+		-Wno-c99-designator
 
 		# Prefix maps ensure more reproducible and environment-independent builds
 		# Remap /path/to/voxen/src/file.cpp -> src/file.cpp in __FILE__ and co.

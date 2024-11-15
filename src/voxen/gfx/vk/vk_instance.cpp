@@ -1,7 +1,6 @@
 #include <voxen/gfx/vk/vk_instance.hpp>
 
 #include <voxen/client/gfx_runtime_config.hpp>
-#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
@@ -16,9 +15,6 @@
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::Capabilities;
 
 namespace
 {
@@ -52,9 +48,9 @@ bool checkVulkanSupport()
 	uint32_t patch = VK_VERSION_PATCH(version);
 	Log::info("Vulkan instance version is {}.{}.{}", major, minor, patch);
 
-	if (version < Capabilities::MIN_VULKAN_VERSION) {
-		uint32_t req_major = VK_VERSION_MAJOR(Capabilities::MIN_VULKAN_VERSION);
-		uint32_t req_minor = VK_VERSION_MINOR(Capabilities::MIN_VULKAN_VERSION);
+	if (version < Instance::MIN_VULKAN_VERSION) {
+		uint32_t req_major = VK_VERSION_MAJOR(Instance::MIN_VULKAN_VERSION);
+		uint32_t req_minor = VK_VERSION_MINOR(Instance::MIN_VULKAN_VERSION);
 		Log::error("Vulkan instance version is lower than minimal supported ({}.{})", req_major, req_minor);
 		return false;
 	}
@@ -239,7 +235,7 @@ void Instance::createInstance()
 	app_info.applicationVersion = version;
 	app_info.pEngineName = "Voxen";
 	app_info.engineVersion = version;
-	app_info.apiVersion = Capabilities::MIN_VULKAN_VERSION;
+	app_info.apiVersion = Instance::MIN_VULKAN_VERSION;
 
 	// Fill VkInstanceCreateInfo
 	auto ext_list = getRequiredInstanceExtensions();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/visibility.hpp>
 
 #include <cstddef>
@@ -17,6 +18,12 @@ namespace Hash
 // well-distributed bits out of anything. XXH64 is bijective for 64-bit inputs
 // so you can even directly compare hashes instead of keys <= 8 bytes.
 VOXEN_API uint64_t xxh64Fixed(uint64_t data) noexcept;
+
+// "Extend" a small-dimension (64 bits or smaller) key with whatever meaning to UID.
+// `pivot_uid` should be a (fixed) random UID, it defines a subsystem (domain) where
+// this key belongs to. The idea is that if the same key is used in different domains
+// it will be converted to different UIDs using this pivot, eliminating UID collisions.
+VOXEN_API UID keyToUid(UID pivot_uid, uint64_t key) noexcept;
 
 } // namespace Hash
 

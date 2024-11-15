@@ -55,7 +55,7 @@ void DmaSystem::copyBufferToBuffer(BufferCopy copy)
 
 uint64_t DmaSystem::flush()
 {
-	if (!m_current_cmd_buf) {
+	if (m_current_cmd_buf == VK_NULL_HANDLE) {
 		return m_last_submitted_timeline;
 	}
 
@@ -85,7 +85,7 @@ void DmaSystem::onFrameTickEnd(FrameTickId /*current_tick*/)
 
 void DmaSystem::ensureCmdBuffer()
 {
-	if (m_current_cmd_buf) {
+	if (m_current_cmd_buf != VK_NULL_HANDLE) {
 		return;
 	}
 

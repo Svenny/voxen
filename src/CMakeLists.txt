@@ -1,10 +1,6 @@
 set(VOXEN_SOURCES
 	src/client/vulkan/algo/terrain_renderer.cpp
-	src/client/vulkan/high/terrain_synchronizer.cpp
 	src/client/vulkan/backend.cpp
-	src/client/vulkan/buffer.cpp
-	src/client/vulkan/capabilities.cpp
-	src/client/vulkan/config.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
 	src/client/vulkan/pipeline.cpp
 	src/client/vulkan/pipeline_cache.cpp
@@ -42,7 +38,6 @@ set(VOXEN_SOURCES
 	src/util/elapsed_timer.cpp
 	src/util/error_condition.cpp
 	src/util/exception.cpp
-	src/util/hash.cpp
 	src/util/log.cpp
 	src/voxen/client/main_thread_service.cpp
 	src/voxen/common/pipe_memory_allocator.cpp
@@ -100,6 +95,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/service_locator.cpp
 	src/voxen/util/concentric_octahedra_walker.cpp
 	src/voxen/util/futex_work_counter.cpp
+	src/voxen/util/hash.cpp
 	src/voxen/util/packed_color.cpp
 )
 
