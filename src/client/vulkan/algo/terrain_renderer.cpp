@@ -1,7 +1,6 @@
 #include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/high/terrain_synchronizer.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/common/gameview.hpp>
@@ -9,8 +8,13 @@
 #include <voxen/common/terrain/config.hpp>
 #include <voxen/common/terrain/surface.hpp>
 #include <voxen/common/world_state.hpp>
+#include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_error.hpp>
+#include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/util/log.hpp>
+
+#include <vma/vk_mem_alloc.h>
 
 #include <extras/dyn_array.hpp>
 #include <extras/math.hpp>
@@ -18,16 +22,11 @@
 namespace voxen::client::vulkan
 {
 
-constexpr VkDeviceSize CHUNK_TRANSFORM_BUFFER_SIZE = sizeof(glm::vec4) * Config::MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize DRAW_COMMAND_BUFFER_SIZE = sizeof(VkDrawIndexedIndirectCommand) * Config::MAX_RENDERED_CHUNKS;
-constexpr VkDeviceSize CHUNK_AABB_BUFFER_SIZE = sizeof(Aabb) * Config::MAX_RENDERED_CHUNKS;
-
-constexpr VkDeviceSize COMBO_BUFFER_PER_FRAME_SIZE = CHUNK_TRANSFORM_BUFFER_SIZE + DRAW_COMMAND_BUFFER_SIZE
-	+ CHUNK_AABB_BUFFER_SIZE;
-constexpr VkDeviceSize COMBO_BUFFER_SIZE = COMBO_BUFFER_PER_FRAME_SIZE * Config::NUM_CPU_PENDING_FRAMES;
+namespace
+{
 
 // clang-format off: breaks more readable table formatting
-constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
+constexpr float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #define LO 0.0f
 #define HI float(terrain::Config::CHUNK_SIZE)
 	LO, LO, LO,
@@ -42,49 +41,33 @@ constexpr static float DEBUG_OCTREE_VERTEX_BUFFER_DATA[] = {
 #undef HI
 };
 
-constexpr static uint16_t DEBUG_OCTREE_INDEX_BUFFER_DATA[] = {
+constexpr uint16_t DEBUG_OCTREE_INDEX_BUFFER_DATA[] = {
 	0, 1, 1, 5, 4, 5, 0, 4,
 	2, 3, 3, 7, 6, 7, 2, 6,
 	0, 2, 1, 3, 4, 6, 5, 7
 };
 // clang-format on
 
+// Pivot UID to extend chunk keys for mesh streaming
+constexpr UID TERRAIN_RENDERER_DOMAIN_UID("95179c38-a5be89ed-c2be9d72-c8ce8057");
+
+}
+
 TerrainRenderer::TerrainRenderer()
 {
-	constexpr VkBufferCreateInfo combo_info {
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = nullptr,
-		.flags = 0,
-		.size = COMBO_BUFFER_SIZE,
-		.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-			| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = nullptr,
-	};
-	m_combo_buffer = FatVkBuffer(combo_info, FatVkBuffer::Usage::Staging);
-
-	m_combo_buffer_host_ptr = m_combo_buffer.hostPointer();
-	// Upload case guarantees host visiblity
-	assert(m_combo_buffer_host_ptr);
-
-	for (uint32_t i = 0; i < Config::NUM_CPU_PENDING_FRAMES; i++) {
-		std::byte *base = reinterpret_cast<std::byte *>(m_combo_buffer_host_ptr) + COMBO_BUFFER_PER_FRAME_SIZE * i;
-
-		m_chunk_transform_ptr[i] = reinterpret_cast<glm::vec4 *>(base);
-		m_draw_command_ptr[i] = reinterpret_cast<VkDrawIndexedIndirectCommand *>(base + CHUNK_TRANSFORM_BUFFER_SIZE);
-		m_chunk_aabb_ptr[i] = reinterpret_cast<Aabb *>(base + CHUNK_TRANSFORM_BUFFER_SIZE + DRAW_COMMAND_BUFFER_SIZE);
-	}
-
 	// It's entirely unlikely that we can reach even 10
 	m_draw_setups.reserve(10);
+
+	// Cache it so we don't have to go into that fat `PhysicalDevice` boy
+	auto &pdev = Backend::backend().device().physicalDevice();
+	m_buffer_alloc_alignment = pdev.info().props.properties.limits.minStorageBufferOffsetAlignment;
 
 	Log::debug("TerrainRenderer created successfully");
 }
 
-VkDeviceSize TerrainRenderer::getComboBufferSize() const noexcept
+TerrainRenderer::~TerrainRenderer()
 {
-	return COMBO_BUFFER_SIZE;
+	Backend::backend().device().enqueueDestroy(m_debug_octree_mesh_buffer, m_debug_octree_mesh_alloc);
 }
 
 void TerrainRenderer::onNewWorldState(const WorldState &state)
@@ -105,74 +88,58 @@ static glm::vec4 calcChunkBaseScale(land::ChunkKey id, const GameView &view) noe
 	return glm::vec4(base_pos - view.cameraPosition(), size);
 }
 
-static bool renderInfoComparator(const TerrainSynchronizer::ChunkRenderInfo &a, uint32_t lod_a,
-	const TerrainSynchronizer::ChunkRenderInfo &b, uint32_t lod_b) noexcept
-{
-	// Using the following composite ordering:
-	// - First compare index types (to minimize index stream type switching)
-	// - Then compare vertex buffer handles (to minimize vertex streams switching)
-	// - Then compare index buffer handles (to minimize index stream switching)
-	// - Then sort by chunk LODs, smaller going first (to hopefully minimize overdraw by drawing near to far)
-	// - Finally sort by first index to make ordering consistent (they can't be equal)
-
-	const VkIndexType type_a = a.index_type;
-	const VkIndexType type_b = b.index_type;
-	if (type_a != type_b) {
-		// U8 goes before U16 and U32
-		if (type_a == VK_INDEX_TYPE_UINT8_EXT) {
-			return true;
-		}
-		if (type_b == VK_INDEX_TYPE_UINT8_EXT) {
-			return false;
-		}
-		// Two possible cases left:
-		// `A == U16 && B == U32` (A goes before B) or
-		// `A == U32 && B == U16` (B goes before A)
-		return type_a == VK_INDEX_TYPE_UINT16;
-	}
-
-	if (a.vertex_buffer != b.vertex_buffer) {
-		return a.vertex_buffer < b.vertex_buffer;
-	}
-
-	if (a.index_buffer != b.index_buffer) {
-		return a.index_buffer < b.index_buffer;
-	}
-
-	if (lod_a != lod_b) {
-		return lod_a < lod_b;
-	}
-
-	return a.first_index < b.first_index;
-}
-
 void TerrainRenderer::onFrameBegin(const GameView &view, VkDescriptorSet main_scene_dset,
 	VkDescriptorSet frustum_cull_dset)
 {
-	m_combo_buffer_active_section = (m_combo_buffer_active_section + 1) % Config::NUM_CPU_PENDING_FRAMES;
 	m_main_scene_dset = main_scene_dset;
 	m_frustum_cull_dset = frustum_cull_dset;
 
-	using RenderInfo = TerrainSynchronizer::ChunkRenderInfo;
+	m_render_infos.clear();
+
+	m_last_state->walkActiveChunksPointers([&](const ChunkPtr &chunk) {
+		if (!chunk->hasSurface()) {
+			return;
+		}
+
+		const terrain::Chunk *chunk_ptr = chunk.get();
+		ChunkRenderInfo render_info;
+
+		if (streamChunk(*chunk_ptr, render_info)) {
+			m_render_infos.emplace_back(chunk_ptr, render_info);
+		}
+	});
+
+	if (m_render_infos.empty()) [[unlikely]] {
+		return;
+	}
 
 	auto &backend = Backend::backend();
+	auto *tsb_alloc = backend.gfxSystem().transientBufferAllocator();
 
-	uint32_t set_id = m_combo_buffer_active_section;
+	VkDeviceSize chunk_transform_size = m_render_infos.size() * sizeof(glm::vec4);
+	VkDeviceSize draw_command_size = m_render_infos.size() * sizeof(VkDrawIndexedIndirectCommand);
+	VkDeviceSize chunk_aabb_size = m_render_infos.size() * sizeof(Aabb);
+
+	auto alloc_type = gfx::vk::TransientBufferAllocator::TypeUpload;
+	m_chunk_transform_buffer = tsb_alloc->allocate(alloc_type, chunk_transform_size, m_buffer_alloc_alignment);
+	m_draw_command_buffer = tsb_alloc->allocate(alloc_type, draw_command_size, m_buffer_alloc_alignment);
+	m_chunk_aabb_buffer = tsb_alloc->allocate(alloc_type, chunk_aabb_size, m_buffer_alloc_alignment);
+
 	VkDescriptorBufferInfo buffer_infos[3];
 	buffer_infos[0] = {
-		.buffer = m_combo_buffer,
-		.offset = uintptr_t(m_chunk_transform_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
-		.range = CHUNK_TRANSFORM_BUFFER_SIZE,
+		.buffer = m_chunk_transform_buffer.buffer,
+		.offset = m_chunk_transform_buffer.buffer_offset,
+		.range = chunk_transform_size,
 	};
 	buffer_infos[1] = {
-		.buffer = m_combo_buffer,
-		.offset = uintptr_t(m_draw_command_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
-		.range = DRAW_COMMAND_BUFFER_SIZE,
+		.buffer = m_draw_command_buffer.buffer,
+		.offset = m_draw_command_buffer.buffer_offset,
+		.range = draw_command_size,
 	};
 	buffer_infos[2] = {
-		.buffer = m_combo_buffer,
-		.offset = uintptr_t(m_chunk_aabb_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
-		.range = CHUNK_AABB_BUFFER_SIZE,
+		.buffer = m_chunk_aabb_buffer.buffer,
+		.offset = m_chunk_aabb_buffer.buffer_offset,
+		.range = chunk_aabb_size,
 	};
 
 	VkDescriptorSet frustum_cull_set = m_frustum_cull_dset;
@@ -216,35 +183,23 @@ void TerrainRenderer::onFrameBegin(const GameView &view, VkDescriptorSet main_sc
 
 	backend.vkUpdateDescriptorSets(backend.device().handle(), std::size(writes), writes, 0, nullptr);
 
-	auto &terrain_sync = backend.terrainSynchronizer();
-	terrain_sync.beginSyncSession();
-
-	extras::dyn_array<std::pair<const terrain::Chunk *, RenderInfo>> render_infos(Config::MAX_RENDERED_CHUNKS);
-
-	m_num_active_chunks = 0;
-	m_last_state->walkActiveChunksPointers([&](const ChunkPtr &chunk) {
-		if (!chunk->hasSurface()) {
-			return;
-		}
-
-		render_infos[m_num_active_chunks] = { chunk.get(), terrain_sync.syncChunk(chunk) };
-		m_num_active_chunks++;
-	});
-
-	auto last_info = render_infos.begin() + m_num_active_chunks;
-	std::sort(render_infos.begin(), last_info, [&](const auto &a, const auto &b) {
+	std::sort(m_render_infos.begin(), m_render_infos.end(), [&](const auto &a, const auto &b) {
 		return renderInfoComparator(a.second, a.first->id().scale_log2, b.second, b.first->id().scale_log2);
 	});
 
 	m_draw_setups.clear();
-	if (m_num_active_chunks != 0) {
-		const auto &first_info = render_infos[0].second;
+	if (!m_render_infos.empty()) {
+		const auto &first_info = m_render_infos[0].second;
 		m_draw_setups.emplace_back(0, first_info.vertex_buffer, first_info.index_buffer, first_info.index_type);
 	}
 
-	for (uint32_t i = 0; i < m_num_active_chunks; i++) {
-		const terrain::Chunk &chunk = *render_infos[i].first;
-		const auto &render_info = render_infos[i].second;
+	auto *chunk_transform_ptr = reinterpret_cast<glm::vec4 *>(m_chunk_transform_buffer.host_pointer);
+	auto *draw_command_ptr = reinterpret_cast<VkDrawIndexedIndirectCommand *>(m_draw_command_buffer.host_pointer);
+	auto *chunk_aabb_ptr = reinterpret_cast<Aabb *>(m_chunk_aabb_buffer.host_pointer);
+
+	for (uint32_t i = 0; i < m_render_infos.size(); i++) {
+		const terrain::Chunk &chunk = *m_render_infos[i].first;
+		const auto &render_info = m_render_infos[i].second;
 
 		const auto &last_draw_setup = m_draw_setups.back();
 		if (std::get<1>(last_draw_setup) != render_info.vertex_buffer
@@ -254,18 +209,16 @@ void TerrainRenderer::onFrameBegin(const GameView &view, VkDescriptorSet main_sc
 		}
 
 		// TODO (Svenny): base/scale calculations can be easily vectorized
-		m_chunk_transform_ptr[set_id][i] = calcChunkBaseScale(chunk.id(), view);
-		m_draw_command_ptr[set_id][i] = VkDrawIndexedIndirectCommand {
+		chunk_transform_ptr[i] = calcChunkBaseScale(chunk.id(), view);
+		draw_command_ptr[i] = VkDrawIndexedIndirectCommand {
 			.indexCount = render_info.num_indices,
 			.instanceCount = 1,
 			.firstIndex = render_info.first_index,
 			.vertexOffset = render_info.first_vertex,
 			.firstInstance = i,
 		};
-		m_chunk_aabb_ptr[set_id][i] = chunk.surface().aabb();
+		chunk_aabb_ptr[i] = chunk.surface().aabb();
 	}
-
-	terrain_sync.endSyncSession();
 }
 
 void TerrainRenderer::prepareResources(VkCommandBuffer cmdbuf)
@@ -273,22 +226,32 @@ void TerrainRenderer::prepareResources(VkCommandBuffer cmdbuf)
 	auto &backend = Backend::backend();
 
 	// TODO: check some debug flag to avoid creating this buffer when it's not needed?
-	if (m_debug_octree_mesh_buffer.handle() == VK_NULL_HANDLE) {
+	if (m_debug_octree_mesh_buffer == VK_NULL_HANDLE) {
 		constexpr VkDeviceSize size = sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA) + sizeof(DEBUG_OCTREE_INDEX_BUFFER_DATA);
-		// TODO: Not efficient and generally looks so GL-ish
-		m_debug_octree_mesh_buffer = FatVkBuffer(
-			VkBufferCreateInfo {
-				.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-				.pNext = nullptr,
-				.flags = 0,
-				.size = size,
-				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-				.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-				.queueFamilyIndexCount = 0,
-				.pQueueFamilyIndices = nullptr,
-			},
-			FatVkBuffer::Usage::DeviceLocal);
+
+		// TODO: generally looks so GL-ish
+		VkBufferCreateInfo buffer_create_info {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.size = size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+				| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.queueFamilyIndexCount = 0,
+			.pQueueFamilyIndices = nullptr,
+		};
+
+		VmaAllocationCreateInfo alloc_create_info {};
+		alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+
+		VkResult res = vmaCreateBuffer(backend.device().vma(), &buffer_create_info, &alloc_create_info,
+			&m_debug_octree_mesh_buffer, &m_debug_octree_mesh_alloc, nullptr);
+		if (res != VK_SUCCESS) [[unlikely]] {
+			throw gfx::vk::VulkanException(res, "vmaCreateBuffer");
+		}
+
+		backend.device().setObjectName(m_debug_octree_mesh_buffer, "debug/octree_cell_mesh");
 
 		backend.vkCmdUpdateBuffer(cmdbuf, m_debug_octree_mesh_buffer, 0, sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA),
 			DEBUG_OCTREE_VERTEX_BUFFER_DATA);
@@ -299,6 +262,10 @@ void TerrainRenderer::prepareResources(VkCommandBuffer cmdbuf)
 
 void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 {
+	if (m_render_infos.empty()) [[unlikely]] {
+		return;
+	}
+
 	auto &backend = Backend::backend();
 
 	VkPipeline pipe = backend.pipelineCollection()[PipelineCollection::TERRAIN_FRUSTUM_CULL_PIPELINE];
@@ -312,9 +279,8 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, std::size(sets), sets, 0,
 		nullptr);
 
-	backend.vkCmdDispatch(cmdbuf, (m_num_active_chunks + 63) / 64, 1, 1);
+	backend.vkCmdDispatch(cmdbuf, (uint32_t(m_render_infos.size()) + 63) / 64, 1, 1);
 
-	uint32_t set_id = m_combo_buffer_active_section;
 	const VkBufferMemoryBarrier2 barrier {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 		.pNext = nullptr,
@@ -324,9 +290,9 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 		.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
 		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.buffer = m_combo_buffer,
-		.offset = uintptr_t(m_draw_command_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr),
-		.size = DRAW_COMMAND_BUFFER_SIZE,
+		.buffer = m_draw_command_buffer.buffer,
+		.offset = m_draw_command_buffer.buffer_offset,
+		.size = m_draw_command_buffer.size,
 	};
 
 	const VkDependencyInfo depInfo {
@@ -346,6 +312,10 @@ void TerrainRenderer::launchFrustumCull(VkCommandBuffer cmdbuf)
 
 void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 {
+	if (m_render_infos.empty()) [[unlikely]] {
+		return;
+	}
+
 	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = backend.pipelineCollection();
@@ -361,9 +331,8 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 	static const glm::vec3 SUN_DIR = glm::normalize(glm::vec3(0.3f, 0.7f, 0.3f));
 	backend.vkCmdPushConstants(cmdbuf, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SUN_DIR), &SUN_DIR);
 
-	const uint32_t set_id = m_combo_buffer_active_section;
-	VkBuffer const xfm_buffer = m_combo_buffer;
-	const VkDeviceSize xfm_offset = uintptr_t(m_chunk_transform_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr);
+	VkBuffer const xfm_buffer = m_chunk_transform_buffer.buffer;
+	const VkDeviceSize xfm_offset = m_chunk_transform_buffer.buffer_offset;
 	backend.vkCmdBindVertexBuffers(cmdbuf, 1, 1, &xfm_buffer, &xfm_offset);
 
 	for (auto iter = m_draw_setups.begin(); iter != m_draw_setups.end(); ++iter) {
@@ -377,7 +346,7 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 		backend.vkCmdBindVertexBuffers(cmdbuf, 0, 1, &vertex_buffer, &offset);
 		backend.vkCmdBindIndexBuffer(cmdbuf, index_buffer, 0, index_type);
 
-		VkDeviceSize draw_offset = uintptr_t(m_draw_command_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr);
+		VkDeviceSize draw_offset = m_draw_command_buffer.buffer_offset;
 		draw_offset += sizeof(VkDrawIndexedIndirectCommand) * first_draw;
 
 		uint32_t draw_count;
@@ -385,16 +354,20 @@ void TerrainRenderer::drawChunksInFrustum(VkCommandBuffer cmdbuf)
 			const auto &next_setup = *(iter + 1);
 			draw_count = std::get<0>(next_setup) - first_draw;
 		} else {
-			draw_count = m_num_active_chunks - first_draw;
+			draw_count = uint32_t(m_render_infos.size()) - first_draw;
 		}
 
-		backend.vkCmdDrawIndexedIndirect(cmdbuf, m_combo_buffer, draw_offset, draw_count,
+		backend.vkCmdDrawIndexedIndirect(cmdbuf, m_draw_command_buffer.buffer, draw_offset, draw_count,
 			sizeof(VkDrawIndexedIndirectCommand));
 	}
 }
 
 void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 {
+	if (m_render_infos.empty()) [[unlikely]] {
+		return;
+	}
+
 	auto &backend = Backend::backend();
 	auto &pipeline_layout_collection = backend.pipelineLayoutCollection();
 	auto &pipeline_collection = backend.pipelineCollection();
@@ -407,18 +380,100 @@ void TerrainRenderer::drawDebugChunkBorders(VkCommandBuffer cmdbuf)
 	backend.vkCmdBindDescriptorSets(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0,
 		nullptr);
 
-	const uint32_t set_id = m_combo_buffer_active_section;
 	VkBuffer vtx_buffers[2];
 	vtx_buffers[0] = m_debug_octree_mesh_buffer;
-	vtx_buffers[1] = m_combo_buffer;
+	vtx_buffers[1] = m_chunk_transform_buffer.buffer;
 	VkDeviceSize vtx_offsets[2];
 	vtx_offsets[0] = 0;
-	vtx_offsets[1] = uintptr_t(m_chunk_transform_ptr[set_id]) - uintptr_t(m_combo_buffer_host_ptr);
+	vtx_offsets[1] = m_chunk_transform_buffer.buffer_offset;
 
 	backend.vkCmdBindVertexBuffers(cmdbuf, 0, std::size(vtx_buffers), vtx_buffers, vtx_offsets);
 	backend.vkCmdBindIndexBuffer(cmdbuf, m_debug_octree_mesh_buffer, sizeof(DEBUG_OCTREE_VERTEX_BUFFER_DATA),
 		VK_INDEX_TYPE_UINT16);
-	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), m_num_active_chunks, 0, 0, 0);
+	backend.vkCmdDrawIndexed(cmdbuf, std::size(DEBUG_OCTREE_INDEX_BUFFER_DATA), uint32_t(m_render_infos.size()), 0, 0,
+		0);
+}
+
+bool TerrainRenderer::streamChunk(const terrain::Chunk &chunk, ChunkRenderInfo &rinfo)
+{
+	gfx::vk::MeshStreamer &streamer = *Backend::backend().gfxSystem().meshStreamer();
+
+	UID chunk_uid = Hash::keyToUid(TERRAIN_RENDERER_DOMAIN_UID, chunk.id().packed());
+
+	gfx::vk::MeshStreamer::MeshInfo mesh_info;
+	streamer.queryMesh(chunk_uid, mesh_info);
+
+	const int64_t latest_version = chunk.version();
+	if (std::max(mesh_info.ready_version, mesh_info.pending_version) < latest_version) {
+		streamer.addMesh(chunk_uid,
+			{
+				.version = latest_version,
+				.substreams[0].data = chunk.surface().vertices(),
+				.substreams[0].num_elements = chunk.surface().numVertices(),
+				.substreams[0].element_size = uint32_t(sizeof(terrain::SurfaceVertex)),
+				.substreams[1].data = chunk.surface().indices(),
+				.substreams[1].num_elements = chunk.surface().numIndices(),
+				.substreams[1].element_size = uint32_t(sizeof(uint32_t)),
+			});
+	}
+
+	if (mesh_info.ready_version >= 0) {
+		assert(mesh_info.substreams[0].element_size == sizeof(terrain::SurfaceVertex));
+		assert(mesh_info.substreams[1].element_size == sizeof(uint32_t));
+
+		rinfo.vertex_buffer = mesh_info.substreams[0].vk_buffer;
+		rinfo.index_buffer = mesh_info.substreams[1].vk_buffer;
+		rinfo.index_type = VK_INDEX_TYPE_UINT32;
+		rinfo.first_vertex = static_cast<int32_t>(mesh_info.substreams[0].first_element);
+		rinfo.first_index = mesh_info.substreams[1].first_element;
+		rinfo.num_vertices = mesh_info.substreams[0].num_elements;
+		rinfo.num_indices = mesh_info.substreams[1].num_elements;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool TerrainRenderer::renderInfoComparator(const ChunkRenderInfo &a, uint32_t lod_a, const ChunkRenderInfo &b,
+	uint32_t lod_b) noexcept
+{
+	// Using the following composite ordering:
+	// - First compare index types (to minimize index stream type switching)
+	// - Then compare vertex buffer handles (to minimize vertex streams switching)
+	// - Then compare index buffer handles (to minimize index stream switching)
+	// - Then sort by chunk LODs, smaller going first (to hopefully minimize overdraw by drawing near to far)
+	// - Finally sort by first index to make ordering consistent (they can't be equal)
+
+	const VkIndexType type_a = a.index_type;
+	const VkIndexType type_b = b.index_type;
+	if (type_a != type_b) {
+		// U8 goes before U16 and U32
+		if (type_a == VK_INDEX_TYPE_UINT8_EXT) {
+			return true;
+		}
+		if (type_b == VK_INDEX_TYPE_UINT8_EXT) {
+			return false;
+		}
+		// Two possible cases left:
+		// `A == U16 && B == U32` (A goes before B) or
+		// `A == U32 && B == U16` (B goes before A)
+		return type_a == VK_INDEX_TYPE_UINT16;
+	}
+
+	if (a.vertex_buffer != b.vertex_buffer) {
+		return a.vertex_buffer < b.vertex_buffer;
+	}
+
+	if (a.index_buffer != b.index_buffer) {
+		return a.index_buffer < b.index_buffer;
+	}
+
+	if (lod_a != lod_b) {
+		return lod_a < lod_b;
+	}
+
+	return a.first_index < b.first_index;
 }
 
 } // namespace voxen::client::vulkan

@@ -29,13 +29,12 @@ void LegacyRenderGraph::rebuild(RenderGraphBuilder &bld)
 {
 	m_device = &bld.device();
 
-	auto &renderer = client::vulkan::Backend::backend().terrainRenderer();
-
 	// Frustum culling pass
 	{
+		// auto &renderer = client::vulkan::Backend::backend().terrainRenderer();
 		m_res.terrain_combo_buffer = bld.makeBuffer("combo_buffer",
 			{
-				.size = renderer.getComboBufferSize(),
+				.size = 4096//renderer.getComboBufferSize(),
 			});
 
 		// TODO: this buffer is not actually used; terrain renderer

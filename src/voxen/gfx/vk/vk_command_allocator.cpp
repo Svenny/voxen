@@ -151,12 +151,10 @@ void CommandAllocator::onFrameTickBegin(FrameTickId completed_tick, FrameTickId 
 	VkDevice vk_device = m_gfx.device()->handle();
 	auto &dt = m_gfx.device()->dt();
 
-	for (auto &pool_set : m_command_pools) {
-		for (VkCommandPool pool : pool_set) {
-			VkResult res = dt.vkResetCommandPool(vk_device, pool, 0);
-			if (res != VK_SUCCESS) [[unlikely]] {
-				throw VulkanException(res, "vkResetCommandPool");
-			}
+	for (VkCommandPool pool : m_command_pools[m_current_set]) {
+		VkResult res = dt.vkResetCommandPool(vk_device, pool, 0);
+		if (res != VK_SUCCESS) [[unlikely]] {
+			throw VulkanException(res, "vkResetCommandPool");
 		}
 	}
 }

@@ -33,6 +33,12 @@ uint64_t xxh64Fixed(uint64_t data) noexcept
 	return result;
 }
 
+UID keyToUid(UID pivot_uid, uint64_t key) noexcept
+{
+	pivot_uid.v1 ^= xxh64Fixed(pivot_uid.v0 ^ key);
+	return pivot_uid;
+}
+
 } // namespace Hash
 
 uint64_t hashFnv1a(const void *data, size_t size) noexcept

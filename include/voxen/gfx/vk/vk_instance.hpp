@@ -18,6 +18,13 @@ class PhysicalDevice;
 
 class Instance {
 public:
+	// Minimal Vulkan API version which must be supported by both the loader and the device.
+	// This is the exact version Voxen is designed to work with:
+	// - No fallback paths for earlier API versions are allowed
+	// - No optional paths for later API versions are allowed
+	// - Using an extension is allowed only if it's not deprecated/obsolete in this version
+	constexpr static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_3;
+
 	// Constructor will automatically attempt to create `VkInstance`,
 	// throwing `VoxenErrc::GfxCapabilityMissing` if it's not supported.
 	// GLFW library must be initialized during the whole object lifetime.

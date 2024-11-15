@@ -1,6 +1,5 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 
-#include <voxen/client/vulkan/capabilities.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
@@ -16,9 +15,6 @@
 
 namespace voxen::gfx::vk
 {
-
-// TODO: there parts are not yet moved to voxen/gfx/vk
-using client::vulkan::Capabilities;
 
 namespace
 {
@@ -348,7 +344,7 @@ bool Device::isSupported(PhysicalDevice &pd)
 	// Vulkan version
 
 	uint32_t apiVersion = props.apiVersion;
-	uint32_t minVersion = Capabilities::MIN_VULKAN_VERSION;
+	uint32_t minVersion = Instance::MIN_VULKAN_VERSION;
 
 	if (apiVersion < minVersion) {
 		Log::debug("Device Vulkan version is less than minimal supported");
@@ -623,7 +619,7 @@ void Device::createVma()
 		.pHeapSizeLimit = nullptr,
 		.pVulkanFunctions = &vma_vk_funcs,
 		.instance = m_instance.handle(),
-		.vulkanApiVersion = Capabilities::MIN_VULKAN_VERSION,
+		.vulkanApiVersion = Instance::MIN_VULKAN_VERSION,
 		.pTypeExternalMemoryHandleTypes = nullptr,
 	};
 

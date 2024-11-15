@@ -27,7 +27,6 @@ class PipelineCollection;
 class PipelineLayoutCollection;
 class ShaderModuleCollection;
 class TerrainRenderer;
-class TerrainSynchronizer;
 
 class Backend {
 public:
@@ -51,9 +50,6 @@ public:
 	const gfx::vk::Instance &instance() const noexcept { return *m_instance; }
 	gfx::vk::Device &device() noexcept { return *m_device; }
 	const gfx::vk::Device &device() const noexcept { return *m_device; }
-
-	TerrainSynchronizer &terrainSynchronizer() noexcept { return *m_terrain_synchronizer; }
-	const TerrainSynchronizer &terrainSynchronizer() const noexcept { return *m_terrain_synchronizer; }
 
 	ShaderModuleCollection &shaderModuleCollection() noexcept { return *m_shader_module_collection; }
 	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }
@@ -101,8 +97,6 @@ private:
 	gfx::GfxSystem *m_gfx_system = nullptr;
 	gfx::vk::Instance *m_instance = nullptr;
 	gfx::vk::Device *m_device = nullptr;
-
-	TerrainSynchronizer *m_terrain_synchronizer = nullptr;
 
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
 	PipelineCache *m_pipeline_cache = nullptr;
