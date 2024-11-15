@@ -1,5 +1,8 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 
+#include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/util/hash.hpp>
+
 namespace voxen::gfx::vk
 {
 
@@ -22,6 +25,30 @@ uint64_t VulkanUtils::alignUp(uint64_t size, uint64_t alignment) noexcept
 uint64_t VulkanUtils::calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept
 {
 	return (size * numerator + denomenator - 1u) / denomenator;
+}
+
+void VulkanUtils::fillBufferSharingInfo(Device &dev, VkBufferCreateInfo &info) noexcept
+{
+	auto &dev_info = dev.info();
+
+	info.sharingMode = dev_info.unique_queue_family_count > 1 ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+	info.queueFamilyIndexCount = dev_info.unique_queue_family_count;
+	info.pQueueFamilyIndices = dev_info.unique_queue_families;
+}
+
+std::array<char, 4> VulkanUtils::makeHandleDisambiguationString(void *handle) noexcept
+{
+	uint64_t hash = Hash::xxh64Fixed(static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle)));
+	std::array<char, 4> result;
+
+	result[0] = 'A' + hash % (1 + 'Z' - 'A');
+	hash >>= 8;
+	result[1] = 'A' + hash % (1 + 'Z' - 'A');
+	hash >>= 8;
+	result[2] = 'A' + hash % (1 + 'Z' - 'A');
+	result[3] = '\0';
+
+	return result;
 }
 
 std::string_view VulkanUtils::getVkResultString(VkResult result) noexcept

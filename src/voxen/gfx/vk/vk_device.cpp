@@ -513,12 +513,17 @@ void Device::createDevice()
 		// Guaranteed to exist by `isSupported()`
 		m_info.main_queue_family = queue_info.main_queue_family;
 
+		m_info.unique_queue_family_count = 1;
+		m_info.unique_queue_families[0] = queue_info.main_queue_family;
+
 		info.queueFamilyIndex = queue_info.main_queue_family;
 		queue_create_infos.emplace_back(info);
 
 		if (queue_info.dma_queue_family != VK_QUEUE_FAMILY_IGNORED) {
 			m_info.dedicated_dma_queue = 1;
 			m_info.dma_queue_family = queue_info.dma_queue_family;
+
+			m_info.unique_queue_families[m_info.unique_queue_family_count++] = queue_info.dma_queue_family;
 
 			info.queueFamilyIndex = queue_info.dma_queue_family;
 			queue_create_infos.emplace_back(info);
@@ -529,6 +534,8 @@ void Device::createDevice()
 		if (queue_info.compute_queue_family != VK_QUEUE_FAMILY_IGNORED) {
 			m_info.dedicated_compute_queue = 1;
 			m_info.compute_queue_family = queue_info.compute_queue_family;
+
+			m_info.unique_queue_families[m_info.unique_queue_family_count++] = queue_info.compute_queue_family;
 
 			info.queueFamilyIndex = queue_info.compute_queue_family;
 			queue_create_infos.emplace_back(info);

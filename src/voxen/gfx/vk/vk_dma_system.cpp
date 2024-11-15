@@ -39,6 +39,20 @@ void DmaSystem::uploadToBuffer(BufferUpload upload)
 	m_gfx.device()->dt().vkCmdCopyBuffer(m_current_cmd_buf, staging.buffer, upload.dst_buffer, 1, &region);
 }
 
+void DmaSystem::copyBufferToBuffer(BufferCopy copy)
+{
+	ensureCmdBuffer();
+
+	VkBufferCopy region {
+		.srcOffset = copy.src_offset,
+		.dstOffset = copy.dst_offset,
+		.size = copy.size,
+	};
+
+	// TODO: should we split cmd buffer if there are too many recorded commands?
+	m_gfx.device()->dt().vkCmdCopyBuffer(m_current_cmd_buf, copy.src_buffer, copy.dst_buffer, 1, &region);
+}
+
 uint64_t DmaSystem::flush()
 {
 	if (!m_current_cmd_buf) {

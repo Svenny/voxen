@@ -1,9 +1,9 @@
 #pragma once
 
+#include <voxen/gfx/frame_tick_id.hpp>
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
-#include <voxen/gfx/frame_tick_id.hpp>
 
 #include <extras/source_location.hpp>
 
@@ -26,6 +26,21 @@ struct DeviceDispatchTable {
 // NOTE: this object includes `PhysicalDevice` as a subobject so it's quite large too.
 class Device {
 public:
+	enum Queue : uint32_t {
+		// Supports GRAPHICS, COMPUTE (and TRANSFER)
+		// operations. Always a dedicated queue.
+		QueueMain = 0,
+		// Supports TRANSFER operations.
+		// Might be either a dedicated queue or an alias of main.
+		QueueDma,
+		// Supports COMPUTE (and TRANSFER) operations.
+		// Might be either a dedicated queue or an alias of main.
+		QueueCompute,
+
+		// Do not use, only for counting queue kinds
+		QueueCount,
+	};
+
 	// Compact (with bit fields packing where possible) representation of
 	// device information.
 	// Mostly duplicates information already exposed by `PhysicalDevice`
@@ -48,21 +63,12 @@ public:
 		uint32_t dedicated_dma_queue : 1 = 0;
 		// Set if compute queue is not an alias of the main one
 		uint32_t dedicated_compute_queue : 1 = 0;
-	};
 
-	enum Queue : uint32_t {
-		// Supports GRAPHICS, COMPUTE (and TRANSFER)
-		// operations. Always a dedicated queue.
-		QueueMain = 0,
-		// Supports TRANSFER operations.
-		// Might be either a dedicated queue or an alias of main.
-		QueueDma,
-		// Supports COMPUTE (and TRANSFER) operations.
-		// Might be either a dedicated queue or an alias of main.
-		QueueCompute,
-
-		// Do not use, only for counting queue kinds
-		QueueCount,
+		// Number of valid entries in `unique_queue_families`.
+		// Can be supplied to e.g. `VkBufferCreateInfo::queueFamilyIndexCount.
+		uint32_t unique_queue_family_count = 0;
+		// Can be supplied to e.g. `VkBufferCreateInfo::pQueueFamilyIndices`
+		uint32_t unique_queue_families[QueueCount] = {};
 	};
 
 	// See `submitCommands()`

@@ -14,6 +14,7 @@ class DebugUtils;
 class Device;
 class DmaSystem;
 class Instance;
+class MeshStreamer;
 class PhysicalDevice;
 class RenderGraphRunner;
 class Swapchain;

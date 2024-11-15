@@ -68,6 +68,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_error.cpp
 	src/voxen/gfx/vk/vk_instance.cpp
 	src/voxen/gfx/vk/vk_instance_wrappers.cpp
+	src/voxen/gfx/vk/vk_mesh_streamer.cpp
 	src/voxen/gfx/vk/vk_physical_device.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp

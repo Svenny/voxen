@@ -17,6 +17,14 @@ public:
 		VkDeviceSize size = 0;
 	};
 
+	struct BufferCopy {
+		VkBuffer src_buffer = VK_NULL_HANDLE;
+		VkBuffer dst_buffer = VK_NULL_HANDLE;
+		VkDeviceSize src_offset = 0;
+		VkDeviceSize dst_offset = 0;
+		VkDeviceSize size = 0;
+	};
+
 	explicit DmaSystem(GfxSystem &gfx);
 	DmaSystem(DmaSystem &&) = delete;
 	DmaSystem(const DmaSystem &) = delete;
@@ -25,6 +33,7 @@ public:
 	~DmaSystem();
 
 	void uploadToBuffer(BufferUpload upload);
+	void copyBufferToBuffer(BufferCopy copy);
 
 	uint64_t flush();
 
