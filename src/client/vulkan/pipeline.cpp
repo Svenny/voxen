@@ -5,6 +5,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
@@ -269,7 +270,7 @@ struct GraphicsPipelineParts {
 			info.basePipelineIndex = -1;
 		}
 
-		default_surface_format = Backend::backend().renderGraph().currentOutputFormat();
+		default_surface_format = Backend::backend().gfxSystem().renderGraph()->currentOutputFormat();
 	}
 
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];

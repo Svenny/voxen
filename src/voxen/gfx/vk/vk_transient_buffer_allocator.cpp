@@ -127,8 +127,23 @@ void TransientBufferAllocator::onFrameTickBegin(FrameTickId completed_tick, Fram
 		auto& free_list = m_free_list[type];
 		auto& used_list = m_used_list[type];
 
+		// What if allocations have stopped at all?
+		// Then buffers won't make it to the used list, so check in free list as well.
+		auto iter = free_list.begin();
+
+		while (iter != free_list.end()) {
+			if (iter->last_allocation_tick <= completed_tick
+				&& iter->last_allocation_tick + STALE_BUFFER_AGE_THRESHOLD < new_tick) {
+				// Stale + no longer used by GPU, destroy it, no enqueue needed
+				vmaDestroyBuffer(m_dev.vma(), iter->vk_handle, iter->vma_handle);
+				iter = free_list.erase(iter);
+			} else {
+				++iter;
+			}
+		}
+
 		// Find buffers available for reset
-		auto iter = used_list.begin();
+		iter = used_list.begin();
 
 		while (iter != used_list.end()) {
 			if (iter->last_allocation_tick > completed_tick) {
@@ -150,18 +165,6 @@ void TransientBufferAllocator::onFrameTickBegin(FrameTickId completed_tick, Fram
 			// This way we will be constantly cycling through buffers.
 			auto prev_iter = iter++;
 			free_list.splice(free_list.end(), used_list, prev_iter);
-		}
-
-		// What if allocations have stopped at all?
-		// Then buffers won't make it to the free list, so check there as well.
-		// Just one check is enough, we will eventually remove them all.
-		iter = free_list.begin();
-
-		if (iter != free_list.end() && iter->last_allocation_tick <= completed_tick
-			&& iter->last_allocation_tick + STALE_BUFFER_AGE_THRESHOLD < new_tick) {
-			// Stale + no longer used by GPU, destroy it, no enqueue needed
-			vmaDestroyBuffer(m_dev.vma(), iter->vk_handle, iter->vma_handle);
-			free_list.erase(iter);
 		}
 	}
 

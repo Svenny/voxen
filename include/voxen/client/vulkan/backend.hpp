@@ -11,13 +11,6 @@
 
 #include <string_view>
 
-namespace voxen::gfx::vk
-{
-
-class LegacyRenderGraph;
-
-} // namespace voxen::gfx::vk
-
 namespace voxen::client::vulkan
 {
 
@@ -66,10 +59,6 @@ public:
 	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
 	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
-	gfx::vk::LegacyRenderGraph &renderGraph() noexcept { return *m_render_graph; }
-	const gfx::vk::LegacyRenderGraph &renderGraph() const noexcept { return *m_render_graph; }
-	gfx::vk::RenderGraphRunner &renderGraphRunner() noexcept { return *m_render_graph_runner; }
-	const gfx::vk::RenderGraphRunner &renderGraphRunner() const noexcept { return *m_render_graph_runner; }
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
@@ -103,8 +92,6 @@ private:
 	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 
-	std::shared_ptr<gfx::vk::LegacyRenderGraph> m_render_graph;
-	gfx::vk::RenderGraphRunner *m_render_graph_runner = nullptr;
 	PipelineCollection *m_pipeline_collection = nullptr;
 
 	TerrainRenderer *m_terrain_renderer = nullptr;

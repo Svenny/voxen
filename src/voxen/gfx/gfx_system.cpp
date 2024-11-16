@@ -3,6 +3,7 @@
 #include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/gfx/frame_tick_source.hpp>
+#include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
@@ -118,12 +119,16 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 	}
 
 	m_vk_device.reset(new (comp.vk_device) vk::Device(*m_vk_instance, *selected_gpu));
+
 	m_vk_command_allocator.reset(new (comp.vk_command_allocator) vk::CommandAllocator(*this));
 	m_vk_transient_buffer_allocator.reset(
 		new (comp.vk_transient_buffer_allocator) vk::TransientBufferAllocator(*m_vk_device));
 	m_vk_dma_system.reset(new (comp.vk_dma_system) vk::DmaSystem(*this));
+
 	m_vk_mesh_streamer.reset(new (comp.vk_mesh_streamer) vk::MeshStreamer(*this));
 	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*m_vk_device, main_window));
+	m_render_graph = std::make_shared<vk::LegacyRenderGraph>();
+	m_vk_render_graph_runner->attachGraph(m_render_graph);
 
 	m_frame_tick_source.reset(new (comp.frame_tick_source) FrameTickSource());
 
@@ -138,12 +143,13 @@ GfxSystem::~GfxSystem()
 	Log::info("Stopping gfx system");
 }
 
-void GfxSystem::drawFrame()
+void GfxSystem::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto [completed_tick_id, this_tick_id] = m_frame_tick_source->startNextTick(*this);
 	notifyFrameTickBegin(completed_tick_id, this_tick_id);
 
-	// TODO: get current world state, run render graph etc.
+	m_render_graph->setGameState(state, view);
+	m_vk_render_graph_runner->executeGraph();
 
 	notifyFrameTickEnd(this_tick_id);
 }
