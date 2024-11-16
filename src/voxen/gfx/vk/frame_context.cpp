@@ -236,7 +236,7 @@ void FrameContext::waitAndReset()
 		VkDeviceSize new_size = Consts::addConstUploadBufferFusing(previously_used_bytes);
 		addConstantUploadBuffer(new_size);
 		// Might help with constants tuning until we have proper stats reporting
-		Log::debug("Fused constant upload buffers to {} KiB", new_size);
+		Log::debug("Fused constant upload buffers to {} KiB", (new_size + 1023) / 1024);
 	} else if (!m_const_upload_buffers.empty()) {
 		// Reset allocated span
 		auto &buf = m_const_upload_buffers.back();

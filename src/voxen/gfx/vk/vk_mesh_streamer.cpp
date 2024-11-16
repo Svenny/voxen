@@ -86,6 +86,8 @@ bool MeshStreamer::queryMesh(UID key, MeshInfo &mesh_info)
 		for (uint32_t i = 0; i < MAX_MESH_SUBSTREAMS; i++) {
 			MeshSubstreamInfo &substream = mesh_info.substreams[i];
 			if (info.ready_substream_allocations[i].valid()) {
+				info.ready_substream_allocations[i].pool->last_access_tick = m_current_tick_id;
+
 				substream.vk_buffer = info.ready_substream_allocations[i].pool->vk_handle;
 				substream.first_element = info.ready_substream_allocations[i].range_begin;
 				substream.num_elements = info.ready_substream_allocations[i].sizeElements();

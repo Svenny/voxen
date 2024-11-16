@@ -7,8 +7,24 @@
 
 #include <memory>
 
+namespace voxen
+{
+
+class GameView;
+class WorldState;
+
+} // namespace voxen
+
 namespace voxen::gfx
 {
+
+// TODO: specific installed render graph name should not be exposed
+namespace vk
+{
+
+class LegacyRenderGraph;
+
+}
 
 // This class is a "god object" storing the whole graphics subsystem (Vulkan renderer).
 //
@@ -43,7 +59,7 @@ public:
 	// If it throws an exception, most likely this means a device loss or out of memory.
 	// In either case the system becomes unusable and must be either restarted or terminated.
 	// Further calls to `drawFrame()` will almost certainly throw too.
-	void drawFrame();
+	void drawFrame(const WorldState& state, const GameView& view);
 
 	// Wait (block) until the given frame tick ID completes GPU execution.
 	// When this function returns, any resource associated with `tick_id`
@@ -52,11 +68,14 @@ public:
 
 	vk::Instance* instance() noexcept { return m_vk_instance.get(); }
 	vk::Device* device() noexcept { return m_vk_device.get(); }
-	vk::CommandAllocator *commandAllocator() noexcept { return m_vk_command_allocator.get(); }
+
+	vk::CommandAllocator* commandAllocator() noexcept { return m_vk_command_allocator.get(); }
 	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
 	vk::DmaSystem* dmaSystem() noexcept { return m_vk_dma_system.get(); }
+
 	vk::MeshStreamer* meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
 	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
+	vk::LegacyRenderGraph* renderGraph() noexcept { return m_render_graph.get(); }
 
 	const FrameTickSource* frameTickSource() const noexcept { return m_frame_tick_source.get(); }
 
@@ -81,11 +100,14 @@ private:
 
 	ComponentPtr<vk::Instance> m_vk_instance;
 	ComponentPtr<vk::Device> m_vk_device;
+
 	ComponentPtr<vk::CommandAllocator> m_vk_command_allocator;
 	ComponentPtr<vk::TransientBufferAllocator> m_vk_transient_buffer_allocator;
 	ComponentPtr<vk::DmaSystem> m_vk_dma_system;
+
 	ComponentPtr<vk::MeshStreamer> m_vk_mesh_streamer;
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
+	std::shared_ptr<vk::LegacyRenderGraph> m_render_graph;
 
 	ComponentPtr<FrameTickSource> m_frame_tick_source;
 

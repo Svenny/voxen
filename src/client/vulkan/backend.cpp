@@ -105,15 +105,8 @@ void Backend::stop() noexcept
 
 bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
 {
-	if (!m_render_graph_runner) {
-		Log::error("No RenderGraphRunner - refusing to draw the frame");
-		return false;
-	}
-
 	try {
-		m_gfx_system->drawFrame();
-		m_render_graph->setGameState(state, view);
-		m_render_graph_runner->executeGraph();
+		m_gfx_system->drawFrame(state, view);
 		return true;
 	}
 	catch (const gfx::vk::VulkanException &e) {
@@ -162,10 +155,6 @@ bool Backend::doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 		m_impl.constructModule(m_descriptor_set_layout_collection);
 		m_impl.constructModule(m_pipeline_layout_collection);
 
-		m_render_graph = std::make_shared<gfx::vk::LegacyRenderGraph>();
-		m_render_graph_runner = m_gfx_system->renderGraphRunner();
-		m_render_graph_runner->attachGraph(m_render_graph);
-
 		m_impl.constructModule(m_pipeline_collection);
 
 		m_impl.constructModule(m_terrain_renderer);
@@ -204,8 +193,6 @@ void Backend::doStop() noexcept
 
 	m_impl.destructModule(m_pipeline_collection);
 
-	m_render_graph.reset();
-
 	m_impl.destructModule(m_pipeline_layout_collection);
 	m_impl.destructModule(m_descriptor_set_layout_collection);
 	m_impl.destructModule(m_pipeline_cache);
@@ -214,7 +201,6 @@ void Backend::doStop() noexcept
 	unloadDeviceLevelApi();
 	unloadInstanceLevelApi();
 
-	m_render_graph_runner = nullptr;
 	m_device = nullptr;
 	m_instance = nullptr;
 	m_impl.destructModule(m_gfx_system);
