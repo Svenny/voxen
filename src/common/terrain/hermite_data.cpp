@@ -71,9 +71,9 @@ glm::ivec3 HermiteDataEntry::biggerEndpoint() const noexcept
 
 bool HermiteDataStorage::entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept
 {
-	// Compare as (Y, X, Z) tuples
-	return std::make_tuple(a.m_lesser_y, a.m_lesser_x, a.m_lesser_z)
-		< std::make_tuple(b.m_lesser_y, b.m_lesser_x, b.m_lesser_z);
+	// Compare as (Y, X, Z, A) tuples
+	return std::make_tuple(a.m_lesser_y, a.m_lesser_x, a.m_lesser_z, a.m_axis)
+		< std::make_tuple(b.m_lesser_y, b.m_lesser_x, b.m_lesser_z, a.m_axis);
 }
 
 void HermiteDataStorage::sort() noexcept
@@ -81,34 +81,38 @@ void HermiteDataStorage::sort() noexcept
 	std::sort(m_storage.begin(), m_storage.end(), entryLess);
 }
 
-HermiteDataStorage::iterator HermiteDataStorage::find(coord_t x, coord_t y, coord_t z) noexcept
+HermiteDataStorage::iterator HermiteDataStorage::find(coord_t x, coord_t y, coord_t z, int axis) noexcept
 {
 	HermiteDataEntry sample;
 	sample.m_lesser_x = x;
 	sample.m_lesser_y = y;
 	sample.m_lesser_z = z;
+	sample.m_axis = static_cast<uint32_t>(axis);
+
 	auto iter = std::lower_bound(m_storage.begin(), m_storage.end(), sample, entryLess);
 	if (iter == m_storage.end()) {
 		return iter;
 	}
-	if (iter->m_lesser_x != x || iter->m_lesser_y != y || iter->m_lesser_z != z) {
+	if (iter->m_lesser_x != x || iter->m_lesser_y != y || iter->m_lesser_z != z || iter->m_axis != axis) {
 		// `lower_bound` found wrong value, this means there is no `sample` in the container
 		return end();
 	}
 	return iter;
 }
 
-HermiteDataStorage::const_iterator HermiteDataStorage::find(coord_t x, coord_t y, coord_t z) const noexcept
+HermiteDataStorage::const_iterator HermiteDataStorage::find(coord_t x, coord_t y, coord_t z, int axis) const noexcept
 {
 	HermiteDataEntry sample;
 	sample.m_lesser_x = x;
 	sample.m_lesser_y = y;
 	sample.m_lesser_z = z;
+	sample.m_axis = static_cast<uint32_t>(axis);
+
 	auto iter = std::lower_bound(m_storage.begin(), m_storage.end(), sample, entryLess);
 	if (iter == m_storage.end()) {
 		return iter;
 	}
-	if (iter->m_lesser_x != x || iter->m_lesser_y != y || iter->m_lesser_z != z) {
+	if (iter->m_lesser_x != x || iter->m_lesser_y != y || iter->m_lesser_z != z || iter->m_axis != axis) {
 		// `lower_bound` found wrong value, this means there is no `sample` in the container
 		return end();
 	}
