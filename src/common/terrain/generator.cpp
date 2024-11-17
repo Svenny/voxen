@@ -174,7 +174,7 @@ void TerrainGenerator::generate(land::ChunkKey id, ChunkPrimaryData &output) con
 					if (ctx.sign_lesser != ctx.sign_bigger) {
 						ctx.value_bigger = values[i + 1][j][k];
 						ctx.voxel_bigger = voxels[i + 1][j][k];
-						addZeroCrossing<1>(ctx, f, df, output.hermite_data_y);
+						addZeroCrossing<1>(ctx, f, df, output.hermite_data);
 					}
 				}
 				if (j + 1 < GRID_SIZE) {
@@ -182,7 +182,7 @@ void TerrainGenerator::generate(land::ChunkKey id, ChunkPrimaryData &output) con
 					if (ctx.sign_lesser != ctx.sign_bigger) {
 						ctx.value_bigger = values[i][j + 1][k];
 						ctx.voxel_bigger = voxels[i][j + 1][k];
-						addZeroCrossing<0>(ctx, f, df, output.hermite_data_x);
+						addZeroCrossing<0>(ctx, f, df, output.hermite_data);
 					}
 				}
 				if (k + 1 < GRID_SIZE) {
@@ -190,7 +190,7 @@ void TerrainGenerator::generate(land::ChunkKey id, ChunkPrimaryData &output) con
 					if (ctx.sign_lesser != ctx.sign_bigger) {
 						ctx.value_bigger = values[i][j][k + 1];
 						ctx.voxel_bigger = voxels[i][j][k + 1];
-						addZeroCrossing<2>(ctx, f, df, output.hermite_data_z);
+						addZeroCrossing<2>(ctx, f, df, output.hermite_data);
 					}
 				}
 			}

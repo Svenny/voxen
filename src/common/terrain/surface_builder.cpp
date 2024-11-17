@@ -15,11 +15,8 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 	surface.clear();
 
 	const ChunkPrimaryData &primary = chunk.primaryData();
-	const HermiteDataStorage &hermite_x = primary.hermite_data_x;
-	const HermiteDataStorage &hermite_y = primary.hermite_data_y;
-	const HermiteDataStorage &hermite_z = primary.hermite_data_z;
 
-	if (hermite_x.empty() && hermite_y.empty() && hermite_z.empty()) {
+	if (primary.hermite_data.empty()) {
 		// This chunk has no edges - no need to spend any more time
 		return;
 	}
@@ -65,16 +62,8 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 		add_point(lesser, entry);
 	};
 
-	for (const auto &entry : hermite_x) {
-		add_edge(entry, 0);
-	}
-
-	for (const auto &entry : hermite_y) {
-		add_edge(entry, 1);
-	}
-
-	for (const auto &entry : hermite_z) {
-		add_edge(entry, 2);
+	for (const auto &entry : primary.hermite_data) {
+		add_edge(entry, entry.axis());
 	}
 
 	std::unordered_map<uint32_t, uint32_t> cell_to_vertex_id;
@@ -138,16 +127,8 @@ void SurfaceBuilder::buildSurface(Chunk &chunk)
 		}
 	};
 
-	for (const auto &entry : hermite_x) {
-		add_triangles(entry, 0);
-	}
-
-	for (const auto &entry : hermite_y) {
-		add_triangles(entry, 1);
-	}
-
-	for (const auto &entry : hermite_z) {
-		add_triangles(entry, 2);
+	for (const auto &entry : primary.hermite_data) {
+		add_triangles(entry, entry.axis());
 	}
 }
 

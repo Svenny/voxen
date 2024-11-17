@@ -21,8 +21,7 @@ Chunk &Chunk::operator=(Chunk &&other) noexcept
 
 bool Chunk::hasSurface() const noexcept
 {
-	return !m_primary_data.hermite_data_x.empty() || !m_primary_data.hermite_data_y.empty()
-		|| !m_primary_data.hermite_data_z.empty();
+	return !m_primary_data.hermite_data.empty();
 }
 
 } // namespace voxen::terrain

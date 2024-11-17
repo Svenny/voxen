@@ -39,6 +39,8 @@ public:
 	glm::vec3 surfacePoint() const noexcept;
 	/// Returns the material of the solid endpoint
 	voxel_t solidEndpointVoxel() const noexcept { return m_solid_voxel; }
+	/// Returns crossing axis in GLM order (0 - X, 1 - Y, 2 - Z)
+	int axis() const noexcept { return m_axis; }
 	/// Returns local coordinates of the lesser endpoint
 	glm::ivec3 lesserEndpoint() const noexcept;
 	/// Returns local coordinates of the bigger endpoint
@@ -70,7 +72,7 @@ private:
 };
 static_assert(sizeof(HermiteDataEntry) == 16, "16-byte Hermite data packing is broken");
 
-/** \brief Compressed storage of `HermiteDataEntry`s for a single axis
+/** \brief Compressed storage of `HermiteDataEntry`s
 */
 class HermiteDataStorage {
 public:
@@ -87,7 +89,7 @@ public:
 	{
 		m_storage.emplace_back(std::forward<Args>(args)...);
 	}
-	/** \brief Sorts stored edges by lesser endpoints (in YXZ order)
+	/** \brief Sorts stored edges by lesser endpoints (in YXZ order, then axis in 012 order)
 
 		Using \ref findEdge is possible only when edges are sorted. Instead of calling this
 		function you may enforce adding entries in given order (if possible).
@@ -96,15 +98,16 @@ public:
 	void clear() noexcept { m_storage.clear(); }
 	iterator begin() noexcept { return m_storage.begin(); }
 	iterator end() noexcept { return m_storage.end(); }
-	/** \brief Finds an entry with given lesser endpoint coordinates
+	/** \brief Finds an entry with given lesser endpoint coordinates and axis
 
 		\param[in] x,y,z Local coordinates of the lesser endpoint
+		\param[in] axis Axis of the edge in GLM order (0 - X, 1 - Y, 2 - Z)
 		\return Iterator to the found entry or \ref end in case nothing was found
 		\attention This function runs binary search. Make sure storage is sorted before calling
 	*/
-	iterator find(coord_t x, coord_t y, coord_t z) noexcept;
+	iterator find(coord_t x, coord_t y, coord_t z, int axis) noexcept;
 	/// \copydoc find
-	const_iterator find(coord_t x, coord_t y, coord_t z) const noexcept;
+	const_iterator find(coord_t x, coord_t y, coord_t z, int axis) const noexcept;
 	/// Returns the number of currently stored entries
 	size_type size() const noexcept { return m_storage.size(); }
 	bool empty() const noexcept { return m_storage.empty(); }
@@ -116,7 +119,7 @@ public:
 private:
 	/// Wrapped container
 	StorageType m_storage;
-	/// 'Less' comparator for entries, orders them as (Y, X, Z) tuples
+	/// 'Less' comparator for entries, orders them as (Y, X, Z, A) tuples
 	static bool entryLess(const HermiteDataEntry &a, const HermiteDataEntry &b) noexcept;
 };
 
