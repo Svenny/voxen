@@ -7,6 +7,7 @@
 
 namespace voxen::land::Utils
 {
+
 // Visit all points in [0; N)^3 space in YXZ order, calling F(x, y, z)
 template<uint32_t N, typename F>
 inline void forYXZ(F &&fn) noexcept(std::is_nothrow_invocable_v<F, uint32_t, uint32_t, uint32_t>)
@@ -19,5 +20,7 @@ inline void forYXZ(F &&fn) noexcept(std::is_nothrow_invocable_v<F, uint32_t, uin
 		}
 	}
 }
+
+
 
 } // namespace voxen::land::Utils

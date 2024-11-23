@@ -1,13 +1,12 @@
 #pragma once
 
 #include <voxen/common/player.hpp>
+#include <voxen/common/world_tick_id.hpp>
 #include <voxen/land/land_state.hpp>
-#include <voxen/util/tagged_tick_id.hpp>
 
 #include <extras/function_ref.hpp>
 #include <extras/refcnt_ptr.hpp>
 
-#include <mutex>
 #include <vector>
 
 namespace voxen
@@ -17,10 +16,6 @@ namespace terrain
 {
 class Chunk;
 }
-
-struct WorldTickTag {};
-
-using WorldTickId = TaggedTickId<WorldTickTag>;
 
 class WorldState {
 public:
