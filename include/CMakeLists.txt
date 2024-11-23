@@ -66,6 +66,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/v8g_hash_trie.hpp
 	include/voxen/common/v8g_hash_trie_impl.hpp
 	include/voxen/common/world_state.hpp
+	include/voxen/common/world_tick_id.hpp
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
@@ -98,13 +99,19 @@ set(VOXEN_HEADERS
 	include/voxen/land/compressed_chunk_storage.hpp
 	include/voxen/land/cube_array.hpp
 	include/voxen/land/land_chunk.hpp
+	include/voxen/land/land_fwd.hpp
 	include/voxen/land/land_messages.hpp
 	include/voxen/land/land_public_consts.hpp
 	include/voxen/land/land_service.hpp
 	include/voxen/land/land_state.hpp
+	include/voxen/land/land_storage_tree.hpp
+	include/voxen/land/land_storage_tree_node_ptr.hpp
 	include/voxen/land/land_utils.hpp
 	include/voxen/land/pseudo_chunk_data.hpp
 	include/voxen/land/pseudo_chunk_surface.hpp
+	include/voxen/land/storage_tree_common.hpp
+	include/voxen/land/storage_tree_utils.hpp
+	include/voxen/land/typed_storage_tree.hpp
 	include/voxen/os/futex.hpp
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/os_fwd.hpp

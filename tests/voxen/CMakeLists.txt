@@ -7,6 +7,8 @@ target_sources(test-voxen PRIVATE
 	land/chunk_key.test.cpp
 	land/compressed_chunk_storage.test.cpp
 	land/cube_array.test.cpp
+	land/land_storage_tree.test.cpp
+	land/storage_tree_utils.test.cpp
 	svc/message_queue.test.cpp
 	svc/service_locator.test.cpp
 	util/concentric_octahedra_walker.test.cpp
@@ -25,6 +27,8 @@ add_test(NAME voxen-debug-uid-registry COMMAND test-voxen "[voxen::debug::uid_re
 add_test(NAME voxen-land-chunk-key COMMAND test-voxen "[voxen::land::chunk_key]")
 add_test(NAME voxen-compressed-chunk-storage COMMAND test-voxen "[voxen::land::compressed_chunk_storage]")
 add_test(NAME voxen-land-cube-array COMMAND test-voxen "[voxen::land::cube_array]")
+add_test(NAME voxen-land-storage-tree COMMAND test-voxen "[voxen::land::land_storage_tree]")
+add_test(NAME voxen-storage-tree-utils COMMAND test-voxen "[voxen::land::storage_tree_utils]")
 add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_queue]")
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
 add_test(NAME voxen-concentric-octahedra-walker COMMAND test-voxen "[voxen::concentric_octahedra_walker]")

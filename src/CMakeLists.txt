@@ -78,8 +78,14 @@ set(VOXEN_SOURCES
 	src/voxen/land/land_private_messages.hpp
 	src/voxen/land/land_service.cpp
 	src/voxen/land/land_state.cpp
+	src/voxen/land/land_storage_tree.cpp
+	src/voxen/land/land_storage_tree_nodes.cpp
+	src/voxen/land/land_storage_tree_node_ptr.cpp
+	src/voxen/land/land_storage_tree_private.hpp
 	src/voxen/land/pseudo_chunk_data.cpp
 	src/voxen/land/pseudo_chunk_surface.cpp
+	src/voxen/land/storage_tree_utils.cpp
+	src/voxen/land/storage_tree_utils_private.hpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
