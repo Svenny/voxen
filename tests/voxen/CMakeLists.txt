@@ -14,6 +14,7 @@ target_sources(test-voxen PRIVATE
 	util/concentric_octahedra_walker.test.cpp
 	util/hash.test.cpp
 	util/packed_color.test.cpp
+	voxen_test_common.cpp
 )
 
 target_link_libraries(test-voxen PRIVATE

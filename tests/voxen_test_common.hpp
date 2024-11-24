@@ -2,6 +2,7 @@
 
 #include "test_common.hpp"
 
+#include <voxen/land/chunk_key.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 
@@ -15,3 +16,13 @@ inline auto errcExceptionMatcher(VoxenErrc ec)
 }
 
 } // namespace voxen::test
+
+namespace Catch
+{
+
+template<>
+struct StringMaker<voxen::land::ChunkKey> {
+	static std::string convert(voxen::land::ChunkKey key);
+};
+
+} // namespace Catch

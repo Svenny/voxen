@@ -89,11 +89,8 @@ void *DuoctreeNodeBase<TChild>::access(const StorageTreeControl &ctl, uint64_t t
 
 	ChildItem &child = *constructItem(storage_index, after_count);
 
-	glm::ivec3 child_min_coord;
-	const uint64_t child_id = my_component & 63u;
-	child_min_coord.x = m_key.x + TChild::NODE_SIZE_CHUNKS * int32_t((child_id % 16) / 4);
-	child_min_coord.y = m_key.y + TChild::NODE_SIZE_CHUNKS * int32_t(child_id / 16);
-	child_min_coord.z = m_key.z + TChild::NODE_SIZE_CHUNKS * int32_t(child_id % 4);
+	glm::ivec3 child_min_coord = StorageTreeUtils::calcDuoctreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_key,
+		my_component);
 
 	try {
 		child.init(ctl, tick, child_min_coord);
@@ -279,11 +276,8 @@ void *TriquadtreeNodeBase<HILO, TChild>::access(const StorageTreeControl &ctl, u
 
 	ChildItem &child = *constructItem(storage_index, after_count);
 
-	glm::ivec3 child_min_coord;
-	const uint64_t child_id = my_component & 63u;
-	child_min_coord.x = m_min_x + TChild::NODE_SIZE_CHUNKS * int32_t(child_id / 8);
-	child_min_coord.y = y_negative ? -TChild::NODE_SIZE_CHUNKS : 0;
-	child_min_coord.z = m_min_z + TChild::NODE_SIZE_CHUNKS * int32_t(child_id % 8);
+	glm::ivec3 child_min_coord = StorageTreeUtils::calcTriquadtreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_min_x,
+		m_min_z, my_component);
 
 	try {
 		child.init(ctl, tick, child_min_coord);
