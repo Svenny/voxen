@@ -23,8 +23,10 @@ static_assert(Consts::MIN_WORLD_Y_CHUNK == -detail::DuoctreeLargestNode::NODE_SI
 static_assert(Consts::MAX_WORLD_Y_CHUNK == detail::DuoctreeLargestNode::NODE_SIZE_CHUNKS - 1);
 
 // These masks define where to deposit/gather X/Y/Z bits using the PDEP/PEXT BMI2 instructions.
+// Inside one node, child index bits are laid out in Morton order.
 //
 // `Root` is filled manually as it needs special wraparound handling.
+// Root items are laid out in XZ order without Morton ordering.
 //
 // Some of the parts from `x1` to `x256` gets the highest bit (7) set as stop bit.
 // That same part can also get the second-high bit (6) set as subnode bit - then it means
@@ -45,10 +47,10 @@ static_assert(Consts::MAX_WORLD_Y_CHUNK == detail::DuoctreeLargestNode::NODE_SIZ
 //    X/Y/Z child node indexing bits
 //
 //                                    Root   TriQRoot  Bridge    x256      x64      x16      x4       x1
-//                                  ######## ~~XXXZZZ ~YXXXZZZ SNYYXXZZ SNYYXXZZ SNYYXXZZ SNYYXXZZ S~~~~XYZ
-constexpr static uint64_t XMASK = 0b00000000'00111000'00111000'00001100'00001100'00001100'00001100'00000000;
-constexpr static uint64_t YMASK = 0b00000000'00000000'01000000'00110000'00110000'00110000'00110000'00000000;
-constexpr static uint64_t ZMASK = 0b00000000'00000111'00000111'00000011'00000011'00000011'00000011'00000000;
+//                                  ######## ~~XZXZXZ ~YXZXZXZ SNYXZYXZ SNYXZYXZ SNYXZYXZ SNYXZYXZ S~~~~XYZ
+constexpr static uint64_t XMASK = 0b00000000'00101010'00101010'00010010'00010010'00010010'00010010'00000000;
+constexpr static uint64_t YMASK = 0b00000000'00000000'01000000'00100100'00100100'00100100'00100100'00000000;
+constexpr static uint64_t ZMASK = 0b00000000'00010101'00010101'00001001'00001001'00001001'00001001'00000000;
 
 std::optional<uint64_t> StorageTreeUtils::keyToTreePath(ChunkKey key) noexcept
 {

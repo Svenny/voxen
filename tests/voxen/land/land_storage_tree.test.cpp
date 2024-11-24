@@ -191,7 +191,19 @@ TEST_CASE("'StorageTree' test case 1 (insertions)", "[voxen::land::land_storage_
 		for (uint64_t path : tree_paths) {
 			void *ptr = st->access(path, tick);
 			SILENT_CHECK(ptr != nullptr);
-			SILENT_CHECK(g_live_keys.contains(ptr));
+
+			auto iter = g_live_keys.find(ptr);
+			SILENT_CHECK(iter != g_live_keys.end());
+
+			ChunkKey expected = StorageTreeUtils::treePathToKey(path);
+			ChunkKey actual = iter->second;
+			// Odd scales will not have equal keys inserted - they are not part of duoctree grid
+			if (expected.scale_log2 % 2 == 0 && expected != actual) {
+				// TODO: something is broken, catch does not hook it up automatically
+				INFO(Catch::StringMaker<ChunkKey>::convert(expected));
+				INFO(Catch::StringMaker<ChunkKey>::convert(actual));
+				CHECK(expected == actual);
+			}
 		}
 
 		// Make things a bit less predictable
