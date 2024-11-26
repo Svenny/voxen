@@ -57,7 +57,9 @@ set(VOXEN_HEADERS
 	include/voxen/common/pipe_memory_allocator.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/player_state_message.hpp
+	include/voxen/common/private_object_pool.hpp
 	include/voxen/common/runtime_config.hpp
+	include/voxen/common/shared_object_pool.hpp
 	include/voxen/common/thread_pool.hpp
 	include/voxen/common/uid.hpp
 	include/voxen/common/v8g_concepts.hpp
