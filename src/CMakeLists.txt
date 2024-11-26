@@ -41,6 +41,8 @@ set(VOXEN_SOURCES
 	src/util/log.cpp
 	src/voxen/client/main_thread_service.cpp
 	src/voxen/common/pipe_memory_allocator.cpp
+	src/voxen/common/private_object_pool.cpp
+	src/voxen/common/shared_object_pool.cpp
 	src/voxen/common/thread_pool.cpp
 	src/voxen/common/uid.cpp
 	src/voxen/debug/bug_found.cpp
