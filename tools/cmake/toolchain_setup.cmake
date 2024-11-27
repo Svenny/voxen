@@ -27,9 +27,11 @@ function(voxen_setup_target target is_executable)
 		-Wall -Wextra -Wpedantic -Werror
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
-		-Wshadow-uncaptured-local
+		-Wshadow-uncaptured-local -Wunused-member-function
 		# And disable some junk warnings
 		-Wno-c99-designator
+		# Does not recognize some member functions are needed to satisfy concepts
+		-Wno-unneeded-member-function
 
 		# Prefix maps ensure more reproducible and environment-independent builds
 		# Remap /path/to/voxen/src/file.cpp -> src/file.cpp in __FILE__ and co.
@@ -112,8 +114,6 @@ function(voxen_setup_target target is_executable)
 			-Wno-switch-default
 			# Triggers even when we have terminating `default` unlike `-Wswitch`
 			-Wno-switch-enum
-			# Does not recognize some member functions are needed to satisfy concepts
-			-Wno-unneeded-member-function
 			# Triggers on ~any unchecked array access, total nonsense
 			-Wno-unsafe-buffer-usage
 
