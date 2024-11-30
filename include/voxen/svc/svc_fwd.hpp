@@ -9,5 +9,19 @@ class MessageQueue;
 class MessageSender;
 class MessagingService;
 class ServiceLocator;
+class TaskBuilder;
+class TaskContext;
+class TaskHandle;
+class TaskService;
+
+namespace detail
+{
+
+class PrivateTaskHandle;
+class TaskCounterTracker;
+struct TaskHeader;
+class TaskServiceImpl;
+
+} // namespace detail
 
 } // namespace voxen::svc

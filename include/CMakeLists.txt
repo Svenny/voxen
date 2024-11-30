@@ -129,6 +129,10 @@ set(VOXEN_HEADERS
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp
 	include/voxen/svc/svc_fwd.hpp
+	include/voxen/svc/task_builder.hpp
+	include/voxen/svc/task_context.hpp
+	include/voxen/svc/task_handle.hpp
+	include/voxen/svc/task_service.hpp
 	include/voxen/util/aabb.hpp
 	include/voxen/util/allocator.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
