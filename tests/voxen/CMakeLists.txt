@@ -13,6 +13,7 @@ target_sources(test-voxen PRIVATE
 	land/storage_tree_utils.test.cpp
 	svc/message_queue.test.cpp
 	svc/service_locator.test.cpp
+	svc/task_service.test.cpp
 	util/concentric_octahedra_walker.test.cpp
 	util/hash.test.cpp
 	util/packed_color.test.cpp
@@ -36,6 +37,7 @@ add_test(NAME voxen-land-storage-tree COMMAND test-voxen "[voxen::land::land_sto
 add_test(NAME voxen-storage-tree-utils COMMAND test-voxen "[voxen::land::storage_tree_utils]")
 add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_queue]")
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
+add_test(NAME voxen-svc-task-service COMMAND test-voxen "[voxen::svc::task_service]")
 add_test(NAME voxen-concentric-octahedra-walker COMMAND test-voxen "[voxen::concentric_octahedra_walker]")
 add_test(NAME voxen-hash COMMAND test-voxen "[voxen::hash]")
 add_test(NAME voxen-packed-color COMMAND test-voxen "[voxen::packed_color]")

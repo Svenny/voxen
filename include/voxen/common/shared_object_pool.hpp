@@ -2,7 +2,9 @@
 
 #include <voxen/visibility.hpp>
 
+#include <algorithm>
 #include <atomic>
+#include <bit>
 #include <utility>
 
 namespace voxen

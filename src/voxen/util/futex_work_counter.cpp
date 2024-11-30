@@ -24,32 +24,32 @@ auto FutexWorkCounter::loadRelaxed() const noexcept -> Value
 
 void FutexWorkCounter::addWork(uint32_t amount) noexcept
 {
-	if (m_counter.fetch_add(amount) == 0) {
-		os::Futex::wakeSingle(&m_counter);
+	if (m_counter.fetch_add(amount, std::memory_order_release) == 0) {
+		os::Futex::wakeAll(&m_counter);
 	}
 }
 
 auto FutexWorkCounter::removeWork(uint32_t amount) noexcept -> Value
 {
-	auto value = unpackValue(m_counter.fetch_sub(amount));
+	auto value = unpackValue(m_counter.fetch_sub(amount, std::memory_order_acq_rel));
 	value.first -= amount;
 	return value;
 }
 
 void FutexWorkCounter::requestStop() noexcept
 {
-	if (m_counter.fetch_or(STOP_BIT) == 0) {
-		os::Futex::wakeSingle(&m_counter);
+	if (m_counter.fetch_or(STOP_BIT, std::memory_order_release) == 0) {
+		os::Futex::wakeAll(&m_counter);
 	}
 }
 
 auto FutexWorkCounter::wait() noexcept -> Value
 {
-	uint32_t value = m_counter.load();
+	uint32_t value = m_counter.load(std::memory_order_acquire);
 
 	while (value == 0) {
 		os::Futex::waitInfinite(&m_counter, value);
-		value = m_counter.load();
+		value = m_counter.load(std::memory_order_acquire);
 	}
 
 	return unpackValue(value);

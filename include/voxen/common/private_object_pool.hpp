@@ -2,6 +2,7 @@
 
 #include <voxen/visibility.hpp>
 
+#include <algorithm>
 #include <bit>
 #include <memory>
 #include <type_traits>
