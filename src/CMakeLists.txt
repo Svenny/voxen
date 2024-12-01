@@ -43,7 +43,6 @@ set(VOXEN_SOURCES
 	src/voxen/common/pipe_memory_allocator.cpp
 	src/voxen/common/private_object_pool.cpp
 	src/voxen/common/shared_object_pool.cpp
-	src/voxen/common/thread_pool.cpp
 	src/voxen/common/uid.cpp
 	src/voxen/debug/bug_found.cpp
 	src/voxen/debug/thread_name.cpp
