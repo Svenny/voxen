@@ -116,9 +116,6 @@ ChunkKey StorageTreeUtils::treePathToKey(uint64_t tree_path) noexcept
 	uint64_t y = _pext_u64(tree_path, YMASK);
 	uint64_t z = _pext_u64(tree_path, ZMASK);
 
-	auto bytes = std::bit_cast<std::array<uint8_t, 8>>(tree_path);
-	(void) bytes;
-
 	// This is the bit stored in "Y negative" bit of the bridge node, see `YMASK`.
 	constexpr uint64_t y_sign_bit = uint64_t(1) << 8;
 	constexpr uint64_t y_sign_fill_mask = ~((y_sign_bit << 1) - 1);

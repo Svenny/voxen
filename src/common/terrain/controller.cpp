@@ -3,8 +3,9 @@
 #include <voxen/common/terrain/allocator.hpp>
 #include <voxen/common/terrain/chunk.hpp>
 #include <voxen/common/terrain/coord.hpp>
-#include <voxen/common/thread_pool.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/svc/task_builder.hpp>
+#include <voxen/svc/task_service.hpp>
 #include <voxen/util/hash.hpp>
 
 #include <glm/common.hpp>
@@ -18,7 +19,7 @@
 namespace voxen::terrain
 {
 
-Controller::Controller(svc::ServiceLocator &svc) : m_thread_pool(svc.requestService<ThreadPool>()) {}
+Controller::Controller(svc::ServiceLocator &svc) : m_task_service(svc.requestService<svc::TaskService>()) {}
 
 Controller::~Controller()
 {
@@ -212,8 +213,9 @@ Controller::ControlBlockPtr Controller::enqueueLoadingChunk(land::ChunkKey id)
 	});
 
 	assert(!m_async_chunk_loads.contains(id));
-	m_async_chunk_loads[id] = m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
-		[this, chunk_ptr]() { m_loader.load(*chunk_ptr); });
+	svc::TaskBuilder bld(m_task_service);
+	m_async_chunk_loads[id] = bld.enqueueTaskWithHandle(
+		[this, chunk_ptr](svc::TaskContext &) { m_loader.load(*chunk_ptr); });
 
 	auto cb_ptr = std::make_unique<ChunkControlBlock>();
 	cb_ptr->setState(ChunkControlBlock::State::Loading);
@@ -282,8 +284,8 @@ Controller::InnerUpdateResult Controller::updateChunkLoading(ChunkControlBlock &
 	assert(iter != m_async_chunk_loads.end());
 	assert(iter->second.valid());
 
-	if (iter->second.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
-		iter->second.get();
+	if (iter->second.finished()) {
+		iter->second.reset();
 		cb.setState(ChunkControlBlock::State::Standby);
 		m_async_chunk_loads.erase(iter);
 		return { true, ParentCommand::Nothing };
