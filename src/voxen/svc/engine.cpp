@@ -2,7 +2,6 @@
 
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/common/pipe_memory_allocator.hpp>
-#include <voxen/common/thread_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/messaging_service.hpp>
@@ -27,11 +26,6 @@ auto makeMsgService(ServiceLocator &svc)
 auto makePipeAllocService(ServiceLocator &svc)
 {
 	return std::make_unique<PipeMemoryAllocator>(svc, PipeMemoryAllocator::Config {});
-}
-
-auto makeThreadPoolService(ServiceLocator &svc)
-{
-	return std::make_unique<ThreadPool>(svc, ThreadPool::Config {});
 }
 
 auto makeTaskService(ServiceLocator &svc)
@@ -62,14 +56,12 @@ Engine::Engine()
 
 	debug::UidRegistry::registerLiteral(MessagingService::SERVICE_UID, "voxen::svc::MessagingService");
 	debug::UidRegistry::registerLiteral(PipeMemoryAllocator::SERVICE_UID, "voxen::PipeMemoryAllocator");
-	debug::UidRegistry::registerLiteral(ThreadPool::SERVICE_UID, "voxen::ThreadPool");
 	debug::UidRegistry::registerLiteral(TaskService::SERVICE_UID, "voxen::svc::TaskService");
 	debug::UidRegistry::registerLiteral(client::MainThreadService::SERVICE_UID, "voxen::client::MainThreadService");
 	debug::UidRegistry::registerLiteral(server::World::SERVICE_UID, "voxen::server::World");
 
 	m_service_locator.registerServiceFactory<MessagingService>(makeMsgService);
 	m_service_locator.registerServiceFactory<PipeMemoryAllocator>(makePipeAllocService);
-	m_service_locator.registerServiceFactory<ThreadPool>(makeThreadPoolService);
 	m_service_locator.registerServiceFactory<TaskService>(makeTaskService);
 	m_service_locator.registerServiceFactory<client::MainThreadService>(makeMainThreadService);
 	m_service_locator.registerServiceFactory<server::World>(makeWorldService);
