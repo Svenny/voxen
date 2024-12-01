@@ -1,13 +1,15 @@
 #include <voxen/land/land_service.hpp>
 
-#include <voxen/common/thread_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/svc/task_builder.hpp>
+#include <voxen/svc/task_service.hpp>
 #include <voxen/util/concentric_octahedra_walker.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/util/lru_visit_ordering.hpp>
 
 #include "land_private_consts.hpp"
 #include "land_private_messages.hpp"
@@ -238,8 +240,10 @@ void generateImpostor8(ChunkKey key, std::array<LandState::PseudoChunkDataTable:
 		LandState::PseudoChunkDataTable::makeValuePtr(ptrs));
 }
 
+constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
+
 struct ChunkMetastate {
-	WorldTickId last_referenced_tick { INT64_MIN };
+	WorldTickId last_referenced_tick = WorldTickId::INVALID;
 
 	uint32_t has_chunk : 1 = 0;
 	uint32_t has_fake_data : 1 = 0;
@@ -261,7 +265,7 @@ struct TicketState {
 
 class detail::LandServiceImpl {
 public:
-	LandServiceImpl(svc::ServiceLocator &svc) : m_thread_pool(svc.requestService<ThreadPool>())
+	LandServiceImpl(svc::ServiceLocator &svc) : m_task_service(svc.requestService<svc::TaskService>())
 	{
 		// Public messages
 		debug::UidRegistry::registerLiteral(ChunkTicketRequestMessage::MESSAGE_UID,
@@ -386,34 +390,42 @@ public:
 		}
 
 		// Try cleaning up some unused chunks
-		auto iter = m_metastate.find(m_cleanup_iterator_key);
-		if (iter == m_metastate.end()) {
-			iter = m_metastate.begin();
-		}
+		m_keys_lru_check_order.visitOldest(
+			[&](ChunkKey key) -> WorldTickId {
+				auto iter = m_metastate.find(key);
+				if (iter == m_metastate.end()) {
+					// Wut, key gone without our action?
+					return WorldTickId::INVALID;
+				}
 
-		// TODO: move to constants/options
-		for (size_t i = 0; i < 1000 && iter != m_metastate.end(); i++) {
-			if (canCleanupChunk(iter->second, tick_id)) {
+				if (iter->second.last_referenced_tick + STALE_CHUNK_AGE_THRESHOLD > tick_id) {
+					// Not yet stale, reschedule the visit
+					return iter->second.last_referenced_tick + STALE_CHUNK_AGE_THRESHOLD;
+				}
+
+				if (!canCleanupChunk(iter->second)) {
+					// Has some pending work, unsafe to remove.
+					// This will leave it pretty much at the same place - the chunk
+					// itself is stale, we just need to wait for jobs completion.
+					return tick_id + 1;
+				}
+
 				uint64_t version = static_cast<uint64_t>(tick_id.value);
 				m_land_state.chunk_table.erase(version, iter->first);
 				m_land_state.pseudo_chunk_data_table.erase(version, iter->first);
 				m_land_state.pseudo_chunk_surface_table.erase(version, iter->first);
+				m_metastate.erase(iter);
 
-				iter = m_metastate.erase(iter);
-			} else {
-				++iter;
-			}
-
-			if (iter != m_metastate.end()) {
-				m_cleanup_iterator_key = iter->first;
-			}
-		}
+				return WorldTickId::INVALID;
+			},
+			// TODO: move to constants/options
+			1000, tick_id);
 	}
 
 	const LandState &landState() const noexcept { return m_land_state; }
 
 private:
-	ThreadPool &m_thread_pool;
+	svc::TaskService &m_task_service;
 
 	svc::MessageQueue m_queue;
 	svc::MessageSender m_sender;
@@ -422,8 +434,8 @@ private:
 	uint64_t m_next_ticket_id = 0;
 
 	std::unordered_map<ChunkKey, ChunkMetastate> m_metastate;
-	ChunkKey m_cleanup_iterator_key = {};
 
+	LruVisitOrdering<ChunkKey, WorldTickTag> m_keys_lru_check_order;
 	std::vector<std::pair<int32_t, ChunkKey>> m_keys_to_update;
 
 	WorldTickId m_tick_id;
@@ -431,13 +443,21 @@ private:
 
 	void tickChunkKey(ChunkKey ck, WorldTickId tick_id, int32_t priority)
 	{
-		auto &m = m_metastate[ck];
+		auto [iter, inserted] = m_metastate.try_emplace(ck);
+		if (inserted) {
+			// Register this key in cleanup visit ordering
+			m_keys_lru_check_order.addKey(ck, tick_id + STALE_CHUNK_AGE_THRESHOLD);
+		}
+
+		auto &m = iter->second;
 		m.last_referenced_tick = tick_id;
 
 		if (ck.scale_log2 == 0 && !m.has_chunk && !m.has_pending_chunk_load) {
 			// No chunk and no loading job - enqueue one
 			m.has_pending_chunk_load = 1;
-			m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard, [ck, snd = &m_sender] { loadChunk(ck, snd); });
+			svc::TaskBuilder(m_task_service).enqueueTask([ck, snd = &m_sender](svc::TaskContext &) {
+				loadChunk(ck, snd);
+			});
 		}
 
 		if (!m.has_fake_data && !m.has_pending_fake_data_gen) {
@@ -451,14 +471,8 @@ private:
 		}
 	}
 
-	static bool canCleanupChunk(ChunkMetastate &m, WorldTickId tick_id)
+	static bool canCleanupChunk(ChunkMetastate &m)
 	{
-		// TODO: move threshold to constants/options
-		if (m.last_referenced_tick + 500 >= tick_id) {
-			// This chunk was referenced relatively recently
-			return false;
-		}
-
 		if (m.has_pending_chunk_load || m.has_pending_fake_data_gen || m.has_pending_pseudo_surface_gen) {
 			// Has pending job, unsafe to remove now
 			return false;
@@ -525,8 +539,8 @@ private:
 
 				// Have all dependencies, enqueue task immediately, no ticket needed
 				m.has_pending_fake_data_gen = 1;
-				m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
-					[ck, deps = std::move(dependencies), snd = &m_sender] {
+				svc::TaskBuilder(m_task_service)
+					.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
 						return generateImpostor(ck, std::move(deps), snd);
 					});
 				return;
@@ -549,8 +563,9 @@ private:
 		if (ck.scale_log2 <= Consts::MAX_DIRECT_GENERATE_LOD) {
 			// Small LOD, generate it directly
 			m.has_pending_fake_data_gen = 1;
-			m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
-				[ck, snd = &m_sender] { return generatePseudoChunk(ck, snd); });
+			svc::TaskBuilder(m_task_service).enqueueTask([ck, snd = &m_sender](svc::TaskContext &) {
+				return generatePseudoChunk(ck, snd);
+			});
 			return;
 		}
 
@@ -598,8 +613,8 @@ private:
 
 			// Have all dependencies, enqueue task immediately, no ticket needed
 			m.has_pending_fake_data_gen = 1;
-			m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
-				[ck, deps = std::move(dependencies), snd = &m_sender] {
+			svc::TaskBuilder(m_task_service)
+				.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
 					return generateImpostor8(ck, std::move(deps), snd);
 				});
 			return;
@@ -668,8 +683,8 @@ private:
 
 			// Have all dependencies, enqueue task immediately, no ticket needed
 			m.has_pending_pseudo_surface_gen = 1;
-			m_thread_pool.enqueueTask(ThreadPool::TaskType::Standard,
-				[ck, deps = std::move(dependencies), snd = &m_sender] {
+			svc::TaskBuilder(m_task_service)
+				.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
 					return generatePseudoSurface(ck, std::move(deps), snd);
 				});
 			return;

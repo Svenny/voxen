@@ -15,13 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-namespace voxen
-{
-
-class ThreadPool;
-
-}
-
 namespace voxen::terrain
 {
 
@@ -69,12 +62,12 @@ private:
 		size_t operator()(const glm::ivec3 &v) const noexcept;
 	};
 
-	ThreadPool &m_thread_pool;
+	svc::TaskService &m_task_service;
 	TerrainLoader m_loader;
 	std::vector<PointOfInterest> m_points_of_interest;
 	std::unordered_map<glm::ivec3, SuperchunkInfo, VecHasher> m_superchunks;
 
-	std::unordered_map<land::ChunkKey, std::future<void>> m_async_chunk_loads;
+	std::unordered_map<land::ChunkKey, svc::TaskHandle> m_async_chunk_loads;
 	uint32_t m_direct_op_quota = 0;
 
 	uint32_t calcLodDirection(land::ChunkKey id) const;
