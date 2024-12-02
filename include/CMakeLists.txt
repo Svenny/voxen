@@ -15,6 +15,9 @@ set(EXTRAS_HEADERS
 	include/extras/refcnt_ptr.hpp
 	include/extras/source_location.hpp
 	include/extras/string_utils.hpp
+
+	# Visualizers for VS debugger
+	include/extras/extras.natvis
 )
 
 target_include_directories(extras INTERFACE include)
