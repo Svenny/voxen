@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="extras::pimpl&lt;*,*,*&gt;">
+		<DisplayString>{*($T1 *) this}</DisplayString>
+		<Expand>
+			<ExpandedItem>*($T1 *) this</ExpandedItem>
+		</Expand>
+	</Type>
+</AutoVisualizer>
