@@ -1,7 +1,6 @@
 #pragma once
 
 #include <voxen/svc/svc_fwd.hpp>
-#include <voxen/util/futex_work_counter.hpp>
 
 #include <extras/hardware_params.hpp>
 
@@ -34,13 +33,18 @@ public:
 
 private:
 	struct alignas(uint64_t) ProduceConsumeIndex {
-		uint32_t produce;
-		uint32_t consume;
+		// Number of produced (pushed) items, wraparound is fine
+		uint32_t produce : 31 = 0;
+		// Set when one or more threads are waiting on this queue
+		uint32_t wait_flag : 1 = 0;
+		// Number of consumed (popped) items, wraparound is fine
+		uint32_t consume : 31 = 0;
+		// Set when threads attached to this queue are requested to stop
+		uint32_t stop_flag : 1 = 0;
 	};
 
 	struct alignas(extras::hardware_params::cache_line) RingBufferHeader {
 		std::atomic<ProduceConsumeIndex> current_index;
-		FutexWorkCounter work_counter;
 	};
 
 	struct alignas(extras::hardware_params::cache_line) RingBufferStorage {

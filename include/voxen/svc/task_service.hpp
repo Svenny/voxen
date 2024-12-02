@@ -5,6 +5,8 @@
 
 #include <extras/pimpl.hpp>
 
+#include <span>
+
 namespace voxen::svc
 {
 
@@ -24,6 +26,8 @@ public:
 	~TaskService() override;
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
+
+	size_t eliminateCompletedWaitCounters(std::span<uint64_t> counters) noexcept;
 
 private:
 	extras::pimpl<detail::TaskServiceImpl, 64, 8> m_impl;

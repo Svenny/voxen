@@ -75,8 +75,12 @@ void TaskQueueSet::pushTask(size_t queue, PrivateTaskHandle handle) noexcept
 
 	ProduceConsumeIndex index = header.current_index.load(std::memory_order_relaxed);
 	std::atomic<TaskHeader *> *item = nullptr;
+	bool need_wake = false;
 
 	while (true) {
+		assert(index.produce >= index.consume);
+		assert(index.produce <= index.consume + RING_BUFFER_SIZE);
+
 		if (index.consume + RING_BUFFER_SIZE == index.produce) [[unlikely]] {
 			// Buffer is full, warn and stall.
 			//
@@ -100,6 +104,8 @@ void TaskQueueSet::pushTask(size_t queue, PrivateTaskHandle handle) noexcept
 		}
 
 		item = &storage.item[index.produce % RING_BUFFER_SIZE];
+		// Someone waits on this queue - remember it
+		need_wake = index.wait_flag;
 
 		// XXX: I'm not sure if this is the most appropriate memory order
 		if (item->load(std::memory_order_acquire) != nullptr) [[unlikely]] {
@@ -111,8 +117,12 @@ void TaskQueueSet::pushTask(size_t queue, PrivateTaskHandle handle) noexcept
 		// Try updating the produce index, "reserving" production of this item for our thread
 		bool success = header.current_index.compare_exchange_weak(index,
 			{
-				.produce = index.produce + 1,
+				.produce = index.produce + 1u,
+				// Reset the wait flag
+				.wait_flag = 0,
 				.consume = index.consume,
+				// Preserve the stop flag
+				.stop_flag = index.stop_flag,
 			},
 			// XXX: I'm not sure if this is the most appropriate memory order
 			std::memory_order_acq_rel);
@@ -124,8 +134,11 @@ void TaskQueueSet::pushTask(size_t queue, PrivateTaskHandle handle) noexcept
 
 	// `item` is "reserved" for us now - no other push or pop can touch it.
 	item->store(handle.release(), std::memory_order_release);
-	// Don't forget to increase work counter and probably wake up the thread
-	header.work_counter.addWork(1);
+	// Don't forget to wake any thread that could wait for new items
+	if (need_wake) {
+		// See waiting code in `popTaskOrWait()` to understand this cast
+		os::Futex::wakeAll(reinterpret_cast<std::atomic_uint32_t *>(&header.current_index));
+	}
 }
 
 PrivateTaskHandle TaskQueueSet::tryPopTask(size_t queue) noexcept
@@ -137,7 +150,15 @@ PrivateTaskHandle TaskQueueSet::tryPopTask(size_t queue) noexcept
 	std::atomic<TaskHeader *> *item = nullptr;
 
 	while (true) {
-		if (index.produce == index.consume) {
+		assert(index.produce >= index.consume);
+		assert(index.produce <= index.consume + RING_BUFFER_SIZE);
+
+		if (index.stop_flag) [[unlikely]] {
+			// Stop requested
+			return {};
+		}
+
+		if (index.produce == index.consume) [[unlikely]] {
 			// Buffer is empty
 			return {};
 		}
@@ -155,7 +176,11 @@ PrivateTaskHandle TaskQueueSet::tryPopTask(size_t queue) noexcept
 		bool success = header.current_index.compare_exchange_weak(index,
 			{
 				.produce = index.produce,
-				.consume = index.consume + 1,
+				// Preserve the wait flag
+				.wait_flag = index.wait_flag,
+				.consume = index.consume + 1u,
+				// Preserve the stop flag (must be zero if we reached here)
+				.stop_flag = 0,
 			},
 			// XXX: I'm not sure if this is the most appropriate memory order
 			std::memory_order_acq_rel);
@@ -168,8 +193,6 @@ PrivateTaskHandle TaskQueueSet::tryPopTask(size_t queue) noexcept
 	// `item` is "reserved" for us now - no other pop or push can touch it.
 	// XXX: I'm not sure if this is the most appropriate memory order.
 	TaskHeader *task_header = item->exchange(nullptr, std::memory_order_acquire);
-	// Don't forget to decrease work counter
-	header.work_counter.removeWork(1);
 	// And assume ownership of the loaded pointer
 	return PrivateTaskHandle(task_header);
 }
@@ -177,24 +200,105 @@ PrivateTaskHandle TaskQueueSet::tryPopTask(size_t queue) noexcept
 PrivateTaskHandle TaskQueueSet::popTaskOrWait(size_t queue) noexcept
 {
 	auto &header = m_ring_buffer_header[queue];
+	auto &storage = m_ring_buffer_storage[queue];
+
+	ProduceConsumeIndex index = header.current_index.load(std::memory_order_relaxed);
+	std::atomic<TaskHeader *> *item = nullptr;
 
 	while (true) {
-		PrivateTaskHandle task = tryPopTask(queue);
-		if (task.valid()) [[likely]] {
-			return task;
-		}
+		assert(index.produce >= index.consume);
+		assert(index.produce <= index.consume + RING_BUFFER_SIZE);
 
-		if (header.work_counter.wait().second) [[unlikely]] {
-			// Stop flag received, return null handle to indicate that
+		if (index.stop_flag) [[unlikely]] {
+			// Stop requested
 			return {};
 		}
-	}
+
+		if (index.produce == index.consume) [[unlikely]] {
+			// Buffer is empty - try setting the wait flag and going to sleep
+			bool success = header.current_index.compare_exchange_weak(index,
+				{
+					.produce = index.produce,
+					.wait_flag = 1,
+					.consume = index.consume,
+				},
+				// XXX: I'm not sure if this is the most appropriate memory order
+				std::memory_order_acq_rel);
+
+			if (!success) [[unlikely]] {
+				// Something changed beneath us - try again
+				continue;
+			}
+
+			// XXX: not the nicest code - take the first uint32 from this struct and wait on it.
+			// But futex only supports uint32 words, and it should be indeed enough for us.
+			//
+			// Produce+wait bit is located in the first word, consume+stop bit in the second.
+			// We don't care about the consume index, but stop bit might be a problem.
+			// However, stop bit is raised by CAS on both words - and if it notices wait
+			// bit in the first word it will properly wake us up, clearing that bit as well.
+			//
+			// So from futex standpoint it's is totally fine, the only ugly thing is this cast.
+			auto words = std::bit_cast<std::array<uint32_t, 2>>(index);
+			os::Futex::waitInfinite(reinterpret_cast<std::atomic_uint32_t *>(&header.current_index), words[0]);
+
+			index = header.current_index.load(std::memory_order_relaxed);
+			continue;
+		}
+
+		item = &storage.item[index.consume % RING_BUFFER_SIZE];
+
+		// XXX: I'm not sure if this is the most appropriate memory order
+		if (item->load(std::memory_order_acquire) == nullptr) [[unlikely]] {
+			// Someone has taken this item before us, reload indices and try again
+			index = header.current_index.load(std::memory_order_relaxed);
+			continue;
+		}
+
+		// Try updating the consume index, "reserving" consumption of this item for our thread
+		bool success = header.current_index.compare_exchange_weak(index,
+			{
+				.produce = index.produce,
+				// Preserve the wait flag
+				.wait_flag = index.wait_flag,
+				.consume = index.consume + 1u,
+				// Preserve the stop flag (must be zero if we reached here)
+				.stop_flag = 0,
+			},
+			// XXX: I'm not sure if this is the most appropriate memory order
+			std::memory_order_acq_rel);
+
+		if (success) [[likely]] {
+			break;
+		}
+	};
+
+	// `item` is "reserved" for us now - no other pop or push can touch it.
+	// XXX: I'm not sure if this is the most appropriate memory order.
+	TaskHeader *task_header = item->exchange(nullptr, std::memory_order_acquire);
+	// And assume ownership of the loaded pointer
+	return PrivateTaskHandle(task_header);
 }
 
 void TaskQueueSet::requestStopAll() noexcept
 {
 	for (size_t queue = 0; queue < m_num_queues; queue++) {
-		m_ring_buffer_header[queue].work_counter.requestStop();
+		auto &header = m_ring_buffer_header[queue];
+
+		ProduceConsumeIndex index = header.current_index.load(std::memory_order_relaxed);
+		ProduceConsumeIndex new_index = index;
+		bool need_wake = false;
+
+		do {
+			need_wake = index.wait_flag;
+			new_index.wait_flag = 0;
+			new_index.stop_flag = 1;
+		} while (!header.current_index.compare_exchange_weak(index, new_index, std::memory_order_release));
+
+		if (need_wake) {
+			// See waiting code in `popTaskOrWait()` to understand this cast
+			os::Futex::wakeAll(reinterpret_cast<std::atomic_uint32_t *>(&header.current_index));
+		}
 	}
 }
 
