@@ -11,7 +11,7 @@ void GfxRuntimeConfig::addOptions(cxxopts::Options &opts)
 	opts.add_options("Graphics")
 		("gfx-debugging", "Enable graphics API debugging extensions")
 		("gfx-validation", "Enable graphics API validation layers")
-		("gfx-gpu", "Name of GPU to use (empty to auto-select)", cxxopts::value<std::string>());
+		("gfx-gpu-name", "Name of GPU to use (empty to auto-select)", cxxopts::value<std::string>());
 	// clang-format on
 }
 
@@ -20,8 +20,8 @@ void GfxRuntimeConfig::fill(const cxxopts::ParseResult &result)
 	m_use_debugging = result["gfx-debugging"].as<bool>();
 	m_use_validation = result["gfx-validation"].as<bool>();
 
-	if (result.count("gfx-gpu-id")) {
-		m_preferred_gpu_name = result["gfx-gpu-id"].as<std::string>();
+	if (result.count("gfx-gpu-name")) {
+		m_preferred_gpu_name = result["gfx-gpu-name"].as<std::string>();
 	}
 }
 
