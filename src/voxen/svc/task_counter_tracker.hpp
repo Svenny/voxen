@@ -26,7 +26,7 @@ public:
 	size_t trimCompleteCounters(std::span<uint64_t> counters) noexcept;
 
 public:
-	constexpr static size_t NUM_COMPLETION_LISTS = 32;
+	constexpr static size_t NUM_COMPLETION_LISTS = 64;
 
 	struct alignas(extras::hardware_params::cache_line) CompletionList {
 		std::atomic_uint64_t fully_completed_value = 0;

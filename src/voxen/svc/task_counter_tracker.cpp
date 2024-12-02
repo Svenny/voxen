@@ -29,6 +29,8 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 	values.emplace_back(desired);
 
 	if (values.size() > 1) {
+		// TODO: insert [a; b] ranges instead of single items,
+		// much more compact as usually just single values are missing.
 		std::sort(values.rbegin(), values.rend());
 		while (!values.empty() && values.back() == expected + 1) {
 			if (fully_completed.compare_exchange_strong(expected, values.back(), std::memory_order_relaxed)) [[likely]] {
