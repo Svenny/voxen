@@ -40,7 +40,6 @@ struct PseudoChunkDataGenCompletionMessage {
 	constexpr static svc::MessageClass MESSAGE_CLASS = svc::MessageClass::Unicast;
 
 	ChunkKey key;
-	LandState::PseudoChunkDataTable::ValuePtr value_ptr;
 };
 
 // Sent from slave thread upon pseudo-chunk surface gen job completion

@@ -1,5 +1,8 @@
 #pragma once
 
+// TODO: temporary debug stuff
+#include <voxen/land/pseudo_chunk_data.hpp>
+
 #include <extras/dyn_array.hpp>
 
 #include <array>
@@ -20,22 +23,23 @@ struct PseudoSurfaceVertex {
 	int16_t normal_y_snorm;
 	int16_t normal_z_snorm;
 
-	uint32_t albedo_r_linear : 11;
-	uint32_t albedo_g_linear : 11;
-	uint32_t albedo_b_linear : 10;
+	uint16_t histogram_mat_or_color[4];
+	uint8_t histogram_mat_weight[4];
 };
-
-class PseudoChunkData;
 
 class PseudoChunkSurface {
 public:
 	PseudoChunkSurface() = default;
+	// TODO: temporary debug stuff
+	explicit PseudoChunkSurface(const PseudoChunkData &data) : m_temp_debug_pseudo_data(data) {}
 	explicit PseudoChunkSurface(std::span<const PseudoSurfaceVertex> vertices, std::span<const uint32_t> indices);
 	PseudoChunkSurface(PseudoChunkSurface &&) = default;
 	PseudoChunkSurface(const PseudoChunkSurface &) = default;
 	PseudoChunkSurface &operator=(PseudoChunkSurface &&) = default;
 	PseudoChunkSurface &operator=(const PseudoChunkSurface &) = default;
 	~PseudoChunkSurface() = default;
+
+	const PseudoChunkData &tempDebugPseudoData() const noexcept { return m_temp_debug_pseudo_data; }
 
 	// Vertex array size is guaranteed to never exceed UINT32_MAX (actually even UINT16_MAX due to 16-bit index)
 	uint32_t numVertices() const noexcept { return static_cast<uint32_t>(m_vertices.size()); }
@@ -52,6 +56,8 @@ public:
 	static PseudoChunkSurface build(const PseudoChunkData &data, std::array<const PseudoChunkData *, 6> adjacent);
 
 private:
+	// TODO: temporary debug stuff
+	PseudoChunkData m_temp_debug_pseudo_data;
 	extras::dyn_array<PseudoSurfaceVertex> m_vertices;
 	extras::dyn_array<uint16_t> m_indices;
 };

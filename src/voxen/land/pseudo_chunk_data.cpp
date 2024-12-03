@@ -87,7 +87,9 @@ PseudoChunkData::PseudoChunkData(ChunkAdjacencyRef ref)
 		}
 	});
 
-	m_faces = extras::dyn_array(faces.begin(), faces.end());
+	if (!faces.empty()) {
+		m_faces = extras::dyn_array(faces.begin(), faces.end());
+	}
 }
 
 PseudoChunkData::PseudoChunkData(std::span<const PseudoChunkData *, 8> hires)
@@ -125,6 +127,10 @@ PseudoChunkData::PseudoChunkData(std::span<const PseudoChunkData *, 8> hires)
 	size_t num_faces = 0;
 	for (uint32_t face = 0; face < 6; face++) {
 		num_faces += faces_combine[face].size();
+	}
+
+	if (num_faces == 0) {
+		return;
 	}
 
 	m_faces = extras::dyn_array<Face>(num_faces);

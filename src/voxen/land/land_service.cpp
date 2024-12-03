@@ -1,5 +1,6 @@
 #include <voxen/land/land_service.hpp>
 
+#include <voxen/common/shared_object_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_utils.hpp>
@@ -22,6 +23,10 @@ namespace voxen::land
 {
 
 static_assert(Consts::NUM_LOD_SCALES <= 1u << Consts::CHUNK_KEY_SCALE_BITS, "LOD scales don't fit in ChunkKey bits");
+
+using ChunkPtr = LandState::ChunkTable::ValuePtr;
+using PseudoDataPtr = SharedPoolPtr<PseudoChunkData>;
+using PseudoSurfacePtr = LandState::PseudoChunkSurfaceTable::ValuePtr;
 
 namespace
 {
@@ -51,7 +56,7 @@ double surfaceFn(glm::dvec3 point)
 	return fn;
 }
 
-LandState::ChunkTable::ValuePtr generateChunk(ChunkKey key)
+void generateChunk(ChunkKey key, ChunkPtr &out_ptr)
 {
 	constexpr int32_t BLOCKS = Consts::CHUNK_SIZE_BLOCKS;
 
@@ -63,15 +68,15 @@ LandState::ChunkTable::ValuePtr generateChunk(ChunkKey key)
 		const double ymin = double(first_block_coords.y) * Consts::BLOCK_SIZE_METRES;
 		if (ymin > Y_BAND_LIMIT) {
 			// Fully above, all zeros
-			return {};
+			out_ptr->setAllBlocksUniform(0);
+			return;
 		}
 
 		const double ymax = double(first_block_coords.y + (BLOCKS << key.scale_log2)) * Consts::BLOCK_SIZE_METRES;
 		if (ymax < -Y_BAND_LIMIT) {
 			// Fully below, all ones
-			auto ptr = LandState::ChunkTable::makeValuePtr();
-			ptr->setAllBlocksUniform(1);
-			return ptr;
+			out_ptr->setAllBlocksUniform(1);
+			return;
 		}
 	}
 
@@ -98,72 +103,21 @@ LandState::ChunkTable::ValuePtr generateChunk(ChunkKey key)
 	});
 
 	if (empty) {
-		return {};
-	}
-
-	auto ptr = LandState::ChunkTable::makeValuePtr();
-	ptr->setAllBlocks(ids->cview());
-	return ptr;
-}
-
-void loadChunk(ChunkKey key, svc::MessageSender *sender)
-{
-	assert(key.scale_log2 == 0);
-
-	constexpr int32_t BLOCKS = Consts::CHUNK_SIZE_BLOCKS;
-
-	const glm::ivec3 coords = key.base();
-	const glm::ivec3 first_block_coords = coords * BLOCKS;
-
-	// Quickly check if the chunk is fully above/below the surface
-	{
-		const double ymin = double(first_block_coords.y) * Consts::BLOCK_SIZE_METRES;
-		if (ymin > Y_BAND_LIMIT) {
-			// Fully above, all zeros
-			sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key);
-			return;
-		}
-
-		const double ymax = double(first_block_coords.y + BLOCKS) * Consts::BLOCK_SIZE_METRES;
-		if (ymax < -Y_BAND_LIMIT) {
-			// Fully below, all ones
-			auto ptr = LandState::ChunkTable::makeValuePtr();
-			ptr->setAllBlocksUniform(1);
-			sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key, std::move(ptr));
-			return;
-		}
-	}
-
-	// Allocate on heap, expanded array is pretty large
-	auto ids = std::make_unique<Chunk::BlockIdArray>();
-	bool empty = true;
-
-	Utils::forYXZ<BLOCKS>([&](uint32_t x, uint32_t y, uint32_t z) {
-		const glm::ivec3 pos = glm::ivec3(x, y, z);
-		const glm::ivec3 block = first_block_coords + pos;
-		const glm::dvec3 block_world = (glm::dvec3(block) + 0.5) * Consts::BLOCK_SIZE_METRES;
-
-		double fn = surfaceFn(block_world);
-
-		if (fn > block_world.y) {
-			empty = false;
-			(*ids)[pos] = 1;
-		} else {
-			(*ids)[pos] = 0;
-		}
-	});
-
-	if (empty) {
-		sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key);
+		out_ptr->setAllBlocksUniform(0);
 		return;
 	}
 
-	auto ptr = LandState::ChunkTable::makeValuePtr();
-	ptr->setAllBlocks(ids->cview());
-	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key, std::move(ptr));
+	out_ptr->setAllBlocks(ids->cview());
 }
 
-void generateImpostor(ChunkKey key, std::array<LandState::ChunkTable::ValuePtr, 7> ref, svc::MessageSender *sender)
+void loadChunk(ChunkKey key, svc::MessageSender *sender, ChunkPtr out_ptr)
+{
+	assert(key.scale_log2 == 0);
+	generateChunk(key, out_ptr);
+	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key, std::move(out_ptr));
+}
+
+void generateImpostor(ChunkKey key, std::array<ChunkPtr, 7> ref, svc::MessageSender *sender, PseudoDataPtr out_ptr)
 {
 	// Must not be called with empty main chunk
 	assert(ref[0]);
@@ -173,71 +127,72 @@ void generateImpostor(ChunkKey key, std::array<LandState::ChunkTable::ValuePtr, 
 		adj.adjacent[i] = ref[i + 1].get();
 	}
 
-	auto ptr = LandState::PseudoChunkDataTable::makeValuePtr(adj);
-
-	if (!ptr->empty()) {
-		// At least one face exists, then non-empty impostor too
-		sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key, std::move(ptr));
-	} else {
-		// Empty impostor, no need to add it to the tree
-		sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key);
-	}
+	*out_ptr = PseudoChunkData(adj);
+	sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key);
 }
 
-void generatePseudoSurface(ChunkKey key, std::array<LandState::PseudoChunkDataTable::ValuePtr, 7> ref,
-	svc::MessageSender *sender)
+void generatePseudoSurface(ChunkKey key, std::array<PseudoDataPtr, 7> ref, svc::MessageSender *sender)
 {
 	// Must not be called with empty main chunk
 	assert(ref[0]);
 
+#if 0
 	std::array<const PseudoChunkData *, 6> adjacent;
 	for (size_t i = 0; i < 6; i++) {
 		adjacent[i] = ref[i + 1].get();
 	}
 
-	auto ptr = LandState::PseudoChunkSurfaceTable::makeValuePtr(PseudoChunkSurface::build(*ref[0], adjacent));
+	auto out_ptr = LandState::PseudoChunkSurfaceTable::makeValuePtr(PseudoChunkSurface(*ref[0]));
 
-	if (!ptr->empty()) {
+	if (!out_ptr->empty()) {
 		// At least one face exists, then non-empty impostor too
-		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key, std::move(ptr));
+		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key, std::move(out_ptr));
 	} else {
 		// Empty impostor, no need to add it to the tree
 		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key);
 	}
+#else
+	// TODO: temporary debug stuff
+
+	if (ref[0]->empty()) {
+		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key);
+	} else {
+		auto out_ptr = LandState::PseudoChunkSurfaceTable::makeValuePtr(PseudoChunkSurface(*ref[0]));
+		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key, std::move(out_ptr));
+	}
+#endif
 }
 
-void generatePseudoChunk(ChunkKey key, svc::MessageSender *sender)
+void generatePseudoChunk(ChunkKey key, svc::MessageSender *sender, PseudoDataPtr out_ptr)
 {
-	std::array<LandState::ChunkTable::ValuePtr, 7> adj;
-
-	adj[0] = generateChunk(key);
-	if (!adj[0]) {
-		// Empty, return nothing
-		sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key);
-		return;
+	std::array<ChunkPtr, 7> adj;
+	for (auto &ptr : adj) {
+		ptr = LandState::ChunkTable::makeValuePtr();
 	}
 
-	const int32_t step = key.scaleMultiplier();
-	adj[1] = generateChunk(ChunkKey(key.x + step, key.y, key.z, key.scale_log2));
-	adj[2] = generateChunk(ChunkKey(key.x - step, key.y, key.z, key.scale_log2));
-	adj[3] = generateChunk(ChunkKey(key.x, key.y + step, key.z, key.scale_log2));
-	adj[4] = generateChunk(ChunkKey(key.x, key.y - step, key.z, key.scale_log2));
-	adj[5] = generateChunk(ChunkKey(key.x, key.y, key.z + step, key.scale_log2));
-	adj[6] = generateChunk(ChunkKey(key.x, key.y, key.z - step, key.scale_log2));
+	generateChunk(key, adj[0]);
 
-	generateImpostor(key, std::move(adj), sender);
+	const int32_t step = key.scaleMultiplier();
+	generateChunk(ChunkKey(key.x + step, key.y, key.z, key.scale_log2), adj[1]);
+	generateChunk(ChunkKey(key.x - step, key.y, key.z, key.scale_log2), adj[2]);
+	generateChunk(ChunkKey(key.x, key.y + step, key.z, key.scale_log2), adj[3]);
+	generateChunk(ChunkKey(key.x, key.y - step, key.z, key.scale_log2), adj[4]);
+	generateChunk(ChunkKey(key.x, key.y, key.z + step, key.scale_log2), adj[5]);
+	generateChunk(ChunkKey(key.x, key.y, key.z - step, key.scale_log2), adj[6]);
+
+	generateImpostor(key, std::move(adj), sender, std::move(out_ptr));
 }
 
-void generateImpostor8(ChunkKey key, std::array<LandState::PseudoChunkDataTable::ValuePtr, 8> lower,
-	svc::MessageSender *sender)
+void generateImpostor8(ChunkKey key, std::array<PseudoDataPtr, 8> lower, svc::MessageSender *sender,
+	PseudoDataPtr out_ptr)
 {
 	const PseudoChunkData *ptrs[8];
 	for (size_t i = 0; i < 8; i++) {
 		ptrs[i] = lower[i].get();
 	}
 
-	sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key,
-		LandState::PseudoChunkDataTable::makeValuePtr(ptrs));
+	*out_ptr = PseudoChunkData(ptrs);
+	sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key);
 }
 
 constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
@@ -245,20 +200,23 @@ constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
 struct ChunkMetastate {
 	WorldTickId last_referenced_tick = WorldTickId::INVALID;
 
-	uint32_t has_chunk : 1 = 0;
-	uint32_t has_fake_data : 1 = 0;
-	uint32_t has_pseudo_surface : 1 = 0;
-	uint32_t has_pending_chunk_load : 1 = 0;
-	uint32_t has_pending_fake_data_gen : 1 = 0;
-	uint32_t has_pending_pseudo_surface_gen : 1 = 0;
-	uint32_t needs_l0_fake_data : 1 = 0;
+	uint32_t pending_task_count : 8 = 0;
+	uint32_t chunk_data_invalidated : 1 = 0;
+	uint32_t pseudo_data_invalidated : 1 = 0;
+	uint32_t pseudo_surface_invalidated : 1 = 0;
+	uint32_t is_virgin : 1 = 1;
 
-	uint64_t internal_ticket = ChunkTicket::INVALID_TICKET_ID;
+	uint64_t chunk_gen_task_counter = 0;
+	uint64_t pseudo_data_gen_task_counter = 0;
+	uint64_t pseudo_surface_gen_task_counter = 0;
+
+	ChunkPtr latest_chunk_ptr;
+	PseudoDataPtr latest_pseudo_data_ptr;
 };
 
 struct TicketState {
 	ChunkTicketArea area;
-	int32_t priority;
+	bool valid;
 };
 
 } // namespace
@@ -309,42 +267,85 @@ public:
 
 	~LandServiceImpl()
 	{
-		bool logged = false;
+		std::vector<uint64_t> wait_counters;
+		wait_counters.reserve(m_metastate.size() * 3);
 
-		// Jobs can reference this object, wait for completion before destroying
+		// Jobs can reference this object, wait for completion before destroying.
 		for (auto &item : m_metastate) {
-			if (item.second.has_pending_chunk_load || item.second.has_pending_fake_data_gen) {
-				if (std::exchange(logged, true) == false) {
-					Log::debug("Have pending jobs remaining, waiting...");
-				}
-
-				m_queue.waitMessages();
-			}
+			wait_counters.emplace_back(item.second.chunk_gen_task_counter);
+			wait_counters.emplace_back(item.second.pseudo_data_gen_task_counter);
+			wait_counters.emplace_back(item.second.pseudo_surface_gen_task_counter);
 		}
+
+		// We inserted A LOT of counters, let's quickly trim the set
+		size_t remaining = m_task_service.eliminateCompletedWaitCounters(wait_counters);
+
+		if (remaining > 0) {
+			Log::debug("Waiting for pending Land jobs...");
+
+			svc::TaskBuilder bld(m_task_service);
+			bld.addWait(std::span(wait_counters.data(), remaining));
+			bld.enqueueSyncPoint().wait();
+		}
+
+		m_queue.pollMessages();
 	}
 
 	void doTick(WorldTickId tick_id)
 	{
 		m_tick_id = tick_id;
 
-		// Process chunk ticket change requests, now we have a fresh list of tickets
+		// Process chunk ticket change requests, now we have a fresh list of tickets.
+		// Job completions and invalidation enqueues will be processed here too.
 		m_queue.pollMessages();
 
+		// Process data invalidations
+		for (ChunkKey key : m_this_tick_pseudo_data_invalidations) {
+			auto iter = m_metastate.find(key);
+			if (iter == m_metastate.end()) {
+				continue;
+			}
+
+			iter->second.pseudo_data_invalidated = 1;
+			iter->second.is_virgin = 0;
+		}
+
+		for (ChunkKey key : m_this_tick_pseudo_surface_invalidations) {
+			auto iter = m_metastate.find(key);
+			if (iter == m_metastate.end()) {
+				continue;
+			}
+
+			iter->second.pseudo_surface_invalidated = 1;
+		}
+
+		m_this_tick_pseudo_data_invalidations.clear();
+		m_this_tick_pseudo_surface_invalidations.clear();
+
 		// No keys left to update for this tick, collect a new list.
-		// It might be very big if there are many tickets (e.g. loading lots of terrain at startup)
-		// but we will consume it in batches over the following ticks.
+		// It might be very big if there are many tickets but we will consume
+		// it in batches over the following ticks.
+		// XXX: still not very got, can hitch on high workloads (too many players/chunkloading entities)
 		if (m_keys_to_update.empty()) {
-			for (const auto &[id, state] : m_chunk_tickets) {
+			for (const TicketState &state : m_chunk_tickets) {
+				if (!state.valid) {
+					continue;
+				}
+
 				if (const auto *box_area = std::get_if<ChunkTicketBoxArea>(&state.area); box_area != nullptr) {
 					const ChunkKey lo = box_area->begin;
 					const ChunkKey hi = box_area->end;
 					const int32_t step = lo.scaleMultiplier();
 
-					for (int64_t y = lo.y; y < hi.y; y += step) {
+					// Limit to vertical world bounds
+					const int64_t lo_y = std::max<int64_t>(lo.y, Consts::MIN_WORLD_Y_CHUNK);
+					const int64_t hi_y = std::min<int64_t>(hi.y, Consts::MAX_WORLD_Y_CHUNK);
+
+					for (int64_t y = lo_y; y < hi_y; y += step) {
 						for (int64_t x = lo.x; x < hi.x; x += step) {
 							for (int64_t z = lo.z; z < hi.z; z += step) {
 								ChunkKey ck(x, y, z, lo.scale_log2);
-								m_keys_to_update.emplace_back(state.priority, ck);
+								m_keys_to_update.emplace_back(ck);
 							}
 						}
 					}
@@ -359,33 +360,27 @@ public:
 					ConcentricOctahedraWalker cwk(octa_area->scaled_radius);
 					while (!cwk.wrappedAround()) {
 						ChunkKey ck(pivot + scale * cwk.step(), octa_area->pivot.scale_log2);
-						m_keys_to_update.emplace_back(state.priority, ck);
+
+						if (ck.y >= Consts::MIN_WORLD_Y_CHUNK && ck.y <= Consts::MAX_WORLD_Y_CHUNK) {
+							m_keys_to_update.emplace_back(ck);
+						}
 					}
 				}
 			}
 
-			// First eliminate duplicate keys from overlapping tickets,
-			// leaving only the ones with the highest priority.
-			// First sort by comparing (key, priority) instead of (priority, key).
-			std::sort(m_keys_to_update.begin(), m_keys_to_update.end(),
-				[](const auto &a, const auto &b) { return std::tie(a.second, a.first) < std::tie(b.second, b.first); });
-			// Now all entries with the same key are grouped together and ordered by priority value.
-			// Leave only the first of every group - i.e. that with highest priority.
-			auto last = std::unique(m_keys_to_update.begin(), m_keys_to_update.end(),
-				[](const auto &a, const auto &b) { return a.second == b.second; });
+			// Eliminate duplicate keys from overlapping tickets
+			std::sort(m_keys_to_update.begin(), m_keys_to_update.end());
+			auto last = std::unique(m_keys_to_update.begin(), m_keys_to_update.end());
 			m_keys_to_update.erase(last, m_keys_to_update.end());
-			// Now sort by comparing (priority, key) so that high-priority keys are visited first.
-			// Note that we are sorting in reverse - we will do pop_back to quickly remove visited keys.
-			std::sort(m_keys_to_update.rbegin(), m_keys_to_update.rend());
 		}
 
 		// Limit the number of keys visited per tick.
 		// TODO: move to constants/options/auto-adjust?
-		constexpr size_t KEYS_PER_TICK = SIZE_MAX; //5500;
+		constexpr size_t KEYS_PER_TICK = 500;
 		const size_t num_visited = std::min(KEYS_PER_TICK, m_keys_to_update.size());
 
 		for (size_t i = 0; i < num_visited; i++) {
-			tickChunkKey(m_keys_to_update.back().second, tick_id, m_keys_to_update.back().first);
+			tickChunkKey(m_keys_to_update.back(), tick_id);
 			m_keys_to_update.pop_back();
 		}
 
@@ -403,7 +398,7 @@ public:
 					return iter->second.last_referenced_tick + STALE_CHUNK_AGE_THRESHOLD;
 				}
 
-				if (!canCleanupChunk(iter->second)) {
+				if (iter->second.pending_task_count > 0) {
 					// Has some pending work, unsafe to remove.
 					// This will leave it pretty much at the same place - the chunk
 					// itself is stale, we just need to wait for jobs completion.
@@ -412,7 +407,6 @@ public:
 
 				uint64_t version = static_cast<uint64_t>(tick_id.value);
 				m_land_state.chunk_table.erase(version, iter->first);
-				m_land_state.pseudo_chunk_data_table.erase(version, iter->first);
 				m_land_state.pseudo_chunk_surface_table.erase(version, iter->first);
 				m_metastate.erase(iter);
 
@@ -430,18 +424,36 @@ private:
 	svc::MessageQueue m_queue;
 	svc::MessageSender m_sender;
 
-	std::unordered_map<uint64_t, TicketState> m_chunk_tickets;
-	uint64_t m_next_ticket_id = 0;
+	std::vector<TicketState> m_chunk_tickets;
+	// Must be placed before any object that can store pool pointers
+	// to destroy earlier. In our case this is only `m_metastate`.
+	SharedObjectPool<PseudoChunkData> m_pseudo_chunk_data_pool;
 
 	std::unordered_map<ChunkKey, ChunkMetastate> m_metastate;
+	std::vector<ChunkKey> m_this_tick_pseudo_data_invalidations;
+	std::vector<ChunkKey> m_this_tick_pseudo_surface_invalidations;
 
 	LruVisitOrdering<ChunkKey, WorldTickTag> m_keys_lru_check_order;
-	std::vector<std::pair<int32_t, ChunkKey>> m_keys_to_update;
+	std::vector<ChunkKey> m_keys_to_update;
 
 	WorldTickId m_tick_id;
 	LandState m_land_state;
 
-	void tickChunkKey(ChunkKey ck, WorldTickId tick_id, int32_t priority)
+	ChunkMetastate &getMetastate(ChunkKey key)
+	{
+		auto [iter, inserted] = m_metastate.try_emplace(key);
+		if (inserted) {
+			// Register this key in cleanup visit ordering
+			m_keys_lru_check_order.addKey(key, m_tick_id + STALE_CHUNK_AGE_THRESHOLD);
+		}
+
+		ChunkMetastate &m = iter->second;
+		m.last_referenced_tick = m_tick_id;
+
+		return m;
+	}
+
+	void tickChunkKey(ChunkKey ck, WorldTickId tick_id)
 	{
 		auto [iter, inserted] = m_metastate.try_emplace(ck);
 		if (inserted) {
@@ -449,266 +461,166 @@ private:
 			m_keys_lru_check_order.addKey(ck, tick_id + STALE_CHUNK_AGE_THRESHOLD);
 		}
 
-		auto &m = iter->second;
+		ChunkMetastate &m = iter->second;
 		m.last_referenced_tick = tick_id;
 
-		if (ck.scale_log2 == 0 && !m.has_chunk && !m.has_pending_chunk_load) {
-			// No chunk and no loading job - enqueue one
-			m.has_pending_chunk_load = 1;
-			svc::TaskBuilder(m_task_service).enqueueTask([ck, snd = &m_sender](svc::TaskContext &) {
-				loadChunk(ck, snd);
-			});
-		}
-
-		if (!m.has_fake_data && !m.has_pending_fake_data_gen) {
-			// No fake data and no gen job - enqueue one if needed
-			tryChunkFakeDataGen(ck, m, priority);
-		}
-
-		if (!m.has_pseudo_surface && !m.has_pending_pseudo_surface_gen) {
-			// No pseudo surface and no gen job - enqueue one if needed
-			tryPseudoSurfaceGen(ck, m, priority);
-		}
-	}
-
-	static bool canCleanupChunk(ChunkMetastate &m)
-	{
-		if (m.has_pending_chunk_load || m.has_pending_fake_data_gen || m.has_pending_pseudo_surface_gen) {
-			// Has pending job, unsafe to remove now
-			return false;
-		}
-
-		// Not referenced for some time, no pending jobs - safe to remove
-		return true;
-	}
-
-	void tryChunkFakeDataGen(ChunkKey ck, ChunkMetastate &m, int32_t priority)
-	{
 		if (ck.scale_log2 == 0) {
-			if (!m.needs_l0_fake_data && priority > 0) {
-				// Avoid infinite "adjacency creep"
-				return;
-			}
+			enqueueChunkDataGen(ck, m);
+		}
 
-			if (!m.has_chunk) {
-				// Wait until at least our chunk loads (don't need ticket for that)
-				return;
-			}
+		enqueuePseudoSurfaceGen(ck, m);
+	}
 
-			bool all_found = true;
-			bool have_nonempty = false;
-			std::array<LandState::ChunkTable::ValuePtr, 7> dependencies;
+	void enqueuePseudoSurfaceGen(ChunkKey ck, ChunkMetastate &m)
+	{
+		if (!m.pseudo_surface_invalidated && m.pseudo_surface_gen_task_counter > 0) {
+			// Surface is already generated and was not invalidated ever since
+			return;
+		}
 
-			auto *my_chunk_item = m_land_state.chunk_table.find(ck);
-			assert(my_chunk_item != nullptr);
-			if (!my_chunk_item->hasValue()) {
-				// Empty chunk, "generate" impostor immediately
-				m.has_fake_data = 1;
-				m_land_state.pseudo_chunk_data_table.insert(static_cast<uint64_t>(m_tick_id.value), ck, {});
-				return;
-			} else {
-				dependencies[0] = my_chunk_item->valuePtr();
-			}
+		// Collect pseudo data from this and 6 adjacent chunks
+		// TODO: do actually collect adjacent chunks
+		// TODO: do insert wait on those chunks' gen tasks counters
+		enqueuePseudoDataGen(ck, m);
 
-			auto find_dependency = [&](ChunkKey dk, size_t index) {
-				const auto *item = m_land_state.chunk_table.find(dk);
-				if (!item) {
-					all_found = false;
-				} else {
-					dependencies[index] = item->valuePtr();
-					have_nonempty |= item->hasValue();
+		std::array<PseudoDataPtr, 7> dependencies;
+		dependencies[0] = m.latest_pseudo_data_ptr;
+
+		m.pending_task_count++;
+		m.pseudo_surface_invalidated = 0;
+
+		svc::TaskBuilder bld(m_task_service);
+		// TODO: wait on all adjacent chunks datas too (dependencies)
+		bld.addWait(m.pseudo_data_gen_task_counter);
+		// This will ensure successive pseudo surface gen tasks complete in order
+		bld.addWait(m.pseudo_surface_gen_task_counter);
+		bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
+			generatePseudoSurface(ck, std::move(deps), snd);
+		});
+		m.chunk_gen_task_counter = bld.getLastTaskCounter();
+	}
+
+	void enqueuePseudoDataGen(ChunkKey ck, ChunkMetastate &m)
+	{
+		if (!m.pseudo_data_invalidated && m.pseudo_data_gen_task_counter > 0) {
+			// Pseudo data is already generated and was not invalidated ever since
+			return;
+		}
+
+		m.pending_task_count++;
+		m.pseudo_data_invalidated = 0;
+		m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate();
+
+		svc::TaskBuilder bld(m_task_service);
+		// This will ensure successive pseudo data gen tasks complete in order
+		bld.addWait(m.pseudo_data_gen_task_counter);
+
+		if (ck.scale_log2 == 0) {
+			// LOD0 - collect chunk data from this and 6 adjacent chunks
+			// TODO: optimize for case when all chunks are known to be
+			// empty and will not produce any pseudo data. To know that
+			// in advance there must be no pending gen tasks on them.
+			std::array<ChunkPtr, 7> dependencies;
+			uint64_t wait_counters[7] = {};
+
+			enqueueChunkDataGen(ck, m);
+			dependencies[0] = m.latest_chunk_ptr;
+			wait_counters[0] = m.chunk_gen_task_counter;
+
+			auto collect_dependency = [&](ChunkKey dk, size_t index) {
+				if (dk.y < Consts::MIN_WORLD_Y_CHUNK || dk.y > Consts::MAX_WORLD_Y_CHUNK) {
+					// Out of world height bounds, place null pointer meaning empty chunk (no data)
+					// TODO: should place fake all-zeros chunk above the limit, all-blocks below the limit.
+					return;
 				}
+
+				ChunkMetastate &mm = getMetastate(dk);
+				enqueueChunkDataGen(dk, mm);
+				dependencies[index] = mm.latest_chunk_ptr;
+				wait_counters[index] = mm.chunk_gen_task_counter;
 			};
 
 			const glm::ivec3 B = ck.base();
 
-			find_dependency(ChunkKey(B + glm::ivec3(1, 0, 0)), 1);
-			find_dependency(ChunkKey(B - glm::ivec3(1, 0, 0)), 2);
-			find_dependency(ChunkKey(B + glm::ivec3(0, 1, 0)), 3);
-			find_dependency(ChunkKey(B - glm::ivec3(0, 1, 0)), 4);
-			find_dependency(ChunkKey(B + glm::ivec3(0, 0, 1)), 5);
-			find_dependency(ChunkKey(B - glm::ivec3(0, 0, 1)), 6);
+			collect_dependency(ChunkKey(B + glm::ivec3(1, 0, 0)), 1);
+			collect_dependency(ChunkKey(B - glm::ivec3(1, 0, 0)), 2);
+			collect_dependency(ChunkKey(B + glm::ivec3(0, 1, 0)), 3);
+			collect_dependency(ChunkKey(B - glm::ivec3(0, 1, 0)), 4);
+			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 1)), 5);
+			collect_dependency(ChunkKey(B - glm::ivec3(0, 0, 1)), 6);
 
-			if (all_found) {
-				if (!have_nonempty) {
-					// All adjacent chunks are empty, "generate" impostor immediately
-					m.has_fake_data = 1;
-					m_land_state.pseudo_chunk_data_table.insert(static_cast<uint64_t>(m_tick_id.value), ck, {});
+			bld.addWait(wait_counters);
+			bld.enqueueTask(
+				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+					generateImpostor(ck, std::move(deps), snd, std::move(ptr));
+				});
+		} else if (ck.scale_log2 <= Consts::MAX_DIRECT_GENERATE_LOD && m.is_virgin) {
+			// Direct gen of "virgin" chunk - enqueue an independent task
+			bld.enqueueTask([ck, snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+				generatePseudoChunk(ck, snd, std::move(ptr));
+			});
+		} else {
+			// Aggregation gen - collect chunk data from 8 "children" chunks
+			// TODO: optimize for case when all pseudochunks are known to be
+			// empty and aggregation will not produce any data. To know that
+			// in advance there must be no pending gen tasks on them.
+			std::array<PseudoDataPtr, 8> dependencies;
+			uint64_t wait_counters[8] = {};
+
+			auto collect_dependency = [&](ChunkKey dk, size_t index) {
+				if (dk.y < Consts::MIN_WORLD_Y_CHUNK || dk.y > Consts::MAX_WORLD_Y_CHUNK) {
+					// Out of world height bounds, place null pointer meaning empty chunk (no pseudo data)
 					return;
 				}
 
-				// Have all dependencies, enqueue task immediately, no ticket needed
-				m.has_pending_fake_data_gen = 1;
-				svc::TaskBuilder(m_task_service)
-					.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
-						return generateImpostor(ck, std::move(deps), snd);
-					});
-				return;
-			}
+				ChunkMetastate &mm = getMetastate(dk);
+				enqueuePseudoDataGen(dk, mm);
+				dependencies[index] = mm.latest_pseudo_data_ptr;
+				wait_counters[index] = mm.pseudo_data_gen_task_counter;
+			};
 
-			if (m.internal_ticket == ChunkTicket::INVALID_TICKET_ID) {
-				// Take a ticket covering the needed adjacent chunks.
-				// Need 6 adjacent chunks in cross (+1 our own).
-				m.internal_ticket = addInternalTicket(
-					ChunkTicketOctahedronArea {
-						.pivot = ck,
-						.scaled_radius = 1,
-					},
-					priority + 1);
-			}
+			const glm::ivec3 B = ck.base();
+			const uint32_t S = ck.scale_log2 - 1u;
+			const int32_t K = ck.scaleMultiplier() / 2;
 
-			return;
-		}
+			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, K), S), 0);
+			collect_dependency(ChunkKey(B + glm::ivec3(K, 0, K), S), 1);
+			collect_dependency(ChunkKey(B + glm::ivec3(0, K, K), S), 2);
+			collect_dependency(ChunkKey(B + glm::ivec3(K, K, K), S), 3);
+			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 0), S), 4);
+			collect_dependency(ChunkKey(B + glm::ivec3(K, 0, 0), S), 5);
+			collect_dependency(ChunkKey(B + glm::ivec3(0, K, 0), S), 6);
+			collect_dependency(ChunkKey(B + glm::ivec3(K, K, 0), S), 7);
 
-		if (ck.scale_log2 <= Consts::MAX_DIRECT_GENERATE_LOD) {
-			// Small LOD, generate it directly
-			m.has_pending_fake_data_gen = 1;
-			svc::TaskBuilder(m_task_service).enqueueTask([ck, snd = &m_sender](svc::TaskContext &) {
-				return generatePseudoChunk(ck, snd);
-			});
-			return;
-		}
-
-		// LOD not zero, separate path for this
-		bool all_found = true;
-		bool have_nonempty = false;
-		std::array<LandState::PseudoChunkDataTable::ValuePtr, 8> dependencies;
-
-		auto find_dependency = [&](ChunkKey dk, size_t index) {
-			const auto *item = m_land_state.pseudo_chunk_data_table.find(dk);
-
-			if (!item) {
-				all_found = false;
-
-				if (dk.scale_log2 == 0) {
-					// We need this chunk to generate its L0 fake data to aggregate it into L1
-					m_metastate[dk].needs_l0_fake_data = 1;
-				}
-			} else {
-				dependencies[index] = item->valuePtr();
-				have_nonempty |= item->hasValue();
-			}
-		};
-
-		const glm::ivec3 B = ck.base();
-		const uint32_t S = ck.scale_log2 - 1u;
-		const int32_t K = ck.scaleMultiplier() / 2;
-
-		find_dependency(ChunkKey(B + glm::ivec3(0, 0, K), S), 0);
-		find_dependency(ChunkKey(B + glm::ivec3(K, 0, K), S), 1);
-		find_dependency(ChunkKey(B + glm::ivec3(0, K, K), S), 2);
-		find_dependency(ChunkKey(B + glm::ivec3(K, K, K), S), 3);
-		find_dependency(ChunkKey(B + glm::ivec3(0, 0, 0), S), 4);
-		find_dependency(ChunkKey(B + glm::ivec3(K, 0, 0), S), 5);
-		find_dependency(ChunkKey(B + glm::ivec3(0, K, 0), S), 6);
-		find_dependency(ChunkKey(B + glm::ivec3(K, K, 0), S), 7);
-
-		if (all_found) {
-			if (!have_nonempty) {
-				// All dependencies are empty, "generate" impostor immediately
-				m.has_fake_data = 1;
-				m_land_state.pseudo_chunk_data_table.insert(static_cast<uint64_t>(m_tick_id.value), ck, {});
-				return;
-			}
-
-			// Have all dependencies, enqueue task immediately, no ticket needed
-			m.has_pending_fake_data_gen = 1;
-			svc::TaskBuilder(m_task_service)
-				.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
-					return generateImpostor8(ck, std::move(deps), snd);
+			bld.addWait(wait_counters);
+			bld.enqueueTask(
+				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+					generateImpostor8(ck, std::move(deps), snd, std::move(ptr));
 				});
-			return;
 		}
 
-		if (m.internal_ticket == ChunkTicket::INVALID_TICKET_ID) {
-			// Take a ticket covering the needed adjacent chunks.
-			// Need 8 (2x2x2) "child LOD cube" chunks.
-			m.internal_ticket = addInternalTicket(
-				ChunkTicketBoxArea {
-					.begin = ChunkKey(ck.base(), ck.scale_log2 - 1),
-					.end = ChunkKey(ck.base() + ck.scaleMultiplier(), ck.scale_log2 - 1),
-				},
-				priority + 5);
-		}
+		m.pseudo_data_gen_task_counter = bld.getLastTaskCounter();
 	}
 
-	void tryPseudoSurfaceGen(ChunkKey ck, ChunkMetastate &m, int32_t priority)
+	void enqueueChunkDataGen(ChunkKey ck, ChunkMetastate &m)
 	{
-		if (!m.has_fake_data || m.has_pending_fake_data_gen) {
-			// Wait for at least our pseudo data to generate
+		assert(ck.scale_log2 == 0);
+
+		if (!m.chunk_data_invalidated && m.chunk_gen_task_counter > 0) {
+			// Chunk data is already generated and was not invalidated ever since
 			return;
 		}
 
-		bool all_found = true;
-		bool have_nonempty = false;
-		std::array<LandState::PseudoChunkDataTable::ValuePtr, 7> dependencies;
+		m.pending_task_count++;
+		m.chunk_data_invalidated = 0;
+		m.latest_chunk_ptr = LandState::ChunkTable::makeValuePtr();
 
-		auto *my_chunk_item = m_land_state.pseudo_chunk_data_table.find(ck);
-		assert(my_chunk_item != nullptr);
-		if (!my_chunk_item->hasValue()) {
-			// Empty chunk, "generate" its pseudo surface immediately
-			m.has_fake_data = 1;
-			m_land_state.pseudo_chunk_surface_table.insert(static_cast<uint64_t>(m_tick_id.value), ck, {});
-			return;
-		} else {
-			dependencies[0] = my_chunk_item->valuePtr();
-		}
-
-		auto find_dependency = [&](ChunkKey dk, size_t index) {
-			const auto *item = m_land_state.pseudo_chunk_data_table.find(dk);
-			if (!item) {
-				all_found = false;
-			} else {
-				dependencies[index] = item->valuePtr();
-				have_nonempty |= item->hasValue();
-			}
-		};
-
-		const glm::ivec3 B = ck.base();
-
-		find_dependency(ChunkKey(B + glm::ivec3(1, 0, 0)), 1);
-		find_dependency(ChunkKey(B - glm::ivec3(1, 0, 0)), 2);
-		find_dependency(ChunkKey(B + glm::ivec3(0, 1, 0)), 3);
-		find_dependency(ChunkKey(B - glm::ivec3(0, 1, 0)), 4);
-		find_dependency(ChunkKey(B + glm::ivec3(0, 0, 1)), 5);
-		find_dependency(ChunkKey(B - glm::ivec3(0, 0, 1)), 6);
-
-		if (all_found) {
-			if (!have_nonempty) {
-				// All adjacent chunks are empty, "generate" pseudo surface immediately
-				m.has_fake_data = 1;
-				m_land_state.pseudo_chunk_surface_table.insert(static_cast<uint64_t>(m_tick_id.value), ck, {});
-				return;
-			}
-
-			// Have all dependencies, enqueue task immediately, no ticket needed
-			m.has_pending_pseudo_surface_gen = 1;
-			svc::TaskBuilder(m_task_service)
-				.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
-					return generatePseudoSurface(ck, std::move(deps), snd);
-				});
-			return;
-		}
-
-		if (m.internal_ticket == ChunkTicket::INVALID_TICKET_ID) {
-			// Take a ticket covering the needed adjacent chunks.
-			// Need 6 adjacent chunks in cross (+1 our own).
-			m.internal_ticket = addInternalTicket(
-				ChunkTicketOctahedronArea {
-					.pivot = ck,
-					.scaled_radius = 1,
-				},
-				priority + 1);
-		}
-	}
-
-	static int32_t ticketAreaPriority(const ChunkTicketArea &area) noexcept
-	{
-		if (const auto *box_area = std::get_if<ChunkTicketBoxArea>(&area); box_area != nullptr) {
-			return box_area->begin.scale_log2;
-		}
-
-		return std::get_if<ChunkTicketOctahedronArea>(&area)->pivot.scale_log2;
+		svc::TaskBuilder bld(m_task_service);
+		// This will ensure successive chunk gen tasks complete in order
+		bld.addWait(m.chunk_gen_task_counter);
+		bld.enqueueTask(
+			[ck, snd = &m_sender, ptr = m.latest_chunk_ptr](svc::TaskContext &) { loadChunk(ck, snd, std::move(ptr)); });
+		m.chunk_gen_task_counter = bld.getLastTaskCounter();
 	}
 
 	void handleChunkTicketRequest(ChunkTicketRequestMessage &msg, svc::MessageInfo &info)
@@ -720,8 +632,17 @@ private:
 			return;
 		}
 
-		uint64_t ticket_id = addInternalTicket(msg.area, ticketAreaPriority(msg.area));
-		msg.ticket = ChunkTicket(ticket_id, &m_sender);
+		for (uint64_t ticket_id = 0; ticket_id < m_chunk_tickets.size(); ticket_id++) {
+			if (!m_chunk_tickets[ticket_id].valid) {
+				m_chunk_tickets[ticket_id].area = msg.area;
+				m_chunk_tickets[ticket_id].valid = true;
+				msg.ticket = ChunkTicket(ticket_id, &m_sender);
+				return;
+			}
+		}
+
+		m_chunk_tickets.emplace_back(TicketState { .area = msg.area, .valid = true });
+		msg.ticket = ChunkTicket(m_chunk_tickets.size() - 1, &m_sender);
 	}
 
 	void handleChunkTicketAdjust(const ChunkTicketAdjustMessage &msg)
@@ -732,77 +653,52 @@ private:
 			return;
 		}
 
-		uint64_t ticket_id = msg.ticket_id;
-		auto iter = m_chunk_tickets.find(ticket_id);
-		assert(iter != m_chunk_tickets.end());
-		iter->second.area = msg.new_area;
-		iter->second.priority = ticketAreaPriority(msg.new_area);
+		assert(msg.ticket_id < m_chunk_tickets.size());
+		m_chunk_tickets[msg.ticket_id].area = msg.new_area;
 	}
 
-	void handleChunkTicketRemove(const ChunkTicketRemoveMessage &msg) { removeInternalTicket(msg.ticket_id); }
+	void handleChunkTicketRemove(const ChunkTicketRemoveMessage &msg)
+	{
+		assert(msg.ticket_id < m_chunk_tickets.size());
+		m_chunk_tickets[msg.ticket_id].valid = false;
+	}
 
 	void handleChunkLoadCompletion(ChunkLoadCompletionMessage &msg)
 	{
-		auto &m = m_metastate[msg.key];
-		assert(m.has_pending_chunk_load);
-		m.has_chunk = 1;
-		m.has_pending_chunk_load = 0;
+		ChunkMetastate &m = m_metastate[msg.key];
+		m.pending_task_count--;
 		m_land_state.chunk_table.insert(static_cast<uint64_t>(m_tick_id.value), msg.key, std::move(msg.value_ptr));
+
+		// TODO: for chunk modifications (not full data gen) invalidate not every
+		// adjacent pseudochunk data, but only those "touched" by this chunk.
+		glm::ivec3 base = msg.key.base();
+
+		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key);
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base + glm::ivec3(1, 0, 0)));
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 0, 0)));
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 1, 0)));
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 1, 0)));
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 0, 1)));
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 0, 1)));
 	}
 
 	void handlePseudoDataGenCompletion(PseudoChunkDataGenCompletionMessage &msg)
 	{
-		auto &m = m_metastate[msg.key];
-		assert(m.has_pending_fake_data_gen);
-		m.has_fake_data = 1;
-		m.has_pending_fake_data_gen = 0;
+		ChunkMetastate &m = m_metastate[msg.key];
+		m.pending_task_count--;
 
-		if (msg.key.scale_log2 == 0) {
-			// Don't regenerate fake data every time, an adjacent chunk needing it will set the flag again
-			m.needs_l0_fake_data = 0;
-		}
-
-		uint64_t ticket_id = std::exchange(m.internal_ticket, ChunkTicket::INVALID_TICKET_ID);
-		if (ticket_id != ChunkTicket::INVALID_TICKET_ID) {
-			removeInternalTicket(ticket_id);
-		}
-
-		m_land_state.pseudo_chunk_data_table.insert(static_cast<uint64_t>(m_tick_id.value), msg.key,
-			std::move(msg.value_ptr));
+		// Invalidate pseudo surface of this chunk and pseudo data of its parent (reaggregation)
+		m_this_tick_pseudo_surface_invalidations.emplace_back(msg.key);
+		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key.parentLodKey());
 	}
 
 	void handlePseudoSurfaceGenCompletion(PseudoChunkSurfaceGenCompletionMessage &msg)
 	{
-		auto &m = m_metastate[msg.key];
-		assert(m.has_pending_pseudo_surface_gen);
-		m.has_pseudo_surface = 1;
-		m.has_pending_pseudo_surface_gen = 0;
-
-		uint64_t ticket_id = std::exchange(m.internal_ticket, ChunkTicket::INVALID_TICKET_ID);
-		if (ticket_id != ChunkTicket::INVALID_TICKET_ID) {
-			removeInternalTicket(ticket_id);
-		}
+		ChunkMetastate &m = m_metastate[msg.key];
+		m.pending_task_count--;
 
 		m_land_state.pseudo_chunk_surface_table.insert(static_cast<uint64_t>(m_tick_id.value), msg.key,
 			std::move(msg.value_ptr));
-	}
-
-	uint64_t addInternalTicket(const ChunkTicketArea &area, int32_t priority)
-	{
-		TicketState state {
-			.area = area,
-			.priority = priority,
-		};
-
-		uint64_t ticket_id = m_next_ticket_id++;
-		m_chunk_tickets.emplace(ticket_id, state);
-		return ticket_id;
-	}
-
-	void removeInternalTicket(uint64_t ticket_id)
-	{
-		assert(m_chunk_tickets.contains(ticket_id));
-		m_chunk_tickets.erase(ticket_id);
 	}
 
 	// Check that area requested for a chunk ticket is not empty and is within world bounds

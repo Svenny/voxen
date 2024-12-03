@@ -19,6 +19,7 @@ public:
 		uint32_t color_packed_srgb;
 	};
 
+	PseudoChunkData() = default;
 	// Generate pseudo-chunk data from chunk+adjacency references
 	explicit PseudoChunkData(ChunkAdjacencyRef ref);
 	// Generate lower resolution pseudo-chunk by aggregating 2x2x2 higher-resolution ones

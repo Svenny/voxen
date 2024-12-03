@@ -14,7 +14,7 @@
 namespace voxen::land
 {
 
-static_assert(sizeof(PseudoSurfaceVertex) == 16, "16-byte packing of PseudoSurfaceVertex is brokne");
+static_assert(sizeof(PseudoSurfaceVertex) == 24, "24-byte packing of PseudoSurfaceVertex is broken");
 
 namespace
 {
@@ -133,11 +133,6 @@ PseudoChunkSurface PseudoChunkSurface::build(const PseudoChunkData &data,
 		vertex.normal_x_snorm = static_cast<int16_t>(normal.x * INT16_MAX);
 		vertex.normal_y_snorm = static_cast<int16_t>(normal.y * INT16_MAX);
 		vertex.normal_z_snorm = static_cast<int16_t>(normal.z * INT16_MAX);
-
-		glm::vec3 color = glm::vec3(state.color_accumulator) / state.color_accumulator.a;
-		vertex.albedo_r_linear = static_cast<uint32_t>(color.r * ((1 << 11) - 1));
-		vertex.albedo_g_linear = static_cast<uint32_t>(color.g * ((1 << 11) - 1));
-		vertex.albedo_b_linear = static_cast<uint32_t>(color.r * ((1 << 10) - 1));
 	}
 
 	return PseudoChunkSurface(vertex_buffer, index_buffer);
