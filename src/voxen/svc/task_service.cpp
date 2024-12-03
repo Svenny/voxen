@@ -55,7 +55,7 @@ public:
 
 		Log::info("Starting task service with {} threads", cfg.num_threads);
 		for (size_t i = 0; i < m_cfg.num_threads; i++) {
-			m_slave_threads[i] = std::thread(slaveThreadFn, std::ref(me), i, m_counter_tracker.get(), &m_queue_set);
+			m_slave_threads[i] = std::thread(slaveThreadFn, std::ref(me), i, std::ref(*m_counter_tracker), &m_queue_set);
 		}
 	}
 
@@ -102,7 +102,7 @@ private:
 	TaskQueueSet m_queue_set;
 	std::unique_ptr<std::thread[]> m_slave_threads;
 
-	static void slaveThreadFn(TaskService &my_service, size_t my_queue, TaskCounterTracker *counter_tracker,
+	static void slaveThreadFn(TaskService &my_service, size_t my_queue, TaskCounterTracker &counter_tracker,
 		TaskQueueSet *queue_set)
 	{
 		debug::setThreadName("ThreadPool@%zu", my_queue);
@@ -124,7 +124,7 @@ private:
 
 			if (!task.hasContinuations()) {
 				// Signal task completion, otherwise some child will do it
-				task.complete(*counter_tracker);
+				task.complete(counter_tracker);
 			}
 		};
 
@@ -136,7 +136,7 @@ private:
 			for (size_t i = 0; i < local_waiting_queue.size(); i++) {
 				TaskHeader *header = local_waiting_queue[i].get();
 
-				size_t remaining_counters = counter_tracker->trimCompleteCounters(
+				size_t remaining_counters = counter_tracker.trimCompleteCounters(
 					std::span(header->waitCountersArray(), header->num_wait_counters));
 				header->num_wait_counters = static_cast<decltype(header->num_wait_counters)>(remaining_counters);
 
