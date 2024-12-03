@@ -15,44 +15,82 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 {
 	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
 
-	uint64_t desired = counter / NUM_COMPLETION_LISTS;
+	const uint64_t desired = counter / NUM_COMPLETION_LISTS;
 	uint64_t expected = desired - 1;
 
-	auto &fully_completed = list.fully_completed_value;
+	std::atomic_uint64_t &fully_completed = list.fully_completed_value;
 	if (fully_completed.compare_exchange_strong(expected, desired, std::memory_order_relaxed)) [[likely]] {
 		// In-order completion, we're good to go
 		return;
 	}
 
 	std::lock_guard lock(list.lock);
-	auto &values = list.out_of_order_values;
-	values.emplace_back(desired);
+	auto &segments = list.out_of_order_segments;
 
-	if (values.size() > 1) {
-		// TODO: insert [a; b] ranges instead of single items,
-		// much more compact as usually just single values are missing.
-		std::sort(values.rbegin(), values.rend());
-		while (!values.empty() && values.back() == expected + 1) {
-			if (fully_completed.compare_exchange_strong(expected, values.back(), std::memory_order_relaxed)) [[likely]] {
-				expected = values.back();
-				values.pop_back();
+	bool appended = false;
+
+	// Try appending to an existing segment.
+	// We keep segments sorted as (first; last) tuples in reverse order:
+	//    { [A0, B0], [A1, B1], ..., [Ak, Bk] }
+	//    Ai <= Bi
+	//    A0 > A1 > ... > Ak
+	//    B0 > B1 > ... > Bk
+	// so after appending we can try collapsing the adjacent segment.
+	for (size_t i = 0; i < segments.size(); i++) {
+		if (desired + 1 == segments[i].first) {
+			segments[i].first = desired;
+
+			// Extended the left bound, try collapsing with the next ("earlier") segment
+			if (i + 1 < segments.size() && segments[i + 1].second + 1 == desired) {
+				// This segment includes the next segment
+				segments[i].first = segments[i + 1].first;
+				segments.erase(segments.begin() + ptrdiff_t(i + 1));
 			}
+
+			appended = true;
+			break;
+		}
+		if (desired == segments[i].second + 1) {
+			segments[i].second = desired;
+
+			// Extended the right bound, try collapsing with the previous ("later") segment
+			if (i > 0 && segments[i - 1].first == desired + 1) {
+				// The previous segment includes this segment
+				segments[i - 1].first = segments[i].first;
+				segments.erase(segments.begin() + ptrdiff_t(i));
+			}
+
+			appended = true;
+			break;
 		}
 	}
-}
 
-bool TaskCounterTracker::isCounterComplete(uint64_t counter) noexcept
-{
-	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
-	uint64_t expected = counter / NUM_COMPLETION_LISTS;
+	// Not found a suitable segment, start a new one
+	if (!appended) [[unlikely]] {
+		// Find the appropriate position to keep it sorted
+		auto iter = segments.begin();
+		while (iter != segments.end() && iter->second > desired) {
+			++iter;
+		}
 
-	if (list.fully_completed_value.load(std::memory_order_relaxed) >= expected) [[likely]] {
-		return true;
+		// This will insert before `iter` which points to either
+		// the end or the first segment having `second < desired`
+		segments.emplace(iter, desired, desired);
 	}
 
-	std::lock_guard lock(list.lock);
-	auto iter = std::find(list.out_of_order_values.begin(), list.out_of_order_values.end(), expected);
-	return iter != list.out_of_order_values.end();
+	// Now try to complete segments - remember they are sorted,
+	// we can stop as soon as we fail the first attempt.
+	while (!segments.empty()) {
+		auto [first, last] = segments.back();
+		if (first != expected + 1) {
+			break;
+		}
+
+		if (fully_completed.compare_exchange_strong(expected, last, std::memory_order_relaxed)) [[likely]] {
+			expected = last;
+			segments.pop_back();
+		}
+	}
 }
 
 size_t TaskCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) noexcept
@@ -82,8 +120,14 @@ size_t TaskCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) no
 
 		{
 			std::lock_guard lock(list.lock);
-			auto iter = std::find(list.out_of_order_values.begin(), list.out_of_order_values.end(), expected);
-			has_in_out_of_order = (iter != list.out_of_order_values.end());
+			auto &segments = list.out_of_order_segments;
+
+			for (size_t j = 0; j < segments.size(); j++) {
+				if (segments[j].first >= expected && segments[j].second <= expected) {
+					has_in_out_of_order = true;
+					break;
+				}
+			}
 		}
 
 		if (has_in_out_of_order) {

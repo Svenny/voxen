@@ -6,6 +6,8 @@
 
 #include "task_handle_private.hpp"
 
+#include <array>
+#include <bit>
 #include <cassert>
 #include <chrono>
 

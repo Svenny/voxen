@@ -22,15 +22,17 @@ public:
 	uint64_t allocateCounter() noexcept;
 	void completeCounter(uint64_t value);
 
-	bool isCounterComplete(uint64_t value) noexcept;
 	size_t trimCompleteCounters(std::span<uint64_t> counters) noexcept;
 
-public:
+private:
 	constexpr static size_t NUM_COMPLETION_LISTS = 64;
+
+	// Both ends inclusive: [first, last]
+	using ValueSegment = std::pair<uint64_t, uint64_t>;
 
 	struct alignas(extras::hardware_params::cache_line) CompletionList {
 		std::atomic_uint64_t fully_completed_value = 0;
-		std::vector<uint64_t> out_of_order_values;
+		std::vector<ValueSegment> out_of_order_segments;
 		os::FutexLock lock;
 	};
 
