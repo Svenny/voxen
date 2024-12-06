@@ -150,6 +150,9 @@ set(VOXEN_HEADERS
 	include/voxen/util/resolution.hpp
 	include/voxen/util/tagged_tick_id.hpp
 	include/voxen/visibility.hpp
+
+	# Visualizers for VS debugger
+	include/voxen/svc/svc.natvis
 )
 
 target_include_directories(voxen PUBLIC include)

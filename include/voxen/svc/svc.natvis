@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="voxen::svc::detail::TaskHeader">
+		<Intrinsic Name="aword" Expression="*(uint32_t*)(&amp;atomic_word)" />
+		<Expand>
+			<Item Name="[ref count]">aword() &amp; 0xFFFF</Item>
+			<Item Name="[futex waiting]">(bool)(aword() &amp; 0x10000)</Item>
+			<Item Name="[is complete]">(bool)(aword() &amp; 0x20000)</Item>
+			<Item Name="[cont count]">aword() &gt;&gt; 20</Item>
+			<Item Name="[wait counters]">(uint64_t*)(this+1),[num_wait_counters]</Item>
+			<Item Name="[parent task]">parent_handle.m_parent</Item>
+			<Item Name="[task counter]">task_counter</Item>
+			<Item Name="[functor call]">call_fn</Item>
+			<Item Name="[functor dtor]">dtor_fn</Item>
+		</Expand>
+	</Type>
+</AutoVisualizer>

@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="extras::dyn_array&lt;*&gt;">
+		<Intrinsic Name="size" Expression="(size_t)(m_size)" />
+		<DisplayString>{{ size={size()} }}</DisplayString>
+		<Expand>
+			<Item Name="[allocator]" ExcludeView="simple">m_alloc</Item>
+			<ArrayItems>
+				<Size>size()</Size>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
 	<Type Name="extras::pimpl&lt;*,*,*&gt;">
 		<DisplayString>{*($T1 *) this}</DisplayString>
 		<Expand>
