@@ -109,6 +109,8 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_queue_set.hpp
 	src/voxen/svc/task_queue_set.cpp
 	src/voxen/svc/task_service.cpp
+	src/voxen/svc/task_service_slave.hpp
+	src/voxen/svc/task_service_slave.cpp
 	src/voxen/util/concentric_octahedra_walker.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/hash.cpp

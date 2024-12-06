@@ -20,6 +20,7 @@ namespace detail
 class PrivateTaskHandle;
 class TaskCounterTracker;
 struct TaskHeader;
+class TaskQueueSet;
 class TaskServiceImpl;
 
 } // namespace detail
