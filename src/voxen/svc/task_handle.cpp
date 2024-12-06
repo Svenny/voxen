@@ -15,8 +15,8 @@ namespace
 {
 
 constexpr uint32_t ATOMIC_WORD_REFCOUNT_MASK = (1u << 16) - 1u;
-constexpr uint32_t ATOMIC_WORD_FINISHED_BIT = 1u << 16;
-constexpr uint32_t ATOMIC_WORD_FUTEX_WAITING_BIT = 1u << 17;
+constexpr uint32_t ATOMIC_WORD_FUTEX_WAITING_BIT = 1u << 16;
+constexpr uint32_t ATOMIC_WORD_FINISHED_BIT = 1u << 17;
 constexpr uint32_t ATOMIC_WORD_CONTINUATION_COUNT_MASK = ((1u << 12) - 1u) << 20;
 constexpr uint32_t ATOMIC_WORD_CONTINUATION_ADD = 1u << 20;
 // Adds 1 to both refcount and continuation count
@@ -41,11 +41,27 @@ void doResetRef(detail::TaskHeader *header) noexcept
 
 void doComplete(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
 {
+	// First complete the parent task, if any
 	header->parent_handle.onTaskComplete(tracker);
+
+	// Set completion flag in the task header.
+	// Not waking immediately, see comments below.
+	bool need_wake = !!(header->atomic_word.fetch_or(ATOMIC_WORD_FINISHED_BIT, std::memory_order_release)
+		& ATOMIC_WORD_FUTEX_WAITING_BIT);
+
+	// Mark task counter as complete to unblock scheduling of dependent tasks.
+	// Note we're doing this only after the completion flag is raised. It must be
+	// formally complete from `TaskHandle` point of view before dependants begin.
 	tracker.completeCounter(header->task_counter);
 
-	if (header->atomic_word.fetch_or(ATOMIC_WORD_FINISHED_BIT, std::memory_order_release)
-		& ATOMIC_WORD_FUTEX_WAITING_BIT) {
+	// After we wake a waiting thread it can start enqueueing new tasks immediately
+	// while the task counter is not yet completed - there is a tiny gap between those
+	// two actions and this thread could get un-scheduled there. It's not a problem.
+	//
+	// But if we do wake immediately after setting the flag then we're going to
+	// extend this gap by the syscall duration, and dependent tasks will not
+	// start executing during that gap. So complete the counter first, then wake.
+	if (need_wake) [[unlikely]] {
 		// Someone is waiting for task completion.
 		// We don't know how many (task handle can be shared) so wake all.
 		os::Futex::wakeAll(&header->atomic_word);
@@ -140,7 +156,7 @@ void TaskHandle::wait() noexcept
 	}
 
 	// Set futex waiting flag. We don't need to care about resetting it,
-	// it will be taken into consideration just once in `markFinished()`.
+	// it will be taken into consideration just once in `doComplete()`.
 	word = m_header->atomic_word.fetch_or(ATOMIC_WORD_FUTEX_WAITING_BIT, std::memory_order_release);
 
 	while (!(word & ATOMIC_WORD_FINISHED_BIT)) {

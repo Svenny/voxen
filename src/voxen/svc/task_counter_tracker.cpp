@@ -123,7 +123,8 @@ size_t TaskCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) no
 			auto &segments = list.out_of_order_segments;
 
 			for (size_t j = 0; j < segments.size(); j++) {
-				if (segments[j].first >= expected && segments[j].second <= expected) {
+				// Check if expected value is inside the segment
+				if (segments[j].first <= expected && segments[j].second >= expected) {
 					has_in_out_of_order = true;
 					break;
 				}

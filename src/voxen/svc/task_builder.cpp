@@ -1,12 +1,12 @@
 #include <voxen/svc/task_builder.hpp>
 
 #include <voxen/common/pipe_memory_allocator.hpp>
+#include <voxen/debug/bug_found.hpp>
 #include <voxen/svc/task_context.hpp>
 #include <voxen/svc/task_service.hpp>
 
 #include "task_handle_private.hpp"
 
-#include <cassert>
 #include <vector>
 
 namespace voxen::svc
@@ -78,11 +78,21 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	// We have static asserts that there is enough alignment for counters and functor
 	size_t size = sizeof(detail::TaskHeader);
 	size += sizeof(uint64_t) * wait_cnt.size();
-	size += functor_size;
 
-	// `num_wait_counters` and `functor_storage_offset` are 16 bits
-	assert(wait_cnt.size() <= UINT16_MAX);
-	assert(size - functor_size <= UINT16_MAX);
+	// `num_wait_counters` and `functor_storage_offset` are 16 bits.
+	// Counters are before the functor and are 8 bytes each, their total size will
+	// overflow uint16 (in `functor_storage_offset`) much faster than their number.
+	// So enough to do one check.
+	// This is achievable in practice, make sure the bug never goes unnoticed.
+	//
+	// TODO: trim/wait if there are more counters (might happen on large system shutdown)
+	if (size > UINT16_MAX) [[unlikely]] {
+		// Not that the user can somehow recover from this error
+		debug::bugFound("TaskBuilder: uint16 overflow in task header; too many wait counters");
+	}
+
+	// Don't forget to add functor size after the check
+	size += functor_size;
 
 	void *place = PipeMemoryAllocator::allocate(size, alignof(detail::TaskHeader));
 	auto *header = new (place) detail::TaskHeader();
@@ -92,6 +102,8 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	header->parent_handle.setParent(m_impl->parent_task_header);
 	// Write wait counters array
 	std::copy_n(wait_cnt.data(), wait_cnt.size(), header->waitCountersArray());
+	// Don't forget to reset it - the next task should not wait on the same counters
+	wait_cnt.clear();
 
 	m_impl->last_task_handle = detail::PrivateTaskHandle(header);
 	return header->functorStorage();
