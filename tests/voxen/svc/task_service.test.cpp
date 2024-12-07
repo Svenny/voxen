@@ -237,7 +237,16 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 			}
 
 			// Sleep for a random time before completing
+#ifndef _WIN32
 			std::this_thread::sleep_for(std::chrono::microseconds(sleep_usecs));
+#else
+			// Windows sleep is dogshit, doing usec sleep will make this test take hours
+			if (sleep_usecs > 140) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			} else {
+				std::this_thread::yield();
+			}
+#endif
 		}
 	};
 
@@ -272,8 +281,8 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 	size_t num_completed = 0;
 
 	while (num_completed < NUM_TASKS) {
-		// 10 ms is certainly enough to finish at least a few tasks
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		// Certainly enough to finish at least a few tasks
+		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 		size_t new_completions = 0;
 
 		for (size_t i = 0; i < NUM_TASKS; i++) {
