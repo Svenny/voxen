@@ -62,9 +62,13 @@ extern const char *SHADER_MODULE_PATH;
 
 ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "assets/shaders/debug/octree.vert.spv")
 ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
+ADD_SHADER_PATH(DEBUG_TORUS_VERTEX, "assets/shaders/debug/torus.vert.spv")
+ADD_SHADER_PATH(DEBUG_TORUS_FRAGMENT, "assets/shaders/debug/torus.frag.spv")
 ADD_SHADER_PATH(TERRAIN_FRUSTUM_CULL_COMPUTE, "assets/shaders/terrain/frustum_cull.comp.spv")
 ADD_SHADER_PATH(TERRAIN_SIMPLE_VERTEX, "assets/shaders/terrain/simple.vert.spv")
 ADD_SHADER_PATH(TERRAIN_SIMPLE_FRAGMENT, "assets/shaders/terrain/simple.frag.spv")
+ADD_SHADER_PATH(LAND_IMPOSTOR_VERTEX, "assets/shaders/land/impostor.vert.spv")
+ADD_SHADER_PATH(LAND_IMPOSTOR_FRAGMENT, "assets/shaders/land/impostor.frag.spv")
 
 template<uint32_t ID = 0, typename T>
 static void loadShaderModules(T &array)

@@ -33,7 +33,7 @@ namespace
 
 constexpr double Y_BAND_LIMIT = 90.0;
 
-double surfaceFn(glm::dvec3 point)
+double surfaceFn(double x, double z)
 {
 	constexpr std::tuple<double, double, double, double> octaves[] = {
 		{ 4.0, 0.5, 0.03, 0.09 },
@@ -45,7 +45,7 @@ double surfaceFn(glm::dvec3 point)
 
 	double fn = 0.0;
 	for (const auto &[amp, phi, fx, fz] : octaves) {
-		fn += amp * sin(phi + point.x * fx + point.z * fz);
+		fn += amp * sin(phi + x * fx + z * fz);
 	}
 
 	//fn *= 0.000001;
@@ -80,32 +80,60 @@ void generateChunk(ChunkKey key, ChunkPtr &out_ptr)
 		}
 	}
 
-	// Allocate on heap, expanded array is pretty large
-	auto ids = std::make_unique<Chunk::BlockIdArray>();
-	bool empty = true;
+	bool have_solid = false;
+	bool have_empty = false;
 
 	const int32_t step = key.scaleMultiplier();
 	const double halfstep = double(step) * 0.5;
 
-	Utils::forYXZ<BLOCKS>([&](uint32_t x, uint32_t y, uint32_t z) {
-		const glm::ivec3 pos = glm::ivec3(x, y, z);
-		const glm::ivec3 block = first_block_coords + pos * step;
-		const glm::dvec3 block_world = (glm::dvec3(block) + halfstep) * Consts::BLOCK_SIZE_METRES;
+	// Precompute surface height levels in 2D.
+	// Allocate on heap, expanded array is pretty large.
+	using HeightLevelsArray = std::array<std::array<uint32_t, Consts::CHUNK_SIZE_BLOCKS>, Consts::CHUNK_SIZE_BLOCKS>;
+	auto height_levels = std::make_unique<HeightLevelsArray>();
 
-		double fn = surfaceFn(block_world);
+	double ymin = (first_block_coords.y + halfstep) * Consts::BLOCK_SIZE_METRES;
+	double ymax = (first_block_coords.y + (Consts::CHUNK_SIZE_BLOCKS - 1) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
 
-		if (fn > block_world.y) {
-			empty = false;
-			(*ids)[pos] = 1;
-		} else {
-			(*ids)[pos] = 0;
+	for (uint32_t x = 0; x < Consts::CHUNK_SIZE_BLOCKS; x++) {
+		for (uint32_t z = 0; z < Consts::CHUNK_SIZE_BLOCKS; z++) {
+			double fx = (first_block_coords.x + int32_t(x) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
+			double fz = (first_block_coords.z + int32_t(z) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
+			double fn = surfaceFn(fx, fz);
+
+			if (fn < ymin) {
+				(*height_levels)[x][z] = 0;
+				have_empty = true;
+			} else if (fn >= ymax) {
+				(*height_levels)[x][z] = Consts::CHUNK_SIZE_BLOCKS;
+				have_solid = true;
+			} else {
+				have_empty = true;
+				have_solid = true;
+
+				double normheight = (fn - ymin) / (ymax - ymin);
+				uint32_t hlevel = 1 + static_cast<uint32_t>(normheight * (Consts::CHUNK_SIZE_BLOCKS - 1));
+				(*height_levels)[x][z] = hlevel;
+			}
 		}
-	});
+	}
 
-	if (empty) {
+	if (!have_solid) {
 		out_ptr->setAllBlocksUniform(0);
 		return;
 	}
+
+	if (!have_empty) {
+		out_ptr->setAllBlocksUniform(1);
+		return;
+	}
+
+	// Allocate on heap, expanded array is pretty large
+	auto ids = std::make_unique<Chunk::BlockIdArray>();
+
+	Utils::forYXZ<BLOCKS>([&](uint32_t x, uint32_t y, uint32_t z) {
+		Chunk::BlockId value = (y < (*height_levels)[x][z]) ? 1 : 0;
+		ids->store(x, y, z, value);
+	});
 
 	out_ptr->setAllBlocks(ids->cview());
 }
@@ -157,7 +185,8 @@ void generatePseudoSurface(ChunkKey key, std::array<PseudoDataPtr, 7> ref, svc::
 	if (ref[0]->empty()) {
 		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key);
 	} else {
-		auto out_ptr = LandState::PseudoChunkSurfaceTable::makeValuePtr(PseudoChunkSurface(*ref[0]));
+		auto out_ptr = LandState::PseudoChunkSurfaceTable::makeValuePtr();
+		out_ptr->generate(*ref[0]);
 		sender->send<detail::PseudoChunkSurfaceGenCompletionMessage>(LandService::SERVICE_UID, key, std::move(out_ptr));
 	}
 #endif
@@ -201,10 +230,14 @@ struct ChunkMetastate {
 	WorldTickId last_referenced_tick = WorldTickId::INVALID;
 
 	uint32_t pending_task_count : 8 = 0;
-	uint32_t chunk_data_invalidated : 1 = 0;
-	uint32_t pseudo_data_invalidated : 1 = 0;
-	uint32_t pseudo_surface_invalidated : 1 = 0;
+	uint32_t chunk_data_invalidated : 1 = 1;
+	uint32_t pseudo_data_invalidated : 1 = 1;
+	uint32_t pseudo_surface_invalidated : 1 = 1;
 	uint32_t is_virgin : 1 = 1;
+
+	WorldTickId chunk_gen_enqueued_tick = WorldTickId::INVALID;
+	WorldTickId pseudo_data_gen_enqueued_tick = WorldTickId::INVALID;
+	WorldTickId pseudo_surface_gen_enqueued_tick = WorldTickId::INVALID;
 
 	uint64_t chunk_gen_task_counter = 0;
 	uint64_t pseudo_data_gen_task_counter = 0;
@@ -473,10 +506,10 @@ private:
 
 	void enqueuePseudoSurfaceGen(ChunkKey ck, ChunkMetastate &m)
 	{
-		if (!m.pseudo_surface_invalidated && m.pseudo_surface_gen_task_counter > 0) {
-			// Surface is already generated and was not invalidated ever since
+		if (!m.pseudo_surface_invalidated) {
 			return;
 		}
+		m.pseudo_surface_invalidated = 0;
 
 		// Collect pseudo data from this and 6 adjacent chunks
 		// TODO: do actually collect adjacent chunks
@@ -486,8 +519,14 @@ private:
 		std::array<PseudoDataPtr, 7> dependencies;
 		dependencies[0] = m.latest_pseudo_data_ptr;
 
+		// TODO: check enqueued tick for every dependency
+		if (m.pseudo_surface_gen_enqueued_tick >= m.pseudo_data_gen_enqueued_tick) {
+			// Surface is not outdated
+			return;
+		}
+
 		m.pending_task_count++;
-		m.pseudo_surface_invalidated = 0;
+		m.pseudo_surface_gen_enqueued_tick = m_tick_id;
 
 		svc::TaskBuilder bld(m_task_service);
 		// TODO: wait on all adjacent chunks datas too (dependencies)
@@ -497,19 +536,15 @@ private:
 		bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
 			generatePseudoSurface(ck, std::move(deps), snd);
 		});
-		m.chunk_gen_task_counter = bld.getLastTaskCounter();
+		m.pseudo_surface_gen_task_counter = bld.getLastTaskCounter();
 	}
 
 	void enqueuePseudoDataGen(ChunkKey ck, ChunkMetastate &m)
 	{
-		if (!m.pseudo_data_invalidated && m.pseudo_data_gen_task_counter > 0) {
-			// Pseudo data is already generated and was not invalidated ever since
+		if (!m.pseudo_data_invalidated) {
 			return;
 		}
-
-		m.pending_task_count++;
 		m.pseudo_data_invalidated = 0;
-		m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate();
 
 		svc::TaskBuilder bld(m_task_service);
 		// This will ensure successive pseudo data gen tasks complete in order
@@ -522,6 +557,7 @@ private:
 			// in advance there must be no pending gen tasks on them.
 			std::array<ChunkPtr, 7> dependencies;
 			uint64_t wait_counters[7] = {};
+			bool outdated = false;
 
 			enqueueChunkDataGen(ck, m);
 			dependencies[0] = m.latest_chunk_ptr;
@@ -536,6 +572,11 @@ private:
 
 				ChunkMetastate &mm = getMetastate(dk);
 				enqueueChunkDataGen(dk, mm);
+
+				if (m.pseudo_data_gen_enqueued_tick < mm.chunk_gen_enqueued_tick) {
+					outdated = true;
+				}
+
 				dependencies[index] = mm.latest_chunk_ptr;
 				wait_counters[index] = mm.chunk_gen_task_counter;
 			};
@@ -549,12 +590,25 @@ private:
 			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 1)), 5);
 			collect_dependency(ChunkKey(B - glm::ivec3(0, 0, 1)), 6);
 
+			if (!outdated) {
+				return;
+			}
+
+			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate();
+
 			bld.addWait(wait_counters);
 			bld.enqueueTask(
 				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
 					generateImpostor(ck, std::move(deps), snd, std::move(ptr));
 				});
 		} else if (ck.scale_log2 <= Consts::MAX_DIRECT_GENERATE_LOD && m.is_virgin) {
+			if (m.latest_pseudo_data_ptr) {
+				// Virgin pseudo-chunks can't be outdated
+				return;
+			}
+
+			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate();
+
 			// Direct gen of "virgin" chunk - enqueue an independent task
 			bld.enqueueTask([ck, snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
 				generatePseudoChunk(ck, snd, std::move(ptr));
@@ -566,6 +620,7 @@ private:
 			// in advance there must be no pending gen tasks on them.
 			std::array<PseudoDataPtr, 8> dependencies;
 			uint64_t wait_counters[8] = {};
+			bool outdated = false;
 
 			auto collect_dependency = [&](ChunkKey dk, size_t index) {
 				if (dk.y < Consts::MIN_WORLD_Y_CHUNK || dk.y > Consts::MAX_WORLD_Y_CHUNK) {
@@ -575,6 +630,11 @@ private:
 
 				ChunkMetastate &mm = getMetastate(dk);
 				enqueuePseudoDataGen(dk, mm);
+
+				if (m.pseudo_data_gen_enqueued_tick < mm.pseudo_data_gen_enqueued_tick) {
+					outdated = true;
+				}
+
 				dependencies[index] = mm.latest_pseudo_data_ptr;
 				wait_counters[index] = mm.pseudo_data_gen_task_counter;
 			};
@@ -592,6 +652,12 @@ private:
 			collect_dependency(ChunkKey(B + glm::ivec3(0, K, 0), S), 6);
 			collect_dependency(ChunkKey(B + glm::ivec3(K, K, 0), S), 7);
 
+			if (!outdated) {
+				return;
+			}
+
+			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate();
+
 			bld.addWait(wait_counters);
 			bld.enqueueTask(
 				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
@@ -599,6 +665,8 @@ private:
 				});
 		}
 
+		m.pending_task_count++;
+		m.pseudo_data_gen_enqueued_tick = m_tick_id;
 		m.pseudo_data_gen_task_counter = bld.getLastTaskCounter();
 	}
 
@@ -606,13 +674,19 @@ private:
 	{
 		assert(ck.scale_log2 == 0);
 
-		if (!m.chunk_data_invalidated && m.chunk_gen_task_counter > 0) {
+		if (!m.chunk_data_invalidated) {
 			// Chunk data is already generated and was not invalidated ever since
+			return;
+		}
+		m.chunk_data_invalidated = 0;
+
+		if (m.chunk_gen_enqueued_tick.valid()) {
+			// Currently chunks are not modified so they can't be outdated
 			return;
 		}
 
 		m.pending_task_count++;
-		m.chunk_data_invalidated = 0;
+		m.chunk_gen_enqueued_tick = m_tick_id;
 		m.latest_chunk_ptr = LandState::ChunkTable::makeValuePtr();
 
 		svc::TaskBuilder bld(m_task_service);
@@ -673,7 +747,8 @@ private:
 		// adjacent pseudochunk data, but only those "touched" by this chunk.
 		glm::ivec3 base = msg.key.base();
 
-		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key);
+		m.pseudo_data_invalidated = 1;
+		//m_this_tick_pseudo_data_invalidations.emplace_back(msg.key);
 		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base + glm::ivec3(1, 0, 0)));
 		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 0, 0)));
 		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 1, 0)));
@@ -688,7 +763,10 @@ private:
 		m.pending_task_count--;
 
 		// Invalidate pseudo surface of this chunk and pseudo data of its parent (reaggregation)
-		m_this_tick_pseudo_surface_invalidations.emplace_back(msg.key);
+		// TODO: invalidate pseudo-surfaces of adjacent chunks in "cross" pattern.
+		// It's better to detect modifications and only invalidate them if a border cell entry changed.
+		m.pseudo_surface_invalidated = 1;
+		//m_this_tick_pseudo_surface_invalidations.emplace_back(msg.key);
 		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key.parentLodKey());
 	}
 

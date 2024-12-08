@@ -33,6 +33,10 @@ Controller::~Controller()
 
 std::vector<Controller::ChunkPtr> Controller::doTick()
 {
+	if (m_direct_op_quota != UINT32_MAX) {
+		return {};
+	}
+
 	garbageCollectPointsOfInterest();
 	engageSuperchunks();
 

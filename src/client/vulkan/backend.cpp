@@ -17,6 +17,8 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
+#include <voxen/gfx/gfx_land_loader.hpp>
+
 #include <GLFW/glfw3.h>
 
 #include <cassert>
@@ -33,7 +35,7 @@ struct Backend::Impl {
 
 	std::tuple<Storage<gfx::GfxSystem>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
 		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<PipelineCollection>,
-		Storage<TerrainRenderer>>
+		Storage<TerrainRenderer>, Storage<gfx::LandLoader>>
 		storage;
 
 	template<typename T, typename... Args>

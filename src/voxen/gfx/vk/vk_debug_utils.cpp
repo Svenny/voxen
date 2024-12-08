@@ -21,6 +21,11 @@ VkBool32 debugMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeve
 		level = Log::Level::Warn;
 	}
 
+	if (strstr(pCallbackData->pMessage, "VK_IMAGE_LAYOUT_UNDEFINED") != nullptr) {
+		// STFU
+		return VK_FALSE;
+	}
+
 	bool spec = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
 	bool perf = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
 

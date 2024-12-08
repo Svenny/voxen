@@ -46,6 +46,7 @@ public:
 	void launchFrustumCull(VkCommandBuffer cmdbuf);
 	void drawChunksInFrustum(VkCommandBuffer cmdbuf);
 	void drawDebugChunkBorders(VkCommandBuffer cmdbuf);
+	void drawFuckingTorus(VkCommandBuffer cmdbuf);
 
 private:
 	struct ChunkRenderInfo {

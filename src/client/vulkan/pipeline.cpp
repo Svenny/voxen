@@ -5,6 +5,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
@@ -94,12 +95,12 @@ struct VertexFormatBasicTerrain {
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(terrain::SurfaceVertex, normal),
 		};
-		// Primary material ID
+		// Material IDs
 		vertex_input_attrib[2] = VkVertexInputAttributeDescription {
 			.location = 2,
 			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, primary_mat),
+			.format = VK_FORMAT_R8G8B8_UINT,
+			.offset = offsetof(terrain::SurfaceVertex, materials),
 		};
 		// Vertex properties (flags)
 		vertex_input_attrib[3] = VkVertexInputAttributeDescription {
@@ -108,37 +109,9 @@ struct VertexFormatBasicTerrain {
 			.format = VK_FORMAT_R8_UINT,
 			.offset = offsetof(terrain::SurfaceVertex, flags),
 		};
-		// Secondary materials pair weight
+		// Chunk base/scale data
 		vertex_input_attrib[4] = VkVertexInputAttributeDescription {
 			.location = 4,
-			.binding = 0,
-			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_weight),
-		};
-		// Secondary materials A/B ratio
-		vertex_input_attrib[5] = VkVertexInputAttributeDescription {
-			.location = 5,
-			.binding = 0,
-			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_ratio),
-		};
-		// Secondary material A
-		vertex_input_attrib[6] = VkVertexInputAttributeDescription {
-			.location = 6,
-			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_a),
-		};
-		// Secondary material B
-		vertex_input_attrib[7] = VkVertexInputAttributeDescription {
-			.location = 7,
-			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_b),
-		};
-		// Chunk base/scale data
-		vertex_input_attrib[8] = VkVertexInputAttributeDescription {
-			.location = 8,
 			.binding = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 			.offset = 0,
@@ -152,7 +125,20 @@ struct VertexFormatBasicTerrain {
 	}
 
 	VkVertexInputBindingDescription vertex_input_binding[2] = {};
-	VkVertexInputAttributeDescription vertex_input_attrib[9] = {};
+	VkVertexInputAttributeDescription vertex_input_attrib[5] = {};
+	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+};
+
+struct VertexFormatEmpty {
+	VertexFormatEmpty() noexcept
+	{
+		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertex_input_info.vertexBindingDescriptionCount = 0;
+		vertex_input_info.pVertexBindingDescriptions = nullptr;
+		vertex_input_info.vertexAttributeDescriptionCount = 0;
+		vertex_input_info.pVertexAttributeDescriptions = nullptr;
+	}
+
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
 };
 
@@ -277,6 +263,7 @@ struct GraphicsPipelineParts {
 
 	const VertexFormatPositionOnlyTerrain vert_fmt_pos_only_terrain;
 	const VertexFormatBasicTerrain vert_fmt_basic_terrain;
+	const VertexFormatEmpty vert_fmt_empty;
 	const DefaultInputAssemblyState default_input_assembly_state;
 	const DefaultViewportState default_viewport_state;
 	const DefaultRasterizationState default_rasterization_state;
@@ -308,6 +295,16 @@ struct GraphicsPipelineParts {
 	struct {
 		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
 	} terrain_simple_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+	} land_impostor_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+		VkPipelineInputAssemblyStateCreateInfo input_assembly_info = {};
+		VkPipelineRasterizationStateCreateInfo rasterization_info = {};
+	} torus_parts;
 };
 
 template<uint32_t ID>
@@ -352,6 +349,119 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
+	my_create_info.renderPass = VK_NULL_HANDLE;
+	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
+}
+
+template<>
+void addParts<PipelineCollection::DEBUG_TORUS_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.torus_parts;
+	auto &my_create_info = parts.create_infos[PipelineCollection::DEBUG_TORUS_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::DEBUG_TORUS_VERTEX];
+	vert_stage_info.pName = "main";
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::DEBUG_TORUS_FRAGMENT];
+	frag_stage_info.pName = "main";
+
+	auto &input_assembly_info = my_parts.input_assembly_info;
+	input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	input_assembly_info.primitiveRestartEnable = VK_FALSE;
+
+	auto &rasterization_info = my_parts.rasterization_info;
+	rasterization_info = parts.default_rasterization_state.rasterization_info;
+	rasterization_info.polygonMode = VK_POLYGON_MODE_FILL;
+
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_empty.vertex_input_info;
+	my_create_info.pInputAssemblyState = &input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
+	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
+	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
+	my_create_info.renderPass = VK_NULL_HANDLE;
+	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
+}
+
+template<>
+void addParts<PipelineCollection::LAND_IMPOSTOR_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.land_impostor_parts;
+
+	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_IMPOSTOR_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	constexpr static uint32_t shader_spec_data[] = {
+		land::Consts::CHUNK_SIZE_BLOCKS,
+		std::bit_cast<uint32_t>(float(land::Consts::BLOCK_SIZE_METRES)),
+		gfx::LandLoader::FAKE_FACE_BATCH_SIZE,
+	};
+
+	constexpr static VkSpecializationMapEntry shader_spec_map[] = {
+		{
+			.constantID = 0,
+			.offset = 0,
+			.size = 4,
+		},
+		{
+			.constantID = 1,
+			.offset = 4,
+			.size = 4,
+		},
+		{
+			.constantID = 2,
+			.offset = 8,
+			.size = 4,
+		},
+	};
+
+	constexpr static VkSpecializationInfo shader_spec_info = {
+		.mapEntryCount = std::size(shader_spec_map),
+		.pMapEntries = shader_spec_map,
+		.dataSize = sizeof(shader_spec_data),
+		.pData = shader_spec_data,
+	};
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_IMPOSTOR_VERTEX];
+	vert_stage_info.pName = "main";
+	vert_stage_info.pSpecializationInfo = &shader_spec_info;
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_IMPOSTOR_FRAGMENT];
+	frag_stage_info.pName = "main";
+	frag_stage_info.pSpecializationInfo = &shader_spec_info;
+
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_empty.vertex_input_info;
+	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
+	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
+	my_create_info.layout = backend.pipelineLayoutCollection().landImpostorLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
