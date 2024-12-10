@@ -22,7 +22,7 @@ constexpr uint32_t ATOMIC_WORD_CONTINUATION_ADD = 1u << 20;
 // Adds 1 to both refcount and continuation count
 constexpr uint32_t ATOMIC_WORD_CONTINUATION_REF_ADD = ATOMIC_WORD_CONTINUATION_ADD | 1u;
 
-void doResetRef(detail::TaskHeader *header) noexcept
+void doReleaseRef(detail::TaskHeader *header) noexcept
 {
 	if ((header->atomic_word.fetch_sub(1, std::memory_order_acq_rel) & ATOMIC_WORD_REFCOUNT_MASK) > 1) {
 		// This was not the last ref
@@ -39,7 +39,7 @@ void doResetRef(detail::TaskHeader *header) noexcept
 	PipeMemoryAllocator::deallocate(header);
 }
 
-void doComplete(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
+void doCompleteAndUnref(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
 {
 	// First complete the parent task, if any
 	header->parent_handle.onTaskComplete(tracker);
@@ -49,13 +49,23 @@ void doComplete(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
 	bool need_wake = !!(header->atomic_word.fetch_or(ATOMIC_WORD_FINISHED_BIT, std::memory_order_release)
 		& ATOMIC_WORD_FUTEX_WAITING_BIT);
 
+	const uint64_t task_counter = header->task_counter;
+	std::atomic_uint32_t *atomic_word = &header->atomic_word;
+
+	// Release ref before marking the counter as complete.
+	// If this was the last ref to this task then its associated resources
+	// will be freed by the time any waiting thread unblocks. This is
+	// needed e.g. for subsystem destructors that wait for all
+	// enqueued tasks to finish using only task counters, not handles.
+	doReleaseRef(header);
+
 	// Mark task counter as complete to unblock scheduling of dependent tasks.
 	// Note we're doing this only after the completion flag is raised. It must be
 	// formally complete from `TaskHandle` point of view before dependants begin.
-	tracker.completeCounter(header->task_counter);
+	tracker.completeCounter(task_counter);
 
 	// After we wake a waiting thread it can start enqueueing new tasks immediately
-	// while the task counter is not yet completed - there is a tiny gap between those
+	// while the task counter is not yet completed - there is a small gap between those
 	// two actions and this thread could get un-scheduled there. It's not a problem.
 	//
 	// But if we do wake immediately after setting the flag then we're going to
@@ -64,7 +74,11 @@ void doComplete(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
 	if (need_wake) [[unlikely]] {
 		// Someone is waiting for task completion.
 		// We don't know how many (task handle can be shared) so wake all.
-		os::Futex::wakeAll(&header->atomic_word);
+		//
+		// XXX: we assume there is at least one more ref to `header` remaining,
+		// otherwise we would wake on a no longer valid address. Could fuse `fetch_or`
+		// and unref into a single atomic operation and check that more refs remain.
+		os::Futex::wakeAll(atomic_word);
 	}
 }
 
@@ -96,12 +110,12 @@ void detail::ParentTaskHandle::onTaskComplete(TaskCounterTracker &tracker)
 	uint32_t old_word = m_parent->atomic_word.fetch_sub(ATOMIC_WORD_CONTINUATION_ADD, std::memory_order_acq_rel);
 	if ((old_word & ATOMIC_WORD_CONTINUATION_COUNT_MASK) == ATOMIC_WORD_CONTINUATION_ADD) {
 		// This was the last continuation, complete the parent
-		doComplete(m_parent, tracker);
+		doCompleteAndUnref(m_parent, tracker);
+	} else {
+		// Parent has more incomplete continuations, but we no longer need to ref it
+		doReleaseRef(m_parent);
 	}
 
-	// Reset ref - can't to it in the same atomic operation,
-	// we need to hold this ref during completion signaling.
-	doResetRef(m_parent);
 	m_parent = nullptr;
 }
 
@@ -135,7 +149,7 @@ void TaskHandle::reset() noexcept
 		return;
 	}
 
-	doResetRef(m_header);
+	doReleaseRef(m_header);
 	m_header = nullptr;
 }
 
@@ -183,9 +197,10 @@ bool detail::PrivateTaskHandle::hasContinuations() const noexcept
 	return !!(m_header->atomic_word.load(std::memory_order_acquire) & ATOMIC_WORD_CONTINUATION_COUNT_MASK);
 }
 
-void detail::PrivateTaskHandle::complete(TaskCounterTracker &tracker)
+void detail::PrivateTaskHandle::completeAndReset(TaskCounterTracker &tracker)
 {
-	doComplete(m_header, tracker);
+	doCompleteAndUnref(m_header, tracker);
+	m_header = nullptr;
 }
 
 } // namespace voxen::svc

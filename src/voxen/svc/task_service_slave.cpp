@@ -25,7 +25,7 @@ struct SlaveState {
 	std::vector<PrivateTaskHandle> local_waiting_queue = {};
 };
 
-void executeTask(SlaveState &state, PrivateTaskHandle &task)
+void executeAndResetTask(SlaveState &state, PrivateTaskHandle &task)
 {
 	TaskHeader *header = task.get();
 
@@ -36,9 +36,22 @@ void executeTask(SlaveState &state, PrivateTaskHandle &task)
 		header->call_fn(header->functorStorage(), ctx);
 	}
 
+	// TODO: defer enqueueing continuations until this point.
+	// There is a (very slight) chance that all of them finish before
+	// this check, or between the check and `task.reset()` for `else` branch.
+	// In the first case we will have double completion (from a continuation
+	// and from here), in the second we will not release resources before task
+	// counter is completed if this was the last ref - which might break the
+	// behavior of e.g. system destructors waiting on task counters to finish.
+	//
+	// Both cases are errors, and both are solved if we simply enqueue continuations
+	// after this check. Actually, deferring just one continuation launch is enough,
+	// all others can be enqueued immediately during the task execution.
 	if (!task.hasContinuations()) {
 		// Signal task completion, otherwise some child will do it
-		task.complete(state.counter_tracker);
+		task.completeAndReset(state.counter_tracker);
+	} else {
+		task.reset();
 	}
 }
 
@@ -57,8 +70,7 @@ void tryDrainLocalQueue(SlaveState &state)
 
 		if (remaining_counters == 0) {
 			// Ready now, execute and reset it, leaving an empty spot in the vector
-			executeTask(state, state.local_waiting_queue[i]);
-			state.local_waiting_queue[i].reset();
+			executeAndResetTask(state, state.local_waiting_queue[i]);
 		} else {
 			// Still not ready, move this task into the first empty spot.
 			// If no task was reset in the above branch yet, this will just swap with itself.
@@ -101,7 +113,7 @@ void TaskServiceSlave::threadFn(TaskService &my_service, size_t my_queue, TaskCo
 			tryDrainLocalQueue(state);
 		} else {
 			// Task without dependencies, execute it right away
-			executeTask(state, task);
+			executeAndResetTask(state, task);
 
 			executed_independent_tasks++;
 			// TODO: adaptive/configurable constant?
