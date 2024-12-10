@@ -18,25 +18,14 @@ struct SurfaceVertex final {
 	glm::vec3 position;
 	// Surface normal (unit vector)
 	glm::vec3 normal;
-	// Primary surface material (the only one in single-material parts)
-	voxel_t primary_mat;
+	// TODO: describe me
+	voxel_t materials[3];
 	// Properties of this vertex:
 	// - bit 0: 'is joint/flange vertex' flag
+	// - bits 1-2: material index (can be 0, 1, 2)
 	uint8_t flags;
-	// Weight of secondary materials pair, normalized value from 0.0 to 1.0.
-	// If 0 then this vertex belongs to a single-material part.
-	uint8_t secondary_mats_weight;
-	// Ratio of secondary materials pair, normalized value from 0.0 to 1.0.
-	// 0.0 is 100% `secondary_mat_a`, 1.0 is 100% `secondary_mat_b`, 0.5 is 50% both.
-	uint8_t secondary_mats_ratio;
-	// Secondary material A (ingored if `secondary_mats_weight == 0 || secondary_mats_ratio == 255`)
-	voxel_t secondary_mat_a;
-	// Secondary material B (ignored if `secondary_mats_weight == 0 || secondary_mats_ratio == 0`)
-	voxel_t secondary_mat_b;
-	// Unused padding bits
-	uint16_t reserved;
 };
-static_assert(sizeof(SurfaceVertex) == 32, "32-byte SurfaceVertex packing is broken");
+static_assert(sizeof(SurfaceVertex) == 28, "28-byte SurfaceVertex packing is broken");
 
 class ChunkSurface final {
 public:

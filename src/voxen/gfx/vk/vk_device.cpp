@@ -367,7 +367,7 @@ bool Device::isSupported(PhysicalDevice &pd)
 	auto &ext_info = pd.extInfo();
 
 	if (!ext_info.have_maintenance5) {
-		missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 	}
 	if (!ext_info.have_push_descriptor) {
 		missing.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -463,6 +463,7 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan13Features features13 = {};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	features13.pNext = &features_maintenance5;
+	features13.pNext = nullptr;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
 	features13.maintenance4 = VK_TRUE;
@@ -475,6 +476,7 @@ void Device::createDevice()
 	features12.uniformBufferStandardLayout = VK_TRUE;
 	features12.hostQueryReset = VK_TRUE;
 	features12.timelineSemaphore = VK_TRUE;
+	features12.bufferDeviceAddress = VK_TRUE;
 	features12.shaderOutputLayer = VK_TRUE;
 
 	VkPhysicalDeviceVulkan11Features features11 = {};
@@ -545,7 +547,7 @@ void Device::createDevice()
 	VkPhysicalDeviceMeshShaderFeaturesEXT features_mesh_shader = {};
 	{
 		// Required extensions
-		ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -610,7 +612,8 @@ void Device::createVma()
 
 	VmaAllocatorCreateInfo vma_create_info {
 		// Both maintenance4 (Vulkan 1.3) and maintenance5 are guaranteed by `isSupported()`
-		.flags = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT,
+		.flags = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT
+			| VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
 		.physicalDevice = m_phys_device.handle(),
 		.device = m_handle,
 		.preferredLargeHeapBlockSize = 0,

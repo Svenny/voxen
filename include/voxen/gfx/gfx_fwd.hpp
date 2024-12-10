@@ -5,6 +5,7 @@ namespace voxen::gfx
 
 class FrameTickSource;
 class GfxSystem;
+class LandLoader;
 
 namespace vk
 {

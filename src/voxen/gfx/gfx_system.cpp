@@ -3,6 +3,7 @@
 #include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/gfx/frame_tick_source.hpp>
+#include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
@@ -97,6 +98,7 @@ struct GfxSystem::ComponentStorage {
 	alignas(vk::TransientBufferAllocator) std::byte vk_transient_buffer_allocator[sizeof(vk::TransientBufferAllocator)];
 	alignas(vk::DmaSystem) std::byte vk_dma_system[sizeof(vk::DmaSystem)];
 	alignas(vk::MeshStreamer) std::byte vk_mesh_streamer[sizeof(vk::MeshStreamer)];
+	alignas(LandLoader) std::byte land_loader[sizeof(LandLoader)];
 	alignas(vk::RenderGraphRunner) std::byte vk_render_graph_runner[sizeof(vk::RenderGraphRunner)];
 	alignas(FrameTickSource) std::byte frame_tick_source[sizeof(FrameTickSource)];
 };
@@ -126,6 +128,8 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 	m_vk_dma_system.reset(new (comp.vk_dma_system) vk::DmaSystem(*this));
 
 	m_vk_mesh_streamer.reset(new (comp.vk_mesh_streamer) vk::MeshStreamer(*this));
+	m_land_loader.reset(new (comp.land_loader) LandLoader(*this, svc));
+
 	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*m_vk_device, main_window));
 	m_render_graph = std::make_shared<vk::LegacyRenderGraph>();
 	m_vk_render_graph_runner->attachGraph(m_render_graph);
@@ -147,6 +151,8 @@ void GfxSystem::drawFrame(const WorldState &state, const GameView &view)
 {
 	auto [completed_tick_id, this_tick_id] = m_frame_tick_source->startNextTick(*this);
 	notifyFrameTickBegin(completed_tick_id, this_tick_id);
+
+	m_land_loader->onNewState(state);
 
 	m_render_graph->setGameState(state, view);
 	m_vk_render_graph_runner->executeGraph();

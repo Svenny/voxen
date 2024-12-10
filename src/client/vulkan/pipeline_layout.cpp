@@ -27,7 +27,9 @@ PipelineLayout::~PipelineLayout() noexcept
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()
-	: m_terrain_basic_layout(createTerrainBasicLayout()), m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	: m_terrain_basic_layout(createTerrainBasicLayout())
+	, m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	, m_land_impostor_layout(createLandImpostorLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
@@ -61,6 +63,25 @@ PipelineLayout PipelineLayoutCollection::createTerrainFrustumCullLayout()
 	VkDescriptorSetLayout layouts[2];
 	layouts[0] = ds_collection.mainSceneLayout();
 	layouts[1] = ds_collection.terrainFrustumCullLayout();
+
+	return PipelineLayout(VkPipelineLayoutCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = std::size(layouts),
+		.pSetLayouts = layouts,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = nullptr,
+	});
+}
+
+PipelineLayout PipelineLayoutCollection::createLandImpostorLayout()
+{
+	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
+
+	VkDescriptorSetLayout layouts[2];
+	layouts[0] = ds_collection.mainSceneLayout();
+	layouts[1] = ds_collection.landImpostorLayout();
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,

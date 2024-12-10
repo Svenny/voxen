@@ -81,6 +81,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/standard_render_graph.hpp
 	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
@@ -95,9 +96,12 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_utils.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/gfx/frame_tick_id.hpp
+	include/voxen/gfx/gfx_land_loader.hpp
 	include/voxen/gfx/gfx_public_consts.hpp
 	include/voxen/gfx/gfx_system.hpp
 	include/voxen/gfx/gfx_fwd.hpp
+	include/voxen/land/block.hpp
+	include/voxen/land/block_registry.hpp
 	include/voxen/land/chunk_key.hpp
 	include/voxen/land/chunk_ticket.hpp
 	include/voxen/land/compressed_chunk_storage.hpp
@@ -110,9 +114,12 @@ set(VOXEN_HEADERS
 	include/voxen/land/land_state.hpp
 	include/voxen/land/land_storage_tree.hpp
 	include/voxen/land/land_storage_tree_node_ptr.hpp
+	include/voxen/land/land_tables.hpp
 	include/voxen/land/land_utils.hpp
+	include/voxen/land/private_storage_tree.hpp
 	include/voxen/land/pseudo_chunk_data.hpp
 	include/voxen/land/pseudo_chunk_surface.hpp
+	include/voxen/land/qef_solver.hpp
 	include/voxen/land/storage_tree_common.hpp
 	include/voxen/land/storage_tree_utils.hpp
 	include/voxen/land/typed_storage_tree.hpp

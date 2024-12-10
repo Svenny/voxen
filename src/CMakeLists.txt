@@ -56,6 +56,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/standard_render_graph.cpp
 	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
@@ -71,7 +72,10 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_transient_buffer_allocator.cpp
 	src/voxen/gfx/vk/vk_utils.cpp
 	src/voxen/gfx/frame_tick_source.cpp
+	src/voxen/gfx/gfx_land_loader.cpp
 	src/voxen/gfx/gfx_system.cpp
+	src/voxen/land/block.cpp
+	src/voxen/land/block_registry.cpp
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/land/land_chunk.cpp
@@ -83,6 +87,7 @@ set(VOXEN_SOURCES
 	src/voxen/land/land_storage_tree_nodes.cpp
 	src/voxen/land/land_storage_tree_node_ptr.cpp
 	src/voxen/land/land_storage_tree_private.hpp
+	src/voxen/land/private_storage_tree.cpp
 	src/voxen/land/pseudo_chunk_data.cpp
 	src/voxen/land/pseudo_chunk_surface.cpp
 	src/voxen/land/storage_tree_utils.cpp
@@ -132,9 +137,13 @@ endif()
 set(VOXEN_SHADERS
 	debug/octree.vert
 	debug/octree.frag
+	debug/torus.vert
+	debug/torus.frag
 	terrain/frustum_cull.comp
 	terrain/simple.vert
 	terrain/simple.frag
+	land/impostor.vert
+	land/impostor.frag
 )
 
 set(VOXEN_SHADER_COMPILER_OPTIONS

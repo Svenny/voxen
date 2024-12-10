@@ -69,6 +69,24 @@ void World::update()
 	m_message_queue.pollMessages();
 	m_next_state = nullptr;
 
+#if 0
+	static glm::dvec3 s_prev_pos = last_state.player().position();
+	static std::chrono::steady_clock::time_point s_prev_time = std::chrono::steady_clock::now();
+	if (next_state.tickId().value % 550 == 0) {
+		glm::dvec3 now_pos = next_state.player().position();
+		auto now_time = std::chrono::steady_clock::now();
+
+		double distance = glm::distance(s_prev_pos, now_pos);
+		double speed = distance / std::chrono::duration<double>(now_time - s_prev_time).count();
+		if (distance > 0.0) {
+			Log::info("Velocity {} m/s", speed);
+		}
+
+		s_prev_pos = now_pos;
+		s_prev_time = now_time;
+	}
+#endif
+
 	// Update chunks
 	m_terrain_controller.setPointOfInterest(0, m_chunk_loading_position);
 	next_state.setActiveChunks(m_terrain_controller.doTick());

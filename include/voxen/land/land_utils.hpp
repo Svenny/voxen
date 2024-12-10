@@ -21,6 +21,24 @@ inline void forYXZ(F &&fn) noexcept(std::is_nothrow_invocable_v<F, uint32_t, uin
 	}
 }
 
+// Offset `base` coordinate by `step` as appropriate for a chunk "child" key in standard YXZ order.
+// `child_id` must be in range [0; 8), otherwise behavior is undefined.
+// XXX: ensure this is compiled to branchless asm, might as well rewrite in SSE (it's just masked int32 adds)
+inline glm::ivec3 offsetChildCoord(size_t child_id, glm::ivec3 base, int32_t step) noexcept
+{
+	if (child_id & 0b100) {
+		base.y += step;
+	}
 
+	if (child_id & 0b010) {
+		base.x += step;
+	}
+
+	if (child_id & 0b001) {
+		base.z += step;
+	}
+
+	return base;
+}
 
 } // namespace voxen::land::Utils
