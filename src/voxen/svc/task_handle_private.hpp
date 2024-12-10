@@ -85,7 +85,12 @@ public:
 	// Mark this task as finished and wake all threads possibly waiting on it.
 	// If task execution was started (its functor was called), this function
 	// MUST be called, otherwise task continuation system will blow up.
-	void complete(TaskCounterTracker &tracker);
+	//
+	// Task ownership is released before signaling completion. This is needed when this handle
+	// holds the only live reference, then resources associated with the task will be freed
+	// before its completion is acknowledged. Needed e.g. for subsystem destructors waiting
+	// for all enqueued tasks completion.
+	void completeAndReset(TaskCounterTracker &tracker);
 
 	// Get raw pointer without affecting ownership
 	TaskHeader *get() noexcept { return m_header; }
