@@ -27,7 +27,7 @@ function(voxen_setup_target target is_executable)
 		-Wall -Wextra -Wpedantic -Werror
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
-		-Wshadow-uncaptured-local -Wunused-member-function
+		-Wshadow-uncaptured-local -Wunused-member-function -Wconditional-uninitialized
 		# And disable some junk warnings
 		-Wno-c99-designator
 		# Does not recognize some member functions are needed to satisfy concepts
