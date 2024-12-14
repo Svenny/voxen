@@ -475,6 +475,7 @@ void Device::createDevice()
 	features12.uniformBufferStandardLayout = VK_TRUE;
 	features12.hostQueryReset = VK_TRUE;
 	features12.timelineSemaphore = VK_TRUE;
+	features12.bufferDeviceAddress = VK_TRUE;
 	features12.shaderOutputLayer = VK_TRUE;
 
 	VkPhysicalDeviceVulkan11Features features11 = {};
@@ -610,7 +611,8 @@ void Device::createVma()
 
 	VmaAllocatorCreateInfo vma_create_info {
 		// Both maintenance4 (Vulkan 1.3) and maintenance5 are guaranteed by `isSupported()`
-		.flags = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT,
+		.flags = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT
+			| VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
 		.physicalDevice = m_phys_device.handle(),
 		.device = m_handle,
 		.preferredLargeHeapBlockSize = 0,

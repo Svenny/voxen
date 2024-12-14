@@ -26,6 +26,7 @@ public:
 
 	struct MeshSubstreamInfo {
 		VkBuffer vk_buffer = VK_NULL_HANDLE;
+		VkDeviceAddress buffer_gpu_address = 0;
 		uint32_t first_element = 0;
 		uint32_t num_elements = 0;
 		uint32_t element_size = 0;
@@ -90,6 +91,7 @@ private:
 	struct Pool {
 		VkBuffer vk_handle = VK_NULL_HANDLE;
 		VmaAllocation vma_handle = VK_NULL_HANDLE;
+		VkDeviceAddress gpu_address = 0;
 
 		// Timestamp of the latest allocation from this pool
 		FrameTickId last_allocation_tick = FrameTickId::INVALID;
