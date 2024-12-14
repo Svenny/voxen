@@ -3,6 +3,10 @@
 namespace voxen::land
 {
 
+class Chunk;
+struct ChunkAdjacencyRef;
+class PrivateStorageTree;
+class PseudoChunkData;
 class StorageTree;
 struct StorageTreeControl;
 

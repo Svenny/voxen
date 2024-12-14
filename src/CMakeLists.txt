@@ -75,6 +75,8 @@ set(VOXEN_SOURCES
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/land/land_chunk.cpp
+	src/voxen/land/land_geometry_utils_private.cpp
+	src/voxen/land/land_geometry_utils_private.hpp
 	src/voxen/land/land_private_consts.hpp
 	src/voxen/land/land_private_messages.hpp
 	src/voxen/land/land_service.cpp
