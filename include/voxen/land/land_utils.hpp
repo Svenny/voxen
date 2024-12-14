@@ -21,6 +21,4 @@ inline void forYXZ(F &&fn) noexcept(std::is_nothrow_invocable_v<F, uint32_t, uin
 	}
 }
 
-
-
 } // namespace voxen::land::Utils
