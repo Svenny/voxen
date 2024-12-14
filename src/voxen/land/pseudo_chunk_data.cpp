@@ -146,7 +146,7 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 		surface_point_weighted_sum += glm::vec4(surface_point, 1.0f);
 
 		// TODO: select color/material from block interface
-		uint16_t color;
+		uint16_t color = 0;
 
 		switch (axis) {
 		case 0:
