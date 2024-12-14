@@ -86,12 +86,14 @@ bool MeshStreamer::queryMesh(UID key, MeshInfo &mesh_info)
 		for (uint32_t i = 0; i < MAX_MESH_SUBSTREAMS; i++) {
 			MeshSubstreamInfo &substream = mesh_info.substreams[i];
 			if (info.ready_substream_allocations[i].valid()) {
-				info.ready_substream_allocations[i].pool->last_access_tick = m_current_tick_id;
+				Pool &pool = *info.ready_substream_allocations[i].pool;
+				pool.last_access_tick = m_current_tick_id;
 
-				substream.vk_buffer = info.ready_substream_allocations[i].pool->vk_handle;
+				substream.vk_buffer = pool.vk_handle;
+				substream.buffer_gpu_address = pool.gpu_address;
 				substream.first_element = info.ready_substream_allocations[i].range_begin;
 				substream.num_elements = info.ready_substream_allocations[i].sizeElements();
-				substream.element_size = info.ready_substream_allocations[i].pool->element_size;
+				substream.element_size = pool.element_size;
 			}
 		}
 	}
@@ -270,19 +272,21 @@ auto MeshStreamer::allocate(uint32_t num_elements, uint32_t element_size) -> All
 	}
 
 	// Out of pool space, create a new one
-	auto &pool = m_pools.emplace_back();
+	Pool &pool = m_pools.emplace_back();
 	defer_fail { m_pools.pop_back(); };
 
-	auto &dev = *m_gfx.device();
+	Device &dev = *m_gfx.device();
 
 	VkBufferCreateInfo buffer_create_info {};
 	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	buffer_create_info.size = POOL_SIZE_BYTES;
 	buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
-		| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+		| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 	VulkanUtils::fillBufferSharingInfo(dev, buffer_create_info);
 
 	VmaAllocationCreateInfo alloc_create_info {};
+	alloc_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
 	VkResult res = vmaCreateBuffer(dev.vma(), &buffer_create_info, &alloc_create_info, &pool.vk_handle, &pool.vma_handle,
@@ -297,6 +301,14 @@ auto MeshStreamer::allocate(uint32_t num_elements, uint32_t element_size) -> All
 	char name_buf[64];
 	snprintf(name_buf, std::size(name_buf), "streaming/mesh/pool@%s", disambig.data());
 	dev.setObjectName(pool.vk_handle, name_buf);
+
+	const VkBufferDeviceAddressInfo bda_info {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+		.pNext = nullptr,
+		.buffer = pool.vk_handle,
+	};
+
+	pool.gpu_address = dev.dt().vkGetBufferDeviceAddress(dev.handle(), &bda_info);
 
 	pool.last_allocation_tick = m_current_tick_id;
 	pool.last_access_tick = m_current_tick_id;
