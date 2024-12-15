@@ -67,6 +67,8 @@ public:
 	//
 	// All pointers must be valid, but can point to special dummy objects.
 	void generateFromFinerLod(std::span<const PseudoChunkData *const, 8> finer);
+	// TODO: describe me
+	void generateExternally(std::span<const CellEntry> cells);
 
 	// Find `CellEntry` with `cell_index` by binary search.
 	// Returns pointer to this entry or null if it was not found.

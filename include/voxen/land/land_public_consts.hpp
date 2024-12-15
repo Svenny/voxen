@@ -28,6 +28,12 @@ constexpr uint32_t CHUNK_KEY_SCALE_BITS = 4;
 // This is hardcoded in `StorageTree` internal data structure.
 constexpr uint32_t NUM_LOD_SCALES = 9;
 
+// The maximal chunk scale (LOD) that can be directly generated. Several highest levels
+// are too sparse (too low resolution) for it and can be obtained only by aggregating
+// data generated at this level. If land generation performance becomes a bottleneck
+// this limit can be raised - actually I wouldn't expect major quality degragation.
+constexpr uint32_t MAX_GENERATABLE_LOD = NUM_LOD_SCALES - 3;
+
 // Size, in chunks, of a single `StorageTree` root item.
 // This is hardcoded in `StorageTree` internal data structure.
 constexpr uint32_t STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS = 1u << (NUM_LOD_SCALES - 1 + 3 + 3);
