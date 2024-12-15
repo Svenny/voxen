@@ -8,11 +8,15 @@
 namespace voxen::detail
 {
 
-static_assert(sizeof(std::atomic_uint8_t) == 1, "Atomic uint8 is not one byte, wtf?");
-static_assert(alignof(std::atomic_uint8_t) == 1, "Atomic uint8 is over-aligned, rewrite this code");
+using RefCounterType = std::atomic_uint16_t;
+
+static_assert(sizeof(RefCounterType) == 2, "Atomic uint16 is not two bytes, wtf?");
+static_assert(alignof(RefCounterType) == 2, "Atomic uint16 is over-aligned, rewrite this code");
 
 namespace
 {
+
+constexpr static uint32_t REF_COUNTER_SIZE = sizeof(RefCounterType);
 
 struct SlabHeader {
 	SharedObjectPoolBase *pool = nullptr;
@@ -39,22 +43,23 @@ SlabHeader *getObjectSlabHeader(void *obj, size_t slab_size) noexcept
 	return reinterpret_cast<SlabHeader *>(slab_base + slab_size - sizeof(SlabHeader));
 }
 
-std::atomic_uint8_t *getRefCounter(void *obj, size_t slab_size, size_t adjusted_object_size) noexcept
+RefCounterType *getRefCounter(void *obj, size_t slab_size, size_t adjusted_object_size) noexcept
 {
 	uintptr_t obj_addr = reinterpret_cast<uintptr_t>(obj);
 	uintptr_t slab_base = obj_addr & ~(slab_size - 1u);
 	uintptr_t index = (obj_addr - slab_base) / adjusted_object_size;
-	return reinterpret_cast<std::atomic_uint8_t *>(slab_base + slab_size - sizeof(SlabHeader) - index - 1);
+	return reinterpret_cast<RefCounterType *>(
+		slab_base + slab_size - sizeof(SlabHeader) - REF_COUNTER_SIZE * (index + 1));
 }
 
-std::atomic_uint8_t *getRefCounter(SlabHeader *hdr, uint32_t object_index) noexcept
+RefCounterType *getRefCounter(SlabHeader *hdr, uint32_t object_index) noexcept
 {
-	return reinterpret_cast<std::atomic_uint8_t *>(reinterpret_cast<uintptr_t>(hdr) - object_index - 1);
+	return reinterpret_cast<RefCounterType *>(reinterpret_cast<uintptr_t>(hdr) - REF_COUNTER_SIZE * (object_index + 1));
 }
 
 uint32_t calcMaxObjects(uint32_t adjusted_object_size, uint32_t slab_size) noexcept
 {
-	return (slab_size - sizeof(SlabHeader)) / (adjusted_object_size + 1);
+	return (slab_size - sizeof(SlabHeader)) / (adjusted_object_size + REF_COUNTER_SIZE);
 }
 
 } // namespace
@@ -92,11 +97,13 @@ SharedObjectPoolBase::~SharedObjectPoolBase()
 
 void SharedObjectPoolBase::addRef(void *obj, size_t slab_size, size_t adjusted_object_size) noexcept
 {
+	constexpr auto COUNTER_MAX = std::numeric_limits<RefCounterType::value_type>::max();
+
 	auto *cnt = getRefCounter(obj, slab_size, adjusted_object_size);
-	if (cnt->fetch_add(1, std::memory_order_relaxed) == UINT8_MAX) [[unlikely]] {
+	if (cnt->fetch_add(1, std::memory_order_relaxed) == COUNTER_MAX) [[unlikely]] {
 		// This should never happen (how could one have so many refs to a pooled object?)
 		// but if it does, we better crash immediately - debugging what happens after will be hell.
-		debug::bugFound("SharedObjectPool refcount has overflown uint8 counter!");
+		debug::bugFound("SharedObjectPool refcount has overflown uint16 counter!");
 	}
 }
 

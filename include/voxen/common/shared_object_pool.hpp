@@ -69,8 +69,8 @@ private:
 // However, this is not a technical limitation, and it can be lifted in future.
 //
 // Another notable restriction in the maximal reference count. We don't expect pooled
-// objects to have many live references, so currently their count is stored in uint8.
-// Therefore, up to 255 references to the same object can exist simultaneously.
+// objects to have many live references, so currently their count is stored in uint16.
+// Therefore, up to 65535 references to the same object can exist simultaneously.
 // If this limit is exceeded, the engine will crash and request reporting a bug.
 // Yes, you will *not* have to deal with undebuggable memory leak/corruption/whatever.
 //
