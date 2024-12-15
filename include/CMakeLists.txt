@@ -16,8 +16,12 @@ set(EXTRAS_HEADERS
 	include/extras/source_location.hpp
 	include/extras/string_utils.hpp
 
-	# Visualizers for VS debugger
+	# Visualizers for VS debugger.
+	# External libs also go here - not the best place
+	# but I don't want to invent one more directory
+	# just to place 3rdparty nativs files there.
 	include/extras/extras.natvis
+	include/extras/glm.natvis
 )
 
 target_include_directories(extras INTERFACE include)

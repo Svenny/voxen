@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="glm::vec&lt;2,*&gt;">
+		<DisplayString>vec2({x}, {y})</DisplayString>
+	</Type>
+
+	<Type Name="glm::vec&lt;3,*&gt;">
+		<DisplayString>vec3({x}, {y}, {z})</DisplayString>
+	</Type>
+
+	<Type Name="glm::vec&lt;4,*&gt;">
+		<DisplayString>vec4({x}, {y}, {z}, {w})</DisplayString>
+	</Type>
+</AutoVisualizer>
