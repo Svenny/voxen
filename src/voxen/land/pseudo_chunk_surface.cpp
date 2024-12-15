@@ -3,6 +3,7 @@
 #include <voxen/land/cube_array.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -57,15 +58,6 @@ constexpr glm::vec3 FACE_NORMAL[6] = {
 	glm::vec3(0, -1, 0),
 	glm::vec3(0, 0, 1),
 	glm::vec3(0, 0, -1),
-};
-
-constexpr PackedColorSrgb FACE_COLOR_CODING[6] = {
-	{ 255, 0, 0 },   // X+, red
-	{ 255, 255, 0 }, // X-, yellow
-	{ 0, 255, 0 },   // Y+, green
-	{ 0, 255, 255 }, // Y-, turquoise
-	{ 0, 0, 255 },   // Z+, blue
-	{ 255, 0, 255 }, // Z-, purple
 };
 
 // Store vertex position, `pos` must be in [-0.125:1.125] range or it will get clipped
@@ -215,41 +207,43 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 		// TODO: request "fake face color" from the block interface.
 		// Currently using hardcoded face color-coding for debugging.
 
-		uint16_t block_id = expanded_ids->load(x + 1, y + 1, z + 1);
+		Chunk::BlockId block_id = expanded_ids->load(x + 1, y + 1, z + 1);
 
-		if (block_id == 0) {
+		if (TempBlockMeta::isBlockEmpty(block_id)) {
 			// Block has no visible faces
 			return;
 		}
 
-		if (expanded_ids->load(x + 2, y + 1, z + 1) == 0) {
+		PackedColorSrgb block_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
+
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 2, y + 1, z + 1))) {
 			// X+ face visible
-			add_face(x, y, z, 0, FACE_COLOR_CODING[0]);
+			add_face(x, y, z, 0, block_color);
 		}
 
-		if (expanded_ids->load(x, y + 1, z + 1) == 0) {
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x, y + 1, z + 1))) {
 			// X- face visible
-			add_face(x, y, z, 1, FACE_COLOR_CODING[1]);
+			add_face(x, y, z, 1, block_color);
 		}
 
-		if (expanded_ids->load(x + 1, y + 2, z + 1) == 0) {
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 2, z + 1))) {
 			// Y+ face visible
-			add_face(x, y, z, 2, FACE_COLOR_CODING[2]);
+			add_face(x, y, z, 2, block_color);
 		}
 
-		if (expanded_ids->load(x + 1, y, z + 1) == 0) {
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y, z + 1))) {
 			// Y- face visible
-			add_face(x, y, z, 3, FACE_COLOR_CODING[3]);
+			add_face(x, y, z, 3, block_color);
 		}
 
-		if (expanded_ids->load(x + 1, y + 1, z + 2) == 0) {
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 1, z + 2))) {
 			// Z+ face visible
-			add_face(x, y, z, 4, FACE_COLOR_CODING[4]);
+			add_face(x, y, z, 4, block_color);
 		}
 
-		if (expanded_ids->load(x + 1, y + 1, z) == 0) {
+		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 1, z))) {
 			// Z- face visible
-			add_face(x, y, z, 5, FACE_COLOR_CODING[5]);
+			add_face(x, y, z, 5, block_color);
 		}
 	});
 
@@ -266,12 +260,9 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 		packNormal(normal, vertex_attrib);
 
 		PackedColorSrgb packed_color(glm::vec3(state.color_accumulator) / state.color_accumulator.a);
-		uint32_t color16 = 1u << 15; // Set fixed color flag
-		color16 |= uint32_t(packed_color.r >> 3) << 10;
-		color16 |= uint32_t(packed_color.g >> 3) << 5;
-		color16 |= packed_color.b >> 3;
+		uint16_t color = TempBlockMeta::packColor555(packed_color);
 
-		vertex_attrib.mat_hist_entries = glm::u16vec4(color16, 0, 0, 0);
+		vertex_attrib.mat_hist_entries = glm::u16vec4(color, 0, 0, 0);
 		vertex_attrib.mat_hist_weights = glm::u8vec4(255, 0, 0, 0);
 	}
 
@@ -333,19 +324,6 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 	};
 
 	auto add_quad = [&](const ProcessedCellEntry cells[4], bool lower_solid) {
-		glm::vec3 min_pos(+10000.0f);
-		glm::vec3 max_pos(-10000.0f);
-
-		for (int i = 0; i < 4; i++) {
-			min_pos = glm::min(min_pos, cells[i].position_mainchunk_local_space);
-			max_pos = glm::max(max_pos, cells[i].position_mainchunk_local_space);
-		}
-
-		// TODO: debugging code; detect what is most likely a broken topological connectivity
-		if (glm::distance(max_pos, min_pos) > 0.1f) {
-			__builtin_debugtrap();
-		}
-
 		// Order is:
 		// 01
 		// 23
@@ -438,8 +416,10 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 				// It can happen as a rare edge (pun intended) case when directly-generated
 				// and aggregated pseudo-chunks meet at the boundary. This will "cure" itself naturally
 				// as more true chunks are generated, but for while simply substitute cell midpoint.
-				glm::vec3 bogus_position = glm::vec3(coord) / float(Consts::CHUNK_SIZE_BLOCKS) + adjustment;
+				glm::vec3 bogus_position = (glm::vec3(coord) + 0.5f) / float(Consts::CHUNK_SIZE_BLOCKS) + adjustment;
 				processed_cells[i].position_mainchunk_local_space = bogus_position;
+				processed_cells[i].mat_hist[0].mat_id_or_color = 0b1'11111'00000'00000;
+				processed_cells[i].mat_hist[0].weight = 255;
 			}
 		}
 
@@ -459,8 +439,15 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 		cells[3] = &cell;
 
 		for (int i = 0; i < 4; i++) {
-			processed_cells[i].position_mainchunk_local_space = glm::unpackUnorm<float>(cells[i]->surface_point_unorm);
-			detail::GeometryUtils::unpackCellEntryMatHist(processed_cells[i].mat_hist, *cells[i]);
+			// TODO: all cells must be present, this covers a bug in our generator
+			if (cells[i]) {
+				processed_cells[i].position_mainchunk_local_space = glm::unpackUnorm<float>(cells[i]->surface_point_unorm);
+				detail::GeometryUtils::unpackCellEntryMatHist(processed_cells[i].mat_hist, *cells[i]);
+			} else {
+				processed_cells[i].position_mainchunk_local_space
+					= (glm::vec3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][2 - i]) + 0.5f)
+					/ float(Consts::CHUNK_SIZE_BLOCKS);
+			}
 		}
 
 		add_quad(processed_cells, lower_solid);

@@ -2,7 +2,9 @@
 
 #include <voxen/common/shared_object_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
+#include <voxen/land/land_generator.hpp>
 #include <voxen/land/land_messages.hpp>
+#include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
@@ -30,189 +32,6 @@ using PseudoSurfacePtr = LandState::PseudoChunkSurfaceTable::ValuePtr;
 
 namespace
 {
-
-constexpr double Y_BAND_LIMIT = 90.0;
-
-double surfaceFn(double x, double z)
-{
-	constexpr std::tuple<double, double, double, double> octaves[] = {
-		{ 4.0, 0.5, 0.03, 0.09 },
-		{ 8.0, 3.5, -0.013, 0.048 },
-		{ 16.0, 14.1, 0.0095, -0.0205 },
-		{ 12.0, -7.5, -0.08, 0.0333 },
-		{ 64.0, 7.65, 0.007, 0.0032 },
-	};
-
-	double fn = 0.0;
-	for (const auto &[amp, phi, fx, fz] : octaves) {
-		fn += amp * sin(phi + x * fx + z * fz);
-	}
-
-	//fn *= 0.000001;
-
-	//fn += 40.0;
-	//fn += 12.0;
-
-	return fn;
-}
-
-glm::dvec2 tubeFn(double x, double z)
-{
-	(void) z;
-
-	constexpr double CENTER_Y = 55.0;
-	constexpr double RADIUS = 3.0;
-
-	if (std::abs(x) > RADIUS) {
-		return glm::dvec2(10'000.0, 10'000.0);
-	}
-
-	double delta = std::sqrt(RADIUS * RADIUS - x * x);
-	return glm::dvec2(CENTER_Y - delta, CENTER_Y + delta);
-}
-
-void generateChunk(ChunkKey key, ChunkPtr &out_ptr)
-{
-	constexpr int32_t BLOCKS = Consts::CHUNK_SIZE_BLOCKS;
-
-	const glm::ivec3 coords = key.base();
-	const glm::ivec3 first_block_coords = coords * BLOCKS;
-
-	// Quickly check if the chunk is fully above/below the surface
-	{
-		const double ymin = double(first_block_coords.y) * Consts::BLOCK_SIZE_METRES;
-		if (ymin > Y_BAND_LIMIT) {
-			// Fully above, all zeros
-			out_ptr->setAllBlocksUniform(0);
-			return;
-		}
-
-		const double ymax = double(first_block_coords.y + (BLOCKS << key.scale_log2)) * Consts::BLOCK_SIZE_METRES;
-		if (ymax < -Y_BAND_LIMIT) {
-			// Fully below, all ones
-			out_ptr->setAllBlocksUniform(1);
-			return;
-		}
-	}
-
-	bool have_solid = false;
-	bool have_empty = false;
-
-	const int32_t step = key.scaleMultiplier();
-	const double halfstep = double(step) * 0.5;
-
-	// Precompute surface height levels in 2D.
-	// Allocate on heap, expanded array is pretty large.
-	struct HeightLevel {
-		uint32_t land;
-		uint32_t tube_min;
-		uint32_t tube_max;
-	};
-
-	using HeightLevelsArray = std::array<std::array<HeightLevel, Consts::CHUNK_SIZE_BLOCKS>, Consts::CHUNK_SIZE_BLOCKS>;
-	auto height_levels = std::make_unique<HeightLevelsArray>();
-
-	double ymin = (first_block_coords.y + halfstep) * Consts::BLOCK_SIZE_METRES;
-	double ymax = (first_block_coords.y + (Consts::CHUNK_SIZE_BLOCKS - 1) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
-
-	for (uint32_t x = 0; x < Consts::CHUNK_SIZE_BLOCKS; x++) {
-		for (uint32_t z = 0; z < Consts::CHUNK_SIZE_BLOCKS; z++) {
-			double fx = (first_block_coords.x + int32_t(x) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
-			double fz = (first_block_coords.z + int32_t(z) * step + halfstep) * Consts::BLOCK_SIZE_METRES;
-			double fn = surfaceFn(fx, fz);
-
-			glm::dvec2 tube = tubeFn(fx, fz);
-			uint32_t tube_min = UINT32_MAX;
-			uint32_t tube_max = tube_min;
-
-			if ((tube.x >= ymin && tube.x <= ymax) || (tube.y >= ymin && tube.y <= ymax)
-				|| (tube.x < ymin && tube.y > ymax)) {
-				have_solid = true;
-
-				double normlo = (std::max(tube.x, ymin) - ymin) / (ymax - ymin);
-				double normhi = (std::min(tube.y, ymax) - ymin) / (ymax - ymin);
-				tube_min = 1 + static_cast<uint32_t>(normlo * (Consts::CHUNK_SIZE_BLOCKS - 1));
-				tube_max = 1 + static_cast<uint32_t>(normhi * (Consts::CHUNK_SIZE_BLOCKS - 1));
-			}
-
-			if (fn < ymin) {
-				(*height_levels)[x][z] = { 0, tube_min, tube_max };
-				have_empty = true;
-			} else if (fn >= ymax) {
-				(*height_levels)[x][z] = { Consts::CHUNK_SIZE_BLOCKS, tube_min, tube_max };
-				have_solid = true;
-			} else {
-				have_empty = true;
-				have_solid = true;
-
-				double normheight = (fn - ymin) / (ymax - ymin);
-				uint32_t hlevel = 1 + static_cast<uint32_t>(normheight * (Consts::CHUNK_SIZE_BLOCKS - 1));
-				(*height_levels)[x][z] = { hlevel, tube_min, tube_max };
-			}
-		}
-	}
-
-	if (!have_solid) {
-		out_ptr->setAllBlocksUniform(0);
-		return;
-	}
-
-	if (!have_empty) {
-		out_ptr->setAllBlocksUniform(1);
-		return;
-	}
-
-	// Allocate on heap, expanded array is pretty large
-	auto ids = std::make_unique<Chunk::BlockIdArray>();
-
-	Utils::forYXZ<BLOCKS>([&](uint32_t x, uint32_t y, uint32_t z) {
-		auto hlevel = (*height_levels)[x][z];
-		if (y < hlevel.land || (y >= hlevel.tube_min && y <= hlevel.tube_max)) {
-			ids->store(x, y, z, 1);
-		} else {
-			ids->store(x, y, z, 0);
-		}
-	});
-
-	out_ptr->setAllBlocks(ids->cview());
-}
-
-// Generate LOD0 (true) chunk data
-void generateChunkData(ChunkKey key, svc::MessageSender *sender, ChunkPtr out_ptr)
-{
-	// TODO: call `LandGenerator` in "true" mode
-	assert(key.scale_log2 == 0);
-	generateChunk(key, out_ptr);
-	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key, std::move(out_ptr));
-}
-
-// Directly generate pseudo-chunk data
-void generatePseudoChunkData(ChunkKey key, svc::MessageSender *sender, PseudoDataPtr out_ptr)
-{
-	// TODO: call `LandGenerator` in "fake" mode
-	(void) key;
-	*out_ptr = PseudoChunkData(key);
-	sender->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, key);
-
-#if 0
-	std::array<ChunkPtr, 7> adj;
-	for (auto &ptr : adj) {
-		ptr = LandState::ChunkTable::makeValuePtr();
-	}
-
-	generateChunk(key, adj[0]);
-
-	const int32_t step = key.scaleMultiplier();
-	generateChunk(ChunkKey(key.x + step, key.y, key.z, key.scale_log2), adj[1]);
-	generateChunk(ChunkKey(key.x - step, key.y, key.z, key.scale_log2), adj[2]);
-	generateChunk(ChunkKey(key.x, key.y + step, key.z, key.scale_log2), adj[3]);
-	generateChunk(ChunkKey(key.x, key.y - step, key.z, key.scale_log2), adj[4]);
-	generateChunk(ChunkKey(key.x, key.y, key.z + step, key.scale_log2), adj[5]);
-	generateChunk(ChunkKey(key.x, key.y, key.z - step, key.scale_log2), adj[6]);
-
-	generateImpostor(key, std::move(adj), sender, std::move(out_ptr));
-#endif
-}
 
 // Aggregate LOD1 pseudo-chunk data from LOD0 (true) chunks
 void aggregatePseudoChunkData(ChunkKey key, std::array<ChunkPtr, 27> ref, svc::MessageSender *sender,
@@ -285,6 +104,27 @@ void generatePseudoChunkSurface(ChunkKey key, std::array<PseudoDataPtr, 19> ref,
 	}
 }
 
+void editBlock(ChunkKey key, ChunkPtr chunk, glm::ivec3 position, Chunk::BlockId block_id, svc::MessageSender *sender)
+{
+	assert(glm::all(glm::greaterThanEqual(position, glm::ivec3(0))));
+	assert(glm::all(glm::lessThan(position, glm::ivec3(Consts::CHUNK_SIZE_BLOCKS))));
+
+	// TODO: we really need to expand everything to change a single block ID?
+	// That won't scale... at all.
+
+	auto expanded = std::make_unique<Chunk::BlockIdArray>();
+	chunk->blockIds().expand(expanded->view());
+
+	if (expanded->load(position.x, position.y, position.z) == block_id) {
+		// Not changed, discard this operation
+		return;
+	}
+
+	expanded->store(position.x, position.y, position.z, block_id);
+	chunk->setAllBlocks(expanded->cview());
+	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key);
+}
+
 constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
 
 struct ChunkMetastate {
@@ -318,6 +158,7 @@ public:
 		// Public messages
 		debug::UidRegistry::registerLiteral(ChunkTicketRequestMessage::MESSAGE_UID,
 			"voxen::land::ChunkTicketRequestMessage");
+		debug::UidRegistry::registerLiteral(BlockEditMessage::MESSAGE_UID, "voxen::land::BlockEditMessage");
 
 		// Private messages
 		debug::UidRegistry::registerLiteral(ChunkTicketAdjustMessage::MESSAGE_UID,
@@ -345,6 +186,8 @@ public:
 			[this](ChunkTicketAdjustMessage &msg, svc::MessageInfo &) { handleChunkTicketAdjust(msg); });
 		m_queue.registerHandler<ChunkTicketRemoveMessage>(
 			[this](ChunkTicketRemoveMessage &msg, svc::MessageInfo &) { handleChunkTicketRemove(msg); });
+		m_queue.registerHandler<BlockEditMessage>(
+			[this](BlockEditMessage &msg, svc::MessageInfo &) { handleBlockEditMessage(msg); });
 		m_queue.registerHandler<ChunkLoadCompletionMessage>(
 			[this](ChunkLoadCompletionMessage &msg, svc::MessageInfo &) { handleChunkLoadCompletion(msg); });
 		m_queue.registerHandler<PseudoChunkDataGenCompletionMessage>(
@@ -356,14 +199,17 @@ public:
 
 		// Create dummies
 		m_dummy_above_limit_chunk = LandState::ChunkTable::makeValuePtr();
-		m_dummy_above_limit_chunk->setAllBlocksUniform(0);
+		m_dummy_above_limit_chunk->setAllBlocksUniform(TempBlockMeta::BlockEmpty);
 		m_dummy_below_limit_chunk = LandState::ChunkTable::makeValuePtr();
-		m_dummy_below_limit_chunk->setAllBlocksUniform(Chunk::BlockId(~0u));
+		m_dummy_below_limit_chunk->setAllBlocksUniform(TempBlockMeta::BlockUnderlimit);
 		m_dummy_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate(ChunkKey { 0, 0, 0, Consts::NUM_LOD_SCALES });
 	}
 
 	~LandServiceImpl()
 	{
+		svc::TaskBuilder bld(m_task_service);
+		m_generator.waitEnqueuedTasks(bld);
+
 		std::vector<uint64_t> wait_counters;
 		wait_counters.reserve(m_metastate.size() * 3);
 
@@ -380,7 +226,6 @@ public:
 		if (remaining > 0) {
 			Log::debug("Waiting for pending Land jobs...");
 
-			svc::TaskBuilder bld(m_task_service);
 			bld.addWait(std::span(wait_counters.data(), remaining));
 			bld.enqueueSyncPoint().wait();
 		}
@@ -391,6 +236,7 @@ public:
 	void doTick(WorldTickId tick_id)
 	{
 		m_tick_id = tick_id;
+		m_generator.onWorldTickBegin(tick_id);
 
 		// Process chunk ticket change requests, now we have a fresh list of tickets.
 		// Job completions and invalidation enqueues will be processed here too.
@@ -535,6 +381,8 @@ private:
 
 	WorldTickId m_tick_id;
 	LandState m_land_state;
+
+	Generator m_generator;
 
 	// Dummy chunk above the world height limit; filled with empty block IDs (zeros)
 	ChunkPtr m_dummy_above_limit_chunk;
@@ -803,7 +651,7 @@ private:
 				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
 					aggregatePseudoChunkData(ck, std::move(deps), snd, std::move(ptr));
 				});
-		} else if (ck.scale_log2 <= Consts::MAX_DIRECT_GENERATE_LOD && m.is_virgin && false) {
+		} else if (ck.scale_log2 <= Consts::MAX_GENERATABLE_LOD && m.is_virgin) {
 			if (m.latest_pseudo_data_ptr) {
 				// Virgin pseudo-chunks can't be outdated
 				return;
@@ -812,8 +660,10 @@ private:
 			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate(ck);
 
 			// Direct gen of "virgin" chunk - enqueue an independent task
-			bld.enqueueTask([ck, snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
-				generatePseudoChunkData(ck, snd, std::move(ptr));
+			bld.addWait(m_generator.prepareKeyGeneration(ck, bld));
+			bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+				gen->generatePseudoChunk(ck, *ptr);
+				snd->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, ck);
 			});
 		} else {
 			// Aggregation gen - collect chunk data from 8 "children" chunks
@@ -892,8 +742,10 @@ private:
 		svc::TaskBuilder bld(m_task_service);
 		// This will ensure successive chunk gen tasks complete in order
 		bld.addWait(m.chunk_gen_task_counter);
-		bld.enqueueTask([ck, snd = &m_sender, ptr = m.latest_chunk_ptr](svc::TaskContext &) {
-			generateChunkData(ck, snd, std::move(ptr));
+		bld.addWait(m_generator.prepareKeyGeneration(ck, bld));
+		bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_chunk_ptr](svc::TaskContext &) {
+			gen->generateChunk(ck, *ptr);
+			snd->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, ck, std::move(ptr));
 		});
 
 		m.pending_task_count++;
@@ -938,6 +790,31 @@ private:
 	{
 		assert(msg.ticket_id < m_chunk_tickets.size());
 		m_chunk_tickets[msg.ticket_id].valid = false;
+	}
+
+	void handleBlockEditMessage(const BlockEditMessage &msg)
+	{
+		glm::ivec3 chunk_lowest_block = msg.position & ~(Consts::CHUNK_SIZE_BLOCKS - 1);
+		ChunkKey chunk_key(chunk_lowest_block / Consts::CHUNK_SIZE_BLOCKS, 0);
+
+		ChunkMetastate &m = getMetastate(chunk_key);
+		enqueueChunkDataGen(chunk_key, m);
+
+		glm::ivec3 edit_position = msg.position - chunk_lowest_block;
+
+		svc::TaskBuilder bld(m_task_service);
+		// This will ensure successive chunk gen/edit tasks complete in order
+		bld.addWait(m.chunk_gen_task_counter);
+		bld.enqueueTask(
+			[chunk_key, position = edit_position, new_block = msg.new_id, snd = &m_sender, ptr = m.latest_chunk_ptr](
+				svc::TaskContext &) { editBlock(chunk_key, std::move(ptr), position, new_block, snd); });
+
+		m.pending_task_count++;
+		m.chunk_gen_task_counter = bld.getLastTaskCounter();
+
+		// Immediately re-enqueue surface gen to lower display latency
+		m.pseudo_surface_invalidated = 1;
+		enqueuePseudoSurfaceGen(chunk_key, m);
 	}
 
 	void handleChunkLoadCompletion(ChunkLoadCompletionMessage &msg)

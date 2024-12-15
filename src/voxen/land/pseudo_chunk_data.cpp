@@ -2,6 +2,7 @@
 
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 
 #include "land_geometry_utils_private.hpp"
@@ -18,14 +19,6 @@ using detail::SurfaceMatHistEntry;
 namespace
 {
 
-// f - fixed color flag              f rrrrr ggggg bbbbb
-constexpr uint16_t FAKE_COLOR_XP = 0b1'11111'00000'00000;
-constexpr uint16_t FAKE_COLOR_XM = 0b1'11111'11111'00000;
-constexpr uint16_t FAKE_COLOR_YP = 0b1'00000'11111'00000;
-constexpr uint16_t FAKE_COLOR_YM = 0b1'00000'11111'11111;
-constexpr uint16_t FAKE_COLOR_ZP = 0b1'00000'00000'11111;
-constexpr uint16_t FAKE_COLOR_ZM = 0b1'11111'00000'11111;
-
 // Chunk-local coordinate space adjustments for finer LOD cells, see `generateFromFinerLod`
 constexpr glm::vec3 FINER_SURFACE_POINT_ADJUSTMENT[8] = {
 	glm::vec3(0.0f, 0.0f, 0.0f),
@@ -40,7 +33,7 @@ constexpr glm::vec3 FINER_SURFACE_POINT_ADJUSTMENT[8] = {
 
 bool isBlockSolid(Chunk::BlockId block_id) noexcept
 {
-	return block_id != 0;
+	return !TempBlockMeta::isBlockEmpty(block_id);
 }
 
 } // namespace
@@ -145,21 +138,7 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 		glm::vec3 surface_point = glm::vec3(surface_point_coord_2x) * (0.5f / float(Consts::CHUNK_SIZE_BLOCKS));
 		surface_point_weighted_sum += glm::vec4(surface_point, 1.0f);
 
-		// TODO: select color/material from block interface
-		uint16_t color = 0;
-
-		switch (axis) {
-		case 0:
-			color = lower_solid ? FAKE_COLOR_XP : FAKE_COLOR_XM;
-			break;
-		case 1:
-			color = lower_solid ? FAKE_COLOR_YP : FAKE_COLOR_YM;
-			break;
-		case 2:
-			color = lower_solid ? FAKE_COLOR_ZP : FAKE_COLOR_ZM;
-			break;
-		}
-
+		uint16_t color = TempBlockMeta::packColor555(TempBlockMeta::BLOCK_FIXED_COLOR[lower_solid ? lower : upper]);
 		detail::GeometryUtils::addMatHistEntry(material_histogram, SurfaceMatHistEntry { color, 255 });
 	};
 
@@ -318,6 +297,11 @@ void PseudoChunkData::generateFromFinerLod(std::span<const PseudoChunkData *cons
 		out_cell_entry.surface_point_unorm = glm::packUnorm<uint16_t>(surface_point);
 		out_cell_entry.surface_point_sum_count = static_cast<uint16_t>(std::min(surface_point_weighted_sum.w, 65535.0f));
 	});
+}
+
+void PseudoChunkData::generateExternally(std::span<const CellEntry> cells)
+{
+	m_cell_entries = { cells.begin(), cells.end() };
 }
 
 const PseudoChunkData::CellEntry *PseudoChunkData::findEntry(glm::uvec3 cell_index) const noexcept

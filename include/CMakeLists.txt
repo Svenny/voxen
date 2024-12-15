@@ -108,12 +108,14 @@ set(VOXEN_HEADERS
 	include/voxen/land/cube_array.hpp
 	include/voxen/land/land_chunk.hpp
 	include/voxen/land/land_fwd.hpp
+	include/voxen/land/land_generator.hpp
 	include/voxen/land/land_messages.hpp
 	include/voxen/land/land_public_consts.hpp
 	include/voxen/land/land_service.hpp
 	include/voxen/land/land_state.hpp
 	include/voxen/land/land_storage_tree.hpp
 	include/voxen/land/land_storage_tree_node_ptr.hpp
+	include/voxen/land/land_temp_blocks.hpp
 	include/voxen/land/land_utils.hpp
 	include/voxen/land/pseudo_chunk_data.hpp
 	include/voxen/land/pseudo_chunk_surface.hpp
