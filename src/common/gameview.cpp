@@ -2,6 +2,9 @@
 
 #include <voxen/common/config.hpp>
 #include <voxen/common/player.hpp>
+#include <voxen/land/land_messages.hpp>
+#include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_service.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/util/log.hpp>
@@ -11,11 +14,7 @@
 namespace voxen
 {
 
-GameView::GameView(os::GlfwWindow& window)
-	: m_window(window)
-	, m_is_pause(true)
-	, m_is_chunk_loading_point_locked(false)
-	, m_is_used_orientation_cursor(false)
+GameView::GameView(os::GlfwWindow& window) : m_window(window)
 {
 	std::tie(m_width, m_height) = window.windowSize();
 	std::pair<double, double> pos = window.cursorPos();
@@ -105,6 +104,12 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 	case client::PlayerActionEvent::LockChunkLoadingPoint:
 		if (is_activate) {
 			m_is_chunk_loading_point_locked = !m_is_chunk_loading_point_locked;
+		}
+		return true;
+
+	case client::PlayerActionEvent::ModifyBlock:
+		if (is_activate) {
+			m_block_modify_requested = true;
 		}
 		return true;
 
@@ -227,6 +232,16 @@ void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc:
 		m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
 
 		m_previous_tick_id = tick_id;
+	}
+
+	if (m_block_modify_requested) {
+		m_block_modify_requested = false;
+
+		glm::ivec3 position = (m_local_player.position() + 5.0 * m_local_player.lookVector())
+			/ land::Consts::BLOCK_SIZE_METRES;
+		land::Chunk::BlockId new_block = 1;
+
+		mq.send<land::BlockEditMessage>(land::LandService::SERVICE_UID, position, new_block);
 	}
 
 	PlayerStateMessage message;
