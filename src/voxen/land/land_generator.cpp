@@ -12,6 +12,7 @@
 
 #include <pcg/pcg_random.hpp>
 
+#include <array>
 #include <random>
 
 namespace voxen::land
@@ -24,6 +25,9 @@ constexpr uint64_t DEFAULT_SEED = 0x42'6f'72'47'6f'41'63'6b;
 
 constexpr int32_t WORLD_SIZE_X_CHUNKS = Consts::MAX_UNIQUE_WORLD_X_CHUNK + 1 - Consts::MIN_UNIQUE_WORLD_X_CHUNK;
 constexpr int32_t WORLD_SIZE_Z_CHUNKS = Consts::MAX_UNIQUE_WORLD_Z_CHUNK + 1 - Consts::MIN_UNIQUE_WORLD_Z_CHUNK;
+
+constexpr double WORLD_SIZE_X_METRES = Consts::BLOCK_SIZE_METRES * Consts::CHUNK_SIZE_BLOCKS * WORLD_SIZE_X_CHUNKS;
+constexpr double WORLD_SIZE_Z_METRES = Consts::BLOCK_SIZE_METRES * Consts::CHUNK_SIZE_BLOCKS * WORLD_SIZE_Z_CHUNKS;
 
 constexpr int32_t GLOBAL_MAP_ASPECT_RATIO = WORLD_SIZE_X_CHUNKS / WORLD_SIZE_Z_CHUNKS;
 
@@ -81,6 +85,134 @@ Chunk::BlockId assignMaterial(LocalPlaneSample &sample, float y_height, bool tru
 	}
 
 	return TempBlockMeta::BlockEmpty;
+}
+
+glm::vec2 grad(int32_t x, int32_t z) noexcept
+{
+	uint64_t kek = Hash::xxh64Fixed((uint64_t(x) << 32) | uint64_t(z));
+
+	uint32_t k1 = uint32_t(kek >> 32);
+	uint32_t k2 = uint32_t(kek);
+
+	constexpr uint32_t S = 1u << 31;
+	constexpr uint32_t M = 16777215u;
+	float gx = ((k1 & S) ? -float(k1 & M) : float(k1 & M)) / float(M);
+	float gy = ((k2 & S) ? -float(k2 & M) : float(k2 & M)) / float(M);
+	return glm::vec2(gx, gy);
+}
+
+float sampleRawSimplexNoise(double x, double z)
+{
+	constexpr double F = 0.3660254038;
+	constexpr double G = 0.2113248654;
+
+	double xskew = x + (x + z) * F;
+	double zskew = z + (x + z) * F;
+
+	double x0d = std::floor(xskew);
+	double z0d = std::floor(zskew);
+	int32_t x0 = static_cast<int32_t>(x0d);
+	int32_t z0 = static_cast<int32_t>(z0d);
+
+	glm::vec2 inner(xskew - x0d, zskew - z0d);
+
+	int32_t x1 = inner.x >= inner.y ? x0 + 1 : x0;
+	int32_t z1 = inner.x < inner.y ? z0 + 1 : z0;
+	double x1d = double(x1);
+	double z1d = double(z1);
+
+	int32_t x2 = x0 + 1;
+	int32_t z2 = z0 + 1;
+	double x2d = double(x2);
+	double z2d = double(z2);
+
+	double x0_unskew = x0d - (x0d + z0d) * G;
+	double z0_unskew = z0d - (x0d + z0d) * G;
+	double x1_unskew = x1d - (x1d + z1d) * G;
+	double z1_unskew = z1d - (x1d + z1d) * G;
+	double x2_unskew = x2d - (x2d + z2d) * G;
+	double z2_unskew = z2d - (x2d + z2d) * G;
+
+	glm::vec2 r0(x - x0_unskew, z - z0_unskew);
+	glm::vec2 r1(x - x1_unskew, z - z1_unskew);
+	glm::vec2 r2(x - x2_unskew, z - z2_unskew);
+
+	float d0 = std::max(0.0f, 0.5f - r0.x * r0.x - r0.y * r0.y);
+	float d1 = std::max(0.0f, 0.5f - r1.x * r1.x - r1.y * r1.y);
+	float d2 = std::max(0.0f, 0.5f - r2.x * r2.x - r2.y * r2.y);
+
+	d0 = d0 * d0;
+	d0 = d0 * d0;
+	d1 = d1 * d1;
+	d1 = d1 * d1;
+	d2 = d2 * d2;
+	d2 = d2 * d2;
+
+	float g0 = glm::dot(grad(x0, z0), r0);
+	float g1 = glm::dot(grad(x1, z1), r1);
+	float g2 = glm::dot(grad(x2, z2), r2);
+
+	float result = d0 * g0 + d1 * g1 + d2 * g2;
+	// TODO: why this multiplication?
+	return 16.0f * result;
+}
+
+float sampleOctavedRawSimplexNoise(double x, double z)
+{
+	float noise = 0.0f;
+
+	noise += 450.0f * sampleRawSimplexNoise(x * 0.001, z * 0.001);
+	noise += 250.0f * sampleRawSimplexNoise(x * 0.002, z * 0.002);
+	noise += 150.0f * sampleRawSimplexNoise(x * 0.004, z * 0.004);
+	noise += 50.0f * sampleRawSimplexNoise(x * 0.01, z * 0.01);
+	noise += 25.0f * sampleRawSimplexNoise(x * 0.025, z * 0.025);
+	noise += 13.0f * sampleRawSimplexNoise(x * 0.05, z * 0.05);
+	noise += 4.5f * sampleRawSimplexNoise(x * 0.1, z * 0.1);
+	noise += 1.5f * sampleRawSimplexNoise(x * 0.3, z * 0.3);
+
+	return noise;
+}
+
+float sampleOctavedWrappedSimplexNoise(double x, double z)
+{
+	// This will bring coordinates in range [-N/2:N/2]. Not sure which ends
+	// are inclusive/exclusive but that doesn't matter much.
+	// Combining samples of four pairs (x; z) (x; -z) (-x; z) (-x; -z)
+	// will make any noise function correctly tile at world boundaries:
+	// other "aliased" positions will sample from same set of points.
+	//
+	// TODO: but is taking 4x noise samples and severely messing up
+	// its value distribution in the process worth it?
+	// One of the better solutions would be to move this hack to the
+	// outermost sampling procedure and introduce logic to skip sampling
+	// an axis twice if it's far from the wrapparound point (close to zero),
+	// smoothly introducing the second sample as we're getting closer to it.
+	x = fmod(x, 0.5 * WORLD_SIZE_X_METRES);
+	z = fmod(z, 0.5 * WORLD_SIZE_Z_METRES);
+
+	float samples[4] = { sampleOctavedRawSimplexNoise(x, z), sampleOctavedRawSimplexNoise(-x, -z),
+		sampleOctavedRawSimplexNoise(x, -z), sampleOctavedRawSimplexNoise(-x, z) };
+	// Sort it manually (and partially)
+	if (samples[0] > samples[1]) {
+		std::swap(samples[0], samples[1]);
+	}
+	if (samples[1] > samples[2]) {
+		std::swap(samples[1], samples[2]);
+	}
+	if (samples[2] > samples[3]) {
+		std::swap(samples[2], samples[3]);
+	}
+	// Now `samples[3]` is the largest
+	if (samples[0] > samples[1]) {
+		std::swap(samples[0], samples[1]);
+	}
+	if (samples[1] > samples[2]) {
+		std::swap(samples[1], samples[2]);
+	}
+	// Now `samples[2]` is the second largest
+
+	// Kinda softmax
+	return 0.125f * samples[0] + 0.125f * samples[1] + 0.25f * samples[2] + 0.5f * samples[3];
 }
 
 } // namespace
@@ -263,11 +395,8 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 
 auto GeneratorGlobalMap::sample(double x, double z) const noexcept -> SampledPoint
 {
-	constexpr double WORLD_SIZE_X = Consts::BLOCK_SIZE_METRES * Consts::CHUNK_SIZE_BLOCKS * WORLD_SIZE_X_CHUNKS;
-	constexpr double WORLD_SIZE_Z = Consts::BLOCK_SIZE_METRES * Consts::CHUNK_SIZE_BLOCKS * WORLD_SIZE_Z_CHUNKS;
-
-	double sample_x = m_width * fmod(x + WORLD_SIZE_X * 1.5, WORLD_SIZE_X) / WORLD_SIZE_X;
-	double sample_z = m_height * fmod(z + WORLD_SIZE_Z * 1.5, WORLD_SIZE_Z) / WORLD_SIZE_Z;
+	double sample_x = m_width * (x + WORLD_SIZE_X_METRES * 0.5) / WORLD_SIZE_X_METRES;
+	double sample_z = m_height * (z + WORLD_SIZE_Z_METRES * 0.5) / WORLD_SIZE_Z_METRES;
 
 	double xf = std::floor(sample_x);
 	double zf = std::floor(sample_z);
@@ -379,6 +508,7 @@ void Generator::generateChunk(ChunkKey key, Chunk &output)
 			double sample_z = min_world.z + z * Consts::BLOCK_SIZE_METRES;
 
 			GeneratorGlobalMap::SampledPoint sp = m_global_map.sample(sample_x, sample_z);
+			sp.height += sampleOctavedWrappedSimplexNoise(sample_x, sample_z);
 			have_empty_solid |= fillLocalPlaneSample(sp, (*local_plane)[x][z], ymin, ymax);
 		}
 	}
@@ -425,6 +555,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 			double sample_z = double(min_blockspace.z + z * step_blockspace) * Consts::BLOCK_SIZE_METRES;
 
 			GeneratorGlobalMap::SampledPoint sp = m_global_map.sample(sample_x, sample_z);
+			sp.height += sampleOctavedWrappedSimplexNoise(sample_x, sample_z);
 			have_empty_solid |= fillLocalPlaneSample(sp, (*local_plane)[size_t(x)][size_t(z)], ymin, ymax);
 		}
 	}
