@@ -74,6 +74,8 @@ public:
 	vk::DmaSystem* dmaSystem() noexcept { return m_vk_dma_system.get(); }
 
 	vk::MeshStreamer* meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
+	LandLoader* landLoader() noexcept { return m_land_loader.get(); }
+
 	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
 	vk::LegacyRenderGraph* renderGraph() noexcept { return m_render_graph.get(); }
 
@@ -106,6 +108,8 @@ private:
 	ComponentPtr<vk::DmaSystem> m_vk_dma_system;
 
 	ComponentPtr<vk::MeshStreamer> m_vk_mesh_streamer;
+	ComponentPtr<LandLoader> m_land_loader;
+
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
 	std::shared_ptr<vk::LegacyRenderGraph> m_render_graph;
 

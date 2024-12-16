@@ -71,6 +71,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_transient_buffer_allocator.cpp
 	src/voxen/gfx/vk/vk_utils.cpp
 	src/voxen/gfx/frame_tick_source.cpp
+	src/voxen/gfx/gfx_land_loader.cpp
 	src/voxen/gfx/gfx_system.cpp
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
