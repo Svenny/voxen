@@ -2,6 +2,8 @@
 
 #include <glm/gtc/packing.hpp>
 
+#include <algorithm>
+
 namespace voxen::land::detail
 {
 
