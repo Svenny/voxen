@@ -142,7 +142,7 @@ const std::array<std::pair<int, string>, 6> InputEventAdapter::MODS_2_STRING = {
 	make_pair(GLFW_MOD_NUM_LOCK, "Numlock"),
 };
 
-const std::array<std::pair<PlayerActionEvent, string>, 12> InputEventAdapter::PLAYERACTIONS_2_STRINGS = {
+const std::array<std::pair<PlayerActionEvent, string>, 13> InputEventAdapter::PLAYERACTIONS_2_STRINGS = {
 	make_pair(PlayerActionEvent::MoveForward, "move forward"),
 	make_pair(PlayerActionEvent::MoveBackward, "move backward"),
 	make_pair(PlayerActionEvent::MoveUp, "move up"),
@@ -155,6 +155,7 @@ const std::array<std::pair<PlayerActionEvent, string>, 12> InputEventAdapter::PL
 	make_pair(PlayerActionEvent::IncreaseSpeed, "increase speed"),
 	make_pair(PlayerActionEvent::DecreaseSpeed, "decrease speed"),
 	make_pair(PlayerActionEvent::LockChunkLoadingPoint, "lock chunk loading point"),
+	make_pair(PlayerActionEvent::ModifyBlock, "modify block"),
 };
 
 const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING = {
@@ -329,6 +330,12 @@ Config::Scheme InputEventAdapter::actionSettingsScheme()
 		string(actionToString(PlayerActionEvent::LockChunkLoadingPoint)),
 		"Lock chunk-loading position",
 		keyboardKeyToString(GLFW_KEY_F, 0),
+	});
+	s.push_back({
+		player_section,
+		string(actionToString(PlayerActionEvent::ModifyBlock)),
+		"Modify the block in front of you",
+		mouseButtonToString(GLFW_MOUSE_BUTTON_RIGHT, 0),
 	});
 
 	return s;

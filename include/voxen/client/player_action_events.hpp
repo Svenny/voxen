@@ -16,7 +16,8 @@ enum class PlayerActionEvent {
 	PauseGame,
 	IncreaseSpeed,
 	DecreaseSpeed,
-	LockChunkLoadingPoint
+	LockChunkLoadingPoint,
+	ModifyBlock,
 };
 
 } // namespace voxen::client
