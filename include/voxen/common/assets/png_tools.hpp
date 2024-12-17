@@ -36,6 +36,9 @@ VOXEN_API size_t numRawBytes(const PngInfo &info) noexcept;
 // NOTE: `bytes.size()` must be equal to `numRawBytes(info)`.
 VOXEN_API extras::dyn_array<std::byte> pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y);
 
+// TODO: stub, not implemented
+VOXEN_API extras::dyn_array<std::byte> unpack(std::span<const std::byte> bytes, PngInfo &info, bool flip_y);
+
 } // namespace PngTools
 
 } // namespace voxen::assets

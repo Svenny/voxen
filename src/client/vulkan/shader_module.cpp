@@ -65,6 +65,8 @@ ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
 ADD_SHADER_PATH(TERRAIN_FRUSTUM_CULL_COMPUTE, "assets/shaders/terrain/frustum_cull.comp.spv")
 ADD_SHADER_PATH(TERRAIN_SIMPLE_VERTEX, "assets/shaders/terrain/simple.vert.spv")
 ADD_SHADER_PATH(TERRAIN_SIMPLE_FRAGMENT, "assets/shaders/terrain/simple.frag.spv")
+ADD_SHADER_PATH(UI_FONT_VERTEX, "assets/shaders/ui/font.vert.spv")
+ADD_SHADER_PATH(UI_FONT_FRAGMENT, "assets/shaders/ui/font.frag.spv")
 
 template<uint32_t ID = 0, typename T>
 static void loadShaderModules(T &array)

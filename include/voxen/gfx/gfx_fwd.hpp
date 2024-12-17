@@ -3,6 +3,7 @@
 namespace voxen::gfx
 {
 
+class FontRenderer;
 class FrameTickSource;
 class GfxSystem;
 class LandLoader;

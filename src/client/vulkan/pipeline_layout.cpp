@@ -27,7 +27,9 @@ PipelineLayout::~PipelineLayout() noexcept
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()
-	: m_terrain_basic_layout(createTerrainBasicLayout()), m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	: m_terrain_basic_layout(createTerrainBasicLayout())
+	, m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	, m_ui_font_layout(createUiFontLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
@@ -70,6 +72,29 @@ PipelineLayout PipelineLayoutCollection::createTerrainFrustumCullLayout()
 		.pSetLayouts = layouts,
 		.pushConstantRangeCount = 0,
 		.pPushConstantRanges = nullptr,
+	});
+}
+
+PipelineLayout PipelineLayoutCollection::createUiFontLayout()
+{
+	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
+
+	VkDescriptorSetLayout layout = ds_collection.uiFontLayout();
+
+	VkPushConstantRange push_const_range {
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.offset = 0,
+		.size = sizeof(glm::vec2),
+	};
+
+	return PipelineLayout(VkPipelineLayoutCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 1,
+		.pSetLayouts = &layout,
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &push_const_range,
 	});
 }
 

@@ -75,6 +75,7 @@ public:
 
 	vk::MeshStreamer* meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
 	LandLoader* landLoader() noexcept { return m_land_loader.get(); }
+	FontRenderer* fontRenderer() noexcept { return m_font_renderer.get(); }
 
 	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
 	vk::LegacyRenderGraph* renderGraph() noexcept { return m_render_graph.get(); }
@@ -109,6 +110,7 @@ private:
 
 	ComponentPtr<vk::MeshStreamer> m_vk_mesh_streamer;
 	ComponentPtr<LandLoader> m_land_loader;
+	ComponentPtr<FontRenderer> m_font_renderer;
 
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
 	std::shared_ptr<vk::LegacyRenderGraph> m_render_graph;

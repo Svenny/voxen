@@ -220,4 +220,13 @@ extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, co
 	return output;
 }
 
+extras::dyn_array<std::byte> PngTools::unpack(std::span<const std::byte> bytes, PngInfo &info, bool flip_y)
+{
+	// TODO: stub just to make it link
+	(void) bytes;
+	(void) info;
+	(void) flip_y;
+	return {};
+}
+
 } // namespace voxen::assets

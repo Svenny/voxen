@@ -169,6 +169,7 @@ public:
 	void enqueueDestroy(VkCommandPool pool) { enqueueJunkItem(pool); }
 	void enqueueDestroy(VkDescriptorPool pool) { enqueueJunkItem(pool); }
 	void enqueueDestroy(VkSwapchainKHR swapchain) { enqueueJunkItem(swapchain); }
+	void enqueueDestroy(VkSampler sampler) { enqueueJunkItem(sampler); }
 
 	// Shorthand to `.instance().debug().setObjectName()`
 	void setObjectName(uint64_t handle, VkObjectType type, const char *name) noexcept;
@@ -209,6 +210,8 @@ public:
 
 	VkImageView vkCreateImageView(const VkImageViewCreateInfo &create_info, const char *name = nullptr,
 		SLoc loc = SLoc::current());
+	VkSampler vkCreateSampler(const VkSamplerCreateInfo &create_info, const char *name = nullptr,
+		SLoc loc = SLoc::current());
 	VkSemaphore vkCreateSemaphore(const VkSemaphoreCreateInfo &create_info, const char *name = nullptr,
 		SLoc loc = SLoc::current());
 	VkSwapchainKHR vkCreateSwapchain(const VkSwapchainCreateInfoKHR &create_info, SLoc loc = SLoc::current());
@@ -223,7 +226,7 @@ public:
 
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
-		VkCommandPool, VkDescriptorPool, VkSwapchainKHR>;
+		VkCommandPool, VkDescriptorPool, VkSwapchainKHR, VkSampler>;
 	using JunkEnqueue = std::pair<JunkItem, FrameTickId>;
 
 	Instance &m_instance;
@@ -259,6 +262,7 @@ private:
 	void destroy(VkCommandPool pool) noexcept;
 	void destroy(VkDescriptorPool pool) noexcept;
 	void destroy(VkSwapchainKHR swapchain) noexcept;
+	void destroy(VkSampler sampler) noexcept;
 };
 
 } // namespace voxen::gfx::vk

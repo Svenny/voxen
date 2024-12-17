@@ -80,6 +80,8 @@ public:
 			return VK_OBJECT_TYPE_COMMAND_POOL;
 		} else if constexpr (std::is_same_v<T, VkCommandBuffer>) {
 			return VK_OBJECT_TYPE_COMMAND_BUFFER;
+		} else if constexpr (std::is_same_v<T, VkSampler>) {
+			return VK_OBJECT_TYPE_SAMPLER;
 		} else {
 			static_assert(false, "Unknown handle type");
 		}
