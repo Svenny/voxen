@@ -98,6 +98,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_transient_buffer_allocator.hpp
 	include/voxen/gfx/vk/vk_utils.hpp
 	include/voxen/gfx/vk/vma_fwd.hpp
+	include/voxen/gfx/font_renderer.hpp
 	include/voxen/gfx/frame_tick_id.hpp
 	include/voxen/gfx/gfx_land_loader.hpp
 	include/voxen/gfx/gfx_public_consts.hpp

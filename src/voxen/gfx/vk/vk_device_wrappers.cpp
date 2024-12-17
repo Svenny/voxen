@@ -9,8 +9,23 @@ VkImageView Device::vkCreateImageView(const VkImageViewCreateInfo &create_info, 
 {
 	VkImageView handle = VK_NULL_HANDLE;
 	VkResult res = m_dt.vkCreateImageView(m_handle, &create_info, nullptr, &handle);
-	if (res != VK_SUCCESS) {
+	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkCreateImageView", loc);
+	}
+
+	if (name) {
+		debug().setObjectName(m_handle, handle, name);
+	}
+
+	return handle;
+}
+
+VkSampler Device::vkCreateSampler(const VkSamplerCreateInfo &create_info, const char *name, SLoc loc)
+{
+	VkSampler handle = VK_NULL_HANDLE;
+	VkResult res = m_dt.vkCreateSampler(m_handle, &create_info, nullptr, &handle);
+	if (res != VK_SUCCESS) [[unlikely]] {
+		throw VulkanException(res, "vkCreateSampler", loc);
 	}
 
 	if (name) {
@@ -24,7 +39,7 @@ VkSemaphore Device::vkCreateSemaphore(const VkSemaphoreCreateInfo &create_info, 
 {
 	VkSemaphore handle = VK_NULL_HANDLE;
 	VkResult res = m_dt.vkCreateSemaphore(m_handle, &create_info, nullptr, &handle);
-	if (res != VK_SUCCESS) {
+	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkCreateSemaphore", loc);
 	}
 
@@ -39,7 +54,7 @@ VkSwapchainKHR Device::vkCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 {
 	VkSwapchainKHR handle = VK_NULL_HANDLE;
 	VkResult res = m_dt.vkCreateSwapchainKHR(m_handle, &create_info, nullptr, &handle);
-	if (res != VK_SUCCESS) {
+	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkCreateSwapchainKHR", loc);
 	}
 

@@ -42,15 +42,18 @@ public:
 
 	WrappedVkDescriptorSetLayout &mainSceneLayout() noexcept { return m_main_scene_layout; }
 	WrappedVkDescriptorSetLayout &terrainFrustumCullLayout() noexcept { return m_terrain_frustum_cull_layout; }
+	WrappedVkDescriptorSetLayout &uiFontLayout() noexcept { return m_ui_font_layout; }
 
 private:
 	std::unordered_map<VkDescriptorType, uint32_t> m_descriptor_consumption;
 	WrappedVkDescriptorSetLayout m_main_scene_layout;
 	WrappedVkDescriptorSetLayout m_terrain_frustum_cull_layout;
+	WrappedVkDescriptorSetLayout m_ui_font_layout;
 
 	void appendDescriptorConsumption(const VkDescriptorSetLayoutCreateInfo &info);
 	WrappedVkDescriptorSetLayout createMainSceneLayout();
 	WrappedVkDescriptorSetLayout createTerrainFrustumCullLayout();
+	WrappedVkDescriptorSetLayout createUiFontLayout();
 };
 
 } // namespace voxen::client::vulkan

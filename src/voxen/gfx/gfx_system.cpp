@@ -2,6 +2,7 @@
 
 #include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/common/runtime_config.hpp>
+#include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/frame_tick_source.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
@@ -99,6 +100,7 @@ struct GfxSystem::ComponentStorage {
 	alignas(vk::DmaSystem) std::byte vk_dma_system[sizeof(vk::DmaSystem)];
 	alignas(vk::MeshStreamer) std::byte vk_mesh_streamer[sizeof(vk::MeshStreamer)];
 	alignas(LandLoader) std::byte land_loader[sizeof(LandLoader)];
+	alignas(FontRenderer) std::byte font_renderer[sizeof(FontRenderer)];
 	alignas(vk::RenderGraphRunner) std::byte vk_render_graph_runner[sizeof(vk::RenderGraphRunner)];
 	alignas(FrameTickSource) std::byte frame_tick_source[sizeof(FrameTickSource)];
 };
@@ -129,6 +131,7 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 
 	m_vk_mesh_streamer.reset(new (comp.vk_mesh_streamer) vk::MeshStreamer(*this));
 	m_land_loader.reset(new (comp.land_loader) LandLoader(*this, svc));
+	m_font_renderer.reset(new (comp.font_renderer) FontRenderer(*this));
 
 	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*m_vk_device, main_window));
 	m_render_graph = std::make_shared<vk::LegacyRenderGraph>();
@@ -138,6 +141,9 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 
 	// Do tick notification to correctly set the initial tick in every component
 	notifyFrameTickBegin(m_frame_tick_source->completedTickId(), m_frame_tick_source->currentTickId());
+
+	// Preload resources for subsystems that need it
+	m_font_renderer->loadResources();
 
 	Log::info("Started gfx system");
 }

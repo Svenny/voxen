@@ -734,4 +734,9 @@ void Device::destroy(VkSwapchainKHR swapchain) noexcept
 	m_dt.vkDestroySwapchainKHR(m_handle, swapchain, nullptr);
 }
 
+void Device::destroy(VkSampler sampler) noexcept
+{
+	m_dt.vkDestroySampler(m_handle, sampler, nullptr);
+}
+
 } // namespace voxen::gfx::vk
