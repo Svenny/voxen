@@ -70,6 +70,11 @@ if(VOXEN_USE_PCH)
 	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
 endif()
 
+option(VOXEN_BUILD_DATA "Build/pack data (assets) files" ON)
+if(VOXEN_BUILD_DATA)
+	add_subdirectory(data)
+endif()
+
 option(VOXEN_BUILD_TESTS "Build tests for some small parts of codebase" OFF)
 if(VOXEN_BUILD_TESTS)
 	enable_testing()
