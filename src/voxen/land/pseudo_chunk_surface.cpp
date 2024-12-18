@@ -30,13 +30,6 @@ using CellEntry = PseudoChunkData::CellEntry;
 namespace
 {
 
-struct VertexState {
-	glm::vec3 position;
-	glm::vec4 color_accumulator;
-	glm::vec3 normal_accumulator;
-	uint32_t vertex_index;
-};
-
 struct ProcessedCellEntry {
 	glm::vec3 position_mainchunk_local_space;
 	SurfaceMatHistEntry mat_hist[4] = {};
@@ -154,40 +147,47 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 	auto expanded_ids = std::make_unique<CubeArray<uint16_t, B + 2>>();
 	adj.expandBlockIds(expanded_ids->view());
 
-	std::unordered_map<int32_t, VertexState> vertex_state;
+	std::unordered_map<int64_t, uint32_t> vertex_index_map;
 	std::vector<uint32_t> index_buffer;
 
-	auto get_vertex_state = [&](int32_t key) -> VertexState & {
-		auto iter = vertex_state.find(key);
-		if (iter != vertex_state.end()) {
+	auto get_vertex_index = [&](glm::ivec3 position, int32_t orientation, Chunk::BlockId block_id) {
+		int64_t key = (position.x << 16) | (position.y << 8) | position.z;
+		key = (key << 24) | (orientation << 8) | block_id;
+
+		auto iter = vertex_index_map.find(key);
+		if (iter != vertex_index_map.end()) {
 			return iter->second;
 		}
 
-		int32_t x = (key / 6) >> 14;
-		int32_t y = ((key / 6) >> 7) % (1 << 7);
-		int32_t z = (key / 6) % (1 << 7);
+		uint32_t vertex_index = static_cast<uint32_t>(m_vertex_positions.size());
+		vertex_index_map[key] = vertex_index;
 
-		auto &state = vertex_state[key];
-		state.position = glm::vec3(x, y, z);
-		state.vertex_index = static_cast<uint32_t>(m_vertex_positions.size());
-		m_vertex_positions.emplace_back();
-		m_vertex_attributes.emplace_back();
-		return state;
+		auto &vertex_pos = m_vertex_positions.emplace_back();
+		auto &vertex_attrib = m_vertex_attributes.emplace_back();
+
+		constexpr float DIVISOR = 1.0f / static_cast<float>(B);
+		glm::vec3 pos_normalized = glm::vec3(position) * DIVISOR;
+		packVertexPosition(pos_normalized, vertex_pos);
+
+		packNormal(FACE_NORMAL[orientation], vertex_attrib);
+
+		PackedColorSrgb packed_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
+		uint16_t color = TempBlockMeta::packColor555(packed_color);
+
+		vertex_attrib.mat_hist_entries = glm::u16vec4(color, 0, 0, 0);
+		vertex_attrib.mat_hist_weights = glm::u8vec4(255, 0, 0, 0);
+
+		return vertex_index;
 	};
 
-	auto add_face = [&](uint32_t x, uint32_t y, uint32_t z, int32_t orientation, PackedColorSrgb color) {
+	auto add_face = [&](uint32_t x, uint32_t y, uint32_t z, int32_t orientation, Chunk::BlockId block_id) {
 		glm::ivec3 base_coord(x, y, z);
 
 		uint32_t vertex_indices[4];
 
 		for (int i = 0; i < 4; i++) {
 			glm::ivec3 vertex_coord = base_coord + FACE_COORD_OFFSET[orientation][i];
-			int32_t vertex_key = ((vertex_coord.x << 14) + (vertex_coord.y << 7) + vertex_coord.z) * 6 + orientation;
-			VertexState &state = get_vertex_state(vertex_key);
-
-			state.color_accumulator += color.toVec4();
-			state.normal_accumulator += FACE_NORMAL[orientation];
-			vertex_indices[i] = state.vertex_index;
+			vertex_indices[i] = get_vertex_index(vertex_coord, orientation, block_id);
 		}
 
 		// First triangle
@@ -214,57 +214,36 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 			return;
 		}
 
-		PackedColorSrgb block_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
-
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 2, y + 1, z + 1))) {
 			// X+ face visible
-			add_face(x, y, z, 0, block_color);
+			add_face(x, y, z, 0, block_id);
 		}
 
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x, y + 1, z + 1))) {
 			// X- face visible
-			add_face(x, y, z, 1, block_color);
+			add_face(x, y, z, 1, block_id);
 		}
 
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 2, z + 1))) {
 			// Y+ face visible
-			add_face(x, y, z, 2, block_color);
+			add_face(x, y, z, 2, block_id);
 		}
 
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y, z + 1))) {
 			// Y- face visible
-			add_face(x, y, z, 3, block_color);
+			add_face(x, y, z, 3, block_id);
 		}
 
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 1, z + 2))) {
 			// Z+ face visible
-			add_face(x, y, z, 4, block_color);
+			add_face(x, y, z, 4, block_id);
 		}
 
 		if (TempBlockMeta::isBlockEmpty(expanded_ids->load(x + 1, y + 1, z))) {
 			// Z- face visible
-			add_face(x, y, z, 5, block_color);
+			add_face(x, y, z, 5, block_id);
 		}
 	});
-
-	constexpr float DIVISOR = 1.0f / static_cast<float>(B);
-
-	for (const auto &[key, state] : vertex_state) {
-		auto &vertex_pos = m_vertex_positions[state.vertex_index];
-		auto &vertex_attrib = m_vertex_attributes[state.vertex_index];
-
-		glm::vec3 pos_normalized = state.position * DIVISOR;
-		packVertexPosition(pos_normalized, vertex_pos);
-
-		glm::vec3 normal = glm::normalize(state.normal_accumulator);
-		packNormal(normal, vertex_attrib);
-
-		PackedColorSrgb packed_color(glm::vec3(state.color_accumulator) / state.color_accumulator.a);
-		uint16_t color = TempBlockMeta::packColor555(packed_color);
-
-		vertex_attrib.mat_hist_entries = glm::u16vec4(color, 0, 0, 0);
-		vertex_attrib.mat_hist_weights = glm::u8vec4(255, 0, 0, 0);
-	}
 
 	m_indices.resize(index_buffer.size());
 	for (size_t i = 0; i < index_buffer.size(); i++) {
