@@ -5,7 +5,7 @@
 namespace voxen
 {
 
-Player::Player()
+Player::Player() : m_position(-1500, 250, -1100)
 {
 	updateSecondaryFactors();
 }

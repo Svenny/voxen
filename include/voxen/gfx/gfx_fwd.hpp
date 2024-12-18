@@ -26,6 +26,8 @@ class Instance;
 class IRenderGraph;
 class MeshStreamer;
 class PhysicalDevice;
+class RenderGraphBuilder;
+class RenderGraphExecution;
 class RenderGraphRunner;
 class Swapchain;
 class TransientBufferAllocator;

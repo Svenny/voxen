@@ -20,7 +20,7 @@ public:
 	const glm::dvec3 &rightVector() const noexcept { return m_right_vector; }
 
 private:
-	glm::dvec3 m_position { 100, 600, -1100 };
+	glm::dvec3 m_position;
 	glm::dquat m_orientation = glm::identity<glm::dquat>();
 
 	glm::dvec3 m_look_vector;

@@ -185,6 +185,13 @@ std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(
 	// https://www.glfw.org/docs/3.3.2/group__input.html#ga2485743d0b59df3791c45951c4195265
 	(void) scancode;
 
+	// TODO: this is even shittier than the rest of input mapping logic
+	// but I don't want to add 10 whole new mappings just for this.
+	if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9 && mods == 0) {
+		int base = int(PlayerActionEvent::ChooseItem0);
+		return make_pair(PlayerActionEvent(base + key - GLFW_KEY_0), action != GLFW_RELEASE);
+	}
+
 	auto search = keyboardKeyToActionMap.find(tuple<int, int>(key, mods));
 	if (search != keyboardKeyToActionMap.end()) {
 		return make_pair(search->second, action != GLFW_RELEASE);

@@ -31,15 +31,21 @@ public:
 
 	PipelineLayout &terrainBasicLayout() noexcept { return m_terrain_basic_layout; }
 	PipelineLayout &terrainFrustumCullLayout() noexcept { return m_terrain_frustum_cull_layout; }
+	PipelineLayout &landChunkMeshLayout() noexcept { return m_land_chunk_mesh_layout; }
+	PipelineLayout &landSelectorLayout() noexcept { return m_land_selector_layout; }
 	PipelineLayout &uiFontLayout() noexcept { return m_ui_font_layout; }
 
 private:
 	PipelineLayout m_terrain_basic_layout;
 	PipelineLayout m_terrain_frustum_cull_layout;
+	PipelineLayout m_land_chunk_mesh_layout;
+	PipelineLayout m_land_selector_layout;
 	PipelineLayout m_ui_font_layout;
 
 	PipelineLayout createTerrainBasicLayout();
 	PipelineLayout createTerrainFrustumCullLayout();
+	PipelineLayout createLandChunkMeshLayout();
+	PipelineLayout createLandSelectorLayout();
 	PipelineLayout createUiFontLayout();
 };
 

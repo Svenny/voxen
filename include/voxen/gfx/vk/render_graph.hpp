@@ -1,12 +1,10 @@
 #pragma once
 
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/visibility.hpp>
 
 namespace voxen::gfx::vk
 {
-
-class RenderGraphBuilder;
-class RenderGraphExecution;
 
 class VOXEN_API IRenderGraph {
 public:
