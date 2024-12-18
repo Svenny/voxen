@@ -35,6 +35,8 @@ private:
 	const WorldState *m_world_state = nullptr;
 	const GameView *m_game_view = nullptr;
 
+	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
+
 	VkFormat m_output_format = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_output_resolution = {};
 

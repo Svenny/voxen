@@ -140,6 +140,10 @@ set(VOXEN_SHADERS
 	terrain/frustum_cull.comp
 	terrain/simple.vert
 	terrain/simple.frag
+	land/chunk_mesh.vert
+	land/chunk_mesh.frag
+	land/selector.vert
+	land/selector.frag
 	ui/font.vert
 	ui/font.frag
 )

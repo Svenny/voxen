@@ -5,6 +5,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/common/terrain/surface.hpp>
+#include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
@@ -349,6 +350,15 @@ struct GraphicsPipelineParts {
 
 	struct {
 		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+	} land_chunk_mesh_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+		VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {};
+	} land_selector_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
 		VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {};
 	} ui_font_parts;
 };
@@ -395,6 +405,82 @@ void addParts<PipelineCollection::DEBUG_OCTREE_PIPELINE>(GraphicsPipelineParts &
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
 	my_create_info.layout = backend.pipelineLayoutCollection().terrainBasicLayout();
+	my_create_info.renderPass = VK_NULL_HANDLE;
+	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
+}
+
+template<>
+void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.land_chunk_mesh_parts;
+
+	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_CHUNK_MESH_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_CHUNK_MESH_VERTEX];
+	vert_stage_info.pName = "main";
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_CHUNK_MESH_FRAGMENT];
+	frag_stage_info.pName = "main";
+
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_empty.vertex_input_info;
+	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
+	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
+	my_create_info.layout = backend.pipelineLayoutCollection().landChunkMeshLayout();
+	my_create_info.renderPass = VK_NULL_HANDLE;
+	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
+}
+
+template<>
+void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.land_selector_parts;
+
+	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_SELECTOR_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_SELECTOR_VERTEX];
+	vert_stage_info.pName = "main";
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_SELECTOR_FRAGMENT];
+	frag_stage_info.pName = "main";
+
+	auto &zs_info = my_parts.depth_stencil_info;
+	zs_info = parts.default_depth_stencil_state.depth_stencil_info;
+	zs_info.depthWriteEnable = VK_FALSE;
+
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_empty.vertex_input_info;
+	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &zs_info;
+	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
+	my_create_info.layout = backend.pipelineLayoutCollection().landSelectorLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
