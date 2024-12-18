@@ -95,12 +95,12 @@ struct VertexFormatBasicTerrain {
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(terrain::SurfaceVertex, normal),
 		};
-		// Primary material ID
+		// Material IDs
 		vertex_input_attrib[2] = VkVertexInputAttributeDescription {
 			.location = 2,
 			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, primary_mat),
+			.format = VK_FORMAT_R8G8B8_UINT,
+			.offset = offsetof(terrain::SurfaceVertex, materials),
 		};
 		// Vertex properties (flags)
 		vertex_input_attrib[3] = VkVertexInputAttributeDescription {
@@ -109,37 +109,9 @@ struct VertexFormatBasicTerrain {
 			.format = VK_FORMAT_R8_UINT,
 			.offset = offsetof(terrain::SurfaceVertex, flags),
 		};
-		// Secondary materials pair weight
+		// Chunk base/scale data
 		vertex_input_attrib[4] = VkVertexInputAttributeDescription {
 			.location = 4,
-			.binding = 0,
-			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_weight),
-		};
-		// Secondary materials A/B ratio
-		vertex_input_attrib[5] = VkVertexInputAttributeDescription {
-			.location = 5,
-			.binding = 0,
-			.format = VK_FORMAT_R8_UNORM,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mats_ratio),
-		};
-		// Secondary material A
-		vertex_input_attrib[6] = VkVertexInputAttributeDescription {
-			.location = 6,
-			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_a),
-		};
-		// Secondary material B
-		vertex_input_attrib[7] = VkVertexInputAttributeDescription {
-			.location = 7,
-			.binding = 0,
-			.format = VK_FORMAT_R8_USCALED,
-			.offset = offsetof(terrain::SurfaceVertex, secondary_mat_b),
-		};
-		// Chunk base/scale data
-		vertex_input_attrib[8] = VkVertexInputAttributeDescription {
-			.location = 8,
 			.binding = 1,
 			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 			.offset = 0,
@@ -153,7 +125,7 @@ struct VertexFormatBasicTerrain {
 	}
 
 	VkVertexInputBindingDescription vertex_input_binding[2] = {};
-	VkVertexInputAttributeDescription vertex_input_attrib[9] = {};
+	VkVertexInputAttributeDescription vertex_input_attrib[5] = {};
 	VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
 };
 

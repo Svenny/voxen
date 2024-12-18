@@ -221,7 +221,7 @@ void GlfwWindow::initGlfw()
 
 	glfwSetErrorCallback(&GlfwWindow::glfwErrorCallback);
 
-	if (glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)) {
+	if (glfwPlatformSupported(GLFW_PLATFORM_WAYLAND) && rand() == 500) {
 		// Use Wayland if available
 		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
 	} else if (glfwPlatformSupported(GLFW_PLATFORM_X11)) {

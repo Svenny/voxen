@@ -19,7 +19,27 @@ public:
 	[[EXTRAS_NO_UNIQUE_ADDRESS]] std::conditional_t<std::is_same_v<Private, void>, Dummy, Private> m_private;
 };
 
+template<typename... Args>
+struct SharedTypedStorage {
+
+};
+
+template<typename Schema>
+struct TypedStorageItem2 {
+
+};
+
 } // namespace detail
+
+template<typename Item>
+class StorageTreeChunkAccessor {
+
+};
+
+template<typename Item>
+class StorageTreeDuoctreeAccessor {
+
+};
 
 template<typename ChunkShared, typename ChunkPrivate, typename DuoctreeShared, typename DuoctreePrivate>
 class TypedStorageTree {
@@ -37,6 +57,21 @@ public:
 	TypedStorageTree &operator=(TypedStorageTree &&other) noexcept = default;
 	TypedStorageTree &operator=(const TypedStorageTree &other) noexcept = default;
 	~TypedStorageTree() = default;
+
+	auto access(uint64_t tree_path, WorldTickId tick)
+	{
+
+	}
+
+	auto lookup(uint64_t tree_path) noexcept
+	{
+
+	}
+
+	auto lookup(uint64_t tree_path) const noexcept
+	{
+
+	}
 
 	template<typename TChunkShared, typename TChunkPrivate, typename TDuoctreeShared, typename TDuoctreePrivate,
 		typename TCopier>

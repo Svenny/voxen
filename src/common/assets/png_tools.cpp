@@ -5,8 +5,24 @@
 #include <voxen/util/hash.hpp>
 #include <voxen/util/log.hpp>
 
+#include <extras/defer.hpp>
+
 #define ZLIB_CONST
 #include <zlib.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wcast-qual"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#pragma clang diagnostic ignored "-Wcast-align"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+#pragma clang diagnostic ignored "-Wunused-function"
+#define STBI_ONLY_PNG
+#define STBI_MAX_DIMENSIONS 8192
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#pragma clang diagnostic pop
 
 #include <bit>
 #include <cassert>
@@ -56,6 +72,15 @@ void bigEndianPack(uint32_t input, void *output) noexcept
 	bytes[1] = static_cast<uint8_t>(input >> 16U);
 	bytes[2] = static_cast<uint8_t>(input >> 8U);
 	bytes[3] = static_cast<uint8_t>(input);
+}
+
+uint32_t bigEndianUnpack(const void *input) noexcept
+{
+	auto *bytes = reinterpret_cast<const uint8_t *>(input);
+	uint32_t output = uint32_t(bytes[0]) << 24U;
+	output |= uint32_t(bytes[1]) << 16U;
+	output |= uint32_t(bytes[2]) << 8U;
+	return output | bytes[3];
 }
 
 std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo &info, bool flip_y, int level)
@@ -222,11 +247,61 @@ extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, co
 
 extras::dyn_array<std::byte> PngTools::unpack(std::span<const std::byte> bytes, PngInfo &info, bool flip_y)
 {
-	// TODO: stub just to make it link
-	(void) bytes;
-	(void) info;
-	(void) flip_y;
-	return {};
+	if (bytes.size() < std::size(PNG_HEADER) + sizeof(IhdrChunk)) [[unlikely]] {
+		Log::error("Too few data bytes ({}) to be a valid PNG stream", bytes.size());
+		return {};
+	}
+
+	if (memcmp(PNG_HEADER, bytes.data(), std::size(PNG_HEADER)) != 0) [[unlikely]] {
+		Log::error("PNG header mismatch");
+		return {};
+	}
+
+	const IhdrChunk &ihdr = *reinterpret_cast<const IhdrChunk *>(bytes.data() + std::size(PNG_HEADER));
+	info.resolution = { int32_t(bigEndianUnpack(ihdr.width)), int32_t(bigEndianUnpack(ihdr.height)) };
+	info.is_16bpc = ihdr.bit_depth == 16;
+
+	if (ihdr.colour_type == IhdrChunk::CHANNELS_GREY) {
+		info.channels = 1;
+	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_GREY_ALPHA) {
+		info.channels = 2;
+	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_RGB) {
+		info.channels = 3;
+	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_RGBA) {
+		info.channels = 4;
+	} else {
+		Log::error("Unsupported PNG colour type {}", ihdr.colour_type);
+		return {};
+	}
+
+	const stbi_uc *data = reinterpret_cast<const stbi_uc *>(bytes.data());
+	void *stb_memory = nullptr;
+	int x, y, ch;
+
+	stbi_set_flip_vertically_on_load_thread(flip_y);
+
+	if (info.is_16bpc) {
+		stb_memory = stbi_load_16_from_memory(data, static_cast<int>(bytes.size()), &x, &y, &ch, info.channels);
+	} else {
+		stb_memory = stbi_load_from_memory(data, static_cast<int>(bytes.size()), &x, &y, &ch, info.channels);
+	}
+
+	if (!stb_memory) [[unlikely]] {
+		Log::error("PNG loading failed: {}", stbi_failure_reason());
+		return {};
+	}
+
+	defer { stbi_image_free(stb_memory); };
+
+	if (x != info.resolution.width || y != info.resolution.height || uint32_t(ch) != info.channels) [[unlikely]] {
+		Log::error("PNG IHDR mismatches what was actually unpacked");
+		return {};
+	}
+
+	size_t memory_size = size_t(x * y * ch) * (info.is_16bpc ? 2 : 1);
+	extras::dyn_array<std::byte> result(memory_size);
+	memcpy(result.data(), stb_memory, memory_size);
+	return result;
 }
 
 } // namespace voxen::assets

@@ -15,6 +15,16 @@ class LandLoaderImpl;
 
 }
 
+namespace graph
+{
+
+class IRenderPass;
+class RenderGraphBuilder;
+class RenderGraphExecution;
+class RenderGraphPreparation;
+
+}
+
 namespace vk
 {
 
