@@ -8,6 +8,7 @@
 #include <voxen/server/world.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/land/land_temp_blocks.hpp>
 
 #include <extras/math.hpp>
 
@@ -31,6 +32,8 @@ GameView::GameView(os::GlfwWindow& window) : m_window(window)
 	m_forward_speed = main_config->getDouble("controller", "forward_speed");
 	m_strafe_speed = main_config->getDouble("controller", "strafe_speed");
 	m_roll_speed = main_config->getDouble("controller", "roll_speed");
+
+	m_current_block_id = land::TempBlockMeta::BlockStone;
 
 	resetKeyState();
 }
@@ -110,6 +113,26 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 	case client::PlayerActionEvent::ModifyBlock:
 		if (is_activate) {
 			m_block_modify_requested = true;
+		}
+		return true;
+
+	case client::PlayerActionEvent::ChooseItem0:
+	case client::PlayerActionEvent::ChooseItem1:
+	case client::PlayerActionEvent::ChooseItem2:
+	case client::PlayerActionEvent::ChooseItem3:
+	case client::PlayerActionEvent::ChooseItem4:
+	case client::PlayerActionEvent::ChooseItem5:
+	case client::PlayerActionEvent::ChooseItem6:
+	case client::PlayerActionEvent::ChooseItem7:
+	case client::PlayerActionEvent::ChooseItem8:
+	case client::PlayerActionEvent::ChooseItem9:
+		if (is_activate) {
+			unsigned block_code = unsigned(event) - unsigned(client::PlayerActionEvent::ChooseItem0);
+			if (block_code >= land::TempBlockMeta::NUM_BLOCKS) {
+				block_code = 0;
+			}
+
+			m_current_block_id = land::Chunk::BlockId(block_code);
 		}
 		return true;
 
@@ -237,9 +260,8 @@ void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc:
 	if (m_block_modify_requested) {
 		m_block_modify_requested = false;
 
-		glm::ivec3 position = (m_local_player.position() + 5.0 * m_local_player.lookVector())
-			/ land::Consts::BLOCK_SIZE_METRES;
-		land::Chunk::BlockId new_block = 1;
+		glm::ivec3 position = modifyTargetBlockCoord();
+		land::Chunk::BlockId new_block = m_current_block_id;
 
 		mq.send<land::BlockEditMessage>(land::LandService::SERVICE_UID, position, new_block);
 	}
@@ -250,6 +272,11 @@ void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc:
 	message.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
 
 	mq.send<PlayerStateMessage>(server::World::SERVICE_UID, message);
+}
+
+glm::ivec3 GameView::modifyTargetBlockCoord() const noexcept
+{
+	return (m_local_player.position() + 5.0 * m_local_player.lookVector()) / land::Consts::BLOCK_SIZE_METRES;
 }
 
 } // namespace voxen

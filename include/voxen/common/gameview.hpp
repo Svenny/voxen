@@ -5,6 +5,7 @@
 #include <voxen/common/world_state.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/land/land_chunk.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -29,6 +30,11 @@ public:
 	const glm::mat4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
 	const glm::mat4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
 	const glm::dvec3& cameraPosition() const noexcept { return m_local_player.position(); }
+
+	// Block ID currently selected for insertion
+	auto selectedBlockId() const noexcept { return m_current_block_id; }
+	// Block coordinate (in block space, not world space) where the player is currently targeting
+	glm::ivec3 modifyTargetBlockCoord() const noexcept;
 
 private:
 	enum Direction : int {
@@ -78,6 +84,7 @@ private:
 	bool m_is_chunk_loading_point_locked = false;
 	bool m_is_used_orientation_cursor = false;
 	bool m_block_modify_requested = false;
+	land::Chunk::BlockId m_current_block_id = 0;
 
 	bool m_state[Direction::Count];
 
