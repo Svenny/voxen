@@ -1,0 +1,52 @@
+{
+	"$module": "voxen::gfx::LandStructs",
+	"$schema": "gfx-structs",
+
+	PseudoSurfaceVertexPosition: {
+		comment: 'Pseudo-chunk surface vertex positions are stored in a separate stream',
+		fields: [
+			{ name: 'pos_exchunkspace_unorm', type: 'u16vec3', comment:
+'After UNORM unpacking expand it into [-0.125:1.125] range.\
+going slightly out of chunk bounds for stitching/skirting.\
+Vertex position in "extended" chunk-local space to allow'
+			},
+		],
+	},
+
+	PseudoSurfaceVertexAttributes: {
+		comment: 'Pseudo-chunk surface vertex attributes except positions',
+		fields: [
+			{ name: 'normal_octpack_snorm', type: 'i16vec2', comment:
+'Normal compressed using octahedral method, then packed into two 16-bit SNORM values.\
+Octahedral method is taken from paper "A Survey of Efficient Representations for Independent Unit Vectors":\
+http://jcgt.org/published/0003/02/01/paper.pdf\
+The only difference is that Y and Z axes are swapped in this implementation.'
+			},
+			{ name: 'mat_hist_entries', type: 'u16vec4', comment:
+'Material histogram (MatHist) stores up to 4 materials with the "highest presence"\
+in this vertex. This attribute is guaranteed to be the same for all three vertices\
+comprising a triangle.\
+An entry is a 16-bit value which can be treated as either material ID if its highest\
+bit is zero ([0:2^15) range) or as fixed R5G5B5 color otherwise ([2^15:2^16) range).\
+Material ID assignment and encoding/decoding of colors is the responsibility\
+of block registry system, and is not covered here.'
+			},
+			{ name: 'mat_hist_weights', type: 'u8vec4', comment:
+'Blending weights of `mat_hist_entries` elements, full range [0; 255].\
+Zero weight means the entry is ignored, it can then contain garbage data.\
+\
+While the exact blending process is up to the renderer, these values are\
+calculated relative to each other - basically they define a weighted sum.'
+			},
+		]
+	},
+
+	PseudoSurfaceDrawCommand: {
+		fields: [
+			{ name: 'pos_data_address', type: 'gpuaddr' },
+			{ name: 'attrib_data_address', type: 'gpuaddr' },
+			{ name: 'chunk_base_camworld', type: 'f32vec3' },
+			{ name: 'chunk_size_metres', type: 'f32' },
+		]
+	},
+}
