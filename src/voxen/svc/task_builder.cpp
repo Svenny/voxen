@@ -75,7 +75,14 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	auto first_zero = std::remove(wait_cnt.begin(), wait_cnt.end(), 0);
 	wait_cnt.erase(first_zero, wait_cnt.end());
 
-	// We have static asserts that there is enough alignment for counters and functor
+	// Try eliminating already completed counters if there are too many.
+	// Might help with countering uint16 overflow, see below.
+	constexpr size_t TRIM_THRESHOLD = 32;
+	if (wait_cnt.size() > TRIM_THRESHOLD) [[unlikely]] {
+		size_t remaining = m_impl->service.eliminateCompletedWaitCounters(wait_cnt);
+		wait_cnt.erase(wait_cnt.begin() + ptrdiff_t(remaining), wait_cnt.end());
+	}
+
 	size_t size = sizeof(detail::TaskHeader);
 	size += sizeof(uint64_t) * wait_cnt.size();
 
@@ -85,13 +92,14 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	// So enough to do one check.
 	// This is achievable in practice, make sure the bug never goes unnoticed.
 	//
-	// TODO: trim/wait if there are more counters (might happen on large system shutdown)
+	// TODO: do more elimination attempts (might happen on large system shutdown)
 	if (size > UINT16_MAX) [[unlikely]] {
 		// Not that the user can somehow recover from this error
 		debug::bugFound("TaskBuilder: uint16 overflow in task header; too many wait counters");
 	}
 
-	// Don't forget to add functor size after the check
+	// Don't forget to add functor size after the check.
+	// We have static asserts that there is enough alignment for counters and functor.
 	size += functor_size;
 
 	void *place = PipeMemoryAllocator::allocate(size, alignof(detail::TaskHeader));
