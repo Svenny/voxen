@@ -375,6 +375,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!ext_info.have_swapchain) {
 		missing.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
+	if (!ext_info.have_maximal_reconvergence) {
+		missing.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
+	}
 
 	if (!missing.empty()) {
 		Log::debug("Device lacks required extensions:");
@@ -409,8 +412,26 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats.features.textureCompressionBC) {
 		missing.emplace_back("textureCompressionBC");
 	}
+	if (!info.feats.features.shaderInt64) {
+		missing.emplace_back("shaderInt64");
+	}
+	if (!info.feats.features.shaderInt16) {
+		missing.emplace_back("shaderInt16");
+	}
+	if (!info.feats11.storageBuffer16BitAccess) {
+		missing.emplace_back("storageBuffer16BitAccess");
+	}
 	if (!info.feats11.shaderDrawParameters) {
 		missing.emplace_back("shaderDrawParameters");
+	}
+	if (!info.feats12.drawIndirectCount) {
+		missing.emplace_back("drawIndirectCount");
+	}
+	if (!info.feats12.storageBuffer8BitAccess) {
+		missing.emplace_back("storageBuffer8BitAccess");
+	}
+	if (!info.feats12.shaderInt8) {
+		missing.emplace_back("shaderInt8");
 	}
 	if (!info.feats12.descriptorIndexing) {
 		missing.emplace_back("descriptorIndexing");
@@ -470,6 +491,9 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan12Features features12 = {};
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	features12.pNext = &features13;
+	features12.drawIndirectCount = VK_TRUE;
+	features12.storageBuffer8BitAccess = VK_TRUE;
+	features12.shaderInt8 = VK_TRUE;
 	features12.descriptorIndexing = VK_TRUE;
 	features12.scalarBlockLayout = VK_TRUE;
 	features12.uniformBufferStandardLayout = VK_TRUE;
@@ -481,6 +505,7 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan11Features features11 = {};
 	features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 	features11.pNext = &features12;
+	features11.storageBuffer16BitAccess = VK_TRUE;
 	features11.shaderDrawParameters = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 features = {};
@@ -493,6 +518,8 @@ void Device::createDevice()
 	features.features.fillModeNonSolid = VK_TRUE;
 	features.features.samplerAnisotropy = VK_TRUE;
 	features.features.textureCompressionBC = VK_TRUE;
+	features.features.shaderInt64 = VK_TRUE;
+	features.features.shaderInt16 = VK_TRUE;
 
 	// Not that these device-local queue priorities matter much...
 	// Don't move to inner scope, this is referenced by `vkCreateDevice`.
@@ -549,6 +576,7 @@ void Device::createDevice()
 		ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		ext_list.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
 
 		auto &ext_info = m_phys_device.extInfo();
 

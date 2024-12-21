@@ -60,11 +60,9 @@ extern const char *SHADER_MODULE_PATH;
 	template<> \
 	inline const char *SHADER_MODULE_PATH<ShaderModuleCollection::name> = path;
 
-ADD_SHADER_PATH(DEBUG_OCTREE_VERTEX, "assets/shaders/debug/octree.vert.spv")
-ADD_SHADER_PATH(DEBUG_OCTREE_FRAGMENT, "assets/shaders/debug/octree.frag.spv")
-ADD_SHADER_PATH(TERRAIN_FRUSTUM_CULL_COMPUTE, "assets/shaders/terrain/frustum_cull.comp.spv")
-ADD_SHADER_PATH(TERRAIN_SIMPLE_VERTEX, "assets/shaders/terrain/simple.vert.spv")
-ADD_SHADER_PATH(TERRAIN_SIMPLE_FRAGMENT, "assets/shaders/terrain/simple.frag.spv")
+ADD_SHADER_PATH(LAND_DEBUG_CHUNK_BOUNDS_VERTEX, "assets/shaders/land/debug_chunk_bounds.vert.spv")
+ADD_SHADER_PATH(LAND_DEBUG_CHUNK_BOUNDS_FRAGMENT, "assets/shaders/land/debug_chunk_bounds.frag.spv")
+ADD_SHADER_PATH(LAND_FRUSTUM_CULL_COMPUTE, "assets/shaders/land/frustum_cull.comp.spv")
 ADD_SHADER_PATH(LAND_CHUNK_MESH_VERTEX, "assets/shaders/land/chunk_mesh.vert.spv")
 ADD_SHADER_PATH(LAND_CHUNK_MESH_FRAGMENT, "assets/shaders/land/chunk_mesh.frag.spv")
 ADD_SHADER_PATH(LAND_SELECTOR_VERTEX, "assets/shaders/land/selector.vert.spv")

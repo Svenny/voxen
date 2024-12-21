@@ -1,11 +1,12 @@
 #pragma once
 
+#include <voxen/gfx/gfx_public_consts.hpp>
+#include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/frame_context.hpp>
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
-#include <voxen/gfx/gfx_public_consts.hpp>
 
 #include "vk_private_consts.hpp"
 
@@ -67,8 +68,11 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
-	explicit RenderGraphPrivate(Device &device, os::GlfwWindow &window)
-		: device(device), fctx_ring(device, gfx::Consts::MAX_PENDING_FRAMES), swapchain(device, window)
+	explicit RenderGraphPrivate(GfxSystem &gfx, os::GlfwWindow &window)
+		: gfx_system(gfx)
+		, device(*gfx.device())
+		, fctx_ring(device, gfx::Consts::MAX_PENDING_FRAMES)
+		, swapchain(device, window)
 	{}
 	RenderGraphPrivate(RenderGraphPrivate &&) = delete;
 	RenderGraphPrivate(const RenderGraphPrivate &) = delete;
@@ -117,6 +121,7 @@ struct VOXEN_LOCAL RenderGraphPrivate {
 
 	using Command = std::variant<BarrierCommand, RenderPassCommand, ComputePassCommand>;
 
+	GfxSystem &gfx_system;
 	Device &device;
 	FrameContextRing fctx_ring;
 	Swapchain swapchain;

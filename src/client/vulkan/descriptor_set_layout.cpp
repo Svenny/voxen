@@ -38,7 +38,7 @@ WrappedVkDescriptorSetLayout::~WrappedVkDescriptorSetLayout() noexcept
 
 DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()
 	: m_main_scene_layout(createMainSceneLayout())
-	, m_terrain_frustum_cull_layout(createTerrainFrustumCullLayout())
+	, m_land_frustum_cull_layout(createLandFrustumCullLayout())
 	, m_land_chunk_mesh_layout(createLandChunkMeshLayout())
 	, m_ui_font_layout(createUiFontLayout())
 {
@@ -77,7 +77,7 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createMainSceneLayou
 	return WrappedVkDescriptorSetLayout(info);
 }
 
-WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustumCullLayout()
+WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createLandFrustumCullLayout()
 {
 	VkDescriptorSetLayoutBinding bindings[3];
 	bindings[0] = {
@@ -105,7 +105,7 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createTerrainFrustum
 	const VkDescriptorSetLayoutCreateInfo info {
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.pNext = nullptr,
-		.flags = 0,
+		.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
 		.bindingCount = std::size(bindings),
 		.pBindings = bindings,
 	};

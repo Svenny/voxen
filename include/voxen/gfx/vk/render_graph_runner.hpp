@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/os/os_fwd.hpp>
@@ -9,8 +10,6 @@
 namespace voxen::gfx::vk
 {
 
-class Device;
-
 struct RenderGraphPrivate;
 
 // Management class connecting render graphs subsystem with the rest of GFX module
@@ -18,7 +17,7 @@ class VOXEN_API RenderGraphRunner {
 public:
 	// Creates a swapchain attached to the window.
 	// This window must not be in use by any other swapchain.
-	RenderGraphRunner(Device &device, os::GlfwWindow &window);
+	RenderGraphRunner(GfxSystem &gfx, os::GlfwWindow &window);
 	RenderGraphRunner(RenderGraphRunner &&) = delete;
 	RenderGraphRunner(const RenderGraphRunner &) = delete;
 	RenderGraphRunner &operator=(RenderGraphRunner &&) = delete;
@@ -36,6 +35,7 @@ public:
 	void executeGraph();
 
 private:
+	GfxSystem &m_gfx;
 	Device &m_device;
 	os::GlfwWindow &m_window;
 

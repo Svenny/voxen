@@ -22,6 +22,7 @@ class CommandAllocator;
 class DebugUtils;
 class Device;
 class DmaSystem;
+class FrameContext;
 class Instance;
 class IRenderGraph;
 class MeshStreamer;

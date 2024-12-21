@@ -187,9 +187,9 @@ RenderGraphBuilder::RenderGraphBuilder(RenderGraphPrivate &priv) noexcept : m_pr
 
 RenderGraphBuilder::~RenderGraphBuilder() noexcept = default;
 
-Device &RenderGraphBuilder::device() noexcept
+GfxSystem &RenderGraphBuilder::gfxSystem() noexcept
 {
-	return m_private.device;
+	return m_private.gfx_system;
 }
 
 VkFormat RenderGraphBuilder::outputImageFormat() const noexcept

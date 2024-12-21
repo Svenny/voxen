@@ -3,6 +3,7 @@
 
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_shader_explicit_arithmetic_types : require
 
 // TODO: unify with declaration of `voxen::land::PseudoSurfaceVertexPosition`
 layout(buffer_reference, scalar, buffer_reference_align = 2) buffer PseudoChunkSurfacePositionRef {

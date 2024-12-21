@@ -3,6 +3,8 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types : require
 
+#include <util/color_ops.glsl>
+
 // TODO: unify with CPU code
 struct GlyphCommand {
 	vec2 up_left_pos;
@@ -22,13 +24,7 @@ layout(set = 0, binding = 1, scalar) readonly buffer SsboGlyphCommands {
 
 vec3 unpackColorSrgb(u8vec4 color_srgb)
 {
-	vec3 c = vec3(color_srgb.rgb) / 255.0;
-
-	bvec3 small = lessThanEqual(c, vec3(0.04045));
-	vec3 linear_part = c * 12.92;
-	vec3 nonlinear_part = pow((c + 0.055) / 1.055, vec3(2.4));
-
-	return mix(nonlinear_part, linear_part, small);
+	return srgbToLinear(vec3(color_srgb.rgb) / 255.0);
 }
 
 bvec2 calcQuadSelector()

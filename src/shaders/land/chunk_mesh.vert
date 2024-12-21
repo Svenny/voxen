@@ -1,9 +1,9 @@
 #version 460 core
 
 #extension GL_EXT_buffer_reference2 : require
-#extension GL_EXT_shader_explicit_arithmetic_types : require
 
 #include <land/mesh_layouts.glsl>
+#include <util/color_ops.glsl>
 
 struct DrawCommand {
 	PseudoChunkSurfacePositionRef pos_data;
@@ -46,8 +46,11 @@ layout(set = 0, binding = 0, std140) uniform CameraParameters {
 	vec3 world_position; float _pad0;
 } g_ubo_cam_params;
 
-layout(set = 1, binding = 0, scalar) readonly buffer CmdList
-{
+layout(set = 1, binding = 0, scalar) readonly buffer CmdList {
+	uint valid_cmds_count;
+	uint _pad0;
+	uint _pad1;
+	uint _pad2;
 	DrawCommand item[];
 } g_cmdlist;
 
@@ -61,9 +64,10 @@ vec3 unpackRgb555(uint packed)
 		return vec3(0, 0, 0);
 	}
 
-	return vec3(float(bitfieldExtract(packed, 10, 5)) / 32.0,
-	            float(bitfieldExtract(packed, 5, 5)) / 32.0,
-	            float(bitfieldExtract(packed, 0, 5)) / 32.0);
+	vec3 srgb = vec3(float(bitfieldExtract(packed, 10, 5)) / 32.0,
+		float(bitfieldExtract(packed, 5, 5)) / 32.0,
+		float(bitfieldExtract(packed, 0, 5)) / 32.0);
+	return srgbToLinear(srgb);
 }
 
 vec4 calcColor(u16vec4 mat_hist_entries, u8vec4 mat_hist_weights)

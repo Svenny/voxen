@@ -29,7 +29,6 @@ target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
 set(VOXEN_HEADERS
-	include/voxen/client/vulkan/algo/terrain_renderer.hpp
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp

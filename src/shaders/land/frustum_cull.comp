@@ -1,0 +1,100 @@
+#version 460 core
+
+#extension GL_EXT_maximal_reconvergence : require
+#extension GL_EXT_scalar_block_layout : require
+#extension GL_KHR_shader_subgroup_ballot : require
+
+#include <land/mesh_layouts.glsl>
+#include <util/aabb.glsl>
+#include <util/vk_structs.glsl>
+
+struct PreCullingDrawCommand {
+	PseudoChunkSurfacePositionRef pos_data;
+	PseudoChunkSurfaceAttributesRef attrib_data;
+
+	vec3 chunk_base_camworld;
+	float chunk_size_metres;
+
+	uint32_t first_index;
+	uint32_t num_indices;
+};
+
+struct DrawCommand {
+	PseudoChunkSurfacePositionRef pos_data;
+	PseudoChunkSurfaceAttributesRef attrib_data;
+
+	vec3 chunk_base_camworld;
+	float chunk_size_metres;
+};
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std140) uniform CameraParameters {
+	mat4 translated_world_to_clip;
+	vec3 world_position; float _pad0;
+} g_ubo_cam_params;
+
+layout(set = 1, binding = 0, scalar) readonly buffer PreCullingCmdsSsbo {
+	PreCullingDrawCommand cmd[];
+} g_pre_culling_cmds_ssbo;
+
+layout(set = 1, binding = 1, scalar) buffer DrawCmdsSsbo {
+	uint valid_cmds_count;
+	uint _pad0;
+	uint _pad1;
+	uint _pad2;
+	DrawCommand cmd[];
+} g_draw_cmds_ssbo;
+
+layout(set = 1, binding = 2, scalar) writeonly buffer IndirectCmdsSsbo {
+	VkDrawIndexedIndirectCommand cmd[];
+} g_indirect_cmds_ssbo;
+
+void main() [[maximally_reconverges]]
+{
+	bool in_frustum = false;
+	PreCullingDrawCommand pre_culling_cmd;
+
+	if (gl_GlobalInvocationID.x < g_pre_culling_cmds_ssbo.cmd.length()) {
+		pre_culling_cmd = g_pre_culling_cmds_ssbo.cmd[gl_GlobalInvocationID.x];
+
+		Aabb aabb;
+		aabb.min = pre_culling_cmd.chunk_base_camworld;
+		aabb.max = pre_culling_cmd.chunk_base_camworld + pre_culling_cmd.chunk_size_metres;
+
+		in_frustum = isAabbInFrustum(aabb, g_ubo_cam_params.translated_world_to_clip);
+	}
+
+	// Collect a bitmask of items that passed the culling
+	uvec4 ballot_result = subgroupBallot(in_frustum);
+	uint ballot_bit_count = subgroupBallotBitCount(ballot_result);
+
+	if (ballot_bit_count == 0u) {
+		// No item in this subgroup passed the culling
+		return;
+	}
+
+	// The first active thread performs the atomic to get the first ouptut slot,
+	// then every thread calculates its own slot with ballot bit count scan.
+	uint first_out_draw_index;
+
+	if (subgroupElect()) {
+		first_out_draw_index = atomicAdd(g_draw_cmds_ssbo.valid_cmds_count, ballot_bit_count);
+	}
+
+	// Per-thread output item index, garbage for threads with `in_frustum == false`
+	uint out_draw_index = subgroupBroadcastFirst(first_out_draw_index) + subgroupBallotExclusiveBitCount(ballot_result);
+
+	if (in_frustum) {
+		g_draw_cmds_ssbo.cmd[out_draw_index].pos_data = pre_culling_cmd.pos_data;
+		g_draw_cmds_ssbo.cmd[out_draw_index].attrib_data = pre_culling_cmd.attrib_data;
+		g_draw_cmds_ssbo.cmd[out_draw_index].chunk_base_camworld = pre_culling_cmd.chunk_base_camworld;
+		g_draw_cmds_ssbo.cmd[out_draw_index].chunk_size_metres = pre_culling_cmd.chunk_size_metres;
+
+		g_indirect_cmds_ssbo.cmd[out_draw_index].indexCount = pre_culling_cmd.num_indices;
+		g_indirect_cmds_ssbo.cmd[out_draw_index].instanceCount = 1u;
+		g_indirect_cmds_ssbo.cmd[out_draw_index].firstIndex = pre_culling_cmd.first_index;
+		g_indirect_cmds_ssbo.cmd[out_draw_index].vertexOffset = 0;
+		g_indirect_cmds_ssbo.cmd[out_draw_index].firstInstance = 1u;
+	}
+}

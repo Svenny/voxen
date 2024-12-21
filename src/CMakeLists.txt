@@ -1,5 +1,4 @@
 set(VOXEN_SOURCES
-	src/client/vulkan/algo/terrain_renderer.cpp
 	src/client/vulkan/backend.cpp
 	src/client/vulkan/descriptor_set_layout.cpp
 	src/client/vulkan/pipeline.cpp
@@ -135,13 +134,11 @@ if(${GLSL_COMPILER} STREQUAL "GLSL_COMPILER-NOTFOUND")
 endif()
 
 set(VOXEN_SHADERS
-	debug/octree.vert
-	debug/octree.frag
-	terrain/frustum_cull.comp
-	terrain/simple.vert
-	terrain/simple.frag
 	land/chunk_mesh.vert
 	land/chunk_mesh.frag
+	land/debug_chunk_bounds.vert
+	land/debug_chunk_bounds.frag
+	land/frustum_cull.comp
 	land/selector.vert
 	land/selector.frag
 	ui/font.vert
