@@ -121,6 +121,13 @@ std::pair<void *, void *> PhysicalDevice::prepareExtInfoQuery(const Instance &in
 			m_ext_info.props_push_descriptor.pNext = std::exchange(props_pnext_last, &m_ext_info.props_push_descriptor);
 		} else if (!strcmp(ext.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
 			m_ext_info.have_swapchain = true;
+		} else if (!strcmp(ext.extensionName, VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME)) {
+			m_ext_info.have_maximal_reconvergence = true;
+
+			m_ext_info.feats_maximal_reconvergence.sType
+				= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR;
+			m_ext_info.feats_maximal_reconvergence.pNext = std::exchange(feats_pnext_last,
+				&m_ext_info.feats_maximal_reconvergence);
 		}
 	}
 

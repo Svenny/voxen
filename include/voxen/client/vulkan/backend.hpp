@@ -19,7 +19,6 @@ class PipelineCache;
 class PipelineCollection;
 class PipelineLayoutCollection;
 class ShaderModuleCollection;
-class TerrainRenderer;
 
 class Backend {
 public:
@@ -62,9 +61,6 @@ public:
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
-	TerrainRenderer &terrainRenderer() noexcept { return *m_terrain_renderer; }
-	const TerrainRenderer &terrainRenderer() const noexcept { return *m_terrain_renderer; }
-
 	// Declare pointers to Vulkan API entry points, moved
 	// into a separate file because of size and ugliness
 #include "api_table_declare.in"
@@ -93,8 +89,6 @@ private:
 	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 
 	PipelineCollection *m_pipeline_collection = nullptr;
-
-	TerrainRenderer *m_terrain_renderer = nullptr;
 
 	static constinit Backend s_instance;
 

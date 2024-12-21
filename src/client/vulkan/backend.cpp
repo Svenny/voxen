@@ -1,6 +1,5 @@
 #include <voxen/client/vulkan/backend.hpp>
 
-#include <voxen/client/vulkan/algo/terrain_renderer.hpp>
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_cache.hpp>
@@ -32,8 +31,7 @@ struct Backend::Impl {
 	};
 
 	std::tuple<Storage<gfx::GfxSystem>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
-		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<PipelineCollection>,
-		Storage<TerrainRenderer>>
+		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<PipelineCollection>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -157,8 +155,6 @@ bool Backend::doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 
 		m_impl.constructModule(m_pipeline_collection);
 
-		m_impl.constructModule(m_terrain_renderer);
-
 		return true;
 	}
 	catch (const Exception &e) {
@@ -188,8 +184,6 @@ void Backend::doStop() noexcept
 			Log::warn("vkDeviceWaitIdle returned {}, ignoring...", gfx::vk::VulkanUtils::getVkResultString(res));
 		}
 	}
-
-	m_impl.destructModule(m_terrain_renderer);
 
 	m_impl.destructModule(m_pipeline_collection);
 

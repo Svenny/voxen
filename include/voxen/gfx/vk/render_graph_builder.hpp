@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 
@@ -9,8 +10,6 @@
 
 namespace voxen::gfx::vk
 {
-
-class Device;
 
 struct RenderGraphPrivate;
 
@@ -79,9 +78,9 @@ public:
 	RenderGraphBuilder &operator=(const RenderGraphBuilder &) = delete;
 	~RenderGraphBuilder() noexcept;
 
-	// Vulkan device used by this render graph system.
+	// `GfxSystem` instance owning this render graph system.
 	// It is guaranteed to be the same during any further execution.
-	Device &device() noexcept;
+	GfxSystem &gfxSystem() noexcept;
 
 	// Format of the output (swapchain) image. It will not change until
 	// the next rebuild. Use `makeOutputRenderTarget()` to draw to it.

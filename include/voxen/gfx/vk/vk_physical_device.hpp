@@ -64,9 +64,11 @@ public:
 		bool have_mesh_shader = false;
 		bool have_push_descriptor = false;
 		bool have_swapchain = false;
+		bool have_maximal_reconvergence = false;
 
 		VkPhysicalDeviceMaintenance5FeaturesKHR feats_maintenance5;
 		VkPhysicalDeviceMeshShaderFeaturesEXT feats_mesh_shader;
+		VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR feats_maximal_reconvergence;
 
 		VkPhysicalDeviceMaintenance5PropertiesKHR props_maintenance5;
 		VkPhysicalDeviceMeshShaderPropertiesEXT props_mesh_shader;

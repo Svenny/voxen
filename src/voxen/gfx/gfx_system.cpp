@@ -133,7 +133,7 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 	m_land_loader.reset(new (comp.land_loader) LandLoader(*this, svc));
 	m_font_renderer.reset(new (comp.font_renderer) FontRenderer(*this));
 
-	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*m_vk_device, main_window));
+	m_vk_render_graph_runner.reset(new (comp.vk_render_graph_runner) vk::RenderGraphRunner(*this, main_window));
 	m_render_graph = std::make_shared<vk::LegacyRenderGraph>();
 	m_vk_render_graph_runner->attachGraph(m_render_graph);
 
