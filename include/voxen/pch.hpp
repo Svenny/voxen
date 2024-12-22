@@ -16,6 +16,8 @@
 #include <extras/source_location.hpp>
 #include <extras/string_utils.hpp>
 
+#include <cpp/result.hpp>
+
 // `glm.hpp` and `ext.hpp` should include all non-experimental GLM
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
