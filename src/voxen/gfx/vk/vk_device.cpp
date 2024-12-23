@@ -367,7 +367,7 @@ bool Device::isSupported(PhysicalDevice &pd)
 	auto &ext_info = pd.extInfo();
 
 	if (!ext_info.have_maintenance5) {
-		missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//missing.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 	}
 	if (!ext_info.have_push_descriptor) {
 		missing.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -376,7 +376,7 @@ bool Device::isSupported(PhysicalDevice &pd)
 		missing.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
 	if (!ext_info.have_maximal_reconvergence) {
-		missing.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
+		//missing.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
 	}
 
 	if (!missing.empty()) {
@@ -484,6 +484,7 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan13Features features13 = {};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	features13.pNext = &features_maintenance5;
+	features13.pNext = nullptr;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
 	features13.maintenance4 = VK_TRUE;
@@ -573,10 +574,10 @@ void Device::createDevice()
 	VkPhysicalDeviceMeshShaderFeaturesEXT features_mesh_shader = {};
 	{
 		// Required extensions
-		ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+		//ext_list.emplace_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 		ext_list.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		ext_list.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
+		//ext_list.emplace_back(VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME);
 
 		auto &ext_info = m_phys_device.extInfo();
 

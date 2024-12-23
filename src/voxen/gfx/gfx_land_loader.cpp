@@ -1,6 +1,7 @@
 #include <voxen/gfx/gfx_land_loader.hpp>
 
 #include <voxen/common/world_state.hpp>
+#include <voxen/debug/uid_registry.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/land/land_messages.hpp>
@@ -32,9 +33,8 @@ public:
 
 	LandLoaderImpl(GfxSystem &gfx, svc::ServiceLocator &svc) : m_gfx(gfx)
 	{
-		// HELL YEAH!!!
-		UID my_uid = UID::generateRandom();
-		m_message_sender = svc.requestService<svc::MessagingService>().createSender(my_uid);
+		debug::UidRegistry::registerLiteral(LAND_LOADER_DOMAIN_UID, "voxen::gfx::LandLoader");
+		m_message_sender = svc.requestService<svc::MessagingService>().createSender(LAND_LOADER_DOMAIN_UID);
 	}
 
 	void onNewState(const WorldState &state)

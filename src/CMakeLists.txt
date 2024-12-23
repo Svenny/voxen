@@ -55,6 +55,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/standard_render_graph.cpp
 	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
@@ -87,15 +88,19 @@ set(VOXEN_SOURCES
 	src/voxen/land/land_storage_tree_nodes.cpp
 	src/voxen/land/land_storage_tree_node_ptr.cpp
 	src/voxen/land/land_storage_tree_private.hpp
+	src/voxen/land/private_storage_tree.cpp
 	src/voxen/land/pseudo_chunk_data.cpp
 	src/voxen/land/pseudo_chunk_surface.cpp
 	src/voxen/land/storage_tree_utils.cpp
 	src/voxen/land/storage_tree_utils_private.hpp
+	src/voxen/os/file.cpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
+	src/voxen/svc/asset_service.cpp
 	src/voxen/svc/engine.cpp
+	src/voxen/svc/file_service.cpp
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp
 	src/voxen/svc/message_sender.cpp
