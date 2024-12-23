@@ -36,6 +36,14 @@ VOXEN_API size_t numRawBytes(const PngInfo &info) noexcept;
 // NOTE: `bytes.size()` must be equal to `numRawBytes(info)`.
 VOXEN_API extras::dyn_array<std::byte> pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y);
 
+// Unpack PNG stream into raw image, returning array of unpacked bytes.
+// An exception will be thrown if the PNG data cannot be decoded/unpacked.
+// The first row in memory is assumed topmost, use `flip_y` to change that (flip image vertically).
+//
+// NOTE: this function is extremely bare-bone and is not suitable for production use.
+// It will reject most of valid PNG streams not similar to those produced by `pack()` function.
+VOXEN_API extras::dyn_array<std::byte> unpack(std::span<const std::byte> bytes, PngInfo &info, bool flip_y);
+
 } // namespace PngTools
 
 } // namespace voxen::assets
