@@ -135,6 +135,7 @@ set(VOXEN_HEADERS
 	include/voxen/svc/message_sender.hpp
 	include/voxen/svc/message_types.hpp
 	include/voxen/svc/messaging_service.hpp
+	include/voxen/svc/pipe_memory_function.hpp
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp
 	include/voxen/svc/svc_fwd.hpp
