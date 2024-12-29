@@ -352,4 +352,80 @@ TEST_CASE("'TaskService' test case 6", "[voxen::svc::task_service]")
 	CHECK(sum_counter.load() == 1000);
 }
 
+namespace
+{
+
+CoroSubTaskToken coroSubTask(RawCoroTaskHandle, int depth, int value, int *out_sum);
+
+class MyAwaitable : public CoroTaskAwaitableBase<MyAwaitable> {
+public:
+	MyAwaitable(int depth, int value) noexcept : m_depth(depth), m_value(value) {}
+
+	void doSuspend(RawCoroTaskHandle handle) noexcept { coroSubTask(handle, m_depth, m_value, &m_value); }
+
+	constexpr int doResume() const noexcept { return m_value; }
+
+private:
+	int m_depth = 0;
+	int m_value = 0;
+};
+
+CoroSubTaskToken coroSubTask(RawCoroTaskHandle, int depth, int value, int *out_sum)
+{
+	int sum = 0;
+
+	if (depth == 0) {
+		if (value == 13) {
+			throw std::runtime_error("boom");
+		} else {
+			sum += value;
+		}
+	} else {
+		sum += co_await MyAwaitable(depth - 1, value);
+	}
+
+	*out_sum += sum;
+	co_return;
+}
+
+CoroTaskHandle coroTaskWithSubTasks(int depth, int value, std::atomic_size_t &fails, std::atomic_size_t &out_sum)
+{
+	int sum = 0;
+
+	try {
+		sum += co_await MyAwaitable(depth - 1, value);
+	}
+	catch (...) {
+		fails.fetch_add(1);
+	}
+
+	out_sum.fetch_add(size_t(sum));
+	co_return;
+}
+
+} // namespace
+
+TEST_CASE("'TaskService' test case 7", "[voxen::svc::task_service]")
+{
+	auto engine = Engine::create();
+	TaskBuilder bld(engine->serviceLocator().requestService<TaskService>());
+
+	// Launch coroutines with sub-tasks
+	uint64_t task_counters[64];
+
+	std::atomic_size_t fails = 0;
+	std::atomic_size_t sum = 0;
+
+	for (size_t i = 0; i < std::size(task_counters); i++) {
+		bld.enqueueTask(coroTaskWithSubTasks(2, int(i), fails, sum));
+		task_counters[i] = bld.getLastTaskCounter();
+	}
+
+	bld.addWait(task_counters);
+	bld.enqueueSyncPoint().wait();
+
+	CHECK(fails.load() == 1);
+	CHECK(sum.load() == 6009);
+}
+
 } // namespace voxen::svc

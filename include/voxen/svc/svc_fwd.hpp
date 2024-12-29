@@ -3,6 +3,8 @@
 namespace voxen::svc
 {
 
+class CoroSubTaskState;
+class CoroSubTaskToken;
 class CoroTaskContext;
 class CoroTaskHandle;
 class CoroTaskState;
