@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/svc/pipe_memory_function.hpp>
+#include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_handle.hpp>
 
 #include <atomic>
@@ -32,6 +34,8 @@ private:
 // - Wait counters array, immediately after the struct
 // - Functor storage bytes for lambda captures etc. + possible alignment
 struct TaskHeader {
+	constexpr static uint32_t MAX_WAIT_COUNTERS = (1u << 31) - 1u;
+
 	// Atomic value for per-task locking, status, refcounting etc.
 	// In current implementation, stores:
 	// Bits [15:0] - refcount (initially 1 from header pointer after allocation)
@@ -42,28 +46,39 @@ struct TaskHeader {
 	std::atomic_uint32_t atomic_word = 1;
 	// Number of valid counter values in `waitCountersArray()`.
 	// When it reaches zero, the task becomes ready to execute.
-	uint16_t num_wait_counters = 0;
-	// Offset (bytes) from the beginning of this struct to the functor storage.
-	uint16_t functor_storage_offset = 0;
-	// Thunk to functor call operator, can be null for "sync point" tasks
-	void (*call_fn)(void *functor_storage, TaskContext &ctx) = nullptr;
-	// Thunk to functor destructor, can be null
-	void (*dtor_fn)(void *functor_storage) noexcept = nullptr;
+	uint32_t num_wait_counters : 31 = 0;
+	// Whether `function` or `coroutine` is the active member of `executable`
+	uint32_t stores_coroutine : 1 = 0;
+
+	// Executable object, either function or coroutine (can be none for "sync point" tasks).
+	// Note: initialized with empty function (conforms to `stores_coroutine = 0` initializer).
+	union ExecutableUnion {
+		PipeMemoryFunction<void(TaskContext &ctx)> function = {};
+		CoroTaskHandle coroutine;
+
+		ExecutableUnion() noexcept {}
+		~ExecutableUnion() noexcept {}
+	} executable;
+
 	// Special handle to the parent task, if not null then this task is its continuation.
 	// Completion signal must be propagated to it through `PrivateTaskHandle::complete()`.
-	// Destroying the object with active (uncompleted) parent reference willmake
+	// Destroying the object with active (uncompleted) parent reference will make
 	// parent's counter never complete, and will then blow up the whole task system.
 	ParentTaskHandle parent_handle;
 	// Counter value associated with this task.
 	// Note - the last field of this struct aligns the immediately following wait counters array.
 	uint64_t task_counter = 0;
 
-	uint64_t *waitCountersArray() noexcept { return reinterpret_cast<uint64_t *>(this + 1); }
-
-	void *functorStorage() const noexcept
+	~TaskHeader() noexcept
 	{
-		return reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(this) + functor_storage_offset);
+		if (stores_coroutine) {
+			executable.coroutine.~CoroTaskHandle();
+		} else {
+			executable.function.~PipeMemoryFunction();
+		}
 	}
+
+	uint64_t *waitCountersArray() noexcept { return reinterpret_cast<uint64_t *>(this + 1); }
 };
 
 // Internal extended version of `TaskHandle`

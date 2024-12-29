@@ -4,6 +4,7 @@
 #include <voxen/visibility.hpp>
 
 #include <cstddef>
+#include <type_traits>
 
 namespace voxen
 {
@@ -79,6 +80,28 @@ public:
 	//
 	// NOTE: every allocation must be deallocated *before* the service is stopped.
 	static void deallocate(void* ptr) noexcept;
+
+	// Allocate and construct an object, semantic equivalent of `new T(args...)`.
+	// If the object constructor throws, memory is automatically deallocated.
+	// Otherwise, the caller owns the returned pointer and must destory/deallocate it.
+	template<typename T, typename... Args>
+	[[nodiscard]] static T* make(Args&&... args)
+	{
+		void* storage = allocate(sizeof(T), alignof(T));
+
+		// Don't codegen unnecessary try/catch sections if the object is nothrow constructible
+		if constexpr (std::is_nothrow_constructible_v<T, Args...>) {
+			return new (storage) T(std::forward<Args>(args)...);
+		} else {
+			try {
+				return new (storage) T(std::forward<Args>(args)...);
+			}
+			catch (...) {
+				deallocate(storage);
+				throw;
+			}
+		}
+	}
 };
 
 // Implementing std allocator semantics, usable in containers etc.

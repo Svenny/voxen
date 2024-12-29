@@ -141,6 +141,7 @@ set(VOXEN_HEADERS
 	include/voxen/svc/svc_fwd.hpp
 	include/voxen/svc/task_builder.hpp
 	include/voxen/svc/task_context.hpp
+	include/voxen/svc/task_coro.hpp
 	include/voxen/svc/task_handle.hpp
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/aabb.hpp

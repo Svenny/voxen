@@ -44,10 +44,34 @@ void TaskBuilder::addWait(std::span<const uint64_t> counters)
 	wait_cnt.insert(wait_cnt.end(), counters.begin(), counters.end());
 }
 
+void TaskBuilder::enqueueTask(PipeMemoryFunction<void(TaskContext &)> fn)
+{
+	createTaskHandle(std::move(fn));
+	doEnqueueTask();
+}
+
+void TaskBuilder::enqueueTask(CoroTaskHandle handle)
+{
+	createTaskHandle(std::move(handle));
+	doEnqueueTask();
+}
+
+TaskHandle TaskBuilder::enqueueTaskWithHandle(PipeMemoryFunction<void(TaskContext &)> fn)
+{
+	createTaskHandle(std::move(fn));
+	return doEnqueueTaskWithHandle();
+}
+
+TaskHandle TaskBuilder::enqueueTaskWithHandle(CoroTaskHandle handle)
+{
+	createTaskHandle(std::move(handle));
+	return doEnqueueTaskWithHandle();
+}
+
 TaskHandle TaskBuilder::enqueueSyncPoint()
 {
 	// Quite literally an empty task enqueue
-	createTaskHandle(0);
+	createTaskHandle();
 	return doEnqueueTaskWithHandle();
 }
 
@@ -56,7 +80,7 @@ uint64_t TaskBuilder::getLastTaskCounter() const noexcept
 	return m_impl->last_task_counter;
 }
 
-void *TaskBuilder::createTaskHandle(size_t functor_size)
+detail::TaskHeader *TaskBuilder::createTaskHandle()
 {
 	auto &wait_cnt = m_impl->wait_counters;
 
@@ -75,8 +99,7 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	auto first_zero = std::remove(wait_cnt.begin(), wait_cnt.end(), 0);
 	wait_cnt.erase(first_zero, wait_cnt.end());
 
-	// Try eliminating already completed counters if there are too many.
-	// Might help with countering uint16 overflow, see below.
+	// Try eagerly eliminating already completed counters if there are too many
 	constexpr size_t TRIM_THRESHOLD = 32;
 	if (wait_cnt.size() > TRIM_THRESHOLD) [[unlikely]] {
 		size_t remaining = m_impl->service.eliminateCompletedWaitCounters(wait_cnt);
@@ -86,42 +109,41 @@ void *TaskBuilder::createTaskHandle(size_t functor_size)
 	size_t size = sizeof(detail::TaskHeader);
 	size += sizeof(uint64_t) * wait_cnt.size();
 
-	// `num_wait_counters` and `functor_storage_offset` are 16 bits.
-	// Counters are before the functor and are 8 bytes each, their total size will
-	// overflow uint16 (in `functor_storage_offset`) much faster than their number.
-	// So enough to do one check.
-	// This is achievable in practice, make sure the bug never goes unnoticed.
-	//
-	// TODO: do more elimination attempts (might happen on large system shutdown)
-	if (size > UINT16_MAX) [[unlikely]] {
+	// Number of counters is stored in 31-bit value.
+	// Limit is really high and should be never encountered in practice.
+	if (wait_cnt.size() > detail::TaskHeader::MAX_WAIT_COUNTERS) [[unlikely]] {
 		// Not that the user can somehow recover from this error
-		debug::bugFound("TaskBuilder: uint16 overflow in task header; too many wait counters");
+		debug::bugFound("TaskBuilder: overflow in task header; too many wait counters");
 	}
-
-	// Don't forget to add functor size after the check.
-	// We have static asserts that there is enough alignment for counters and functor.
-	size += functor_size;
 
 	void *place = PipeMemoryAllocator::allocate(size, alignof(detail::TaskHeader));
 	auto *header = new (place) detail::TaskHeader();
 
-	header->num_wait_counters = static_cast<uint16_t>(wait_cnt.size());
-	header->functor_storage_offset = static_cast<uint16_t>(size - functor_size);
+	header->num_wait_counters = static_cast<decltype(header->num_wait_counters)>(wait_cnt.size());
 	header->parent_handle.setParent(m_impl->parent_task_header);
 	// Write wait counters array
 	std::copy_n(wait_cnt.data(), wait_cnt.size(), header->waitCountersArray());
-	// Don't forget to reset it - the next task should not wait on the same counters
+	// Don't forget to reset the source one - the next task should not wait on the same counters
 	wait_cnt.clear();
 
 	m_impl->last_task_handle = detail::PrivateTaskHandle(header);
-	return header->functorStorage();
+	return header;
 }
 
-void TaskBuilder::setTaskPayload(TaskPayloadInfo info)
+void TaskBuilder::createTaskHandle(PipeMemoryFunction<void(TaskContext &)> fn)
 {
-	detail::TaskHeader *header = m_impl->last_task_handle.get();
-	header->call_fn = info.call;
-	header->dtor_fn = info.dtor;
+	detail::TaskHeader *header = createTaskHandle();
+	header->executable.function = std::move(fn);
+}
+
+void TaskBuilder::createTaskHandle(CoroTaskHandle handle)
+{
+	detail::TaskHeader *header = createTaskHandle();
+	// Task handle stores empty function by default, call destructor
+	// before switching the active member to be formally correct
+	header->executable.function.~PipeMemoryFunction();
+	header->stores_coroutine = 1;
+	new (&header->executable.coroutine) CoroTaskHandle(std::move(handle));
 }
 
 void TaskBuilder::doEnqueueTask()

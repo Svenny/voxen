@@ -106,6 +106,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/service_locator.cpp
 	src/voxen/svc/task_builder.cpp
 	src/voxen/svc/task_context.cpp
+	src/voxen/svc/task_coro.cpp
 	src/voxen/svc/task_handle.cpp
 	src/voxen/svc/task_handle_private.hpp
 	src/voxen/svc/task_counter_tracker.hpp
