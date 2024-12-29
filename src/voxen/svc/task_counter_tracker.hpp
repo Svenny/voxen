@@ -22,6 +22,7 @@ public:
 	uint64_t allocateCounter() noexcept;
 	void completeCounter(uint64_t value);
 
+	bool isCounterComplete(uint64_t counter) noexcept;
 	size_t trimCompleteCounters(std::span<uint64_t> counters) noexcept;
 
 private:

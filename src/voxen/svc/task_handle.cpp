@@ -29,12 +29,6 @@ void doReleaseRef(detail::TaskHeader *header) noexcept
 		return;
 	}
 
-	if (header->dtor_fn) [[likely]] {
-		// Dtor might be missing if this header was not fully constructed in `TaskBuilder`,
-		// otherwise it's quite rare (trivially destructible functor storage optimization?)
-		header->dtor_fn(header->functorStorage());
-	}
-
 	header->~TaskHeader();
 	PipeMemoryAllocator::deallocate(header);
 }

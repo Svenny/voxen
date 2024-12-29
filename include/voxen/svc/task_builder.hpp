@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/svc/pipe_memory_function.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_handle.hpp>
 #include <voxen/visibility.hpp>
@@ -11,10 +12,6 @@
 
 namespace voxen::svc
 {
-
-// Task callable object must have function-like signature `task(TaskContext &ctx)`
-template<typename T>
-concept CTaskObject = std::is_nothrow_destructible_v<T> && std::is_invocable_v<T, TaskContext &>;
 
 // Provides interface to setup and enqueue tasks for asynchronous execution.
 // This class is intended to be used within the scope of a single function.
@@ -64,23 +61,19 @@ public:
 	// Behaves exactly as if a single-value `addWait()` is called for every value
 	void addWait(std::span<const uint64_t> counters);
 
-	// Enqueue task defined by functor (callable object).
-	// There is no way to retrieve `TaskHandle` for it.
-	template<CTaskObject T>
-	void enqueueTask(T &&task)
-	{
-		createTask(std::forward<T>(task));
-		doEnqueueTask();
-	}
+	// Enqueue a task containing a functor (callable object).
+	// There is no way to retrieve `TaskHandle` for it later.
+	void enqueueTask(PipeMemoryFunction<void(TaskContext &)> fn);
+	// Enqueue a task containing a coroutine.
+	// There is no way to retrieve `TaskHandle` for it later.
+	void enqueueTask(CoroTaskHandle handle);
 
-	// Enqueue a task defined by functor (callable object)
-	// and return a `TaskHandle` pointing to it.
-	template<CTaskObject T>
-	TaskHandle enqueueTaskWithHandle(T &&task)
-	{
-		createTask(std::forward<T>(task));
-		return doEnqueueTaskWithHandle();
-	}
+	// Enqueue a task containing a functor (callable object)
+	// and return a `TaskHandle` tracking its execution.
+	TaskHandle enqueueTaskWithHandle(PipeMemoryFunction<void(TaskContext &)> fn);
+	// Enqueue a task containing a coroutine
+	// and return a `TaskHandle` tracking its execution.
+	TaskHandle enqueueTaskWithHandle(CoroTaskHandle handle);
 
 	// Conceptually this is equal to `enqueueTaskWithHandle(<empty lambda>)`.
 	// An idiomatic way to get a "group" handle to wait for a set of tasks (`addWait()`).
@@ -96,28 +89,9 @@ private:
 	struct Impl;
 	extras::pimpl<Impl, 64, 8> m_impl;
 
-	struct TaskPayloadInfo {
-		void (*call)(void *functor_storage, TaskContext &ctx);
-		void (*dtor)(void *functor_storage) noexcept;
-	};
-
-	template<CTaskObject T>
-	void createTask(T &&task)
-	{
-		using FT = std::remove_cvref_t<T>;
-		static_assert(alignof(FT) <= alignof(uint64_t), "Task functor is over-aligned");
-
-		void *functor_storage = createTaskHandle(sizeof(FT));
-		new (functor_storage) FT(std::forward<FT>(task));
-
-		setTaskPayload({
-			.call = [](void *ptr, TaskContext &ctx) { reinterpret_cast<FT *>(ptr)->operator()(ctx); },
-			.dtor = [](void *ptr) noexcept { reinterpret_cast<FT *>(ptr)->~FT(); },
-		});
-	}
-
-	void *createTaskHandle(size_t functor_size);
-	void setTaskPayload(TaskPayloadInfo info);
+	detail::TaskHeader *createTaskHandle();
+	void createTaskHandle(PipeMemoryFunction<void(TaskContext &)> fn);
+	void createTaskHandle(CoroTaskHandle handle);
 	void doEnqueueTask();
 	TaskHandle doEnqueueTaskWithHandle();
 };

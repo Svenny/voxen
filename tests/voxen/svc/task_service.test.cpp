@@ -2,6 +2,7 @@
 
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/task_builder.hpp>
+#include <voxen/svc/task_coro.hpp>
 
 #include "../../voxen_test_common.hpp"
 
@@ -302,6 +303,53 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 	}
 
 	CHECK(dependency_errors.load() == 0);
+}
+
+namespace
+{
+
+CoroTaskHandle recursiveCoroTask(size_t num_subtasks, int depth, std::atomic_size_t &counter)
+{
+	CoroTaskContext &ctx = co_await CoroTaskContext::current();
+	TaskBuilder bld(ctx.taskService());
+
+	if (depth == 0) {
+		counter.fetch_add(1);
+		co_return;
+	}
+
+	std::atomic_size_t local_counter = 0;
+
+	for (size_t i = 0; i < num_subtasks; i++) {
+		bld.enqueueTask(recursiveCoroTask(num_subtasks, depth - 1, std::ref(local_counter)));
+		co_await ctx.waitTaskCounter(bld.getLastTaskCounter());
+	}
+
+	counter.fetch_add(local_counter.load());
+}
+
+} // namespace
+
+TEST_CASE("'TaskService' test case 6", "[voxen::svc::task_service]")
+{
+	auto engine = Engine::create();
+	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
+
+	std::atomic_size_t sum_counter = 0;
+
+	// Launch a recursive tree of coroutine tasks waiting for their subtrees
+	TaskBuilder bld(ts);
+	uint64_t task_counters[10];
+
+	for (size_t i = 0; i < std::size(task_counters); i++) {
+		bld.enqueueTask(recursiveCoroTask(10, 2, std::ref(sum_counter)));
+		task_counters[i] = bld.getLastTaskCounter();
+	}
+
+	bld.addWait(task_counters);
+	bld.enqueueSyncPoint().wait();
+
+	CHECK(sum_counter.load() == 1000);
 }
 
 } // namespace voxen::svc

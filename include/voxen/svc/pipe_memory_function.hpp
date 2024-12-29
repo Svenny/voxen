@@ -38,31 +38,19 @@ constexpr bool IS_PIPE_MEMORY_FUNCTION<PipeMemoryFunction<T>> = true;
 //
 // To avoid accidental double wrapping, `PipeMemoryObject` itself cannot be stored there.
 template<typename T, typename Res, typename... Args>
-concept CPipeMemoryFunctionLambda = std::is_class_v<T> && std::is_invocable_r_v<Res, T, Args...>
-	&& !detail::IS_PIPE_MEMORY_FUNCTION<T>;
+concept CPipeMemoryFunctionLambda = std::is_class_v<std::remove_reference_t<T>> && std::is_nothrow_destructible_v<T>
+	&& std::is_invocable_r_v<Res, T, Args...> && !detail::IS_PIPE_MEMORY_FUNCTION<T>;
 
 template<typename Res, typename... Args>
 class PipeMemoryFunction<Res(Args...)> {
 public:
+	PipeMemoryFunction() = default;
+
 	template<CPipeMemoryFunctionLambda<Res, Args...> Fn>
 	PipeMemoryFunction(Fn &&fn)
 	{
 		using ST = Storage<Fn>;
-		void *storage = PipeMemoryAllocator::allocate(sizeof(ST), alignof(ST));
-
-		// Don't codegen unnecessary try/catch sections if the functor is nothrow constructible
-		if constexpr (!std::is_nothrow_constructible_v<Fn, Fn>) {
-			try {
-				m_storage = new (storage) ST { .object = std::forward<Fn>(fn) };
-			}
-			catch (...) {
-				PipeMemoryAllocator::deallocate(storage);
-				throw;
-			}
-		} else {
-			m_storage = new (storage) ST { .object = std::forward<Fn>(fn) };
-		}
-
+		m_storage = PipeMemoryAllocator::make<ST>(std::forward<Fn>(fn));
 		m_storage->dtor = [](void *thiz) noexcept { reinterpret_cast<ST *>(thiz)->~ST(); };
 		m_storage->invoker = [](void *thiz, TParam<Args>... args) -> Res {
 			// Have no `std::invoke_r<Res>` before C++23
@@ -91,7 +79,9 @@ public:
 	}
 
 	PipeMemoryFunction(const PipeMemoryFunction &) = delete;
-	PipeMemoryFunction &operator=(const PipeMemoryFunction) = delete;
+	PipeMemoryFunction &operator=(const PipeMemoryFunction &) = delete;
+
+	operator bool() const noexcept { return m_storage != nullptr; }
 
 	Res operator()(Args... args) { return m_storage->invoker(m_storage, std::forward<Args>(args)...); }
 
@@ -110,6 +100,7 @@ private:
 
 	template<CPipeMemoryFunctionLambda<Res, Args...> Fn>
 	struct Storage : StorageHeader {
+		Storage(Fn &&fn) : object(std::forward<Fn>(fn)) {}
 		Fn object;
 	};
 

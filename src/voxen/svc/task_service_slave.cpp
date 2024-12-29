@@ -25,15 +25,53 @@ struct SlaveState {
 	std::vector<PrivateTaskHandle> local_waiting_queue = {};
 };
 
-void executeAndResetTask(SlaveState &state, PrivateTaskHandle &task)
+// Attempts to execute task if possible (not blocked on anything).
+// Returns `true` and automatically destroys task object if it was finished.
+// Regular function tasks will be finished after the first call while
+// coroutine tasks can require multiple entries if they suspend on something.
+bool tryExecuteAndResetTask(SlaveState &state, PrivateTaskHandle &task)
 {
 	TaskHeader *header = task.get();
 
-	// Sync point tasks have no functor
-	if (header->call_fn) [[likely]] {
-		TaskContext ctx(state.task_service, task);
-		// TODO: exception safety, wrap in try/catch and store the exception
-		header->call_fn(header->functorStorage(), ctx);
+	if (header->num_wait_counters > 0) {
+		// Can't run yet
+		return false;
+	}
+
+	if (header->stores_coroutine) {
+		CoroTaskHandle &coro_handle = header->executable.coroutine;
+		// Well, in theory user could enqueue null handle or a terminated coroutine... but what for?
+		if (coro_handle.runnable()) [[likely]] {
+			CoroTaskState &coro_state = coro_handle.state();
+
+			uint64_t blocked_on_counter = coro_state.blockedOnCounter();
+			if (blocked_on_counter > 0) {
+				if (state.counter_tracker.isCounterComplete(blocked_on_counter)) {
+					coro_state.setBlockedOnCounter(0);
+				} else {
+					// Coroutine is still blocked awaiting something
+					return false;
+				}
+			}
+
+			// TODO: don't recreate context every time (though it holds no state now)
+			CoroTaskContext ctx(state.task_service);
+			coro_state.setContext(&ctx);
+			// TODO: exception safety, wrap in try/catch and store the exception
+			coro_handle.resume();
+
+			if (!coro_handle.done()) {
+				// Coroutine was suspended, can't complete/destroy it yet
+				return false;
+			}
+		}
+	} else {
+		// Sync point tasks can have no functor
+		if (header->executable.function) [[likely]] {
+			TaskContext ctx(state.task_service, task);
+			// TODO: exception safety, wrap in try/catch and store the exception
+			header->executable.function(ctx);
+		}
 	}
 
 	// TODO: defer enqueueing continuations until this point.
@@ -53,6 +91,8 @@ void executeAndResetTask(SlaveState &state, PrivateTaskHandle &task)
 	} else {
 		task.reset();
 	}
+
+	return true;
 }
 
 // Update wait status of all tasks in the local queue and execute them if possible.
@@ -68,11 +108,8 @@ void tryDrainLocalQueue(SlaveState &state)
 			std::span(header->waitCountersArray(), header->num_wait_counters));
 		header->num_wait_counters = static_cast<decltype(header->num_wait_counters)>(remaining_counters);
 
-		if (remaining_counters == 0) {
-			// Ready now, execute and reset it, leaving an empty spot in the vector
-			executeAndResetTask(state, state.local_waiting_queue[i]);
-		} else {
-			// Still not ready, move this task into the first empty spot.
+		if (!tryExecuteAndResetTask(state, state.local_waiting_queue[i])) {
+			// Still not ready/finished, move this task into the first empty spot.
 			// If no task was reset in the above branch yet, this will just swap with itself.
 			std::swap(state.local_waiting_queue[i], state.local_waiting_queue[remaining_tasks]);
 			remaining_tasks++;
@@ -102,19 +139,15 @@ void TaskServiceSlave::threadFn(TaskService &my_service, size_t my_queue, TaskCo
 
 	// When the queue returns null handle it means a stop flag was raised
 	while (task.valid()) {
-		TaskHeader *header = task.get();
-
-		if (header->num_wait_counters > 0) {
-			// This task might be not executable right away.
+		if (!tryExecuteAndResetTask(state, task)) {
+			// This task is not executable right away or was not done in one go (coroutine task).
 			// Put it in the local queue and immediately try draining it while retaining FIFO order.
 			// Previous waiting tasks might be dependencies of this one. Hence trying to execute
 			// them first makes sense - might immediately unblock some waiting tasks added later.
 			state.local_waiting_queue.emplace_back(std::move(task));
 			tryDrainLocalQueue(state);
 		} else {
-			// Task without dependencies, execute it right away
-			executeAndResetTask(state, task);
-
+			// Done!
 			executed_independent_tasks++;
 			// TODO: adaptive/configurable constant?
 			if (!state.local_waiting_queue.empty() && executed_independent_tasks > 50) {

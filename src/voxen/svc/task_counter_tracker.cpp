@@ -30,7 +30,7 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 	bool appended = false;
 
 	// Try appending to an existing segment.
-	// We keep segments sorted as (first; last) tuples in reverse order:
+	// We keep segments sorted as [first; last] tuples in reverse order:
 	//    { [A0, B0], [A1, B1], ..., [Ak, Bk] }
 	//    Ai <= Bi
 	//    A0 > A1 > ... > Ak
@@ -91,6 +91,30 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 			segments.pop_back();
 		}
 	}
+}
+
+bool TaskCounterTracker::isCounterComplete(uint64_t counter) noexcept
+{
+	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
+	const uint64_t expected = counter / NUM_COMPLETION_LISTS;
+
+	if (list.fully_completed_value.load(std::memory_order_relaxed) >= expected) [[likely]] {
+		return true;
+	}
+
+	std::lock_guard lock(list.lock);
+	auto &segments = list.out_of_order_segments;
+
+	// XXX: segments are sorted so we could use binary search.
+	// Not sure if it's profitable (can have few segments) though, needs stats.
+	for (size_t i = 0; i < segments.size(); i++) {
+		// Check if expected value is inside the segment
+		if (segments[i].first <= expected && segments[i].second >= expected) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 size_t TaskCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) noexcept

@@ -3,6 +3,9 @@
 namespace voxen::svc
 {
 
+class CoroTaskContext;
+class CoroTaskHandle;
+class CoroTaskState;
 class Engine;
 class IService;
 class MessageQueue;
