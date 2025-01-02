@@ -54,7 +54,7 @@ struct TaskHeader {
 	// Note: initialized with empty function (conforms to `stores_coroutine = 0` initializer).
 	union ExecutableUnion {
 		PipeMemoryFunction<void(TaskContext &ctx)> function = {};
-		CoroTaskHandle coroutine;
+		CoroTask coroutine;
 
 		ExecutableUnion() noexcept {}
 		~ExecutableUnion() noexcept {}
@@ -72,7 +72,7 @@ struct TaskHeader {
 	~TaskHeader() noexcept
 	{
 		if (stores_coroutine) {
-			executable.coroutine.~CoroTaskHandle();
+			executable.coroutine.~CoroTask();
 		} else {
 			executable.function.~PipeMemoryFunction();
 		}

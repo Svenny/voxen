@@ -50,7 +50,7 @@ void TaskBuilder::enqueueTask(PipeMemoryFunction<void(TaskContext &)> fn)
 	doEnqueueTask();
 }
 
-void TaskBuilder::enqueueTask(CoroTaskHandle handle)
+void TaskBuilder::enqueueTask(CoroTask handle)
 {
 	createTaskHandle(std::move(handle));
 	doEnqueueTask();
@@ -62,7 +62,7 @@ TaskHandle TaskBuilder::enqueueTaskWithHandle(PipeMemoryFunction<void(TaskContex
 	return doEnqueueTaskWithHandle();
 }
 
-TaskHandle TaskBuilder::enqueueTaskWithHandle(CoroTaskHandle handle)
+TaskHandle TaskBuilder::enqueueTaskWithHandle(CoroTask handle)
 {
 	createTaskHandle(std::move(handle));
 	return doEnqueueTaskWithHandle();
@@ -136,14 +136,14 @@ void TaskBuilder::createTaskHandle(PipeMemoryFunction<void(TaskContext &)> fn)
 	header->executable.function = std::move(fn);
 }
 
-void TaskBuilder::createTaskHandle(CoroTaskHandle handle)
+void TaskBuilder::createTaskHandle(CoroTask handle)
 {
 	detail::TaskHeader *header = createTaskHandle();
 	// Task handle stores empty function by default, call destructor
 	// before switching the active member to be formally correct
 	header->executable.function.~PipeMemoryFunction();
 	header->stores_coroutine = 1;
-	new (&header->executable.coroutine) CoroTaskHandle(std::move(handle));
+	new (&header->executable.coroutine) CoroTask(std::move(handle));
 }
 
 void TaskBuilder::doEnqueueTask()

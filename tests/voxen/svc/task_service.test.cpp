@@ -308,21 +308,19 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 namespace
 {
 
-CoroTaskHandle recursiveCoroTask(size_t num_subtasks, int depth, std::atomic_size_t &counter)
+CoroTask recursiveCoroTask(TaskService &ts, size_t num_subtasks, int depth, std::atomic_size_t &counter)
 {
-	CoroTaskContext &ctx = co_await CoroTaskContext::current();
-	TaskBuilder bld(ctx.taskService());
-
 	if (depth == 0) {
 		counter.fetch_add(1);
 		co_return;
 	}
 
 	std::atomic_size_t local_counter = 0;
+	TaskBuilder bld(ts);
 
 	for (size_t i = 0; i < num_subtasks; i++) {
-		bld.enqueueTask(recursiveCoroTask(num_subtasks, depth - 1, std::ref(local_counter)));
-		co_await ctx.waitTaskCounter(bld.getLastTaskCounter());
+		bld.enqueueTask(recursiveCoroTask(ts, num_subtasks, depth - 1, local_counter));
+		co_await CoroFuture<>(bld.getLastTaskCounter());
 	}
 
 	counter.fetch_add(local_counter.load());
@@ -342,7 +340,7 @@ TEST_CASE("'TaskService' test case 6", "[voxen::svc::task_service]")
 	uint64_t task_counters[10];
 
 	for (size_t i = 0; i < std::size(task_counters); i++) {
-		bld.enqueueTask(recursiveCoroTask(10, 2, std::ref(sum_counter)));
+		bld.enqueueTask(recursiveCoroTask(ts, 10, 2, sum_counter));
 		task_counters[i] = bld.getLastTaskCounter();
 	}
 
@@ -355,48 +353,54 @@ TEST_CASE("'TaskService' test case 6", "[voxen::svc::task_service]")
 namespace
 {
 
-CoroSubTaskToken coroSubTask(RawCoroTaskHandle, int depth, int value, int *out_sum);
+CoroSubTask<void> coroSubTaskVoid()
+{
+	co_return;
+}
 
-class MyAwaitable : public CoroTaskAwaitableBase<MyAwaitable> {
-public:
-	MyAwaitable(int depth, int value) noexcept : m_depth(depth), m_value(value) {}
+CoroFuture<int> launchAsyncTask(TaskService &ts)
+{
+	auto ptr = std::allocate_shared<int>(TPipeMemoryAllocator<int>(), -1);
 
-	void doSuspend(RawCoroTaskHandle handle) noexcept { coroSubTask(handle, m_depth, m_value, &m_value); }
+	TaskBuilder bld(ts);
+	bld.enqueueTask([ptr](TaskContext &) { *ptr = 1; });
 
-	constexpr int doResume() const noexcept { return m_value; }
+	return { bld.getLastTaskCounter(), std::move(ptr) };
+}
 
-private:
-	int m_depth = 0;
-	int m_value = 0;
-};
-
-CoroSubTaskToken coroSubTask(RawCoroTaskHandle, int depth, int value, int *out_sum)
+CoroSubTask<int> coroSubTask(TaskService &ts, int depth, int value)
 {
 	int sum = 0;
+
+	auto future = launchAsyncTask(ts);
 
 	if (depth == 0) {
 		if (value == 13) {
 			throw std::runtime_error("boom");
-		} else {
-			sum += value;
 		}
+
+		sum = co_await future;
 	} else {
-		sum += co_await MyAwaitable(depth - 1, value);
+		sum += co_await coroSubTask(ts, depth - 1, value);
+		sum += co_await coroSubTask(ts, depth - 1, value);
+		sum += co_await future;
 	}
 
-	*out_sum += sum;
-	co_return;
+	co_return sum;
 }
 
-CoroTaskHandle coroTaskWithSubTasks(int depth, int value, std::atomic_size_t &fails, std::atomic_size_t &out_sum)
+CoroTask coroTaskWithSubTasks(TaskService &ts, int depth, int value, std::atomic_size_t &fails,
+	std::atomic_size_t &out_sum)
 {
 	int sum = 0;
 
 	try {
-		sum += co_await MyAwaitable(depth - 1, value);
+		sum += co_await coroSubTask(ts, depth - 1, value);
+		sum += co_await coroSubTask(ts, depth - 1, value);
 	}
 	catch (...) {
 		fails.fetch_add(1);
+		co_return;
 	}
 
 	out_sum.fetch_add(size_t(sum));
@@ -408,7 +412,11 @@ CoroTaskHandle coroTaskWithSubTasks(int depth, int value, std::atomic_size_t &fa
 TEST_CASE("'TaskService' test case 7", "[voxen::svc::task_service]")
 {
 	auto engine = Engine::create();
-	TaskBuilder bld(engine->serviceLocator().requestService<TaskService>());
+	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
+	TaskBuilder bld(ts);
+
+	// Basically just checks that it compiles
+	bld.enqueueTask([]() -> CoroTask { co_await coroSubTaskVoid(); }());
 
 	// Launch coroutines with sub-tasks
 	uint64_t task_counters[64];
@@ -417,7 +425,7 @@ TEST_CASE("'TaskService' test case 7", "[voxen::svc::task_service]")
 	std::atomic_size_t sum = 0;
 
 	for (size_t i = 0; i < std::size(task_counters); i++) {
-		bld.enqueueTask(coroTaskWithSubTasks(2, int(i), fails, sum));
+		bld.enqueueTask(coroTaskWithSubTasks(ts, 3, int(i), fails, sum));
 		task_counters[i] = bld.getLastTaskCounter();
 	}
 
@@ -425,7 +433,7 @@ TEST_CASE("'TaskService' test case 7", "[voxen::svc::task_service]")
 	bld.enqueueSyncPoint().wait();
 
 	CHECK(fails.load() == 1);
-	CHECK(sum.load() == 6009);
+	CHECK(sum.load() == 882); // 63 (one fail) * 14 (2*(1+2*(1+2*(1))))
 }
 
 } // namespace voxen::svc
