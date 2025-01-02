@@ -83,13 +83,14 @@ void CoroTaskState::updateSubTaskStack() noexcept
 
 void CoroTaskState::resumeStep(std::coroutine_handle<> my_coro)
 {
+	// Must not be blocked before entering this function
 	assert(m_blocked_on_counter == 0);
 
 	while (m_sub_task_stack_top) {
-		// Should be the last line in loop body but that would require one more if
-		m_sub_task_stack_top->m_next_sub_task = nullptr;
-
 		CoroSubTaskStateBase* top = m_sub_task_stack_top;
+		// Should be the last line in loop body but that would require one more if
+		top->m_next_sub_task = nullptr;
+
 		top->m_this_coroutine.resume();
 
 		if (!top->m_this_coroutine.done()) {
