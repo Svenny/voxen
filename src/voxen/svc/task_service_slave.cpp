@@ -25,7 +25,11 @@ struct SlaveState {
 	std::vector<PrivateTaskHandle> local_waiting_queue = {};
 };
 
-bool tryExecuteCoroutineTask(SlaveState &state, RawCoroTaskHandle coro)
+// Attempts to execute coroutine task, must not be "initially" blocked i.e. `num_wait_counters == 0`.
+// Check if the coroutine await stack is dynamically blocked (on an external task counter),
+// and if it's not, resumes coroutines until either one blocks again or all of them complete.
+// Returns `true` when the task is finished and can be destroyed/completion signaled.
+bool tryExecuteCoroutineTask(SlaveState &state, CoroTask::RawHandle coro)
 {
 	// Well, in theory user could enqueue null handle or a terminated coroutine... but what for?
 	if (!coro || coro.done()) [[unlikely]] {
@@ -44,9 +48,10 @@ bool tryExecuteCoroutineTask(SlaveState &state, RawCoroTaskHandle coro)
 		}
 	}
 
-	// TODO: exception safety, wrap in try/catch and store the exception.
-	// Well, `resume()` does not throw by itself, it will only save exception
-	// in the state object. So we should check for it when it becomes done.
+	// XXX: when sub-tasks throw it's OK, exceptions are propagated to awaiting "parents".
+	// But unhandled exceptions in the base task are silently swallowed. We should probably
+	// at least warn about that and print exception details where possible. Ideally we should
+	// establish some well-defined unhandled exception behavior unified with regular tasks.
 	coro_state.resumeStep(coro);
 
 	// Task is finished only when the main coroutine is done
