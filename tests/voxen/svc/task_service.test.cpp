@@ -318,9 +318,17 @@ CoroTask recursiveCoroTask(TaskService &ts, size_t num_subtasks, int depth, std:
 	std::atomic_size_t local_counter = 0;
 	TaskBuilder bld(ts);
 
+	std::vector<uint64_t> subtask_counters(num_subtasks);
+
+	// Launch subtasks in parallel
 	for (size_t i = 0; i < num_subtasks; i++) {
 		bld.enqueueTask(recursiveCoroTask(ts, num_subtasks, depth - 1, local_counter));
-		co_await CoroFuture<>(bld.getLastTaskCounter());
+		subtask_counters[i] = bld.getLastTaskCounter();
+	}
+
+	// Then wait for all of them (no API yet to wait for all at once)
+	for (size_t i = 0; i < num_subtasks; i++) {
+		co_await CoroFuture<>(subtask_counters[i]);
 	}
 
 	counter.fetch_add(local_counter.load());
