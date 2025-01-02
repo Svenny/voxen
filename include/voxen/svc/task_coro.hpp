@@ -3,19 +3,23 @@
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 
+#include <concepts>
 #include <coroutine>
 #include <exception>
+#include <memory>
 #include <new>
 #include <utility>
 
 namespace voxen::svc
 {
 
-using RawCoroTaskHandle = std::coroutine_handle<CoroTaskState>;
-using RawCoroSubTaskHandle = std::coroutine_handle<CoroSubTaskState>;
+using RawCoroTaskHandle = std::coroutine_handle<detail::CoroTaskState>;
+
+template<typename T>
+using RawCoroSubTaskHandle = std::coroutine_handle<detail::CoroSubTaskState<T>>;
 
 // Handle to a created task coroutine with `std::unique_ptr`-like semantics.
-// To convert an arbitrary function/labmda into a task coroutine, make this type
+// To convert an arbitrary function/lambda into a task coroutine, make this type
 // a return type of the function and use at least one `co_await/co_return` in its body.
 //
 // Then, when enqueuing this function, simply call it as argument of `TaskBuilder::enqueueTask()`.
@@ -23,40 +27,60 @@ using RawCoroSubTaskHandle = std::coroutine_handle<CoroSubTaskState>;
 //
 // In general, you should never create nor store objects of this type anywhere in your code.
 // NOTE: in any case, DO NOT call `resume()` manually, this is reserved for task service implementation.
-class VOXEN_API CoroTaskHandle final {
+class CoroTask final {
 public:
-	CoroTaskHandle(RawCoroTaskHandle handle) noexcept : m_handle(handle) {}
-	CoroTaskHandle(CoroTaskHandle &&other) noexcept : m_handle(std::exchange(other.m_handle, {})) {}
+	CoroTask(RawCoroTaskHandle handle) noexcept : m_handle(handle) {}
+	CoroTask(CoroTask &&other) noexcept : m_handle(std::exchange(other.m_handle, {})) {}
 
-	CoroTaskHandle &operator=(CoroTaskHandle &&other) noexcept
+	CoroTask &operator=(CoroTask &&other) noexcept
 	{
 		std::swap(m_handle, other.m_handle);
 		return *this;
 	}
 
-	CoroTaskHandle(const CoroTaskHandle &) = delete;
-	CoroTaskHandle &operator=(const CoroTaskHandle &) = delete;
+	CoroTask(const CoroTask &) = delete;
+	CoroTask &operator=(const CoroTask &) = delete;
 
-	~CoroTaskHandle()
+	~CoroTask()
 	{
 		if (m_handle) {
 			m_handle.destroy();
 		}
 	}
 
-	// Whether the coroutine has finished executing (UB for empty handles)
-	bool done() const noexcept { return m_handle.done(); }
-	// Whether the coroutine is valid to execute
-	bool runnable() const noexcept { return m_handle && !m_handle.done(); }
-	// Execute the coroutine until the next suspension point (UB for empty/done handles).
-	// DO NOT call outside of task service implementation!
-	void resume() const;
-
-	// Access the coroutine state block (UB for empty handles)
-	CoroTaskState &state() const noexcept { return m_handle.promise(); }
+	RawCoroTaskHandle get() const noexcept { return m_handle; }
 
 private:
 	RawCoroTaskHandle m_handle;
+};
+
+namespace detail
+{
+
+class VOXEN_API CoroTaskStateBase {
+public:
+	CoroTaskStateBase() = default;
+	CoroTaskStateBase(CoroTaskStateBase &&) = delete;
+	CoroTaskStateBase(const CoroTaskStateBase &) = delete;
+	CoroTaskStateBase &operator=(CoroTaskStateBase &&) = delete;
+	CoroTaskStateBase &operator=(const CoroTaskStateBase &) = delete;
+	~CoroTaskStateBase() = default;
+
+	constexpr std::suspend_always final_suspend() const noexcept { return {}; }
+	void unhandled_exception() noexcept;
+
+	void rethrowIfHasException();
+
+	uint64_t blockedOnCounter() const noexcept { return m_blocked_on_counter; }
+
+	static void *operator new(size_t bytes);
+	static void *operator new(size_t bytes, std::align_val_t align);
+	static void operator delete(void *ptr) noexcept;
+	static void operator delete(void *ptr, std::align_val_t align) noexcept;
+
+protected:
+	uint64_t m_blocked_on_counter = 0;
+	std::exception_ptr m_unhandled_exception;
 };
 
 // State block of a task coroutine. This is purely an implementation detail exposed
@@ -65,190 +89,172 @@ private:
 //
 // Class has new/delete overloads which use `PipeMemoryAllocator` so that
 // all task coroutines have their state and stack frames allocated there.
-class VOXEN_API CoroTaskState final {
+class VOXEN_API CoroTaskState final : public CoroTaskStateBase {
 public:
-	CoroTaskState() = default;
-	CoroTaskState(CoroTaskState &&) = delete;
-	CoroTaskState(const CoroTaskState &) = delete;
-	CoroTaskState &operator=(CoroTaskState &&) = delete;
-	CoroTaskState &operator=(const CoroTaskState &) = delete;
-	~CoroTaskState() = default;
-
-	CoroTaskHandle get_return_object() noexcept { return CoroTaskHandle(RawCoroTaskHandle::from_promise(*this)); }
+	CoroTask get_return_object() noexcept { return CoroTask(RawCoroTaskHandle::from_promise(*this)); }
 
 	constexpr std::suspend_always initial_suspend() const noexcept { return {}; }
-	constexpr std::suspend_always final_suspend() const noexcept { return {}; }
 	constexpr void return_void() const noexcept {}
 
-	void unhandled_exception() noexcept;
-
-	void retrowIfHasException();
-
-	CoroTaskContext *context() const noexcept { return m_context; }
-	void setContext(CoroTaskContext *context) noexcept { m_context = context; }
-
-	uint64_t blockedOnCounter() const noexcept { return m_blocked_on_counter; }
-	void setBlockedOnCounter(uint64_t counter) noexcept { m_blocked_on_counter = counter; }
-
-	RawCoroSubTaskHandle callStackTop() const noexcept { return m_call_stack_top; }
-	void setCallStackTop(RawCoroSubTaskHandle handle) noexcept { m_call_stack_top = handle; }
-
-	static void *operator new(size_t bytes);
-	static void *operator new(size_t bytes, std::align_val_t align);
-	static void operator delete(void *ptr) noexcept;
-	static void operator delete(void *ptr, std::align_val_t align) noexcept;
-
-private:
-	CoroTaskContext *m_context = nullptr;
-	uint64_t m_blocked_on_counter = 0;
-	std::exception_ptr m_exception;
-
-	RawCoroSubTaskHandle m_call_stack_top;
-};
-
-// Sub-task coroutines are owned by the base (call stack bottom) task state block.
-class CoroSubTaskToken final {};
-
-class VOXEN_API CoroSubTaskState final {
-public:
-	CoroSubTaskState(RawCoroTaskHandle base_task) noexcept;
-
-	// Compatibility with C++ "promise" construction rules - constructor must match all coroutine call args
-	template<typename... Args>
-	CoroSubTaskState(RawCoroTaskHandle base_task, Args &&.../*ignored*/) noexcept : CoroSubTaskState(base_task)
-	{}
-
-	~CoroSubTaskState();
-
-	CoroSubTaskState() = delete;
-	CoroSubTaskState(CoroSubTaskState &&) = delete;
-	CoroSubTaskState(const CoroSubTaskState &) = delete;
-	CoroSubTaskState &operator=(CoroSubTaskState &&) = delete;
-	CoroSubTaskState &operator=(const CoroSubTaskState &) = delete;
-
-	constexpr CoroSubTaskToken get_return_object() const noexcept { return {}; }
-	constexpr std::suspend_never initial_suspend() const noexcept { return {}; }
-	constexpr std::suspend_never final_suspend() const noexcept { return {}; }
-	constexpr void return_void() const noexcept {}
-
-	void unhandled_exception() noexcept;
-
-	RawCoroTaskHandle baseTaskHandle() const noexcept { return m_base_task; }
-	CoroTaskState *baseTaskState() const noexcept { return &m_base_task.promise(); }
-
-	static void *operator new(size_t bytes);
-	static void *operator new(size_t bytes, std::align_val_t align);
-	static void operator delete(void *ptr) noexcept;
-	static void operator delete(void *ptr, std::align_val_t align) noexcept;
-
-private:
-	RawCoroTaskHandle m_base_task;
-	RawCoroSubTaskHandle m_previous_task;
-};
-
-class VOXEN_API CoroTaskAwaitableBaseDetail {
-public:
 	void blockOnCounter(uint64_t counter) noexcept;
+	void blockOnSubTask(CoroSubTaskStateBase *sub_task) noexcept;
+
+	void updateSubTaskStack() noexcept;
+	void resumeStep(std::coroutine_handle<> my_coro);
+
+	void unblockCounter() noexcept { m_blocked_on_counter = 0; }
+
+private:
+	CoroSubTaskStateBase *m_sub_task_stack_top = nullptr;
+};
+
+class VOXEN_API CoroSubTaskStateBase : public CoroTaskStateBase {
+public:
+	constexpr std::suspend_never initial_suspend() const noexcept { return {}; }
+
+	void blockOnCounter(uint64_t counter) noexcept;
+	void blockOnSubTask(CoroSubTaskStateBase *sub_task) noexcept;
 
 protected:
-	void onSuspend(RawCoroTaskHandle handle) noexcept;
-	void onResume() const;
-
-	static RawCoroTaskHandle getBaseTaskHandle(RawCoroSubTaskHandle handle) noexcept;
-
+	std::coroutine_handle<> m_this_coroutine;
+	CoroSubTaskStateBase *m_next_sub_task = nullptr;
+	CoroSubTaskStateBase *m_prev_sub_task = nullptr;
 	CoroTaskState *m_base_task = nullptr;
+
+	friend class CoroTaskState;
 };
 
-template<typename Base>
-class VOXEN_API CoroTaskAwaitableBase : protected CoroTaskAwaitableBaseDetail {
+template<typename T>
+class CoroSubTaskState final : public CoroSubTaskStateBase {
 public:
-	CoroTaskAwaitableBase() = default;
-	CoroTaskAwaitableBase(CoroTaskAwaitableBase &&) = default;
-	CoroTaskAwaitableBase(const CoroTaskAwaitableBase &) = delete;
-	CoroTaskAwaitableBase &operator=(CoroTaskAwaitableBase &&) = default;
-	CoroTaskAwaitableBase &operator=(const CoroTaskAwaitableBase &) = delete;
-	~CoroTaskAwaitableBase() = default;
+	CoroSubTask<T> get_return_object() noexcept
+	{
+		auto coro = RawCoroSubTaskHandle<T>::from_promise(*this);
+		m_this_coroutine = coro;
+		return CoroSubTask<T>(coro);
+	}
+
+	template<std::convertible_to<T> From>
+	void return_value(From &&value) noexcept(std::is_nothrow_constructible_v<T, From>)
+	{
+		new (m_object_storage) T(std::forward<From>(value));
+	}
+
+	T takeObject() noexcept { return std::move(*std::launder(reinterpret_cast<T *>(m_object_storage))); }
+
+private:
+	alignas(T) std::byte m_object_storage[sizeof(T)];
+};
+
+template<>
+class CoroSubTaskState<void> final : public CoroSubTaskStateBase {
+public:
+	CoroSubTask<void> get_return_object() noexcept;
+
+	constexpr void return_void() const noexcept {}
+};
+
+class CoroFutureBase {
+public:
+	CoroFutureBase(uint64_t task_counter) noexcept : m_task_counter(task_counter) {}
+	CoroFutureBase(CoroFutureBase &&) = default;
+	CoroFutureBase(const CoroFutureBase &) = delete;
+	CoroFutureBase &operator=(CoroFutureBase &&) = default;
+	CoroFutureBase &operator=(const CoroFutureBase &) = delete;
+	~CoroFutureBase() = default;
 
 	constexpr bool await_ready() const noexcept { return false; }
 
-	auto await_suspend(RawCoroTaskHandle handle) noexcept(noexcept(static_cast<Base *>(this)->doSuspend(handle)))
+	void await_suspend(RawCoroTaskHandle handle) noexcept { handle.promise().blockOnCounter(m_task_counter); }
+
+	template<typename Y>
+	void await_suspend(RawCoroSubTaskHandle<Y> handle) noexcept
 	{
-		CoroTaskAwaitableBaseDetail::onSuspend(handle);
-		return static_cast<Base *>(this)->doSuspend(handle);
+		handle.promise().blockOnCounter(m_task_counter);
 	}
 
-	auto await_suspend(RawCoroSubTaskHandle handle) noexcept(
-		noexcept(static_cast<Base *>(this)->doSuspend(getBaseTaskHandle(handle))))
-	{
-		RawCoroTaskHandle base_handle = getBaseTaskHandle(handle);
-		CoroTaskAwaitableBaseDetail::onSuspend(base_handle);
-		return static_cast<Base *>(this)->doSuspend(base_handle);
-	}
-
-	auto await_resume()
-	{
-		CoroTaskAwaitableBaseDetail::onResume();
-		return static_cast<Base *>(this)->doResume();
-	}
+private:
+	uint64_t m_task_counter;
 };
 
-// Helper class analogous to `TaskContext` for regular function (non-coroutine) tasks.
-// Not passed as argument but accessed from inside the coroutine with an awkward
-// `co_await CoroTaskContext::current()` - task service will magically fill it.
-class VOXEN_API CoroTaskContext final {
-private:
-	struct GetAwaitable {
-		constexpr bool await_ready() const noexcept { return false; }
-		bool await_suspend(RawCoroTaskHandle handle) noexcept
-		{
-			ctx = handle.promise().context();
-			return false;
-		}
-		CoroTaskContext &await_resume() const noexcept { return *ctx; }
+} // namespace detail
 
-		CoroTaskContext *ctx = nullptr;
-	};
-
-	class CounterAwaitable : public CoroTaskAwaitableBase<CounterAwaitable> {
-	public:
-		CounterAwaitable(uint64_t counter) noexcept : m_counter(counter) {}
-
-		void doSuspend(RawCoroTaskHandle) noexcept { blockOnCounter(m_counter); }
-
-		constexpr void doResume() const noexcept {}
-
-	private:
-		uint64_t m_counter;
-	};
-
+template<typename T>
+class CoroSubTask final {
 public:
-	explicit CoroTaskContext(TaskService &svc) noexcept : m_task_service(svc) {}
-	CoroTaskContext(CoroTaskContext &&) = delete;
-	CoroTaskContext(const CoroTaskContext &) = delete;
-	CoroTaskContext &operator=(CoroTaskContext &&) = delete;
-	CoroTaskContext &operator=(const CoroTaskContext &) = delete;
-	~CoroTaskContext() = default;
+	CoroSubTask(RawCoroSubTaskHandle<T> handle) noexcept : m_handle(handle) {}
+	CoroSubTask(CoroSubTask &&other) noexcept : m_handle(std::exchange(other.m_handle, {})) {}
 
-	// C++ coroutine semantics are a bit awkward and don't allow getting things
-	// related to coroutine state directly so use this construction:
-	//     CoroTaskContext &ctx = co_await CoroTaskContext::current();
-	//
-	// NOTE: this will UB wildly if you call `CoroTaskHandle::resume()` manually,
-	// for the task state block is not fully initialized before it is enqueued.
-	constexpr static GetAwaitable current() noexcept { return {}; }
+	CoroSubTask &operator=(CoroSubTask &&other) noexcept
+	{
+		std::swap(m_handle, other.m_handle);
+		return *this;
+	}
 
-	// Task service executing this. You can create `TaskBuilder`
-	// from it to launch independent, non-continuation tasks.
-	TaskService &taskService() noexcept { return m_task_service; }
+	CoroSubTask(const CoroSubTask &) = delete;
+	CoroSubTask &operator=(const CoroSubTask &) = delete;
 
-	// Block this corouting on task counter. Use to create task dependencies
-	// dynamically during execution, exactly what coroutines are needed for:
-	//     uint64_t counter = startSomeAsyncOperation();
-	//     co_await ctx.waitTaskCounter(counter);
-	CounterAwaitable waitTaskCounter(uint64_t counter) noexcept { return CounterAwaitable { counter }; }
+	~CoroSubTask()
+	{
+		if (m_handle) {
+			m_handle.destroy();
+		}
+	}
+
+	bool await_ready() const noexcept { return m_handle.done(); }
+
+	void await_suspend(RawCoroTaskHandle handle) noexcept { handle.promise().blockOnSubTask(&m_handle.promise()); }
+
+	template<typename Y>
+	void await_suspend(RawCoroSubTaskHandle<Y> handle) noexcept
+	{
+		handle.promise().blockOnSubTask(&m_handle.promise());
+	}
+
+	T await_resume()
+	{
+		auto &state = m_handle.promise();
+		state.rethrowIfHasException();
+
+		if constexpr (!std::is_void_v<T>) {
+			return state.takeObject();
+		}
+	}
 
 private:
-	TaskService &m_task_service;
+	RawCoroSubTaskHandle<T> m_handle;
+};
+
+inline CoroSubTask<void> detail::CoroSubTaskState<void>::get_return_object() noexcept
+{
+	auto coro = RawCoroSubTaskHandle<void>::from_promise(*this);
+	m_this_coroutine = coro;
+	return CoroSubTask<void>(coro);
+}
+
+template<typename T = void>
+class CoroFuture : public detail::CoroFutureBase {
+public:
+	static_assert(std::is_nothrow_move_constructible_v<T>, "Future object must be nothrow move constructible");
+
+	CoroFuture(uint64_t task_counter, std::shared_ptr<T> object) noexcept
+		: detail::CoroFutureBase(task_counter), m_object(std::move(object))
+	{}
+
+	T await_resume() noexcept { return std::move(*m_object); }
+
+private:
+	std::shared_ptr<T> m_object;
+};
+
+// Specialization for `void` - this only waits for task counter completion.
+// See description of the base template.
+template<>
+class CoroFuture<void> : public detail::CoroFutureBase {
+public:
+	using detail::CoroFutureBase::CoroFutureBase;
+
+	constexpr void await_resume() const noexcept {}
 };
 
 } // namespace voxen::svc
@@ -257,13 +263,13 @@ namespace std
 {
 
 template<typename... Args>
-struct coroutine_traits<voxen::svc::CoroTaskHandle, Args...> {
-	using promise_type = voxen::svc::CoroTaskState;
+struct coroutine_traits<voxen::svc::CoroTask, Args...> {
+	using promise_type = voxen::svc::detail::CoroTaskState;
 };
 
-template<typename... Args>
-struct coroutine_traits<voxen::svc::CoroSubTaskToken, Args...> {
-	using promise_type = voxen::svc::CoroSubTaskState;
+template<typename T, typename... Args>
+struct coroutine_traits<voxen::svc::CoroSubTask<T>, Args...> {
+	using promise_type = voxen::svc::detail::CoroSubTaskState<T>;
 };
 
 } // namespace std

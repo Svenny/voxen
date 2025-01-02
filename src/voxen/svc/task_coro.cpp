@@ -2,137 +2,139 @@
 
 #include <voxen/common/pipe_memory_allocator.hpp>
 
+#include <cassert>
+
 namespace voxen::svc
 {
 
-// CoroTaskHandle
-
-void CoroTaskHandle::resume() const
+namespace detail
 {
-	CoroTaskState& state = m_handle.promise();
-	RawCoroSubTaskHandle sub_task = state.callStackTop();
 
-	while (sub_task) {
-		// Sub-tasks have "never" final suspend, meaning they destroy themselves
-		// after completing. So `sub_task` can become dangling immediately after
-		// this line.
-		// Also, dtor of `CoroSubTaskState` replaces stack top automatically.
-		// As we can't use `done()` anymore, check if the stack top has changed
-		// to determine whether this sub-task has completed or is suspended again.
-		sub_task.resume();
+// CoroTaskStateBase
 
-		RawCoroSubTaskHandle new_stack_top = state.callStackTop();
-		if (new_stack_top == sub_task) {
-			// Suspended again in this stack frame, return
-			return;
-		}
+void CoroTaskStateBase::unhandled_exception() noexcept
+{
+	m_unhandled_exception = std::current_exception();
+}
 
-		// This stack frame has finished, proceed to the next one
-		sub_task = new_stack_top;
+void CoroTaskStateBase::rethrowIfHasException()
+{
+	if (m_unhandled_exception) {
+		std::rethrow_exception(std::exchange(m_unhandled_exception, {}));
 	}
+}
 
-	// No call stack (or everything unwound), resume the base task
-	m_handle.resume();
+void* CoroTaskStateBase::operator new(size_t bytes)
+{
+	return PipeMemoryAllocator::allocate(bytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+}
+
+void* CoroTaskStateBase::operator new(size_t bytes, std::align_val_t align)
+{
+	return PipeMemoryAllocator::allocate(bytes, static_cast<size_t>(align));
+}
+
+void CoroTaskStateBase::operator delete(void* ptr) noexcept
+{
+	return PipeMemoryAllocator::deallocate(ptr);
+}
+
+void CoroTaskStateBase::operator delete(void* ptr, std::align_val_t /*align*/) noexcept
+{
+	return PipeMemoryAllocator::deallocate(ptr);
 }
 
 // CoroTaskState
 
-void CoroTaskState::unhandled_exception() noexcept
+void CoroTaskState::blockOnCounter(uint64_t counter) noexcept
 {
-	m_exception = std::current_exception();
+	m_blocked_on_counter = counter;
 }
 
-void CoroTaskState::retrowIfHasException()
+void CoroTaskState::blockOnSubTask(CoroSubTaskStateBase* sub_task) noexcept
 {
-	if (m_exception) {
-		std::rethrow_exception(std::exchange(m_exception, {}));
+	assert(m_blocked_on_counter == 0);
+	assert(m_sub_task_stack_top == nullptr);
+	// This must begin the sub-task stack
+	assert(sub_task->m_prev_sub_task == nullptr);
+
+	m_sub_task_stack_top = sub_task;
+	updateSubTaskStack();
+}
+
+void CoroTaskState::updateSubTaskStack() noexcept
+{
+	CoroSubTaskStateBase* ptr = m_sub_task_stack_top;
+
+	while (ptr) {
+		if (ptr->m_blocked_on_counter != 0) {
+			assert(m_blocked_on_counter == 0);
+			// This must end the sub-task stack
+			assert(ptr->m_next_sub_task == nullptr);
+			// "Steal" blocked counter from the sub-task
+			m_blocked_on_counter = std::exchange(ptr->m_blocked_on_counter, 0);
+		}
+
+		m_sub_task_stack_top = ptr;
+		ptr->m_base_task = this;
+		ptr = ptr->m_next_sub_task;
 	}
 }
 
-void* CoroTaskState::operator new(size_t bytes)
+void CoroTaskState::resumeStep(std::coroutine_handle<> my_coro)
 {
-	return PipeMemoryAllocator::allocate(bytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+	assert(m_blocked_on_counter == 0);
+
+	while (m_sub_task_stack_top) {
+		// Should be the last line in loop body but that would require one more if
+		m_sub_task_stack_top->m_next_sub_task = nullptr;
+
+		CoroSubTaskStateBase* top = m_sub_task_stack_top;
+		top->m_this_coroutine.resume();
+
+		if (!top->m_this_coroutine.done()) {
+			// Blocked on something again
+			return;
+		}
+
+		// Finished, unwind the stack and continue.
+		// Should not be really necessary to clear fields of `top`,
+		// it's about to destroy anyway, but do it just in casee.
+		top->m_base_task = nullptr;
+		m_sub_task_stack_top = std::exchange(top->m_prev_sub_task, nullptr);
+	}
+
+	// All sub-task stack unwound, resume the main coroutine
+	my_coro.resume();
 }
 
-void* CoroTaskState::operator new(size_t bytes, std::align_val_t align)
+// CoroSubTaskStateBase
+
+void CoroSubTaskStateBase::blockOnCounter(uint64_t counter) noexcept
 {
-	return PipeMemoryAllocator::allocate(bytes, static_cast<size_t>(align));
+	// Only the sub-task stack top can block on counters
+	assert(m_next_sub_task == nullptr);
+
+	if (m_base_task) {
+		m_base_task->blockOnCounter(counter);
+	} else {
+		m_blocked_on_counter = counter;
+	}
 }
 
-void CoroTaskState::operator delete(void* ptr) noexcept
+void CoroSubTaskStateBase::blockOnSubTask(CoroSubTaskStateBase* sub_task) noexcept
 {
-	return PipeMemoryAllocator::deallocate(ptr);
+	assert(m_blocked_on_counter == 0);
+	assert(m_next_sub_task == nullptr);
+
+	m_next_sub_task = sub_task;
+	sub_task->m_prev_sub_task = this;
+
+	if (m_base_task) {
+		m_base_task->updateSubTaskStack();
+	}
 }
 
-void CoroTaskState::operator delete(void* ptr, std::align_val_t /*align*/) noexcept
-{
-	return PipeMemoryAllocator::deallocate(ptr);
-}
-
-// CoroSubTaskState
-
-CoroSubTaskState::CoroSubTaskState(RawCoroTaskHandle base_task) noexcept : m_base_task(base_task)
-{
-	// We're the top of call stack now
-	m_previous_task = m_base_task.promise().callStackTop();
-	m_base_task.promise().setCallStackTop(RawCoroSubTaskHandle::from_promise(*this));
-}
-
-CoroSubTaskState::~CoroSubTaskState()
-{
-	// Pop this frame from call stack
-	m_base_task.promise().setCallStackTop(m_previous_task);
-}
-
-void CoroSubTaskState::unhandled_exception() noexcept
-{
-	// Store exception in the base task. This stack frame is done at this point,
-	// exception will be retrown upon resuming the previous frame.
-	m_base_task.promise().unhandled_exception();
-}
-
-void* CoroSubTaskState::operator new(size_t bytes)
-{
-	return PipeMemoryAllocator::allocate(bytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
-}
-
-void* CoroSubTaskState::operator new(size_t bytes, std::align_val_t align)
-{
-	return PipeMemoryAllocator::allocate(bytes, static_cast<size_t>(align));
-}
-
-void CoroSubTaskState::operator delete(void* ptr) noexcept
-{
-	return PipeMemoryAllocator::deallocate(ptr);
-}
-
-void CoroSubTaskState::operator delete(void* ptr, std::align_val_t /*align*/) noexcept
-{
-	return PipeMemoryAllocator::deallocate(ptr);
-}
-
-// CoroTaskAwaitableBaseDetail
-
-void CoroTaskAwaitableBaseDetail::blockOnCounter(uint64_t counter) noexcept
-{
-	m_base_task->setBlockedOnCounter(counter);
-}
-
-void CoroTaskAwaitableBaseDetail::onSuspend(RawCoroTaskHandle handle) noexcept
-{
-	m_base_task = &handle.promise();
-}
-
-void CoroTaskAwaitableBaseDetail::onResume() const
-{
-	// Exception pointer can become non-zero only if there was an unhandled exception
-	// somewhere in the call stack. Assuming this method is called on *every* resume
-	// we'll correctly propagate exceptions down the stack, basically unwinding it.
-	m_base_task->retrowIfHasException();
-}
-RawCoroTaskHandle CoroTaskAwaitableBaseDetail::getBaseTaskHandle(RawCoroSubTaskHandle handle) noexcept
-{
-	return handle.promise().baseTaskHandle();
-}
+} // namespace detail
 
 } // namespace voxen::svc

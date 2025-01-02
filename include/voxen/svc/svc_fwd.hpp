@@ -3,11 +3,11 @@
 namespace voxen::svc
 {
 
-class CoroSubTaskState;
-class CoroSubTaskToken;
-class CoroTaskContext;
-class CoroTaskHandle;
-class CoroTaskState;
+template<typename>
+class CoroFuture;
+template<typename>
+class CoroSubTask;
+class CoroTask;
 class Engine;
 class IService;
 class MessageQueue;
@@ -22,6 +22,10 @@ class TaskService;
 namespace detail
 {
 
+class CoroSubTaskStateBase;
+template<typename>
+class CoroSubTaskState;
+class CoroTaskState;
 class PrivateTaskHandle;
 class TaskCounterTracker;
 struct TaskHeader;

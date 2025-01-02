@@ -66,14 +66,14 @@ public:
 	void enqueueTask(PipeMemoryFunction<void(TaskContext &)> fn);
 	// Enqueue a task containing a coroutine.
 	// There is no way to retrieve `TaskHandle` for it later.
-	void enqueueTask(CoroTaskHandle handle);
+	void enqueueTask(CoroTask handle);
 
 	// Enqueue a task containing a functor (callable object)
 	// and return a `TaskHandle` tracking its execution.
 	TaskHandle enqueueTaskWithHandle(PipeMemoryFunction<void(TaskContext &)> fn);
 	// Enqueue a task containing a coroutine
 	// and return a `TaskHandle` tracking its execution.
-	TaskHandle enqueueTaskWithHandle(CoroTaskHandle handle);
+	TaskHandle enqueueTaskWithHandle(CoroTask handle);
 
 	// Conceptually this is equal to `enqueueTaskWithHandle(<empty lambda>)`.
 	// An idiomatic way to get a "group" handle to wait for a set of tasks (`addWait()`).
@@ -91,7 +91,7 @@ private:
 
 	detail::TaskHeader *createTaskHandle();
 	void createTaskHandle(PipeMemoryFunction<void(TaskContext &)> fn);
-	void createTaskHandle(CoroTaskHandle handle);
+	void createTaskHandle(CoroTask handle);
 	void doEnqueueTask();
 	TaskHandle doEnqueueTaskWithHandle();
 };

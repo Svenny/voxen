@@ -25,6 +25,34 @@ struct SlaveState {
 	std::vector<PrivateTaskHandle> local_waiting_queue = {};
 };
 
+bool tryExecuteCoroutineTask(SlaveState &state, RawCoroTaskHandle coro)
+{
+	// Well, in theory user could enqueue null handle or a terminated coroutine... but what for?
+	if (!coro || coro.done()) [[unlikely]] {
+		return true;
+	}
+
+	CoroTaskState &coro_state = coro.promise();
+
+	if (uint64_t counter = coro_state.blockedOnCounter(); counter > 0) {
+		if (state.counter_tracker.isCounterComplete(counter)) {
+			// Coroutine stack unblocked, can resume it
+			coro_state.unblockCounter();
+		} else {
+			// Coroutine stack is still blocked awaiting something external
+			return false;
+		}
+	}
+
+	// TODO: exception safety, wrap in try/catch and store the exception.
+	// Well, `resume()` does not throw by itself, it will only save exception
+	// in the state object. So we should check for it when it becomes done.
+	coro_state.resumeStep(coro);
+
+	// Task is finished only when the main coroutine is done
+	return coro.done();
+}
+
 // Attempts to execute task if possible (not blocked on anything).
 // Returns `true` and automatically destroys task object if it was finished.
 // Regular function tasks will be finished after the first call while
@@ -39,31 +67,8 @@ bool tryExecuteAndResetTask(SlaveState &state, PrivateTaskHandle &task)
 	}
 
 	if (header->stores_coroutine) {
-		CoroTaskHandle &coro_handle = header->executable.coroutine;
-		// Well, in theory user could enqueue null handle or a terminated coroutine... but what for?
-		if (coro_handle.runnable()) [[likely]] {
-			CoroTaskState &coro_state = coro_handle.state();
-
-			uint64_t blocked_on_counter = coro_state.blockedOnCounter();
-			if (blocked_on_counter > 0) {
-				if (state.counter_tracker.isCounterComplete(blocked_on_counter)) {
-					coro_state.setBlockedOnCounter(0);
-				} else {
-					// Coroutine is still blocked awaiting something
-					return false;
-				}
-			}
-
-			// TODO: don't recreate context every time (though it holds no state now)
-			CoroTaskContext ctx(state.task_service);
-			coro_state.setContext(&ctx);
-			// TODO: exception safety, wrap in try/catch and store the exception
-			coro_handle.resume();
-
-			if (!coro_handle.done()) {
-				// Coroutine was suspended, can't complete/destroy it yet
-				return false;
-			}
+		if (!tryExecuteCoroutineTask(state, header->executable.coroutine.get())) {
+			return false;
 		}
 	} else {
 		// Sync point tasks can have no functor

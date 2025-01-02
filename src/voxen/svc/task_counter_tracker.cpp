@@ -20,7 +20,11 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 
 	std::atomic_uint64_t &fully_completed = list.fully_completed_value;
 	if (fully_completed.compare_exchange_strong(expected, desired, std::memory_order_relaxed)) [[likely]] {
-		// In-order completion, we're good to go
+		// In-order completion, we're good to go.
+		// XXX: we are not. If the first out-of-order segment starts from `desired + 1` we should collapse it.
+		// It's still correct if we don't, then it will collapse later as any further completion is out-of-order.
+		// We skip it mainly to avoid locking, however if/when we add active completion signaling
+		// ("wait lists/push notifications") we'll probably always have to take a lock anyway.
 		return;
 	}
 
