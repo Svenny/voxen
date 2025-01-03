@@ -3,7 +3,7 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/os/futex.hpp>
 
-#include "task_counter_tracker.hpp"
+#include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 
 #include <cassert>
@@ -33,7 +33,7 @@ void doReleaseRef(detail::TaskHeader *header) noexcept
 	PipeMemoryAllocator::deallocate(header);
 }
 
-void doCompleteAndUnref(detail::TaskHeader *header, detail::TaskCounterTracker &tracker)
+void doCompleteAndUnref(detail::TaskHeader *header, detail::AsyncCounterTracker &tracker)
 {
 	// First complete the parent task, if any
 	header->parent_handle.onTaskComplete(tracker);
@@ -94,7 +94,7 @@ void detail::ParentTaskHandle::setParent(TaskHeader *header) noexcept
 	}
 }
 
-void detail::ParentTaskHandle::onTaskComplete(TaskCounterTracker &tracker)
+void detail::ParentTaskHandle::onTaskComplete(AsyncCounterTracker &tracker)
 {
 	// Tasks are expected to be mostly indepent (not continuations)
 	if (!m_parent) [[likely]] {
@@ -191,7 +191,7 @@ bool detail::PrivateTaskHandle::hasContinuations() const noexcept
 	return !!(m_header->atomic_word.load(std::memory_order_acquire) & ATOMIC_WORD_CONTINUATION_COUNT_MASK);
 }
 
-void detail::PrivateTaskHandle::completeAndReset(TaskCounterTracker &tracker)
+void detail::PrivateTaskHandle::completeAndReset(AsyncCounterTracker &tracker)
 {
 	doCompleteAndUnref(m_header, tracker);
 	m_header = nullptr;

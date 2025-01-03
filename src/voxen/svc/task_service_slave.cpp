@@ -4,7 +4,7 @@
 #include <voxen/svc/task_context.hpp>
 #include <voxen/svc/task_service.hpp>
 
-#include "task_counter_tracker.hpp"
+#include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 #include "task_queue_set.hpp"
 
@@ -16,7 +16,7 @@ namespace
 
 struct SlaveState {
 	TaskService &task_service;
-	TaskCounterTracker &counter_tracker;
+	AsyncCounterTracker &counter_tracker;
 	TaskQueueSet &queue_set;
 
 	// Store waiting tasks locally to not keep them in the limited ring buffer.
@@ -133,7 +133,7 @@ void tryDrainLocalQueue(SlaveState &state)
 
 } // namespace
 
-void TaskServiceSlave::threadFn(TaskService &my_service, size_t my_queue, TaskCounterTracker &counter_tracker,
+void TaskServiceSlave::threadFn(TaskService &my_service, size_t my_queue, AsyncCounterTracker &counter_tracker,
 	TaskQueueSet &queue_set)
 {
 	debug::setThreadName("ThreadPool@%zu", my_queue);

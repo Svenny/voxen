@@ -20,7 +20,7 @@ public:
 	~ParentTaskHandle();
 
 	void setParent(TaskHeader *header) noexcept;
-	void onTaskComplete(TaskCounterTracker &tracker);
+	void onTaskComplete(AsyncCounterTracker &tracker);
 
 private:
 	TaskHeader *m_parent = nullptr;
@@ -105,7 +105,7 @@ public:
 	// holds the only live reference, then resources associated with the task will be freed
 	// before its completion is acknowledged. Needed e.g. for subsystem destructors waiting
 	// for all enqueued tasks completion.
-	void completeAndReset(TaskCounterTracker &tracker);
+	void completeAndReset(AsyncCounterTracker &tracker);
 
 	// Get raw pointer without affecting ownership
 	TaskHeader *get() noexcept { return m_header; }
