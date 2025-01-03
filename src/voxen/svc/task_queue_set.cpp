@@ -57,11 +57,24 @@ TaskQueueSet::TaskQueueSet(size_t num_queues)
 
 TaskQueueSet::~TaskQueueSet()
 {
+	// Any remaining stored tasks will never be marked as complete
+	// and can deadlock the system if something else depends on them.
+	// Most likely this will mean a bug in slave threads logic.
 	for (size_t queue = 0; queue < m_num_queues; queue++) {
-		// Deref all remaining stored tasks
+		size_t remaining_tasks = 0;
+
+		// Deref them anyway to at least not leak memory
 		PrivateTaskHandle handle = tryPopTask(queue);
 		while (handle.valid()) {
+			remaining_tasks++;
 			handle = tryPopTask(queue);
+		}
+
+		if (remaining_tasks > 0) [[unlikely]] {
+			Log::warn(
+				"~TaskQueueSet: {} remaining tasks in queue #{}! Probably the associated slave thread "
+				"has exited without draining the queue. This is most likely a bug, risk of deadlock.",
+				remaining_tasks, queue);
 		}
 	}
 }
