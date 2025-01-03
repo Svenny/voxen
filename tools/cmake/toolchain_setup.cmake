@@ -63,8 +63,8 @@ function(voxen_setup_target target is_executable)
 		)
 
 		target_link_options(${target} PRIVATE
-			# Always use LLD for linking speed and LTO
-			-fuse-ld=lld
+			# The fastest linker we have on Linux, non-LTO builds are just instant
+			-fuse-ld=mold
 
 			# Directly bind locally defined function symbols. Similar to
 			# `-fno-semantic-interposition` but works at link time.
