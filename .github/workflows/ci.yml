@@ -41,6 +41,9 @@ jobs:
           sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
           sudo apt install libdw-dev
 
+      - name: Install Mold linker
+        uses: rui314/setup-mold@v1
+
       - name: Build Voxen
         run: |
           BUILD_DIR=$XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
