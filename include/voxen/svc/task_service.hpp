@@ -27,6 +27,10 @@ public:
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
 
+	// Check a set of task counters for completion and remove completed ones.
+	// Returns the number of remaining incomplete counters - they will be moved
+	// to the first consecutive elements of `counters` in unspecified order.
+	// The remaining elements of `counters` will have undefined (garbage) values.
 	size_t eliminateCompletedWaitCounters(std::span<uint64_t> counters) noexcept;
 
 private:

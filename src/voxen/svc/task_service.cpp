@@ -6,7 +6,7 @@
 #include <voxen/util/hash.hpp>
 #include <voxen/util/log.hpp>
 
-#include "task_counter_tracker.hpp"
+#include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 #include "task_queue_set.hpp"
 #include "task_service_slave.hpp"
@@ -46,7 +46,7 @@ class detail::TaskServiceImpl {
 public:
 	TaskServiceImpl(TaskService &me, ServiceLocator &svc, TaskService::Config cfg)
 		: m_cfg(cfg)
-		, m_counter_tracker(std::make_unique<TaskCounterTracker>())
+		, m_counter_tracker(svc.requestService<AsyncCounterTracker>())
 		, m_queue_set(cfg.num_threads)
 		, m_slave_threads(std::make_unique<std::thread[]>(cfg.num_threads))
 	{
@@ -54,7 +54,7 @@ public:
 
 		Log::info("Starting task service with {} threads", cfg.num_threads);
 		for (size_t i = 0; i < m_cfg.num_threads; i++) {
-			m_slave_threads[i] = std::thread(TaskServiceSlave::threadFn, std::ref(me), i, std::ref(*m_counter_tracker),
+			m_slave_threads[i] = std::thread(TaskServiceSlave::threadFn, std::ref(me), i, std::ref(m_counter_tracker),
 				std::ref(m_queue_set));
 		}
 	}
@@ -75,14 +75,14 @@ public:
 
 	size_t eliminateCompletedWaitCounters(std::span<uint64_t> counters) noexcept
 	{
-		return m_counter_tracker->trimCompleteCounters(counters);
+		return m_counter_tracker.trimCompleteCounters(counters);
 	}
 
 	uint64_t enqueueTask(PrivateTaskHandle handle)
 	{
 		TaskHeader *header = handle.get();
 
-		const uint64_t counter = m_counter_tracker->allocateCounter();
+		const uint64_t counter = m_counter_tracker.allocateCounter();
 		header->task_counter = counter;
 
 		// Select the target queue randomly.
@@ -101,7 +101,7 @@ public:
 private:
 	const TaskService::Config m_cfg;
 
-	std::unique_ptr<TaskCounterTracker> m_counter_tracker;
+	AsyncCounterTracker &m_counter_tracker;
 	TaskQueueSet m_queue_set;
 	std::unique_ptr<std::thread[]> m_slave_threads;
 };

@@ -95,6 +95,8 @@ set(VOXEN_SOURCES
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
+	src/voxen/svc/async_counter_tracker.cpp
+	src/voxen/svc/async_counter_tracker.hpp
 	src/voxen/svc/engine.cpp
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp
@@ -109,8 +111,6 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_coro.cpp
 	src/voxen/svc/task_handle.cpp
 	src/voxen/svc/task_handle_private.hpp
-	src/voxen/svc/task_counter_tracker.hpp
-	src/voxen/svc/task_counter_tracker.cpp
 	src/voxen/svc/task_queue_set.hpp
 	src/voxen/svc/task_queue_set.cpp
 	src/voxen/svc/task_service.cpp

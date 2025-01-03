@@ -1,4 +1,4 @@
-#include "task_counter_tracker.hpp"
+#include "async_counter_tracker.hpp"
 
 #include <algorithm>
 #include <mutex>
@@ -6,12 +6,14 @@
 namespace voxen::svc::detail
 {
 
-uint64_t TaskCounterTracker::allocateCounter() noexcept
+AsyncCounterTracker::~AsyncCounterTracker() = default;
+
+uint64_t AsyncCounterTracker::allocateCounter()
 {
 	return m_next_allocated_counter.fetch_add(1, std::memory_order_relaxed);
 }
 
-void TaskCounterTracker::completeCounter(uint64_t counter)
+void AsyncCounterTracker::completeCounter(uint64_t counter)
 {
 	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
 
@@ -97,7 +99,7 @@ void TaskCounterTracker::completeCounter(uint64_t counter)
 	}
 }
 
-bool TaskCounterTracker::isCounterComplete(uint64_t counter) noexcept
+bool AsyncCounterTracker::isCounterComplete(uint64_t counter) noexcept
 {
 	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
 	const uint64_t expected = counter / NUM_COMPLETION_LISTS;
@@ -121,7 +123,7 @@ bool TaskCounterTracker::isCounterComplete(uint64_t counter) noexcept
 	return false;
 }
 
-size_t TaskCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) noexcept
+size_t AsyncCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) noexcept
 {
 	// XXX: this is likely not the most optimal in terms of shared memory operations.
 	// We could first sort counters by `counter / NUM_COMPLETION_LISTS` to aggregate

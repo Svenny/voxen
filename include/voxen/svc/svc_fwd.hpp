@@ -22,12 +22,12 @@ class TaskService;
 namespace detail
 {
 
+class AsyncCounterTracker;
 class CoroSubTaskStateBase;
 template<typename>
 class CoroSubTaskState;
 class CoroTaskState;
 class PrivateTaskHandle;
-class TaskCounterTracker;
 struct TaskHeader;
 class TaskQueueSet;
 class TaskServiceImpl;
