@@ -4,6 +4,7 @@ target_sources(test-extras PRIVATE
 	bitset.test.cpp
 	defer.test.cpp
 	dyn_array.test.cpp
+	enum_utils.test.cpp
 	fixed_pool.test.cpp
 	function_ref.test.cpp
 	linear_allocator.test.cpp
@@ -20,6 +21,7 @@ target_link_libraries(test-extras PRIVATE
 add_test(NAME extras-bitset COMMAND test-extras "[extras::bitset]")
 add_test(NAME extras-defer COMMAND test-extras "[extras::defer]")
 add_test(NAME extras-dyn-array COMMAND test-extras "[extras::dyn_array]")
+add_test(NAME extras-enum-utils COMMAND test-extras "[extras::enum_utils]")
 add_test(NAME extras-fixed-pool COMMAND test-extras "[extras::fixed_pool]")
 add_test(NAME extras-function-ref COMMAND test-extras "[extras::function_ref]")
 add_test(NAME extras-linear-allocator COMMAND test-extras "[extras::linear_allocator]")
