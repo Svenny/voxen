@@ -76,7 +76,7 @@ std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo 
 	z_stream strm = {};
 	if (deflateInit(&strm, level) != Z_OK) [[unlikely]] {
 		Log::error("deflateInit failed, msg = {}", strm.msg);
-		throw Exception::fromFailedCall(VoxenErrc::ExternalLibFailure, "deflateInit");
+		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "'zlib/deflateInit' failed");
 	}
 
 	defer {
@@ -156,7 +156,7 @@ extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, 
 
 	if (inflateInit(&strm) != Z_OK) [[unlikely]] {
 		Log::error("inflateInit failed, msg = {}", strm.msg);
-		throw Exception::fromFailedCall(VoxenErrc::ExternalLibFailure, "inflateInit");
+		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "'zlib/inflateInit' failed");
 	}
 
 	defer {
@@ -184,7 +184,7 @@ extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, 
 		int res = inflate(&strm, Z_NO_FLUSH);
 		if (res != Z_OK && res != Z_STREAM_END) [[unlikely]] {
 			Log::error("inflate failed, msg = {}, code = {}", strm.msg, res);
-			throw Exception::fromFailedCall(VoxenErrc::InvalidData, "inflate");
+			throw Exception::fromError(VoxenErrc::InvalidData, "'zlib/inflate' failed");
 		}
 
 		if (strm.avail_out != 0) [[unlikely]] {
