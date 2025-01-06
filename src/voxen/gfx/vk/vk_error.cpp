@@ -1,6 +1,7 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 
 #include <voxen/gfx/vk/vk_utils.hpp>
+#include <voxen/util/error_condition.hpp>
 #include <voxen/util/log.hpp>
 
 #include <fmt/format.h>
@@ -10,23 +11,35 @@
 namespace
 {
 
-struct VulkanErrorCategory : std::error_category {
-	const char *name() const noexcept override { return "Vulkan error"; }
+struct VulkanErrorCategory final : std::error_category {
+	const char *name() const noexcept override { return "vulkan"; }
 
 	std::string message(int code) const override
 	{
 		return std::string(voxen::gfx::vk::VulkanUtils::getVkResultString(VkResult(code)));
 	}
+
+	std::error_condition default_error_condition(int /*code*/) const noexcept override
+	{
+		// Map all Vulkan error codes to a generic `GfxFailure`.
+		// Not ideal but being more fine-grained here is hard.
+		return voxen::VoxenErrc::GfxFailure;
+	}
 };
 
 const VulkanErrorCategory g_category;
+
+std::string formatMessage(VkResult result, const char *api)
+{
+	return fmt::format("'{}' failed: {}", api, voxen::gfx::vk::VulkanUtils::getVkResultString(result));
+}
 
 } // anonymous namespace
 
 namespace std
 {
 
-error_condition make_error_condition(VkResult result) noexcept
+error_code make_error_code(VkResult result) noexcept
 {
 	return { static_cast<int>(result), g_category };
 }
@@ -36,20 +49,11 @@ error_condition make_error_condition(VkResult result) noexcept
 namespace voxen::gfx::vk
 {
 
-VulkanException::VulkanException(VkResult result, std::string_view api, extras::source_location loc)
-	: Exception(fmt::format("call to '{}' failed", api), std::make_error_condition(result), loc)
-{
-	assert(api.length() > 0);
-	Log::error("{} failed with error code {}", api, VulkanUtils::getVkResultString(result), loc);
-}
+VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc)
+	: Exception(formatMessage(result, api), std::make_error_code(result).default_error_condition(), loc)
+{}
 
 // Not defining inline to satisfy -Wweak-vtables
 VulkanException::~VulkanException() noexcept = default;
-
-VkResult VulkanException::result() const noexcept
-{
-	// We know the error category can only be vulkan one
-	return static_cast<VkResult>(error().value());
-}
 
 } // namespace voxen::gfx::vk

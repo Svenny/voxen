@@ -1,41 +1,25 @@
 ﻿#include <voxen/util/exception.hpp>
 
-#include <voxen/util/error_condition.hpp>
-
 #include <fmt/format.h>
-
-#include <cassert>
 
 namespace voxen
 {
 
-const char *Exception::what() const noexcept
+// Not defining inline to satisfy -Wweak-vtables
+Exception::~Exception() = default;
+
+Exception Exception::fromErrorCode(std::error_code ec, const char *details, Location loc)
 {
-	if (const std::string *str = std::get_if<std::string>(&m_what); str) {
-		return str->c_str();
-	}
-
-	// Can directly use `std::get<const char *>()` here but this will trip exception-escape analyzer
-	if (const char *const *pstr = std::get_if<const char *>(&m_what); pstr) {
-		return *pstr;
-	}
-
-	assert(false);
-	__builtin_unreachable();
+	return { fmt::format("{} (code [{}:{}] {})", details, ec.category().name(), ec.value(), ec.message()),
+		ec.default_error_condition(), loc };
 }
 
-Exception Exception::fromError(std::error_condition error, const char *what, Location loc) noexcept
+Exception Exception::fromError(std::error_condition ec, const char *details, Location loc)
 {
-	return { what ? what : "see stored error condition", error, loc };
+	return { fmt::format("{} (cond [{}:{}] {})", details, ec.category().name(), ec.value(), ec.message()), ec, loc };
 }
 
-Exception Exception::fromFailedCall(std::error_condition error, std::string_view api, Location loc)
-{
-	assert(api.length() > 0);
-	return { fmt::format("call to '{}' failed", api), error, loc };
-}
-
-Exception::Exception(std::variant<const char *, std::string> what, std::error_condition error, Location loc) noexcept
+Exception::Exception(std::string what, std::error_condition error, Location loc)
 	: m_what(std::move(what)), m_error(error), m_where(loc)
 {
 	// TODO: this is the best place to capture stacktrace

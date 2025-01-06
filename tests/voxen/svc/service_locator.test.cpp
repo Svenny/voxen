@@ -65,7 +65,7 @@ public:
 	static std::unique_ptr<BadService> factory(ServiceLocator& svc)
 	{
 		DepService<U, Deps...>::requestDeps(svc);
-		throw Exception::fromError(std::errc::not_supported, "oops");
+		throw std::runtime_error("oops");
 	}
 };
 
