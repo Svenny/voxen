@@ -5,8 +5,20 @@
 
 #include <glm/glm.hpp>
 
+#include <system_error>
+
 namespace Catch
 {
+
+template<>
+struct StringMaker<std::error_code> {
+	static std::string convert(const std::error_code &ec);
+};
+
+template<>
+struct StringMaker<std::error_condition> {
+	static std::string convert(const std::error_condition &ec);
+};
 
 #define MAKE_GLM_VEC_STRINGIZER(L, T) \
 	template<> \

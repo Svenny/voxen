@@ -123,6 +123,7 @@ set(VOXEN_HEADERS
 	include/voxen/land/storage_tree_common.hpp
 	include/voxen/land/storage_tree_utils.hpp
 	include/voxen/land/typed_storage_tree.hpp
+	include/voxen/os/file.hpp
 	include/voxen/os/futex.hpp
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/os_fwd.hpp

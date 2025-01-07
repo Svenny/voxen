@@ -11,6 +11,7 @@ target_sources(test-voxen PRIVATE
 	land/cube_array.test.cpp
 	land/land_storage_tree.test.cpp
 	land/storage_tree_utils.test.cpp
+	os/file.test.cpp
 	svc/message_queue.test.cpp
 	svc/service_locator.test.cpp
 	svc/task_service.test.cpp
@@ -35,6 +36,7 @@ add_test(NAME voxen-compressed-chunk-storage COMMAND test-voxen "[voxen::land::c
 add_test(NAME voxen-land-cube-array COMMAND test-voxen "[voxen::land::cube_array]")
 add_test(NAME voxen-land-storage-tree COMMAND test-voxen "[voxen::land::land_storage_tree]")
 add_test(NAME voxen-storage-tree-utils COMMAND test-voxen "[voxen::land::storage_tree_utils]")
+add_test(NAME voxen-file COMMAND test-voxen "[voxen::os::file]")
 add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_queue]")
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
 add_test(NAME voxen-svc-task-service COMMAND test-voxen "[voxen::svc::task_service]")
