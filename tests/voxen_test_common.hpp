@@ -15,6 +15,11 @@ inline auto errcExceptionMatcher(VoxenErrc ec)
 	return Catch::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
 }
 
+inline auto errcExceptionMatcher(std::errc ec)
+{
+	return Catch::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
+}
+
 } // namespace voxen::test
 
 namespace Catch

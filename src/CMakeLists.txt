@@ -91,6 +91,7 @@ set(VOXEN_SOURCES
 	src/voxen/land/pseudo_chunk_surface.cpp
 	src/voxen/land/storage_tree_utils.cpp
 	src/voxen/land/storage_tree_utils_private.hpp
+	src/voxen/os/file.cpp
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp

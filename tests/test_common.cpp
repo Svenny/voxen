@@ -5,8 +5,18 @@
 namespace Catch
 {
 
+std::string StringMaker<std::error_code>::convert(const std::error_code& ec)
+{
+	return fmt::format("[{}:{}] ({})", ec.category().name(), ec.value(), ec.message());
+}
+
+std::string StringMaker<std::error_condition>::convert(const std::error_condition& ec)
+{
+	return fmt::format("[{}:{}] ({})", ec.category().name(), ec.value(), ec.message());
+}
+
 #define MAKE_GLM_VEC_STRINGIZER(L, T, ...) \
-	std::string StringMaker<glm::vec<L, T>>::convert(const glm::vec<L, T> &value) \
+	std::string StringMaker<glm::vec<L, T>>::convert(const glm::vec<L, T>& value) \
 	{ \
 		return fmt::format(__VA_ARGS__); \
 	}
