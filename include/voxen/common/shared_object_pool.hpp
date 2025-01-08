@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/os/futex.hpp>
 #include <voxen/visibility.hpp>
 
 #include <algorithm>
@@ -55,6 +56,7 @@ private:
 	const uint32_t m_slab_size;
 	const uint32_t m_max_objects;
 
+	os::FutexLock m_lock;
 	std::atomic<void *> m_last_freed_object = nullptr;
 	void *m_newest_slab = nullptr;
 };
@@ -185,13 +187,17 @@ private:
 };
 
 // A simple unbounded object pool using a list of fixed-size "slabs".
-// Allocates objects with shared ownership. This pool is NOT thread-safe
-// but the returned pointers can be used from multiple threads,
-// i.e. object reference counting and deallocation IS thread-safe.
+// Allocates objects with shared ownership. This pool IS thread-safe,
+// and returned pointers can also be used from multiple threads just like
+// `std::shared_ptr`: modifying them is not thread-safe but copying is.
 //
 // Not efficient for extremely tiny objects - allocations are rounded
 // up to one pointer size (4/8 bytes) for internal bookkeeping.
 // These objects should be stored inline where possible anyway.
+//
+// Current implementation keeps "allocation waterline" - that is, memory
+// usage is determined by the maximal number of simultaneously allocated
+// objects during the whole pool lifetime.
 //
 // `SLAB_SIZE_HINT` controls how many objects should be placed in one "slab" memory block.
 // The implementation might allocate more than this number but will not allocate less.

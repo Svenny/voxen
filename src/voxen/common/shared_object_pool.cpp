@@ -83,7 +83,7 @@ SharedObjectPoolBase::~SharedObjectPoolBase()
 		if (live_allocs > 0) [[unlikely]] {
 			// TODO: call bugreport function?
 			Log::fatal(
-				"SharedObjectPool bug: pool ({}x{} byte objs, {} bytes slab) "
+				"SharedObjectPool usage bug: pool ({}x{} byte objs, {} bytes slab) "
 				"destroying slab {} with {} live objects remaining",
 				m_max_objects, m_adjusted_object_size, m_slab_size, fmt::ptr(slab), live_allocs);
 			Log::fatal("Live objects remain => your memory is corrupted, buckle up!");
@@ -133,6 +133,8 @@ void SharedObjectPoolBase::deallocate(void *obj, size_t slab_size) noexcept
 
 void *SharedObjectPoolBase::allocate()
 {
+	// Try reusing freed object.
+	// This section is thread-safe.
 	void *last_freed_object = m_last_freed_object.load(std::memory_order_acquire);
 
 	while (last_freed_object != nullptr) {
@@ -160,7 +162,10 @@ void *SharedObjectPoolBase::allocate()
 	}
 
 	// Reuse failed, allocate a new entry.
-	// This section is fully single-threaded.
+	// This section is not thread-safe so take a lock.
+	// Once we reach "waterline" (allocate the maximal number of objects)
+	// we will stop entering here and allocation will become lock-free.
+	std::lock_guard lock(m_lock);
 
 	if (!m_newest_slab || getSlabHeader(m_newest_slab, m_slab_size)->initial_objects == m_max_objects) [[unlikely]] {
 		void *slab = operator new(m_slab_size, std::align_val_t(m_slab_size));

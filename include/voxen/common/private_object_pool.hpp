@@ -59,11 +59,16 @@ private:
 } // namespace detail
 
 // The simplest unbounded object pool using a list of fixed-size "slabs".
-// Allocates objects with unique ownership. This pool is NOT thread-safe.
+// Allocates objects with unique ownership. This pool is NOT thread-safe,
+// nor are its returned pointers.
 //
 // Not efficient for extremely tiny objects - allocations are rounded
 // up to one pointer size (4/8 bytes) for internal bookkeeping.
 // These objects should be stored inline where possible anyway.
+//
+// Current implementation keeps "allocation waterline" - that is, memory
+// usage is determined by the maximal number of simultaneously allocated
+// objects during the whole pool lifetime.
 //
 // `SLAB_SIZE_HINT` controls how many objects should be placed in one "slab" memory block.
 // The implementation might allocate more than this number but will not allocate less.
