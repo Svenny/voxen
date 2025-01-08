@@ -48,7 +48,7 @@ PrivateObjectPoolBase::~PrivateObjectPoolBase()
 	if (m_live_allocations > 0) [[unlikely]] {
 		// TODO: call bugreport function?
 		Log::fatal(
-			"PrivateObjectPool bug: pool ({}x{} byte objs, {} bytes slab) "
+			"PrivateObjectPool usage bug: pool ({}x{} byte objs, {} bytes slab) "
 			"destroying with {} live objects remaining",
 			m_max_objects, m_adjusted_object_size, m_slab_size, m_live_allocations);
 		Log::fatal("Live objects remain => your memory is corrupted, buckle up!");
