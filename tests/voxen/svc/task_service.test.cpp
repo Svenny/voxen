@@ -1,5 +1,6 @@
 #include <voxen/svc/task_service.hpp>
 
+#include <voxen/os/time.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
@@ -238,16 +239,10 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 			}
 
 			// Sleep for a random time before completing
-#ifndef _WIN32
-			std::this_thread::sleep_for(std::chrono::microseconds(sleep_usecs));
-#else
-			// Windows sleep is dogshit, doing usec sleep will make this test take hours
-			if (sleep_usecs > 140) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			} else {
-				std::this_thread::yield();
-			}
-#endif
+			os::Time::nanosleepFor({
+				.tv_sec = time_t(sleep_usecs / 1'000'000),
+				.tv_nsec = long(sleep_usecs * 1000),
+			});
 		}
 	};
 

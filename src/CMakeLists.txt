@@ -96,6 +96,7 @@ set(VOXEN_SOURCES
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
+	src/voxen/os/time.cpp
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
 	src/voxen/svc/engine.cpp

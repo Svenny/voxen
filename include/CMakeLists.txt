@@ -129,6 +129,7 @@ set(VOXEN_HEADERS
 	include/voxen/os/os_fwd.hpp
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
+	include/voxen/os/time.hpp
 	include/voxen/server/world.hpp
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp
