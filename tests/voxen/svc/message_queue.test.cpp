@@ -40,7 +40,7 @@ constexpr UID U3("5eba2318-3dd0e03a-7101e4e9-e7b8dbea");
 
 TEST_CASE("'MessageQueue' basic unicast test", "[voxen::svc::message_queue]")
 {
-	auto engine = Engine::create();
+	auto engine = Engine::createForTestSuite();
 
 	std::unique_ptr<int> received_object;
 	MessageQueue mq1;
@@ -87,7 +87,7 @@ TEST_CASE("'MessageQueue' basic unicast test", "[voxen::svc::message_queue]")
 
 TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 {
-	auto engine = Engine::create();
+	auto engine = Engine::createForTestSuite();
 
 	MessageQueue mq1;
 	MessageQueue mq2;
