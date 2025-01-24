@@ -231,7 +231,9 @@ void Instance::createInstance()
 	auto version = VK_MAKE_VERSION(Version::MAJOR, Version::MINOR, Version::PATCH);
 	VkApplicationInfo app_info = {};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	// TODO: pass application name from `EngineStartArgs`
 	app_info.pApplicationName = "Voxen";
+	// TODO: pass application version from `EngineStartArgs`
 	app_info.applicationVersion = version;
 	app_info.pEngineName = "Voxen";
 	app_info.engineVersion = version;

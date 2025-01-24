@@ -1,110 +1,33 @@
 #include <voxen/client/main_thread_service.hpp>
-#include <voxen/common/config.hpp>
-#include <voxen/common/filemanager.hpp>
-#include <voxen/common/runtime_config.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 
-#include <cxxopts/cxxopts.hpp>
-
-#include <iostream>
-#include <string>
-#include <variant>
-
-static const std::string kCliSectionSeparator = "__";
-
-static cxxopts::Options initCli()
-{
-	using namespace voxen;
-
-	cxxopts::Options options("voxen", "Voxen - awesome VOXel ENgine");
-	Config::Scheme scheme = Config::mainConfigScheme();
-
-	for (Config::SchemeEntry &entry : scheme) {
-		const std::string &arg_name = entry.section + kCliSectionSeparator + entry.parameter_name;
-
-		std::shared_ptr<cxxopts::Value> default_cli_value;
-		switch (entry.default_value.index()) {
-		case 0:
-			static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, voxen::Config::option_t>>);
-			default_cli_value = cxxopts::value<std::string>();
-			break;
-
-		case 1:
-			static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, voxen::Config::option_t>>);
-			default_cli_value = cxxopts::value<int>();
-			break;
-
-		case 2:
-			static_assert(std::is_same_v<double, std::variant_alternative_t<2, voxen::Config::option_t>>);
-			default_cli_value = cxxopts::value<double>();
-			break;
-
-		case 3:
-			static_assert(std::is_same_v<bool, std::variant_alternative_t<3, voxen::Config::option_t>>);
-			// Minor UX convenience. This allows use bool flag like `--dev__fps_logging` instead of strict `--dev__fps_loggin=true` form
-			default_cli_value = cxxopts::value<bool>()->default_value("true");
-			break;
-
-		default:
-			static_assert(std::variant_size_v<voxen::Config::option_t> == 4);
-			break;
-		}
-		options.add_options(entry.section)(arg_name, entry.description, default_cli_value);
-	}
-
-	// clang-format off: breaks nice chaining syntax
-	options.add_options()
-		("h,help", "Display help information")
-		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
-	// clang-format on
-
-	voxen::RuntimeConfig::addOptions(options);
-
-	return options;
-}
-
-static void patchConfig(const cxxopts::ParseResult &result, voxen::Config *config)
-{
-	for (const auto &keyvalue : result.arguments()) {
-		size_t sep_idx = keyvalue.key().find(kCliSectionSeparator);
-		if (sep_idx == std::string::npos) {
-			continue;
-		}
-
-		std::string section = keyvalue.key().substr(0, sep_idx);
-		std::string parameter = keyvalue.key().substr(sep_idx + kCliSectionSeparator.size());
-
-		config->patch(section, parameter, keyvalue.value());
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	using voxen::Log;
 
-	Log::info("Starting Voxen {}", voxen::Version::STRING);
-	Log::info("Started at: {:%c UTC%z (%Z)}", fmt::localtime(std::time(nullptr)));
-
 	try {
-		cxxopts::Options options = initCli();
-		auto result = options.parse(argc, argv);
-		if (result.count("help")) {
-			std::cout << options.help() << std::endl;
-			return 0;
+		using ArgvStatus = voxen::svc::EngineStartArgs::ArgvParseStatus;
+
+		voxen::svc::EngineStartArgs engine_args(voxen::svc::AppInfo {
+			.name = "Voxen Sample Game",
+			.version_major = voxen::Version::MAJOR,
+			.version_minor = voxen::Version::MINOR,
+			.version_patch = voxen::Version::PATCH,
+			.version_appendix = voxen::Version::SUFFIX,
+			.git_commit_hash = voxen::Version::GIT_HASH,
+		});
+
+		if (auto result = engine_args.fillFromArgv(argc, argv); result.status != ArgvStatus::Success) {
+			printf("%s\n", result.help_text.c_str());
+			// Explicitly requested help - success; otherwise it's a failure (wrong CLI usage)
+			return result.status == ArgvStatus::HelpRequested ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
 
-		voxen::RuntimeConfig::instance().fill(result);
-
-		auto engine = voxen::svc::Engine::create();
-
-		voxen::FileManager::setProfileName(argv[0], result["profile"].as<std::string>());
-
-		voxen::Config *main_voxen_config = voxen::Config::mainConfig();
-		patchConfig(result, main_voxen_config);
+		auto engine = voxen::svc::Engine::create(std::move(engine_args));
 
 		// This will start world thread automatically
 		engine->serviceLocator().requestService<voxen::server::World>();
@@ -133,6 +56,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	Log::info("Exiting");
+	Log::info("Exiting normally");
 	return EXIT_SUCCESS;
 }
