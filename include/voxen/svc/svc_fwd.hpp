@@ -23,6 +23,7 @@ namespace detail
 {
 
 class AsyncCounterTracker;
+class AsyncFileIoServiceImpl;
 class CoroSubTaskStateBase;
 template<typename>
 class CoroSubTaskState;

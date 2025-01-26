@@ -99,6 +99,7 @@ set(VOXEN_SOURCES
 	src/voxen/os/time.cpp
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
+	src/voxen/svc/async_file_io_service.cpp
 	src/voxen/svc/engine.cpp
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp

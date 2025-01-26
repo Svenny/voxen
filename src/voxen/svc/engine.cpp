@@ -7,6 +7,7 @@
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/server/world.hpp>
+#include <voxen/svc/async_file_io_service.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -131,6 +132,11 @@ auto makeTaskService(ServiceLocator &svc)
 	return std::make_unique<TaskService>(svc, TaskService::Config {});
 }
 
+auto makeAsyncFileIoService(ServiceLocator &svc)
+{
+	return std::make_unique<AsyncFileIoService>(svc, AsyncFileIoService::Config {});
+}
+
 auto makeMainThreadService(ServiceLocator &svc)
 {
 	return std::make_unique<client::MainThreadService>(svc, client::MainThreadService::Config {});
@@ -219,6 +225,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	debug::UidRegistry::registerLiteral(detail::AsyncCounterTracker::SERVICE_UID,
 		"voxen::svc::detail::AsyncCounterTracker");
 	debug::UidRegistry::registerLiteral(TaskService::SERVICE_UID, "voxen::svc::TaskService");
+	debug::UidRegistry::registerLiteral(AsyncFileIoService::SERVICE_UID, "voxen::svc::AsyncFileIoService");
 	debug::UidRegistry::registerLiteral(client::MainThreadService::SERVICE_UID, "voxen::client::MainThreadService");
 	debug::UidRegistry::registerLiteral(server::World::SERVICE_UID, "voxen::server::World");
 
@@ -226,6 +233,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	m_service_locator.registerServiceFactory<PipeMemoryAllocator>(makePipeAllocService);
 	m_service_locator.registerServiceFactory<detail::AsyncCounterTracker>(makeAsyncCounterTracker);
 	m_service_locator.registerServiceFactory<TaskService>(makeTaskService);
+	m_service_locator.registerServiceFactory<AsyncFileIoService>(makeAsyncFileIoService);
 	m_service_locator.registerServiceFactory<client::MainThreadService>(makeMainThreadService);
 	m_service_locator.registerServiceFactory<server::World>(makeWorldService);
 }

@@ -32,6 +32,8 @@ enum class VoxenErrc : int {
 	UnresolvedDependency = 10,
 	// A circular data/control dependency not allowed in this context was encountered
 	CircularDependency = 11,
+	// Error is unknown or unexpected here
+	UnknownError = 12,
 };
 
 // ADL-accessible factory for `std::error_condition { VoxenErrc }`

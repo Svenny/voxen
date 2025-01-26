@@ -131,6 +131,7 @@ set(VOXEN_HEADERS
 	include/voxen/os/stdlib.hpp
 	include/voxen/os/time.hpp
 	include/voxen/server/world.hpp
+	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp
 	include/voxen/svc/message_queue.hpp

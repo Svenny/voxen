@@ -34,6 +34,8 @@ struct VoxenErrorCategory : std::error_category {
 			return "A data/control dependency was not resolved";
 		case VoxenErrc::CircularDependency:
 			return "A circular data/control dependency not allowed in this context was encountered";
+		case VoxenErrc::UnknownError:
+			return "Error is unknown or unexpected here";
 		} // No `default` to make `-Werror -Wswitch` protection work
 
 		return "Unknown error";
