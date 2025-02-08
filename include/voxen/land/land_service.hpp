@@ -1,21 +1,13 @@
 #pragma once
 
-#include <voxen/common/world_state.hpp>
+#include <voxen/land/land_fwd.hpp>
 #include <voxen/svc/service_base.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 #include <extras/pimpl.hpp>
 
 namespace voxen::land
 {
-
-namespace detail
-{
-
-class LandServiceImpl;
-
-}
-
-struct LandState;
 
 // Accepts the following messages:
 // - `voxen::land::ChunkTicketRequestMessage`
@@ -32,7 +24,7 @@ public:
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
 
-	void doTick(WorldTickId tick_id);
+	void doTick(world::TickId tick_id);
 	const LandState &stateForCopy() const noexcept;
 
 private:

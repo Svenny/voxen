@@ -5,6 +5,8 @@ namespace voxen::land
 
 class Chunk;
 struct ChunkAdjacencyRef;
+class LandService;
+struct LandState;
 class PrivateStorageTree;
 class PseudoChunkData;
 class StorageTree;
@@ -18,6 +20,7 @@ struct DuoctreeX4Node;
 struct DuoctreeX16Node;
 struct DuoctreeX64Node;
 struct DuoctreeX256Node;
+class LandServiceImpl;
 struct TriquadtreeBridgeNode;
 struct TriquadtreeRootNode;
 

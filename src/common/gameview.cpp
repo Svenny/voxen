@@ -2,13 +2,14 @@
 
 #include <voxen/common/config.hpp>
 #include <voxen/common/player.hpp>
+#include <voxen/common/player_state_message.hpp>
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
-#include <voxen/server/world.hpp>
+#include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/util/log.hpp>
-#include <voxen/land/land_temp_blocks.hpp>
+#include <voxen/world/world_control_service.hpp>
 
 #include <extras/math.hpp>
 
@@ -169,7 +170,7 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc::MessageQueue& mq) noexcept
+void GameView::update(const Player& player, world::TickId tick_id, double dt, svc::MessageQueue& mq) noexcept
 {
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {
@@ -271,7 +272,7 @@ void GameView::update(const Player& player, WorldTickId tick_id, double dt, svc:
 	message.player_orientation = m_local_player.orientation();
 	message.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
 
-	mq.send<PlayerStateMessage>(server::World::SERVICE_UID, message);
+	mq.send<PlayerStateMessage>(world::ControlService::SERVICE_UID, message);
 }
 
 glm::ivec3 GameView::modifyTargetBlockCoord() const noexcept

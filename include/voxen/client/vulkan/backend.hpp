@@ -1,11 +1,11 @@
 #pragma once
 
 #include <voxen/common/gameview.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/world/world_fwd.hpp>
 
 #include <extras/dyn_array.hpp>
 
@@ -33,7 +33,7 @@ public:
 	bool start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept;
 	void stop() noexcept;
 
-	bool drawFrame(const WorldState &state, const GameView &view) noexcept;
+	bool drawFrame(const world::State &state, const GameView &view) noexcept;
 
 	State state() const noexcept { return m_state; }
 
