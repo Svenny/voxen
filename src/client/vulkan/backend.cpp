@@ -101,7 +101,7 @@ void Backend::stop() noexcept
 	m_state = State::NotStarted;
 }
 
-bool Backend::drawFrame(const WorldState &state, const GameView &view) noexcept
+bool Backend::drawFrame(const world::State &state, const GameView &view) noexcept
 {
 	try {
 		m_gfx_system->drawFrame(state, view);

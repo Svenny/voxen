@@ -29,8 +29,6 @@ set(VOXEN_SOURCES
 	src/common/gameview.cpp
 	src/common/player.cpp
 	src/common/runtime_config.cpp
-	src/common/world_state.cpp
-	src/server/world.cpp
 	src/util/aabb.cpp
 	src/util/allocator.cpp
 	src/util/debug.cpp
@@ -123,6 +121,9 @@ set(VOXEN_SOURCES
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/hash.cpp
 	src/voxen/util/packed_color.cpp
+	src/voxen/world/world_control_service.cpp
+	src/voxen/world/world_sim_thread.cpp
+	src/voxen/world/world_sim_thread.hpp
 )
 
 target_sources(game PRIVATE

@@ -128,7 +128,7 @@ void editBlock(ChunkKey key, ChunkPtr chunk, glm::ivec3 position, Chunk::BlockId
 constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
 
 struct ChunkMetastate {
-	WorldTickId last_referenced_tick = WorldTickId::INVALID;
+	world::TickId last_referenced_tick = world::TickId::INVALID;
 
 	uint32_t pending_task_count : 8 = 0;
 	uint32_t chunk_data_invalidated : 1 = 1;
@@ -233,7 +233,7 @@ public:
 		m_queue.pollMessages();
 	}
 
-	void doTick(WorldTickId tick_id)
+	void doTick(world::TickId tick_id)
 	{
 		m_tick_id = tick_id;
 		m_generator.onWorldTickBegin(tick_id);
@@ -329,11 +329,11 @@ public:
 
 		// Try cleaning up some unused chunks
 		m_keys_lru_check_order.visitOldest(
-			[&](ChunkKey key) -> WorldTickId {
+			[&](ChunkKey key) -> world::TickId {
 				auto iter = m_metastate.find(key);
 				if (iter == m_metastate.end()) {
 					// Wut, key gone without our action?
-					return WorldTickId::INVALID;
+					return world::TickId::INVALID;
 				}
 
 				if (iter->second.last_referenced_tick + STALE_CHUNK_AGE_THRESHOLD > tick_id) {
@@ -353,7 +353,7 @@ public:
 				m_land_state.pseudo_chunk_surface_table.erase(version, iter->first);
 				m_metastate.erase(iter);
 
-				return WorldTickId::INVALID;
+				return world::TickId::INVALID;
 			},
 			// TODO: move to constants/options
 			1000, tick_id);
@@ -376,10 +376,10 @@ private:
 	std::vector<ChunkKey> m_this_tick_pseudo_data_invalidations;
 	std::vector<ChunkKey> m_this_tick_pseudo_surface_invalidations;
 
-	LruVisitOrdering<ChunkKey, WorldTickTag> m_keys_lru_check_order;
+	LruVisitOrdering<ChunkKey, world::WorldTickTag> m_keys_lru_check_order;
 	std::vector<ChunkKey> m_keys_to_update;
 
-	WorldTickId m_tick_id;
+	world::TickId m_tick_id;
 	LandState m_land_state;
 
 	Generator m_generator;
@@ -405,7 +405,7 @@ private:
 		return m;
 	}
 
-	void tickChunkKey(ChunkKey ck, WorldTickId tick_id)
+	void tickChunkKey(ChunkKey ck, world::TickId tick_id)
 	{
 		auto [iter, inserted] = m_metastate.try_emplace(ck);
 		if (inserted) {
@@ -962,7 +962,7 @@ LandService::LandService(svc::ServiceLocator &svc) : m_impl(svc) {}
 
 LandService::~LandService() = default;
 
-void LandService::doTick(WorldTickId tick_id)
+void LandService::doTick(world::TickId tick_id)
 {
 	m_impl->doTick(tick_id);
 }

@@ -55,7 +55,7 @@ void StorageTree::copyFrom(const StorageTree &other, UserDataCopyFn user_data_co
 	}
 }
 
-void *StorageTree::access(uint64_t tree_path, WorldTickId tick)
+void *StorageTree::access(uint64_t tree_path, world::TickId tick)
 {
 	const uint32_t root_index = static_cast<uint32_t>(tree_path >> (64 - 8));
 	auto &root_item = m_root_items[root_index];
@@ -69,7 +69,7 @@ void *StorageTree::access(uint64_t tree_path, WorldTickId tick)
 	return root_item->access(m_ctl, tree_path, tick);
 }
 
-void StorageTree::remove(uint64_t tree_path, WorldTickId tick)
+void StorageTree::remove(uint64_t tree_path, world::TickId tick)
 {
 	uint32_t root_index = static_cast<uint32_t>(tree_path >> (64 - 8));
 	auto &root_item = m_root_items[root_index];

@@ -3,13 +3,13 @@
 #include <voxen/client/gui.hpp>
 #include <voxen/client/render.hpp>
 #include <voxen/common/config.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/os/glfw_window.hpp>
-#include <voxen/server/world.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/world/world_control_service.hpp>
+#include <voxen/world/world_state.hpp>
 
 #include <extras/attributes.hpp>
 
@@ -76,13 +76,13 @@ void MainThreadService::doMainLoop()
 
 	auto &impl = m_impl.object();
 
-	auto &world = impl.svc.requestService<server::World>();
-	auto last_state_ptr = world.getLastState();
+	auto &world_control = impl.svc.requestService<world::ControlService>();
+	auto last_state_ptr = world_control.getLastState();
 
 	impl.gui->init(*last_state_ptr);
 
 	int64_t fps_counter = 0;
-	WorldTickId tick_id_counter = last_state_ptr->tickId();
+	world::TickId tick_id_counter = last_state_ptr->tickId();
 
 	auto last_fps_log_time = std::chrono::steady_clock::now();
 	auto last_input_sample_time = last_fps_log_time;
@@ -102,14 +102,14 @@ void MainThreadService::doMainLoop()
 		impl.message_queue.pollMessages();
 
 		// Receive the latest world state
-		last_state_ptr = world.getLastState();
-		const WorldState &last_state = *last_state_ptr;
+		last_state_ptr = world_control.getLastState();
+		const world::State &last_state = *last_state_ptr;
 
 		if (impl.log_fps) {
 			std::chrono::duration<double> dur = (input_sample_time - last_fps_log_time);
 			double elapsed = dur.count();
 			if (elapsed > 2.0) {
-				WorldTickId tick_id = last_state.tickId();
+				world::TickId tick_id = last_state.tickId();
 				int64_t ups_counter = tick_id - tick_id_counter;
 
 				Log::info("FPS: {:.1f} UPS: {:.1f}", double(fps_counter) / elapsed, double(ups_counter) / elapsed);

@@ -61,7 +61,7 @@ void DuoctreeNodeBase<TChild>::clear(const StorageTreeControl &ctl) noexcept
 }
 
 template<typename TChild>
-void *DuoctreeNodeBase<TChild>::access(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick)
+void *DuoctreeNodeBase<TChild>::access(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick)
 {
 	const uint64_t my_component = StorageTreeUtils::extractNodePathComponent<TREE_PATH_BYTE>(tree_path);
 	const uint64_t child_bit = StorageTreeUtils::extractNodePathChildBit(my_component);
@@ -109,7 +109,7 @@ void *DuoctreeNodeBase<TChild>::access(const StorageTreeControl &ctl, uint64_t t
 }
 
 template<typename TChild>
-void DuoctreeNodeBase<TChild>::remove(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick)
+void DuoctreeNodeBase<TChild>::remove(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick)
 {
 	const uint64_t my_component = StorageTreeUtils::extractNodePathComponent<TREE_PATH_BYTE>(tree_path);
 	const uint64_t child_bit = StorageTreeUtils::extractNodePathChildBit(my_component);
@@ -245,7 +245,7 @@ void TriquadtreeNodeBase<HILO, TChild>::clear(const StorageTreeControl &ctl) noe
 }
 
 template<bool HILO, typename TChild>
-void *TriquadtreeNodeBase<HILO, TChild>::access(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick)
+void *TriquadtreeNodeBase<HILO, TChild>::access(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick)
 {
 	const uint64_t my_component = StorageTreeUtils::extractNodePathComponent<TREE_PATH_BYTE>(tree_path);
 	const uint64_t child_bit = StorageTreeUtils::extractNodePathChildBit(my_component);
@@ -301,7 +301,7 @@ void *TriquadtreeNodeBase<HILO, TChild>::access(const StorageTreeControl &ctl, u
 }
 
 template<bool HILO, typename TChild>
-void TriquadtreeNodeBase<HILO, TChild>::remove(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick)
+void TriquadtreeNodeBase<HILO, TChild>::remove(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick)
 {
 	const uint64_t my_component = StorageTreeUtils::extractNodePathComponent<TREE_PATH_BYTE>(tree_path);
 	const uint64_t child_bit = StorageTreeUtils::extractNodePathChildBit(my_component);

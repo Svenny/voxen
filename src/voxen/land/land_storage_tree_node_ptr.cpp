@@ -65,7 +65,7 @@ void userDataDtor(const StorageTreeControl& ctl, TNode* node) noexcept
 
 template<typename TNode>
 StorageTreeNodePtr<TNode>::StorageTreeNodePtr(StorageTreeNodePtr&& other) noexcept
-	: m_tick(std::exchange(other.m_tick, WorldTickId::INVALID)), m_node(std::exchange(other.m_node, nullptr))
+	: m_tick(std::exchange(other.m_tick, world::TickId::INVALID)), m_node(std::exchange(other.m_node, nullptr))
 {}
 
 template<typename TNode>
@@ -93,7 +93,7 @@ StorageTreeNodePtr<TNode>::~StorageTreeNodePtr()
 }
 
 template<typename TNode>
-void StorageTreeNodePtr<TNode>::init(const StorageTreeControl& ctl, WorldTickId tick, glm::ivec3 min_coord)
+void StorageTreeNodePtr<TNode>::init(const StorageTreeControl& ctl, world::TickId tick, glm::ivec3 min_coord)
 {
 	assert(!m_node);
 
@@ -117,7 +117,7 @@ void StorageTreeNodePtr<TNode>::init(const StorageTreeControl& ctl, WorldTickId 
 }
 
 template<typename TNode>
-void StorageTreeNodePtr<TNode>::moo(const StorageTreeControl& ctl, WorldTickId tick)
+void StorageTreeNodePtr<TNode>::moo(const StorageTreeControl& ctl, world::TickId tick)
 {
 	if (m_tick >= tick) {
 		return;

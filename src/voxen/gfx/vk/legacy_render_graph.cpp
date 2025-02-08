@@ -188,7 +188,7 @@ void LegacyRenderGraph::endExecution(RenderGraphExecution &)
 	m_game_view = nullptr;
 }
 
-void LegacyRenderGraph::setGameState(const WorldState &state, const GameView &view)
+void LegacyRenderGraph::setGameState(const world::State &state, const GameView &view)
 {
 	m_world_state = &state;
 	m_game_view = &view;

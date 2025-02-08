@@ -1,12 +1,12 @@
 #pragma once
 
 #include <voxen/common/shared_object_pool.hpp>
-#include <voxen/common/world_tick_id.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/util/lru_visit_ordering.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 namespace voxen::land
 {
@@ -77,7 +77,7 @@ public:
 	Generator &operator=(const Generator &) = delete;
 	~Generator();
 
-	void onWorldTickBegin(WorldTickId new_tick);
+	void onWorldTickBegin(world::TickId new_tick);
 	void setSeed(uint64_t seed);
 	// Uses `bld` to wait for tasks enqueued by this builder.
 	// Call it before destroying to protect from use-after-free.
@@ -112,7 +112,7 @@ private:
 
 	struct RegionalMapCacheEntry {
 		SharedPoolPtr<GeneratorRegionalMap, REGIONAL_MAP_POOL_HINT> ptr;
-		WorldTickId last_referenced_tick = WorldTickId::INVALID;
+		world::TickId last_referenced_tick = world::TickId::INVALID;
 		uint64_t gen_task_counter = 0;
 	};
 
@@ -124,7 +124,7 @@ private:
 
 	GeneratorGlobalMap m_global_map;
 
-	WorldTickId m_current_world_tick = WorldTickId::INVALID;
+	world::TickId m_current_world_tick = world::TickId::INVALID;
 	uint64_t m_global_map_gen_task_counter = 0;
 
 	SharedObjectPool<GeneratorRegionalMap, REGIONAL_MAP_POOL_HINT> m_regional_map_pool;
