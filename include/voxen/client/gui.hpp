@@ -22,7 +22,7 @@ public:
 	void handleMouseScroll(double xoffset, double yoffset);
 
 	void init(const world::State& world_start_state);
-	void update(const world::State& lastState, double dt, svc::MessageQueue& mq);
+	void update(const world::State& lastState, double dt, svc::MessageSender& msend);
 
 	GameView& view();
 

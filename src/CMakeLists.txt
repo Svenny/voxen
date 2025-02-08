@@ -44,6 +44,7 @@ set(VOXEN_SOURCES
 	src/voxen/debug/bug_found.cpp
 	src/voxen/debug/thread_name.cpp
 	src/voxen/debug/uid_registry.cpp
+	src/voxen/gfx/ui/ui_builder.cpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp
@@ -127,7 +128,9 @@ set(VOXEN_SOURCES
 )
 
 target_sources(game PRIVATE
-	src/main.cpp
+	src/game/game_main.cpp
+	src/game/game_ui.hpp
+	src/game/game_ui.cpp
 )
 
 target_sources(voxen PRIVATE ${VOXEN_SOURCES})

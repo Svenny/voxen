@@ -1,3 +1,5 @@
+#include "game_ui.hpp"
+
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
@@ -59,9 +61,14 @@ int main(int argc, char *argv[])
 			latch.wait();
 		}
 
+		vxgame::Ui ui;
+
 		auto &main_thread = engine->serviceLocator().requestService<voxen::client::MainThreadService>();
 		// Will stay inside this function until the game is ordered to exit
-		main_thread.doMainLoop();
+		main_thread.doMainLoop([&](voxen::client::MainThreadService::FrameCallbackData fcd) {
+			ui.draw(fcd.ui_builder);
+			return true;
+		});
 
 		{
 			std::latch latch(1);

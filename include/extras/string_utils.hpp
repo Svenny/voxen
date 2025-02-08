@@ -21,4 +21,10 @@ inline void string_split_apply(std::string_view string, std::string_view delimit
 	functor(string.substr(prev_pos, string.size()));
 }
 
+// Trivial cast helper to adapt `char` to `char8_t` when input contains only ASCII
+inline std::u8string_view ascii_as_utf8(std::string_view view) noexcept
+{
+	return std::u8string_view(reinterpret_cast<const char8_t *>(view.data()), view.length());
+}
+
 } // namespace extras

@@ -75,6 +75,9 @@ set(VOXEN_HEADERS
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
+	include/voxen/gfx/ui/ui_builder.hpp
+	include/voxen/gfx/ui/ui_fwd.hpp
+	include/voxen/gfx/ui/ui_setup_types.hpp
 	include/voxen/gfx/vk/frame_context.hpp
 	include/voxen/gfx/vk/legacy_render_graph.hpp
 	include/voxen/gfx/vk/render_graph.hpp

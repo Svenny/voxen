@@ -18,7 +18,7 @@ public:
 	GameView(os::GlfwWindow& window);
 
 	void init(const Player& player) noexcept;
-	void update(const Player& player, world::TickId tick_id, double dt, svc::MessageQueue& mq) noexcept;
+	void update(const Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
