@@ -1,10 +1,8 @@
 #include <voxen/client/gui.hpp>
 
-#include <voxen/util/log.hpp>
-
-#include <functional>
-
 #include <voxen/client/input_event_adapter.hpp>
+#include <voxen/util/log.hpp>
+#include <voxen/world/world_state.hpp>
 
 namespace voxen::client
 {
@@ -59,13 +57,13 @@ GameView& Gui::view()
 	return m_gameview;
 }
 
-void Gui::init(const WorldState& world_start_state)
+void Gui::init(const world::State& world_start_state)
 {
 	m_gameview.init(world_start_state.player());
 	InputEventAdapter::init();
 }
 
-void Gui::update(const WorldState& lastState, double dt, svc::MessageQueue& mq)
+void Gui::update(const world::State& lastState, double dt, svc::MessageQueue& mq)
 {
 	m_gameview.update(lastState.player(), lastState.tickId(), dt, mq);
 }

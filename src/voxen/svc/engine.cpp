@@ -6,7 +6,6 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/debug/uid_registry.hpp>
-#include <voxen/server/world.hpp>
 #include <voxen/svc/async_file_io_service.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/task_service.hpp>
@@ -14,6 +13,7 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
+#include <voxen/world/world_control_service.hpp>
 
 #include "async_counter_tracker.hpp"
 
@@ -142,9 +142,9 @@ auto makeMainThreadService(ServiceLocator &svc)
 	return std::make_unique<client::MainThreadService>(svc, client::MainThreadService::Config {});
 }
 
-auto makeWorldService(ServiceLocator &svc)
+auto makeWorldControlService(ServiceLocator &svc)
 {
-	return std::make_unique<server::World>(svc);
+	return std::make_unique<world::ControlService>(svc);
 }
 
 std::atomic_bool g_instance_created = false;
@@ -227,7 +227,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	debug::UidRegistry::registerLiteral(TaskService::SERVICE_UID, "voxen::svc::TaskService");
 	debug::UidRegistry::registerLiteral(AsyncFileIoService::SERVICE_UID, "voxen::svc::AsyncFileIoService");
 	debug::UidRegistry::registerLiteral(client::MainThreadService::SERVICE_UID, "voxen::client::MainThreadService");
-	debug::UidRegistry::registerLiteral(server::World::SERVICE_UID, "voxen::server::World");
+	debug::UidRegistry::registerLiteral(world::ControlService::SERVICE_UID, "voxen::world::ControlService");
 
 	m_service_locator.registerServiceFactory<MessagingService>(makeMsgService);
 	m_service_locator.registerServiceFactory<PipeMemoryAllocator>(makePipeAllocService);
@@ -235,7 +235,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	m_service_locator.registerServiceFactory<TaskService>(makeTaskService);
 	m_service_locator.registerServiceFactory<AsyncFileIoService>(makeAsyncFileIoService);
 	m_service_locator.registerServiceFactory<client::MainThreadService>(makeMainThreadService);
-	m_service_locator.registerServiceFactory<server::World>(makeWorldService);
+	m_service_locator.registerServiceFactory<world::ControlService>(makeWorldControlService);
 }
 
 Engine::~Engine() = default;

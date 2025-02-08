@@ -1,10 +1,10 @@
 #pragma once
 
 #include <voxen/common/gameview.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
+#include <voxen/world/world_fwd.hpp>
 
 namespace voxen::client
 {
@@ -18,7 +18,7 @@ public:
 	Render &operator=(const Render &) = delete;
 	~Render();
 
-	void drawFrame(const WorldState &world_state, const GameView &view);
+	void drawFrame(const world::State &world_state, const GameView &view);
 
 private:
 	os::GlfwWindow &m_window;

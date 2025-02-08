@@ -72,8 +72,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/v8g_flat_map_impl.hpp
 	include/voxen/common/v8g_hash_trie.hpp
 	include/voxen/common/v8g_hash_trie_impl.hpp
-	include/voxen/common/world_state.hpp
-	include/voxen/common/world_tick_id.hpp
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
@@ -130,7 +128,6 @@ set(VOXEN_HEADERS
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
 	include/voxen/os/time.hpp
-	include/voxen/server/world.hpp
 	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp
@@ -161,6 +158,10 @@ set(VOXEN_HEADERS
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
 	include/voxen/util/tagged_tick_id.hpp
+	include/voxen/world/world_control_service.hpp
+	include/voxen/world/world_fwd.hpp
+	include/voxen/world/world_state.hpp
+	include/voxen/world/world_tick_id.hpp
 	include/voxen/visibility.hpp
 
 	# Visualizers for VS debugger

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/world_tick_id.hpp>
 #include <voxen/land/land_fwd.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 #include <glm/vec3.hpp>
 
@@ -28,15 +28,15 @@ public:
 	~StorageTreeNodePtr();
 
 	// Construct (default initialize) a node and its user data block. UB if already constructed.
-	void init(const StorageTreeControl &ctl, WorldTickId tick, glm::ivec3 min_coord);
+	void init(const StorageTreeControl &ctl, world::TickId tick, glm::ivec3 min_coord);
 	// If `tick > tick()`, copy-construct a node and its user data block. Otherwise do nothing.
-	void moo(const StorageTreeControl &ctl, WorldTickId tick);
+	void moo(const StorageTreeControl &ctl, world::TickId tick);
 	// Release node reference, destroying it if this was the last one
 	void reset(const StorageTreeControl &ctl) noexcept;
 
-	WorldTickId tick() const noexcept { return m_tick; }
+	world::TickId tick() const noexcept { return m_tick; }
 	// Overwrite stored tick; use with caution.
-	void set_tick(WorldTickId tick) noexcept { m_tick = tick; }
+	void set_tick(world::TickId tick) noexcept { m_tick = tick; }
 
 	TNode *get() noexcept { return m_node; }
 	TNode *operator->() noexcept { return m_node; }
@@ -49,7 +49,7 @@ public:
 	operator bool() const noexcept { return m_node != nullptr; }
 
 private:
-	WorldTickId m_tick = WorldTickId::INVALID;
+	world::TickId m_tick = world::TickId::INVALID;
 	TNode *m_node = nullptr;
 };
 

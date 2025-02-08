@@ -2,7 +2,7 @@
 
 #include <voxen/util/tagged_tick_id.hpp>
 
-namespace voxen
+namespace voxen::world
 {
 
 struct WorldTickTag {};
@@ -11,6 +11,6 @@ struct WorldTickTag {};
 //
 // World state communicated to other subsystems is like a snapshot
 // of the world at a time point associated with a certain tick ID.
-using WorldTickId = TaggedTickId<WorldTickTag>;
+using TickId = TaggedTickId<WorldTickTag>;
 
-} // namespace voxen
+} // namespace voxen::world

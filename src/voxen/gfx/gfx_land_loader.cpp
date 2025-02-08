@@ -1,6 +1,6 @@
 #include <voxen/gfx/gfx_land_loader.hpp>
 
-#include <voxen/common/world_state.hpp>
+#include <voxen/debug/uid_registry.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/land/land_messages.hpp>
@@ -8,6 +8,7 @@
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/world/world_state.hpp>
 
 #include <optional>
 
@@ -32,12 +33,11 @@ public:
 
 	LandLoaderImpl(GfxSystem &gfx, svc::ServiceLocator &svc) : m_gfx(gfx)
 	{
-		// HELL YEAH!!!
-		UID my_uid = UID::generateRandom();
-		m_message_sender = svc.requestService<svc::MessagingService>().createSender(my_uid);
+		debug::UidRegistry::registerLiteral(LAND_LOADER_DOMAIN_UID, "voxen::gfx::LandLoader");
+		m_message_sender = svc.requestService<svc::MessagingService>().createSender(LAND_LOADER_DOMAIN_UID);
 	}
 
-	void onNewState(const WorldState &state)
+	void onNewState(const world::State &state)
 	{
 		const auto &new_land = state.landState();
 		last_known_pseudo_chunk_surface_table = new_land.pseudo_chunk_surface_table;
@@ -286,7 +286,7 @@ LandLoader::LandLoader(GfxSystem &gfx, svc::ServiceLocator &svc) : m_impl(gfx, s
 
 LandLoader::~LandLoader() = default;
 
-void LandLoader::onNewState(const WorldState &state)
+void LandLoader::onNewState(const world::State &state)
 {
 	m_impl->onNewState(state);
 }

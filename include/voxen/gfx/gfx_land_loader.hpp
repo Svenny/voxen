@@ -3,6 +3,7 @@
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/world/world_fwd.hpp>
 
 #include <extras/pimpl.hpp>
 
@@ -12,13 +13,6 @@
 
 typedef struct VkBuffer_T *VkBuffer;
 typedef uint64_t VkDeviceAddress;
-
-namespace voxen
-{
-
-class WorldState;
-
-} // namespace voxen
 
 namespace voxen::gfx
 {
@@ -58,7 +52,7 @@ public:
 	LandLoader &operator=(const LandLoader &) = delete;
 	~LandLoader();
 
-	void onNewState(const WorldState &state);
+	void onNewState(const world::State &state);
 
 	// Collects chunk surfaces within render area centered around `viewpoint`
 	// according to LODs. Requests streaming of surfaces of those chunks

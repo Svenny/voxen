@@ -1,11 +1,11 @@
 #pragma once
 
 #include <voxen/common/gameview.hpp>
-#include <voxen/common/world_state.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
+#include <voxen/world/world_fwd.hpp>
 
 namespace voxen::gfx::vk
 {
@@ -20,7 +20,7 @@ public:
 	void beginExecution(RenderGraphExecution &exec) override;
 	void endExecution(RenderGraphExecution &exec) override;
 
-	void setGameState(const WorldState &state, const GameView &view);
+	void setGameState(const world::State &state, const GameView &view);
 
 	VkFormat currentOutputFormat() const noexcept { return m_output_format; }
 
@@ -43,7 +43,7 @@ private:
 	VkDescriptorSet createMainSceneDset(FrameContext &fctx);
 
 	GfxSystem *m_gfx = nullptr;
-	const WorldState *m_world_state = nullptr;
+	const world::State *m_world_state = nullptr;
 	const GameView *m_game_view = nullptr;
 
 	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;

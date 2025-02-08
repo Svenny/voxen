@@ -4,6 +4,7 @@
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/world/world_fwd.hpp>
 
 #include <memory>
 
@@ -11,7 +12,6 @@ namespace voxen
 {
 
 class GameView;
-class WorldState;
 
 } // namespace voxen
 
@@ -59,7 +59,7 @@ public:
 	// If it throws an exception, most likely this means a device loss or out of memory.
 	// In either case the system becomes unusable and must be either restarted or terminated.
 	// Further calls to `drawFrame()` will almost certainly throw too.
-	void drawFrame(const WorldState& state, const GameView& view);
+	void drawFrame(const world::State& state, const GameView& view);
 
 	// Wait (block) until the given frame tick ID completes GPU execution.
 	// When this function returns, any resource associated with `tick_id`

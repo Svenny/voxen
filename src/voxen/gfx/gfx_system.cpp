@@ -153,7 +153,7 @@ GfxSystem::~GfxSystem()
 	Log::info("Stopping gfx system");
 }
 
-void GfxSystem::drawFrame(const WorldState &state, const GameView &view)
+void GfxSystem::drawFrame(const world::State &state, const GameView &view)
 {
 	auto [completed_tick_id, this_tick_id] = m_frame_tick_source->startNextTick(*this);
 	notifyFrameTickBegin(completed_tick_id, this_tick_id);

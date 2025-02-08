@@ -63,8 +63,8 @@ struct DuoctreeNodeBase : NodeBase {
 	const void *userStorage() const noexcept { return this + 1; }
 
 	void clear(const StorageTreeControl &ctl) noexcept;
-	void *access(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick);
-	void remove(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick);
+	void *access(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick);
+	void remove(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick);
 	const void *lookup(uint64_t tree_path) const noexcept;
 
 protected:
@@ -104,8 +104,8 @@ struct TriquadtreeNodeBase : NodeBase {
 	bool empty() const noexcept { return m_child_mask[0] == 0 && m_child_mask[NUM_MASKS - 1] == 0; }
 
 	void clear(const StorageTreeControl &ctl) noexcept;
-	void *access(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick);
-	void remove(const StorageTreeControl &ctl, uint64_t tree_path, WorldTickId tick);
+	void *access(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick);
+	void remove(const StorageTreeControl &ctl, uint64_t tree_path, world::TickId tick);
 	const void *lookup(uint64_t tree_path) const noexcept;
 
 protected:

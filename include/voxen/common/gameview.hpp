@@ -2,10 +2,10 @@
 
 #include <voxen/client/player_action_events.hpp>
 #include <voxen/common/player.hpp>
-#include <voxen/common/world_state.hpp>
+#include <voxen/land/land_chunk.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/svc_fwd.hpp>
-#include <voxen/land/land_chunk.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -18,7 +18,7 @@ public:
 	GameView(os::GlfwWindow& window);
 
 	void init(const Player& player) noexcept;
-	void update(const Player& player, WorldTickId tick_id, double dt, svc::MessageQueue& mq) noexcept;
+	void update(const Player& player, world::TickId tick_id, double dt, svc::MessageQueue& mq) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	bool handleCursor(double xpos, double ypos) noexcept;
@@ -76,7 +76,7 @@ private:
 	glm::mat4 m_tr_world_to_clip;
 
 	// Previous tick id
-	WorldTickId m_previous_tick_id;
+	world::TickId m_previous_tick_id;
 	os::GlfwWindow& m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack

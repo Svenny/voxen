@@ -1,9 +1,11 @@
 #include <voxen/client/main_thread_service.hpp>
-#include <voxen/server/world.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
+#include <voxen/world/world_control_service.hpp>
+
+#include <latch>
 
 int main(int argc, char *argv[])
 {
@@ -29,12 +31,59 @@ int main(int argc, char *argv[])
 
 		auto engine = voxen::svc::Engine::create(std::move(engine_args));
 
-		// This will start world thread automatically
-		engine->serviceLocator().requestService<voxen::server::World>();
+		// We don't have UI and save/load yet, so just create a new world.
+		auto &world_control = engine->serviceLocator().requestService<voxen::world::ControlService>();
+
+		{
+			std::latch latch(1);
+
+			world_control.asyncStartWorld({
+				// Don't load any saved world
+				.storage_directory = {},
+				// Just report it, but we could also update progress bar in UI
+				.progress_callback =
+					[](float progress) { Log::info("World starting progress: {:.0f}%", progress * 100.0f); },
+				.result_callback =
+					[&latch](std::error_condition error) {
+						if (error) {
+							// TODO: any handling actions?
+							Log::error("World start failed: {} ([{}: {}])", error.message(), error.category().name(),
+								error.value());
+						}
+
+						latch.count_down();
+					},
+			});
+
+			// Block until the world starts
+			latch.wait();
+		}
 
 		auto &main_thread = engine->serviceLocator().requestService<voxen::client::MainThreadService>();
 		// Will stay inside this function until the game is ordered to exit
 		main_thread.doMainLoop();
+
+		{
+			std::latch latch(1);
+
+			world_control.asyncStopWorld({
+				// Just report it, but we could also update progress bar in UI
+				.progress_callback = [](float progress) { Log::info("World saving progress: {:.0f}%", progress * 100.0f); },
+				.result_callback =
+					[&latch](std::error_condition error) {
+						if (error) {
+							// TODO: any handling actions?
+							Log::error("World stop failed: {} ([{}: {}])", error.message(), error.category().name(),
+								error.value());
+						}
+
+						latch.count_down();
+					},
+			});
+
+			// Block until the world stops
+			latch.wait();
+		}
 	}
 	catch (const voxen::Exception &e) {
 		Log::fatal("Unchaught voxen::Exception instance");

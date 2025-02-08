@@ -186,7 +186,7 @@ TEST_CASE("'StorageTree' test case 1 (insertions)", "[voxen::land::land_storage_
 
 	// Do several "epochs" of overwriting all keys
 	for (int64_t epoch = 1; epoch <= 5; epoch++) {
-		WorldTickId tick(epoch);
+		world::TickId tick(epoch);
 
 		for (uint64_t path : tree_paths) {
 			void *ptr = st->access(path, tick);
@@ -221,7 +221,7 @@ TEST_CASE("'StorageTree' test case 2 (lookups)", "[voxen::land::land_storage_tre
 	std::mt19937 rng(0xDEADBEEF + 2);
 	auto test_keys = geneateUniqueKeys(5'000, rng);
 
-	WorldTickId tick(1);
+	world::TickId tick(1);
 
 	// Insert only even keys
 	for (size_t i = 0; i < test_keys.size(); i += 2) {
@@ -263,7 +263,7 @@ TEST_CASE("'StorageTree' test case 3 (removals)", "[voxen::land::land_storage_tr
 
 	// Do several rounds of inserting and removing keys
 	for (int64_t epoch = 1; epoch <= 3; epoch++) {
-		WorldTickId tick(epoch);
+		world::TickId tick(epoch);
 
 		for (uint64_t path : tree_paths) {
 			st->remove(path, tick);
