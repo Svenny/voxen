@@ -1,10 +1,14 @@
 #pragma once
 
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/gfx/ui/ui_setup_types.hpp>
 #include <voxen/visibility.hpp>
 
 #include <extras/pimpl.hpp>
+
+// TODO: cutting through API abstraction
+using VkCommandBuffer = struct VkCommandBuffer_T *;
 
 namespace voxen::gfx::ui
 {
@@ -43,10 +47,10 @@ public:
 
 	void label(LabelSetup setup);
 
-	void computeLayout(int32_t root_width, int32_t root_height);
+	void render(int32_t width, int32_t height, GfxSystem &gfx, VkCommandBuffer cmd_buf);
 
 private:
-	extras::pimpl<detail::UiBuilderImpl, 256, 8> m_impl;
+	extras::pimpl<detail::UiBuilderImpl, 512, 8> m_impl;
 };
 
 } // namespace voxen::gfx::ui

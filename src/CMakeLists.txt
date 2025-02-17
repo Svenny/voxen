@@ -44,6 +44,8 @@ set(VOXEN_SOURCES
 	src/voxen/debug/thread_name.cpp
 	src/voxen/debug/uid_registry.cpp
 	src/voxen/gfx/ui/ui_builder.cpp
+	src/voxen/gfx/ui/ui_render_list_builder.cpp
+	src/voxen/gfx/ui/ui_render_list_builder.hpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp
@@ -150,6 +152,8 @@ set(VOXEN_SHADERS
 	land/selector.frag
 	ui/font.vert
 	ui/font.frag
+	ui/ui_basic.vert
+	ui/ui_basic.frag
 )
 
 set(VOXEN_SHADER_COMPILER_OPTIONS

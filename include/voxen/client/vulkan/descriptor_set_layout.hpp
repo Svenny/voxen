@@ -44,6 +44,7 @@ public:
 	WrappedVkDescriptorSetLayout &landFrustumCullLayout() noexcept { return m_land_frustum_cull_layout; }
 	WrappedVkDescriptorSetLayout &landChunkMeshLayout() noexcept { return m_land_chunk_mesh_layout; }
 	WrappedVkDescriptorSetLayout &uiFontLayout() noexcept { return m_ui_font_layout; }
+	WrappedVkDescriptorSetLayout &uiBasicLayout() noexcept { return m_ui_basic_layout; }
 
 private:
 	std::unordered_map<VkDescriptorType, uint32_t> m_descriptor_consumption;
@@ -51,12 +52,14 @@ private:
 	WrappedVkDescriptorSetLayout m_land_frustum_cull_layout;
 	WrappedVkDescriptorSetLayout m_land_chunk_mesh_layout;
 	WrappedVkDescriptorSetLayout m_ui_font_layout;
+	WrappedVkDescriptorSetLayout m_ui_basic_layout;
 
 	void appendDescriptorConsumption(const VkDescriptorSetLayoutCreateInfo &info);
 	WrappedVkDescriptorSetLayout createMainSceneLayout();
 	WrappedVkDescriptorSetLayout createLandFrustumCullLayout();
 	WrappedVkDescriptorSetLayout createLandChunkMeshLayout();
 	WrappedVkDescriptorSetLayout createUiFontLayout();
+	WrappedVkDescriptorSetLayout createUiBasicLayout();
 };
 
 } // namespace voxen::client::vulkan

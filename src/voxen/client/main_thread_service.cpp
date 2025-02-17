@@ -140,12 +140,8 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 			break;
 		}
 
-		// TODO: use true window dimensions
-		// TODO: use the result (actually draw UI), this call is just for debugging
-		ui_bld.computeLayout(2560, 1440);
-
 		// Do render
-		impl.gfx_system->drawFrame(last_state, impl.gui->view());
+		impl.gfx_system->drawFrame(last_state, impl.gui->view(), ui_bld);
 		fps_counter++;
 	}
 }

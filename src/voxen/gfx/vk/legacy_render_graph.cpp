@@ -7,6 +7,7 @@
 #include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
+#include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/gfx/vk/frame_context.hpp>
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
@@ -192,6 +193,11 @@ void LegacyRenderGraph::setGameState(const world::State &state, const GameView &
 {
 	m_world_state = &state;
 	m_game_view = &view;
+}
+
+void LegacyRenderGraph::setUiBuilder(ui::UiBuilder &ui)
+{
+	m_ui_builder = &ui;
 }
 
 void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
@@ -423,6 +429,11 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		FontRenderer &font = *m_gfx->fontRenderer();
 		font.drawUi(cmd_buf, texts, glm::vec2(1.0f / viewport.width, 1.0f / viewport.height));
 	}
+
+	// Draw UI
+	assert(m_ui_builder);
+	m_ui_builder->render(static_cast<int32_t>(m_output_resolution.width),
+		static_cast<int32_t>(m_output_resolution.height), *m_gfx, cmd_buf);
 }
 
 VkDescriptorSet LegacyRenderGraph::createMainSceneDset(FrameContext &fctx)

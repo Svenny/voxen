@@ -2,6 +2,7 @@
 
 #include <voxen/common/gameview.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
+#include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
@@ -21,6 +22,7 @@ public:
 	void endExecution(RenderGraphExecution &exec) override;
 
 	void setGameState(const world::State &state, const GameView &view);
+	void setUiBuilder(ui::UiBuilder &ui);
 
 	VkFormat currentOutputFormat() const noexcept { return m_output_format; }
 
@@ -45,6 +47,7 @@ private:
 	GfxSystem *m_gfx = nullptr;
 	const world::State *m_world_state = nullptr;
 	const GameView *m_game_view = nullptr;
+	ui::UiBuilder *m_ui_builder = nullptr;
 
 	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
 	std::vector<LandPerIndexBufferData> m_land_per_index_buffer_data;

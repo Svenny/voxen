@@ -69,6 +69,8 @@ ADD_SHADER_PATH(LAND_SELECTOR_VERTEX, "assets/shaders/land/selector.vert.spv")
 ADD_SHADER_PATH(LAND_SELECTOR_FRAGMENT, "assets/shaders/land/selector.frag.spv")
 ADD_SHADER_PATH(UI_FONT_VERTEX, "assets/shaders/ui/font.vert.spv")
 ADD_SHADER_PATH(UI_FONT_FRAGMENT, "assets/shaders/ui/font.frag.spv")
+ADD_SHADER_PATH(UI_BASIC_VERTEX, "assets/shaders/ui/ui_basic.vert.spv")
+ADD_SHADER_PATH(UI_BASIC_FRAGMENT, "assets/shaders/ui/ui_basic.frag.spv")
 
 template<uint32_t ID = 0, typename T>
 static void loadShaderModules(T &array)

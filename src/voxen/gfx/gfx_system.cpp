@@ -164,7 +164,7 @@ GfxSystem::~GfxSystem()
 	client::vulkan::Backend::backend().stop();
 }
 
-void GfxSystem::drawFrame(const world::State &state, const GameView &view)
+void GfxSystem::drawFrame(const world::State &state, const GameView &view, ui::UiBuilder &ui)
 {
 	auto [completed_tick_id, this_tick_id] = m_frame_tick_source->startNextTick(*this);
 	notifyFrameTickBegin(completed_tick_id, this_tick_id);
@@ -172,6 +172,7 @@ void GfxSystem::drawFrame(const world::State &state, const GameView &view)
 	m_land_loader->onNewState(state);
 
 	m_render_graph->setGameState(state, view);
+	m_render_graph->setUiBuilder(ui);
 	m_vk_render_graph_runner->executeGraph();
 
 	notifyFrameTickEnd(this_tick_id);

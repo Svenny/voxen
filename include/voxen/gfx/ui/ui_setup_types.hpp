@@ -12,49 +12,63 @@ namespace voxen::gfx::ui
 enum class LayoutDirection {
 	LeftToRight,
 	TopToBottom,
+	BackToFront,
 };
 
-enum class LayoutXGravity {
-	Left,
+enum class Gravity {
+	Min,
 	Center,
-	Right,
+	Max,
 };
 
-enum class LayoutYGravity {
-	Top,
-	Center,
-	Bottom,
-};
-
-enum class LayoutSizingType {
+enum class AxisSizingType {
 	Fit,
 	Grow,
+	Fixed,
 	Percent,
 };
 
-struct LayoutSizing {
+struct AxisSizing {
 	constexpr static float NO_MAX = std::numeric_limits<float>::max();
 
-	static LayoutSizing fit(float min = 0.0f, float max = NO_MAX) noexcept
+	static AxisSizing fit(float min = 0.0f, float max = NO_MAX) noexcept { return { AxisSizingType::Fit, min, max }; }
+
+	static AxisSizing grow(float min = 0.0f, float max = NO_MAX) noexcept { return { AxisSizingType::Grow, min, max }; }
+
+	static AxisSizing fixed(float value) noexcept { return { AxisSizingType::Fixed, value, value }; }
+
+	static AxisSizing percent(float value) noexcept
 	{
-		return { LayoutSizingType::Fit, min, max };
+		return { AxisSizingType::Percent, value / 100.0f, value / 100.0f };
 	}
 
-	static LayoutSizing grow(float min = 0.0f, float max = NO_MAX) noexcept
-	{
-		return { LayoutSizingType::Grow, min, max };
-	}
-
-	static LayoutSizing fixed(float value) noexcept { return { LayoutSizingType::Fit, value, value }; }
-
-	static LayoutSizing percent(float value) noexcept
-	{
-		return { LayoutSizingType::Percent, value / 100.0f, value / 100.0f };
-	}
-
-	LayoutSizingType type = LayoutSizingType::Fit;
+	AxisSizingType type = AxisSizingType::Fit;
 	float min = 0.0f;
 	float max = NO_MAX;
+};
+
+struct Sizing {
+	constexpr static float NO_MAX = AxisSizing::NO_MAX;
+
+	static Sizing fit(float min = 0.0f, float max = NO_MAX) noexcept
+	{
+		return { AxisSizing::fit(min, max), AxisSizing::fit(min, max) };
+	}
+
+	static Sizing grow(float min = 0.0f, float max = NO_MAX) noexcept
+	{
+		return { AxisSizing::grow(min, max), AxisSizing::grow(min, max) };
+	}
+
+	static Sizing fixed(float width, float height) noexcept
+	{
+		return { AxisSizing::fixed(width), AxisSizing::fixed(height) };
+	}
+
+	static Sizing percent(float x, float y) noexcept { return { AxisSizing::percent(x), AxisSizing::percent(y) }; }
+
+	AxisSizing x = {};
+	AxisSizing y = {};
 };
 
 struct LayoutPadding {
@@ -70,10 +84,8 @@ struct LayoutSetup {
 	LayoutDirection direction = LayoutDirection::LeftToRight;
 	LayoutPadding padding = {};
 	uint8_t child_gap = 0;
-	LayoutXGravity x_gravity = LayoutXGravity::Left;
-	LayoutYGravity y_gravity = LayoutYGravity::Top;
-	LayoutSizing x_sizing = {};
-	LayoutSizing y_sizing = {};
+	Gravity x_gravity = Gravity::Min;
+	Gravity y_gravity = Gravity::Min;
 };
 
 struct BorderSideSetup {
@@ -96,6 +108,7 @@ struct RectangleSetup {
 struct DivSetup {
 	std::u8string_view id = u8"";
 	LayoutSetup layout = {};
+	Sizing sizing = Sizing::fit();
 	BorderSetup border = {};
 	RectangleSetup rectangle = {};
 };
@@ -103,6 +116,7 @@ struct DivSetup {
 struct ViewportSetup {
 	std::u8string_view id = u8"";
 	LayoutSetup layout = {};
+	Sizing sizing = Sizing::grow();
 	BorderSetup border = {};
 	//RenderGraphReference render_graph;
 };
