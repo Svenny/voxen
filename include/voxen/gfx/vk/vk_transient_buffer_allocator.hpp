@@ -93,7 +93,7 @@ public:
 	// NOTE: `align` is respective to the underlying buffer start, not its underlying device memory.
 	// Buffer start itself is aligned according to features declared in `Type` enum description.
 	// However, Vulkan expresses most alignment requirements as buffer offsets so this shouldn't be an issue.
-	Allocation allocate(Type type, VkDeviceSize size, VkDeviceSize align);
+	[[nodiscard]] Allocation allocate(Type type, VkDeviceSize size, VkDeviceSize align);
 
 	void onFrameTickBegin(FrameTickId completed_tick, FrameTickId new_tick);
 	void onFrameTickEnd(FrameTickId current_tick);
