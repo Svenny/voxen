@@ -127,6 +127,13 @@ function(voxen_setup_target target is_executable)
 			# Futex ops like WaitOnAddress/WakeByAddress...
 			synchronization
 		)
+
+		# Built-in clang-tidy also can't understand we're building for C++20...
+		set_target_properties(${target} PROPERTIES VS_GLOBAL_ClangTidyChecks "\
+-clang-diagnostic-c++98-compat,-clang-diagnostic-c++98-compat-pedantic,\
+-clang-diagnostic-pre-c++17-compat,-clang-diagnostic-pre-c++20-compat-pedantic,\
+-clang-diagnostic-pragma-once-outside-header,-clang-diagnostic-unsafe-buffer-usage"
+		)
 	endif()
 
 	# We usually name targets in lowercase, convert to uppercase for nicer macros
