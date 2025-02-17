@@ -47,16 +47,18 @@ vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus)
 	vk::PhysicalDevice *integrated = nullptr;
 	vk::PhysicalDevice *other = nullptr;
 
+	const std::string &preferred_name = RuntimeConfig::instance().gfxConfig().preferredGpuName();
+
 	Log::debug("Searching for Vulkan device");
 	for (auto &gpu : gpus) {
 		std::string_view name = gpu.info().props.properties.deviceName;
 
 		if (!vk::Device::isSupported(gpu)) {
-			Log::debug("'{}' is does not pass minimal requirements", name);
+			Log::debug("'{}' does not pass minimal requirements", name);
 			continue;
 		}
 
-		if (name == RuntimeConfig::instance().gfxConfig().preferredGpuName()) {
+		if (name == preferred_name) {
 			Log::debug("'{}' is preferred in config, taking it", name);
 			preferred = &gpu;
 			break;
@@ -65,13 +67,10 @@ vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus)
 		VkPhysicalDeviceType type = gpu.info().props.properties.deviceType;
 
 		if (type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-			Log::debug("'{}' is dGPU, taking it", name);
+			Log::debug("'{}' is dGPU, first priority", name);
 			discrete = &gpu;
-			break;
-		}
-
-		if (type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-			Log::debug("'{}' is iGPU, might take it if won't find dGPU", name);
+		} else if (type == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+			Log::debug("'{}' is iGPU, second priority", name);
 			integrated = &gpu;
 		} else if (!other) {
 			Log::debug("'{}' is neither iGPU nor dGPU, might take it if won't find one", name);
