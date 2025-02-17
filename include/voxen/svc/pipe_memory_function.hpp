@@ -2,15 +2,15 @@
 
 #include <voxen/common/pipe_memory_allocator.hpp>
 
-#include <concepts>
 #include <type_traits>
+#include <utility>
 
 namespace voxen::svc
 {
 
 // Provides storage for a callable object backed by `PipeMemoryAllocator`.
 // Intended to store completion handler lambdas for asynchronous operations.
-// Modeled after `std::move_only_function` with unncesessary features stripped.
+// Modeled after `std::move_only_function` with unnecessary features stripped.
 //
 // In most cases you should not create this object directly. Simply pass your lambda
 // as argument to the asynchronous operation and let implicit constructor do its job.
