@@ -30,8 +30,8 @@ struct Backend::Impl {
 		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
 	};
 
-	std::tuple<Storage<gfx::GfxSystem>, Storage<ShaderModuleCollection>, Storage<PipelineCache>,
-		Storage<DescriptorSetLayoutCollection>, Storage<PipelineLayoutCollection>, Storage<PipelineCollection>>
+	std::tuple<Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
+		Storage<PipelineLayoutCollection>, Storage<PipelineCollection>>
 		storage;
 
 	template<typename T, typename... Args>
@@ -63,7 +63,7 @@ Backend::~Backend() noexcept
 	assert(m_state == State::NotStarted);
 }
 
-bool Backend::start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
+bool Backend::start(gfx::GfxSystem &gfx) noexcept
 {
 	if (m_state != State::NotStarted) {
 		Log::warn("Cannot start Vulkan backend - it's in state [{}] now", stateToString(m_state));
@@ -80,7 +80,7 @@ bool Backend::start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
 		return false;
 	}
 
-	if (!doStart(window, svc)) {
+	if (!doStart(gfx)) {
 		stop();
 		return false;
 	}
@@ -101,42 +101,10 @@ void Backend::stop() noexcept
 	m_state = State::NotStarted;
 }
 
-bool Backend::drawFrame(const world::State &state, const GameView &view) noexcept
+bool Backend::doStart(gfx::GfxSystem &gfx) noexcept
 {
 	try {
-		m_gfx_system->drawFrame(state, view);
-		return true;
-	}
-	catch (const gfx::vk::VulkanException &e) {
-		// Unhandled errors are considered non-recoverable
-		m_state = State::Broken;
-		Log::error("Vulkan error during rendering a frame");
-		Log::error("what(): {}", e.what());
-		auto loc = e.where();
-		Log::error("where(): {}:{}", loc.file_name(), loc.line());
-	}
-	catch (const Exception &e) {
-		Log::error("voxen::Exception during rendering a frame");
-		Log::error("what(): {}", e.what());
-		auto loc = e.where();
-		Log::error("where(): {}:{}", loc.file_name(), loc.line());
-	}
-	catch (const std::exception &e) {
-		Log::error("std::exception during rendering a frame");
-		Log::error("what(): {}", e.what());
-	}
-	catch (...) {
-		Log::error("An unknown exception during rendering a frame");
-	}
-
-	return false;
-}
-
-bool Backend::doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept
-{
-	try {
-		m_impl.constructModule(m_gfx_system, svc, window);
-
+		m_gfx_system = &gfx;
 		m_instance = m_gfx_system->instance();
 		m_device = m_gfx_system->device();
 
@@ -197,7 +165,7 @@ void Backend::doStop() noexcept
 
 	m_device = nullptr;
 	m_instance = nullptr;
-	m_impl.destructModule(m_gfx_system);
+	m_gfx_system = nullptr;
 }
 
 std::string_view Backend::stateToString(State state) noexcept

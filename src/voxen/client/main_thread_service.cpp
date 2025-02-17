@@ -1,9 +1,9 @@
 #include <voxen/client/main_thread_service.hpp>
 
 #include <voxen/client/gui.hpp>
-#include <voxen/client/render.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/debug/thread_name.hpp>
+#include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/messaging_service.hpp>
@@ -43,7 +43,7 @@ struct MainThreadService::Impl {
 
 	os::GlfwWindow window;
 	// Placed after `window` to destroy before it
-	std::unique_ptr<Render> render_service;
+	std::unique_ptr<gfx::GfxSystem> gfx_system;
 	// Placed after `window` to destroy before it
 	std::unique_ptr<Gui> gui;
 };
@@ -65,7 +65,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 		.fullscreen = main_config->getBool("window", "fullscreen"),
 	});
 
-	m_impl->render_service = std::make_unique<Render>(m_impl->window, svc);
+	m_impl->gfx_system = std::make_unique<gfx::GfxSystem>(svc, m_impl->window);
 	m_impl->gui = std::make_unique<Gui>(m_impl->window);
 }
 
@@ -145,7 +145,7 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 		ui_bld.computeLayout(2560, 1440);
 
 		// Do render
-		impl.render_service->drawFrame(last_state, impl.gui->view());
+		impl.gfx_system->drawFrame(last_state, impl.gui->view());
 		fps_counter++;
 	}
 }
