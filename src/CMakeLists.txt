@@ -7,7 +7,6 @@ set(VOXEN_SOURCES
 	src/client/vulkan/shader_module.cpp
 	src/client/gfx_runtime_config.cpp
 	src/client/gui.cpp
-	src/client/render.cpp
 	src/client/input_event_adapter.cpp
 	src/common/assets/png_tools.cpp
 	src/common/terrain/allocator.cpp
