@@ -38,7 +38,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/gfx_runtime_config.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp
-	include/voxen/client/render.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/assets/png_tools.hpp

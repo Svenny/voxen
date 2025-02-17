@@ -30,10 +30,8 @@ public:
 		Broken,
 	};
 
-	bool start(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept;
+	bool start(gfx::GfxSystem &gfx) noexcept;
 	void stop() noexcept;
-
-	bool drawFrame(const world::State &state, const GameView &view) noexcept;
 
 	State state() const noexcept { return m_state; }
 
@@ -100,7 +98,7 @@ private:
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadDeviceLevelApi() noexcept;
 
-	bool doStart(os::GlfwWindow &window, svc::ServiceLocator &svc) noexcept;
+	bool doStart(gfx::GfxSystem &gfx) noexcept;
 	void doStop() noexcept;
 
 	constexpr Backend(Impl &impl) noexcept;

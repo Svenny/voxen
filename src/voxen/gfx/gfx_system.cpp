@@ -18,6 +18,9 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
+// TODO: legacy parts, move them here
+#include <voxen/client/vulkan/backend.hpp>
+
 namespace voxen::gfx
 {
 
@@ -145,12 +148,20 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
 	// Preload resources for subsystems that need it
 	m_font_renderer->loadResources();
 
+	// TODO: legacy part, remove it
+	if (!client::vulkan::Backend::backend().start(*this)) {
+		Log::error("Render subsystem couldn't launch");
+		throw Exception::fromError(VoxenErrc::GfxFailure, "failed to start render subsystem");
+	}
+
 	Log::info("Started gfx system");
 }
 
 GfxSystem::~GfxSystem()
 {
 	Log::info("Stopping gfx system");
+	// TODO: legacy part, remove it
+	client::vulkan::Backend::backend().stop();
 }
 
 void GfxSystem::drawFrame(const world::State &state, const GameView &view)
