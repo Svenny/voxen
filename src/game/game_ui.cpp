@@ -28,7 +28,7 @@ bool mainMenuButton(UiBuilder &ui, std::u8string_view text)
 	auto container = ui.div({
 		.id = text,
 		.layout = {
-			.padding = LayoutPadding::all(INNER_PADDING),
+			.padding = Padding::all(INNER_PADDING),
 			.x_gravity = Gravity::Min,
 			.y_gravity = Gravity::Center,
 		},
@@ -45,14 +45,13 @@ bool mainMenuButton(UiBuilder &ui, std::u8string_view text)
 		container.setColor(COLOR_PRESSED);
 	}
 
-	// TODO: font size, wrapping, layout settings
-	//ui.label({ .label = text });
-	ui.div({
-		.sizing = Sizing::fixed(static_cast<float>(text.size() * FONT_SIZE), FONT_SIZE),
-		.rectangle = { .color = { 0, 0, 0, 255 } },
+	// TODO: wrapping, sizing settings, font ID?
+	ui.text({
+		.text = text,
+		.font_size = FONT_SIZE,
 	});
 
-	return container.released();
+	return container.releasedThisFrame();
 }
 
 } // namespace
@@ -134,11 +133,10 @@ void Ui::draw(UiBuilder &ui)
 				.rectangle = { .color = { 10, 20, 30, 255 } },
 			});
 
-			// TODO: font size, label
-			//ui.label({ .label = m_version_string });
-			ui.div({
-				.sizing = Sizing::fixed(static_cast<float>(m_version_string.size() * VERSION_FONT_SIZE), VERSION_FONT_SIZE),
-				.rectangle = { .color = { 0, 0, 0, 255 } },
+			// TODO: wrapping, sizing settings, font ID?
+			ui.text({
+				.text = m_version_string,
+				.font_size = VERSION_FONT_SIZE,
 			});
 		}
 	}

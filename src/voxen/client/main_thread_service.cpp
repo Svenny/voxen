@@ -5,6 +5,7 @@
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
+#include <voxen/gfx/ui/ui_system.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
@@ -37,6 +38,8 @@ struct MainThreadService::Impl {
 
 	// Used for sending player state to World
 	svc::MessageSender message_sender;
+
+	gfx::ui::UiSystem ui_system;
 
 	// Placed before GLFW-dependent stuff to construct before it and destroy after it
 	[[EXTRAS_NO_UNIQUE_ADDRESS]] GlfwRaii glfw_raii;
@@ -127,7 +130,11 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 		// TODO: this is not our responsibility, user code should do it
 		impl.gui->update(last_state, dt, impl.message_sender);
 
-		gfx::ui::UiBuilder ui_bld;
+		gfx::ui::UiBuilder ui_bld = impl.ui_system.beginFrame({
+			.window_resolution = impl.window.framebufferSize(),
+			.cursor_position = impl.window.cursorPos(),
+			.left_button_pressed = impl.window.mouseLeftButtonPressed(),
+		});
 
 		FrameCallbackData fcd {
 			.delta_time = dt,
@@ -141,7 +148,7 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 		}
 
 		// Do render
-		impl.gfx_system->drawFrame(last_state, impl.gui->view(), ui_bld);
+		impl.gfx_system->drawFrame(last_state, impl.gui->view(), impl.ui_system);
 		fps_counter++;
 	}
 }

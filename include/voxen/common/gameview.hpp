@@ -50,7 +50,7 @@ private:
 		Count
 	};
 
-	double m_width, m_height;
+	glm::dvec2 m_window_size;
 
 	double m_mouse_sensitivity;
 	double m_forward_speed;
@@ -58,11 +58,9 @@ private:
 	double m_roll_speed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
-	double m_newest_xpos;
-	double m_newest_ypos;
+	glm::dvec2 m_newest_cursor_pos;
 	// Mouse position at the time of the latest call to `update`
-	double m_prev_xpos;
-	double m_prev_ypos;
+	glm::dvec2 m_prev_cursor_pos;
 	// Gamer view data and parameters
 	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;

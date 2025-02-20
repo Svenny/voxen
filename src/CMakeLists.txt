@@ -46,6 +46,8 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/ui/ui_builder.cpp
 	src/voxen/gfx/ui/ui_render_list_builder.cpp
 	src/voxen/gfx/ui/ui_render_list_builder.hpp
+	src/voxen/gfx/ui/ui_system.cpp
+	src/voxen/gfx/ui/ui_system_impl.hpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp

@@ -3,13 +3,15 @@
 namespace voxen::gfx::ui
 {
 
+struct RenderData;
 class UiBuilder;
+class UiSystem;
 
 namespace detail
 {
 
 struct ContainerImpl;
-class UiBuilderImpl;
+class UiSystemImpl;
 
 } // namespace detail
 

@@ -22,7 +22,7 @@ public:
 	void endExecution(RenderGraphExecution &exec) override;
 
 	void setGameState(const world::State &state, const GameView &view);
-	void setUiBuilder(ui::UiBuilder &ui);
+	void setUiSystem(ui::UiSystem &ui);
 
 	VkFormat currentOutputFormat() const noexcept { return m_output_format; }
 
@@ -47,7 +47,7 @@ private:
 	GfxSystem *m_gfx = nullptr;
 	const world::State *m_world_state = nullptr;
 	const GameView *m_game_view = nullptr;
-	ui::UiBuilder *m_ui_builder = nullptr;
+	ui::UiSystem *m_ui_system = nullptr;
 
 	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
 	std::vector<LandPerIndexBufferData> m_land_per_index_buffer_data;

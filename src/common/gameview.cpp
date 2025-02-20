@@ -18,14 +18,14 @@ namespace voxen
 
 GameView::GameView(os::GlfwWindow& window) : m_window(window)
 {
-	std::tie(m_width, m_height) = window.windowSize();
-	std::pair<double, double> pos = window.cursorPos();
-	m_prev_xpos = pos.first;
-	m_prev_ypos = pos.second;
+	auto window_size = window.windowSize();
+	m_window_size = glm::dvec2(window_size.width, window_size.height);
+
+	m_prev_cursor_pos = window.cursorPos();
 
 	m_fov_y = glm::radians(70.0);
 	double tan_half_fovy = std::tan(m_fov_y / 2.0);
-	double aspect = (double) m_width / (double) m_height;
+	double aspect = m_window_size.x / m_window_size.y;
 	m_fov_x = 2.0 * std::atan(aspect * tan_half_fovy);
 
 	Config* main_config = Config::mainConfig();
@@ -158,8 +158,7 @@ static glm::dquat quatFromEulerAngles(double pitch, double yaw, double roll) noe
 
 bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 {
-	m_newest_xpos = xpos;
-	m_newest_ypos = ypos;
+	m_newest_cursor_pos = glm::dvec2(xpos, ypos);
 	return true;
 }
 
@@ -178,9 +177,7 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 			m_is_used_orientation_cursor = true;
 		}
 
-		std::pair<double, double> pos = m_window.cursorPos();
-		m_prev_xpos = pos.first;
-		m_prev_ypos = pos.second;
+		m_prev_cursor_pos = m_window.cursorPos();
 	} else {
 		if (m_is_used_orientation_cursor) {
 			m_window.useGrabbedCursor();
@@ -224,15 +221,15 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 		}
 		move_forward_direction += dl * m_local_player.lookVector();
 
-		dx = (m_prev_xpos - m_newest_xpos) * m_mouse_sensitivity;
-		m_prev_xpos = m_newest_xpos;
+		dx = (m_prev_cursor_pos.x - m_newest_cursor_pos.x) * m_mouse_sensitivity;
 		double tan_half_fovx = std::tan(m_fov_x * 0.5);
-		double yawAngle = atan(2 * dx * tan_half_fovx / m_width);
+		double yawAngle = atan(2 * dx * tan_half_fovx / m_window_size.x);
 
-		dy = (m_prev_ypos - m_newest_ypos) * m_mouse_sensitivity;
-		m_prev_ypos = m_newest_ypos;
+		dy = (m_prev_cursor_pos.y - m_newest_cursor_pos.y) * m_mouse_sensitivity;
 		double tan_half_fovy = std::tan(m_fov_y * 0.5);
-		double pitchAngle = atan(2 * dy * tan_half_fovy / m_height);
+		double pitchAngle = atan(2 * dy * tan_half_fovy / m_window_size.y);
+
+		m_prev_cursor_pos = m_newest_cursor_pos;
 
 		double rollAngle = 0;
 		if (m_state[Direction::RollLeft]) {

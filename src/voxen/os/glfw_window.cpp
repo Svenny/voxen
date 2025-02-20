@@ -109,10 +109,10 @@ void GlfwWindow::pollEvents()
 	glfwPollEvents();
 }
 
-std::pair<int, int> GlfwWindow::waitUntilUnMinimized()
+Resolution GlfwWindow::waitUntilUnMinimized()
 {
 	auto size = framebufferSize();
-	while (size.first == 0 && size.second == 0 && !shouldClose()) {
+	while (size.width == 0 && size.width == 0 && !shouldClose()) {
 		glfwWaitEvents();
 		size = framebufferSize();
 	}
@@ -177,25 +177,30 @@ void GlfwWindow::globalMouseScroll(GLFWwindow* window, double xoffset, double yo
 	}
 }
 
-std::pair<int, int> GlfwWindow::windowSize() const
+Resolution GlfwWindow::windowSize() const
 {
 	int width, height;
 	glfwGetWindowSize(m_window, &width, &height);
 	return { width, height };
 }
 
-std::pair<int, int> GlfwWindow::framebufferSize() const
+Resolution GlfwWindow::framebufferSize() const
 {
 	int width, height;
 	glfwGetFramebufferSize(m_window, &width, &height);
 	return { width, height };
 }
 
-std::pair<double, double> GlfwWindow::cursorPos() const
+glm::dvec2 GlfwWindow::cursorPos() const
 {
 	double xpos, ypos;
 	glfwGetCursorPos(m_window, &xpos, &ypos);
-	return std::make_pair(xpos, ypos);
+	return { xpos, ypos };
+}
+
+bool GlfwWindow::mouseLeftButtonPressed() const
+{
+	return glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 }
 
 void GlfwWindow::useRegularCursor()

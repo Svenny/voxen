@@ -1,8 +1,9 @@
 #pragma once
 
+#include <voxen/util/resolution.hpp>
 #include <voxen/visibility.hpp>
 
-#include <utility>
+#include <glm/fwd.hpp>
 
 struct GLFWwindow;
 
@@ -38,7 +39,7 @@ public:
 	// Block until the window is expanded from the minimized state
 	// then return the new value of `framebufferSize()`. Call
 	// this when creating a surface/swapchain and the size is zero.
-	std::pair<int, int> waitUntilUnMinimized();
+	Resolution waitUntilUnMinimized();
 
 	GLFWwindow *glfwHandle() const noexcept { return m_window; }
 
@@ -48,11 +49,15 @@ public:
 	// NOTE: may be different from `framebufferSize()` because window
 	// size is measured in logical units while framebuffer is in pixels.
 	// See docs for `glfwGetWindowSize` and `glfwGetFramebufferSize`.
-	std::pair<int, int> windowSize() const;
+	// NOTE: can return empty (zeros) if the window is minimized.
+	Resolution windowSize() const;
 	// Window framebuffer size in pixels. Usually you need this function.
-	std::pair<int, int> framebufferSize() const;
+	// NOTE: can return empty (zeros) if the window is minimized.
+	Resolution framebufferSize() const;
 
-	std::pair<double, double> cursorPos() const;
+	glm::dvec2 cursorPos() const;
+	// HACK: do not use this, it can miss short clicks
+	bool mouseLeftButtonPressed() const;
 
 	void useRegularCursor();
 	void useGrabbedCursor();

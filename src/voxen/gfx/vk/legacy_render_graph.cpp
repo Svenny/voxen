@@ -7,7 +7,8 @@
 #include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
-#include <voxen/gfx/ui/ui_builder.hpp>
+#include <voxen/gfx/ui/ui_render_data.hpp>
+#include <voxen/gfx/ui/ui_system.hpp>
 #include <voxen/gfx/vk/frame_context.hpp>
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
@@ -195,9 +196,9 @@ void LegacyRenderGraph::setGameState(const world::State &state, const GameView &
 	m_game_view = &view;
 }
 
-void LegacyRenderGraph::setUiBuilder(ui::UiBuilder &ui)
+void LegacyRenderGraph::setUiSystem(ui::UiSystem &ui)
 {
-	m_ui_builder = &ui;
+	m_ui_system = &ui;
 }
 
 void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
@@ -322,6 +323,8 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		}
 	}
 
+	TransientBufferAllocator &tsballoc = *m_gfx->transientBufferAllocator();
+
 	// Draw debug chunk bounds
 	if (!m_land_per_index_buffer_data.empty()) {
 		VkPipelineLayout pipeline_layout = legacy_layout_collection.landChunkMeshLayout();
@@ -329,8 +332,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		// TODO: don't upload index buffer again every frame
 		constexpr uint16_t INDEX_BUFFER[] = { 0, 1, 1, 5, 4, 5, 0, 4, 2, 3, 3, 7, 6, 7, 2, 6, 0, 2, 1, 3, 4, 6, 5, 7 };
 
-		auto index_buffer = m_gfx->transientBufferAllocator()->allocate(TransientBufferAllocator::TypeUpload,
-			sizeof(INDEX_BUFFER), 4);
+		auto index_buffer = tsballoc.allocate(TransientBufferAllocator::TypeUpload, sizeof(INDEX_BUFFER), 4);
 
 		memcpy(index_buffer.host_pointer, INDEX_BUFFER, sizeof(INDEX_BUFFER));
 		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer.buffer, index_buffer.buffer_offset, VK_INDEX_TYPE_UINT16);
@@ -431,9 +433,119 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 	}
 
 	// Draw UI
-	assert(m_ui_builder);
-	m_ui_builder->render(static_cast<int32_t>(m_output_resolution.width),
-		static_cast<int32_t>(m_output_resolution.height), *m_gfx, cmd_buf);
+	// TODO: uploading should go in "prepare" phase probably
+	{
+		assert(m_ui_system);
+		ui::RenderData ui_render_data = m_ui_system->endFrame();
+
+		// Upload render data
+		const uint32_t draw_count = static_cast<uint32_t>(ui_render_data.draw_setups.size());
+
+		TransientBufferAllocator::Allocation indirect_buffer_alloc;
+		TransientBufferAllocator::Allocation per_item_buffer_alloc;
+		TransientBufferAllocator::Allocation vertex_buffer_alloc;
+		TransientBufferAllocator::Allocation index_buffer_alloc;
+
+		// Upload indirect command data
+		{
+			const size_t indirect_data_size = sizeof(VkDrawIndexedIndirectCommand) * draw_count;
+			indirect_buffer_alloc = tsballoc.allocate(TransientBufferAllocator::TypeUpload, indirect_data_size,
+				alignof(VkDrawIndexedIndirectCommand));
+
+			auto *write_indirect = reinterpret_cast<VkDrawIndexedIndirectCommand *>(indirect_buffer_alloc.host_pointer);
+
+			for (uint32_t i = 0; i < draw_count; i++) {
+				write_indirect[i] = {
+					.indexCount = ui_render_data.draw_setups[i].index_count,
+					.instanceCount = 1,
+					.firstIndex = ui_render_data.draw_setups[i].first_index,
+					.vertexOffset = static_cast<int32_t>(ui_render_data.draw_setups[i].first_vertex),
+					.firstInstance = 0,
+				};
+			}
+		}
+
+		// Upload per-item data
+		{
+			const size_t per_item_data_size = ui_render_data.per_item_buffer.size_bytes();
+			per_item_buffer_alloc = tsballoc.allocate(TransientBufferAllocator::TypeUpload, per_item_data_size,
+				64); // TODO: max(alignof(PerItemData), vk::minSsboOffsetAlign);
+			memcpy(per_item_buffer_alloc.host_pointer, ui_render_data.per_item_buffer.data(), per_item_data_size);
+		}
+
+		// Upload vertices
+		{
+			const size_t vertex_data_size = ui_render_data.vertex_buffer.size_bytes();
+			vertex_buffer_alloc = tsballoc.allocate(TransientBufferAllocator::TypeUpload, vertex_data_size,
+				64); // TODO: max(alignof(VertexData), vk::minSsboOffsetAlign);
+			memcpy(vertex_buffer_alloc.host_pointer, ui_render_data.vertex_buffer.data(), vertex_data_size);
+		}
+
+		// Upload indices
+		{
+			const size_t index_data_size = ui_render_data.index_buffer.size_bytes();
+			index_buffer_alloc = tsballoc.allocate(TransientBufferAllocator::TypeUpload, index_data_size,
+				alignof(ui::RenderData::IndexType));
+			memcpy(index_buffer_alloc.host_pointer, ui_render_data.index_buffer.data(), index_data_size);
+		}
+
+		VkDescriptorBufferInfo vertex_buf_info {
+			.buffer = vertex_buffer_alloc.buffer,
+			.offset = vertex_buffer_alloc.buffer_offset,
+			.range = vertex_buffer_alloc.size,
+		};
+
+		VkDescriptorBufferInfo per_item_buf_info {
+			.buffer = per_item_buffer_alloc.buffer,
+			.offset = per_item_buffer_alloc.buffer_offset,
+			.range = per_item_buffer_alloc.size,
+		};
+
+		VkWriteDescriptorSet descriptors[2] = {
+			{
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.pNext = nullptr,
+				.dstSet = VK_NULL_HANDLE,
+				.dstBinding = 0,
+				.dstArrayElement = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pImageInfo = nullptr,
+				.pBufferInfo = &vertex_buf_info,
+				.pTexelBufferView = nullptr,
+			},
+			{
+				.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.pNext = nullptr,
+				.dstSet = VK_NULL_HANDLE,
+				.dstBinding = 1,
+				.dstArrayElement = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pImageInfo = nullptr,
+				.pBufferInfo = &per_item_buf_info,
+				.pTexelBufferView = nullptr,
+			},
+		};
+
+		auto &pipeline_layout = legacy_backend.pipelineLayoutCollection().uiBasicLayout();
+
+		const glm::vec2 inv_screen_size = glm::vec2(1.0f) / glm::vec2(viewport.width, viewport.height);
+
+		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			legacy_backend.pipelineCollection()[client::vulkan::PipelineCollection::UI_BASIC_PIPELINE]);
+		ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec2),
+			glm::value_ptr(inv_screen_size));
+		ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
+			std::size(descriptors), descriptors);
+
+		static_assert(std::is_same_v<uint16_t, ui::RenderData::IndexType>, "UI index type changed");
+		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer_alloc.buffer, index_buffer_alloc.buffer_offset,
+			VK_INDEX_TYPE_UINT16);
+
+		ddt.vkCmdDrawIndexedIndirect(cmd_buf, indirect_buffer_alloc.buffer, indirect_buffer_alloc.buffer_offset,
+			draw_count, sizeof(VkDrawIndexedIndirectCommand));
+	}
 }
 
 VkDescriptorSet LegacyRenderGraph::createMainSceneDset(FrameContext &fctx)
