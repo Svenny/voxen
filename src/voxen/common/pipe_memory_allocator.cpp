@@ -44,7 +44,8 @@ struct PipeMemorySlab {
 		const uintptr_t top = end - ctl.allocated_bytes;
 		// Allocation bottom - points to the lowest free byte
 		const uintptr_t bottom = reinterpret_cast<uintptr_t>(storage);
-		// Allocated pointer would be here (subtract size, then align)
+		// Allocated pointer would be here (subtract size, then align).
+		// Subtraction can't underflow because `size` is checked against `MAX_ALLOC_SIZE` before.
 		const uintptr_t ptr = (top - size) & ~(align - 1u);
 
 		if (ptr >= bottom) [[likely]] {

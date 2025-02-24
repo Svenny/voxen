@@ -70,7 +70,8 @@ public:
 	// This call is fast, the short path is a thread-local access and a bunch of arithmetic.
 	//
 	// NOTE: you must not call it while the service is not active.
-	[[gnu::malloc, gnu::alloc_size(1), gnu::alloc_align(2), nodiscard]] static void* allocate(size_t size, size_t align);
+	[[gnu::malloc, gnu::alloc_size(1), gnu::alloc_align(2), nodiscard]] static void* allocate(size_t size,
+		size_t align = alignof(std::max_align_t));
 
 	// Free pointer returned by previous call to `allocate()` (can be null).
 	// This call is EXTREMELY fast, basically just one branch and one atomic op.
@@ -104,6 +105,7 @@ public:
 	}
 };
 
+// See `PipeMemoryAllocator`.
 // Implementing std allocator semantics, usable in containers etc.
 template<typename T>
 struct TPipeMemoryAllocator {

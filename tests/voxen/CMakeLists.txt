@@ -2,6 +2,7 @@ voxen_add_executable(test-voxen "")
 
 target_sources(test-voxen PRIVATE
 	common/private_object_pool.test.cpp
+	common/scratch_memory_allocator.test.cpp
 	common/shared_object_pool.test.cpp
 	common/v8g_flat_map.test.cpp
 	common/v8g_hash_trie.test.cpp
@@ -28,6 +29,7 @@ target_link_libraries(test-voxen PRIVATE
 )
 
 add_test(NAME voxen-private-object-pool COMMAND test-voxen "[voxen::private_object_pool]")
+add_test(NAME voxen-scratch-memory-allocator COMMAND test-voxen "[voxen::scratch_memory_allocator]")
 add_test(NAME voxen-shared-object-pool COMMAND test-voxen "[voxen::shared_object_pool]")
 add_test(NAME voxen-v8g-flat-map COMMAND test-voxen "[voxen::v8g_flat_map]")
 add_test(NAME voxen-v8g-hash-trie COMMAND test-voxen "[voxen::v8g_hash_trie]")
