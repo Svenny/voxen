@@ -56,6 +56,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/terrain/surface.hpp
 	include/voxen/common/terrain/surface_builder.hpp
 	include/voxen/common/terrain/voxel_grid.hpp
+	include/voxen/common/common_fwd.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
 	include/voxen/common/gameview.hpp
@@ -64,6 +65,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/player_state_message.hpp
 	include/voxen/common/private_object_pool.hpp
 	include/voxen/common/runtime_config.hpp
+	include/voxen/common/scratch_memory_allocator.hpp
 	include/voxen/common/shared_object_pool.hpp
 	include/voxen/common/uid.hpp
 	include/voxen/common/v8g_concepts.hpp
