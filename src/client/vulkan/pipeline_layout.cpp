@@ -31,6 +31,7 @@ PipelineLayoutCollection::PipelineLayoutCollection()
 	, m_land_chunk_mesh_layout(createLandChunkMeshLayout())
 	, m_land_selector_layout(createLandSelectorLayout())
 	, m_ui_font_layout(createUiFontLayout())
+	, m_ui_basic_layout(createUiBasicLayout())
 {
 	Log::debug("PipelineLayoutCollection created successfully");
 }
@@ -101,6 +102,29 @@ PipelineLayout PipelineLayoutCollection::createUiFontLayout()
 	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
 
 	VkDescriptorSetLayout layout = ds_collection.uiFontLayout();
+
+	VkPushConstantRange push_const_range {
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.offset = 0,
+		.size = sizeof(glm::vec2),
+	};
+
+	return PipelineLayout(VkPipelineLayoutCreateInfo {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.setLayoutCount = 1,
+		.pSetLayouts = &layout,
+		.pushConstantRangeCount = 1,
+		.pPushConstantRanges = &push_const_range,
+	});
+}
+
+PipelineLayout PipelineLayoutCollection::createUiBasicLayout()
+{
+	auto &ds_collection = Backend::backend().descriptorSetLayoutCollection();
+
+	VkDescriptorSetLayout layout = ds_collection.uiBasicLayout();
 
 	VkPushConstantRange push_const_range {
 		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,

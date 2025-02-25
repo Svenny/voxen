@@ -2,8 +2,11 @@
 
 #include <voxen/client/gui.hpp>
 #include <voxen/common/config.hpp>
+#include <voxen/common/scratch_memory_allocator.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/gfx/gfx_system.hpp>
+#include <voxen/gfx/ui/ui_builder.hpp>
+#include <voxen/gfx/ui/ui_system.hpp>
 #include <voxen/os/glfw_window.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
@@ -34,8 +37,12 @@ struct MainThreadService::Impl {
 
 	bool log_fps = false;
 
+	ScratchMemoryAllocator scratch_allocator;
+
 	// Used for sending player state to World
-	svc::MessageQueue message_queue;
+	svc::MessageSender message_sender;
+
+	gfx::ui::UiSystem ui_system;
 
 	// Placed before GLFW-dependent stuff to construct before it and destroy after it
 	[[EXTRAS_NO_UNIQUE_ADDRESS]] GlfwRaii glfw_raii;
@@ -51,7 +58,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 {
 	auto &impl = m_impl.object();
 
-	impl.message_queue = svc.requestService<svc::MessagingService>().registerAgent(SERVICE_UID);
+	impl.message_sender = svc.requestService<svc::MessagingService>().createSender(SERVICE_UID);
 
 	auto *main_config = voxen::Config::mainConfig();
 
@@ -70,7 +77,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 
 MainThreadService::~MainThreadService() noexcept = default;
 
-void MainThreadService::doMainLoop()
+void MainThreadService::doMainLoop(FrameCallback frame_callback)
 {
 	debug::setThreadName("Main Thread");
 
@@ -96,10 +103,6 @@ void MainThreadService::doMainLoop()
 
 		// Receive input events
 		impl.window.pollEvents();
-		// Receive incoming messages.
-		// Not does nothing (drops all), we don't register any message handler.
-		// But we must do it anyway or we'll have memory leaks.
-		impl.message_queue.pollMessages();
 
 		// Receive the latest world state
 		last_state_ptr = world_control.getLastState();
@@ -127,10 +130,31 @@ void MainThreadService::doMainLoop()
 		last_input_sample_time = input_sample_time;
 
 		// Convert sampled input events into actions (player controls)
-		impl.gui->update(last_state, dt, impl.message_queue);
+		// TODO: this is not our responsibility, user code should do it
+		impl.gui->update(last_state, dt, impl.message_sender);
+
+		auto scratch_scope = impl.scratch_allocator.scope();
+
+		gfx::ui::UiBuilder ui_bld = impl.ui_system.beginFrame(scratch_scope,
+			{
+				.window_resolution = impl.window.framebufferSize(),
+				.cursor_position = impl.window.cursorPos(),
+				.left_button_pressed = impl.window.mouseLeftButtonPressed(),
+			});
+
+		FrameCallbackData fcd {
+			.delta_time = dt,
+			.ui_builder = ui_bld,
+		};
+
+		// Perform per-frame user logic
+		if (!frame_callback(fcd)) {
+			// Requested to stop
+			break;
+		}
 
 		// Do render
-		impl.gfx_system->drawFrame(last_state, impl.gui->view());
+		impl.gfx_system->drawFrame(last_state, impl.gui->view(), impl.ui_system);
 		fps_counter++;
 	}
 }
