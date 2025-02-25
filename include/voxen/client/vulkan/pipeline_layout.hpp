@@ -33,17 +33,20 @@ public:
 	PipelineLayout &landChunkMeshLayout() noexcept { return m_land_chunk_mesh_layout; }
 	PipelineLayout &landSelectorLayout() noexcept { return m_land_selector_layout; }
 	PipelineLayout &uiFontLayout() noexcept { return m_ui_font_layout; }
+	PipelineLayout &uiBasicLayout() noexcept { return m_ui_basic_layout; }
 
 private:
 	PipelineLayout m_land_frustum_cull_layout;
 	PipelineLayout m_land_chunk_mesh_layout;
 	PipelineLayout m_land_selector_layout;
 	PipelineLayout m_ui_font_layout;
+	PipelineLayout m_ui_basic_layout;
 
 	PipelineLayout createLandFrustumCullLayout();
 	PipelineLayout createLandChunkMeshLayout();
 	PipelineLayout createLandSelectorLayout();
 	PipelineLayout createUiFontLayout();
+	PipelineLayout createUiBasicLayout();
 };
 
 } // namespace voxen::client::vulkan

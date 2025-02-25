@@ -118,6 +118,22 @@ struct DefaultDepthStencilState {
 	VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {};
 };
 
+struct DisabledDepthStencilState {
+	DisabledDepthStencilState() noexcept
+	{
+		depth_stencil_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depth_stencil_info.depthTestEnable = VK_FALSE;
+		depth_stencil_info.depthWriteEnable = VK_FALSE;
+		depth_stencil_info.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+		depth_stencil_info.depthBoundsTestEnable = VK_FALSE;
+		depth_stencil_info.stencilTestEnable = VK_FALSE;
+		depth_stencil_info.minDepthBounds = 0.0f;
+		depth_stencil_info.maxDepthBounds = 1.0f;
+	}
+
+	VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {};
+};
+
 struct DisabledBlendState {
 	DisabledBlendState() noexcept
 	{
@@ -186,6 +202,7 @@ struct GraphicsPipelineParts {
 	const DefaultRasterizationState default_rasterization_state;
 	const DisabledMsaaState disabled_msaa_state;
 	const DefaultDepthStencilState default_depth_stencil_state;
+	const DisabledDepthStencilState disabled_depth_stencil_state;
 	const DisabledBlendState disabled_blend_state;
 	const StandardBlendState standard_blend_state;
 
@@ -220,8 +237,11 @@ struct GraphicsPipelineParts {
 
 	struct {
 		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
-		VkPipelineDepthStencilStateCreateInfo depth_stencil_info = {};
 	} ui_font_parts;
+
+	struct {
+		VkPipelineShaderStageCreateInfo stages[2] = { {}, {} };
+	} ui_basic_parts;
 };
 
 template<uint32_t ID>
@@ -362,11 +382,40 @@ void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts
 	frag_stage_info.module = module_collection[ShaderModuleCollection::UI_FONT_FRAGMENT];
 	frag_stage_info.pName = "main";
 
-	auto &zs_info = my_parts.depth_stencil_info;
-	zs_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	zs_info.depthCompareOp = VK_COMPARE_OP_ALWAYS;
-	zs_info.minDepthBounds = 0.0f;
-	zs_info.maxDepthBounds = 1.0f;
+	my_create_info.stageCount = 2;
+	my_create_info.pStages = my_parts.stages;
+	my_create_info.pVertexInputState = &parts.vert_fmt_empty.vertex_input_info;
+	my_create_info.pInputAssemblyState = &parts.default_input_assembly_state.input_assembly_info;
+	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
+	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
+	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
+	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
+	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
+	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
+	my_create_info.layout = backend.pipelineLayoutCollection().uiFontLayout();
+	my_create_info.renderPass = VK_NULL_HANDLE;
+	my_create_info.subpass = 0;
+	my_create_info.pNext = &parts.default_rendering_info;
+}
+
+template<>
+void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+{
+	auto &my_parts = parts.ui_basic_parts;
+	auto &my_create_info = parts.create_infos[PipelineCollection::UI_BASIC_PIPELINE];
+	auto &module_collection = backend.shaderModuleCollection();
+
+	auto &vert_stage_info = my_parts.stages[0];
+	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vert_stage_info.module = module_collection[ShaderModuleCollection::UI_BASIC_VERTEX];
+	vert_stage_info.pName = "main";
+
+	auto &frag_stage_info = my_parts.stages[1];
+	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	frag_stage_info.module = module_collection[ShaderModuleCollection::UI_BASIC_FRAGMENT];
+	frag_stage_info.pName = "main";
 
 	my_create_info.stageCount = 2;
 	my_create_info.pStages = my_parts.stages;
@@ -375,10 +424,10 @@ void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts
 	my_create_info.pViewportState = &parts.default_viewport_state.viewport_info;
 	my_create_info.pRasterizationState = &parts.default_rasterization_state.rasterization_info;
 	my_create_info.pMultisampleState = &parts.disabled_msaa_state.multisample_info;
-	my_create_info.pDepthStencilState = &zs_info;
+	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().uiFontLayout();
+	my_create_info.layout = backend.pipelineLayoutCollection().uiBasicLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;

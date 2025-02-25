@@ -345,13 +345,17 @@ uint32_t Swapchain::updateSwapchainParameters()
 
 	// `currentExtent` is zero or allows any size?
 	if (m_image_extent.width == 0 || m_image_extent.height == 0) {
-		std::tie(m_image_extent.width, m_image_extent.height) = m_window.framebufferSize();
+		auto [width, height] = m_window.framebufferSize();
+		m_image_extent.width = static_cast<uint32_t>(width);
+		m_image_extent.height = static_cast<uint32_t>(height);
 	}
 
 	// Still zero?
 	if (m_image_extent.width == 0 || m_image_extent.height == 0) {
 		Log::info("Window surface size is (0, 0) - minimized? Waiting for resize");
-		std::tie(m_image_extent.width, m_image_extent.height) = m_window.waitUntilUnMinimized();
+		auto [width, height] = m_window.waitUntilUnMinimized();
+		m_image_extent.width = static_cast<uint32_t>(width);
+		m_image_extent.height = static_cast<uint32_t>(height);
 	}
 
 	// Select image format

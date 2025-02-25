@@ -41,6 +41,7 @@ DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()
 	, m_land_frustum_cull_layout(createLandFrustumCullLayout())
 	, m_land_chunk_mesh_layout(createLandChunkMeshLayout())
 	, m_ui_font_layout(createUiFontLayout())
+	, m_ui_basic_layout(createUiBasicLayout())
 {
 	Log::debug("DescriptorSetLayoutCollection created successfully");
 }
@@ -159,6 +160,36 @@ WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createUiFontLayout()
 		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		.descriptorCount = 1,
 		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.pImmutableSamplers = nullptr,
+	};
+
+	const VkDescriptorSetLayoutCreateInfo info {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
+		.bindingCount = std::size(bindings),
+		.pBindings = bindings,
+	};
+
+	appendDescriptorConsumption(info);
+	return WrappedVkDescriptorSetLayout(info);
+}
+
+WrappedVkDescriptorSetLayout DescriptorSetLayoutCollection::createUiBasicLayout()
+{
+	VkDescriptorSetLayoutBinding bindings[2];
+	bindings[0] = {
+		.binding = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+		.descriptorCount = 1,
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.pImmutableSamplers = nullptr,
+	};
+	bindings[1] = {
+		.binding = 1,
+		.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+		.descriptorCount = 1,
+		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 		.pImmutableSamplers = nullptr,
 	};
 
