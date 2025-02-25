@@ -96,6 +96,16 @@ public:
 	[[gnu::malloc, gnu::alloc_size(2), gnu::alloc_align(3), nodiscard]] void *allocate(size_t size,
 		size_t align = alignof(std::max_align_t));
 
+	// Allocate and construct an object, semantic equivalent of `new T(args...)`.
+	// If the object constructor throws, memory remains used until this scope closes.
+	// Otherwise, the caller owns the returned pointer and should destory it if needed.
+	template<typename T, typename... Args>
+	[[nodiscard]] T *make(Args &&...args)
+	{
+		void *storage = allocate(sizeof(T), alignof(T));
+		return new (storage) T(std::forward<Args>(args)...);
+	}
+
 	// Open a subscope. All allocations made after opening it, even if through
 	// a different scope object, are reclaimed (freed) when this one closes.
 	//

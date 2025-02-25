@@ -2,6 +2,7 @@
 
 #include <voxen/client/gui.hpp>
 #include <voxen/common/config.hpp>
+#include <voxen/common/scratch_memory_allocator.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
@@ -35,6 +36,8 @@ struct MainThreadService::Impl {
 	Config cfg;
 
 	bool log_fps = false;
+
+	ScratchMemoryAllocator scratch_allocator;
 
 	// Used for sending player state to World
 	svc::MessageSender message_sender;
@@ -130,11 +133,14 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 		// TODO: this is not our responsibility, user code should do it
 		impl.gui->update(last_state, dt, impl.message_sender);
 
-		gfx::ui::UiBuilder ui_bld = impl.ui_system.beginFrame({
-			.window_resolution = impl.window.framebufferSize(),
-			.cursor_position = impl.window.cursorPos(),
-			.left_button_pressed = impl.window.mouseLeftButtonPressed(),
-		});
+		auto scratch_scope = impl.scratch_allocator.scope();
+
+		gfx::ui::UiBuilder ui_bld = impl.ui_system.beginFrame(scratch_scope,
+			{
+				.window_resolution = impl.window.framebufferSize(),
+				.cursor_position = impl.window.cursorPos(),
+				.left_button_pressed = impl.window.mouseLeftButtonPressed(),
+			});
 
 		FrameCallbackData fcd {
 			.delta_time = dt,

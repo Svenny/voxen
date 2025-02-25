@@ -3,6 +3,7 @@
 #include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/util/hash.hpp>
 
+#include "ui_render_list_builder.hpp"
 #include "ui_system_impl.hpp"
 
 #include <algorithm>
@@ -186,7 +187,7 @@ void sizeContainer(ContainerImpl &container)
 
 ContainerImpl &UiSystemImpl::pushContainer(DivSetup setup)
 {
-	auto &container = m_containers.emplace_front();
+	auto &container = *m_scratch->make<ContainerImpl>(*m_scratch);
 	container.parent = std::exchange(m_container_stack_top, &container);
 	container.parent->children.emplace_back(&container);
 	container.id = calcContainerId(container.parent->id, setup.id, container.parent->children.size());
@@ -274,43 +275,68 @@ void UiSystemImpl::popContainer(ContainerImpl &container)
 	m_container_stack_top = container.parent;
 }
 
-void UiSystemImpl::beginFrame(UiSystem::PerFrameData per_frame)
+void UiSystemImpl::beginFrame(ScratchMemoryAllocatorScope &scratch, UiSystem::PerFrameData per_frame)
 {
+	m_scratch = &scratch;
+
 	m_prev_frame_data = m_this_frame_data;
 	m_this_frame_data = per_frame;
 
-	m_render_list_builder.clear();
+	// Create and set up the root container
+	m_root_container.reset(scratch.make<ContainerImpl>(*m_scratch));
+	m_container_stack_top = m_root_container.get();
 
-	// Establish some root container data
-	m_root_container.hovered = false;
+	// Don't do any hovered checks at all if cursor is outside the window.
+	// This will recursively disable hovered check for child containers.
+	m_root_container->hovered = false;
 
 	if (per_frame.cursor_position.x >= 0.0 && per_frame.cursor_position.y >= 0.0
 		&& per_frame.cursor_position.x <= per_frame.window_resolution.width
 		&& per_frame.cursor_position.y <= per_frame.window_resolution.height) {
-		// Don't do any hovered checks at all if cursor is outside the window
-		m_root_container.hovered = true;
+		m_root_container->hovered = true;
 	}
 
-	m_root_container.x = 0.0f;
-	m_root_container.y = 0.0f;
-	m_root_container.width = static_cast<float>(per_frame.window_resolution.width);
-	m_root_container.height = static_cast<float>(per_frame.window_resolution.height);
+	m_root_container->layout.direction = LayoutDirection::BackToFront;
+
+	m_root_container->x = 0.0f;
+	m_root_container->y = 0.0f;
+	m_root_container->width = static_cast<float>(per_frame.window_resolution.width);
+	m_root_container->height = static_cast<float>(per_frame.window_resolution.height);
 }
 
 RenderData UiSystemImpl::endFrame()
 {
-	sizeContainer<true>(m_root_container);
-	sizeContainer<false>(m_root_container);
+	sizeContainer<true>(*m_root_container);
+	sizeContainer<false>(*m_root_container);
 
-	uint32_t root_item_id = m_render_list_builder.addItem(glm::vec2(0, 0),
-		glm::vec2(m_root_container.width, m_root_container.height));
+	// Prime render list builder with the number of rectangles added in previous frame.
+	// Should be close to perfect estimate when UI layout does not change between frames.
+	RenderListBuilder render_list_builder(*m_scratch, m_prev_frame_render_data_rectangles);
+	m_prev_frame_render_data_rectangles = 0;
 
-	std::vector<std::pair<ContainerImpl *, uint32_t>> dfs;
-	dfs.emplace_back(&m_root_container, root_item_id);
+	uint32_t root_item_id = render_list_builder.addItem(glm::vec2(0, 0),
+		glm::vec2(m_root_container->width, m_root_container->height));
+
+	scratch_vector<std::pair<ContainerImpl *, uint32_t>> dfs(*m_scratch);
+	// Estimate the maximal container stack depth
+	dfs.reserve(16);
+	dfs.emplace_back(m_root_container.get(), root_item_id);
+
+	// Create new ghosts of containers from this frame while iterating
+	m_prev_frame_containers.clear();
 
 	while (!dfs.empty()) {
 		auto [container, parent_item_id] = dfs.back();
 		dfs.pop_back();
+
+		m_prev_frame_containers.emplace_back(ContainerGhost {
+			.id = container->id,
+			.x = container->x,
+			.y = container->y,
+			.width = container->width,
+			.height = container->height,
+			.pressed = container->pressed,
+		});
 
 		// No need for a new item if there are no children (reuse parent scissor box)
 		uint32_t item_id = parent_item_id;
@@ -320,13 +346,14 @@ RenderData UiSystemImpl::endFrame()
 
 			glm::vec2 min(container->x + container->layout.padding.left, container->y + container->layout.padding.top);
 			glm::vec2 max = min + glm::vec2(inner_width, inner_height);
-			item_id = m_render_list_builder.addItem(min, max);
+			item_id = render_list_builder.addItem(min, max);
 		}
 
 		if (container->rectangle.color.a != 0) {
 			glm::vec2 min(container->x, container->y);
 			glm::vec2 max = min + glm::vec2(container->width, container->height);
-			m_render_list_builder.addRectangle(min, max, container->rectangle.color, parent_item_id);
+			render_list_builder.addRectangle(min, max, container->rectangle.color, parent_item_id);
+			m_prev_frame_render_data_rectangles++;
 		}
 
 		// TODO: cull out-of-screen subtrees?
@@ -336,29 +363,19 @@ RenderData UiSystemImpl::endFrame()
 		}
 	}
 
-	// Create ghosts of containers from this frame
-	m_prev_frame_containers.clear();
-
-	for (ContainerImpl &container : m_containers) {
-		m_prev_frame_containers.emplace_back(ContainerGhost {
-			.id = container.id,
-			.x = container.x,
-			.y = container.y,
-			.width = container.width,
-			.height = container.height,
-			.pressed = container.pressed,
-		});
-	}
-
-	// Sort to allow for fast binary search in the next frame
+	// Sort ghosts to allow for fast binary search in the next frame
 	std::sort(m_prev_frame_containers.begin(), m_prev_frame_containers.end());
 
-	// Reset this frame containers, we no longer need them
-	m_root_container.children.clear();
-	m_container_stack_top = &m_root_container;
-	m_containers.clear();
+	// Reset this frame containers, we no longer need them.
+	// XXX: everything in containers is scratch-allocated, this does nothing.
+	m_root_container.reset();
+	m_container_stack_top = nullptr;
 
-	return m_render_list_builder.produceRenderData();
+	// `render_list_builder` will destroy after this line
+	// so returned struct will have kinda dangling pointers.
+	// But they all point to scratch memory so are safe to use
+	// until `m_scratch` scope closes (somewhere outside).
+	return render_list_builder.produceRenderData();
 }
 
 } // namespace detail
@@ -367,10 +384,10 @@ UiSystem::UiSystem() = default;
 
 UiSystem::~UiSystem() = default;
 
-UiBuilder UiSystem::beginFrame(PerFrameData per_frame)
+UiBuilder UiSystem::beginFrame(ScratchMemoryAllocatorScope &scratch, PerFrameData per_frame)
 {
 	auto &impl = m_impl.object();
-	impl.beginFrame(per_frame);
+	impl.beginFrame(scratch, per_frame);
 	return UiBuilder(impl);
 }
 

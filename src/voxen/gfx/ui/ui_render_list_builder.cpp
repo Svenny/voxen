@@ -5,14 +5,13 @@
 namespace voxen::gfx::ui::detail
 {
 
-void RenderListBuilder::clear() noexcept
+RenderListBuilder::RenderListBuilder(ScratchMemoryAllocatorScope &scratch, size_t items_estimate)
+	: m_draw_setups(scratch), m_per_item_datas(scratch), m_vertices(scratch), m_indices(scratch)
 {
-	m_cur_draw_setup = {};
-
-	m_draw_setups.clear();
-	m_per_item_datas.clear();
-	m_vertices.clear();
-	m_indices.clear();
+	m_draw_setups.reserve(1);
+	m_per_item_datas.reserve(items_estimate);
+	m_vertices.reserve(4 * items_estimate);
+	m_indices.reserve(6 * items_estimate);
 }
 
 uint32_t RenderListBuilder::addItem(glm::vec2 min, glm::vec2 max)
