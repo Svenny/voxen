@@ -44,6 +44,11 @@ jobs:
       - name: Install Mold linker
         uses: rui314/setup-mold@v1
 
+      - name: Patch 3rdparty projects
+        run: |
+          git apply --directory=3rdparty/fmt 3rdparty/patches/fmt.patch
+          git apply --directory=3rdparty/zlib 3rdparty/patches/zlib.patch
+
       - name: Build Voxen
         run: |
           BUILD_DIR=$XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
@@ -60,7 +65,7 @@ jobs:
         if: matrix.tests == 'ON'
         run: |
           cd $XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
-          ctest -j`nproc`
+          ctest -j`nproc` --output-on-failure
 
   build-windows:
     runs-on: windows-2022
@@ -97,6 +102,11 @@ jobs:
       - name: Install Vulkan SDK
         run: ./VulkanSDK-Installer.exe --accept-licenses --default-answer --confirm-command install
 
+      - name: Patch 3rdparty projects
+        run: |
+          git apply --directory=3rdparty/fmt 3rdparty/patches/fmt.patch
+          git apply --directory=3rdparty/zlib 3rdparty/patches/zlib.patch
+
       - name: CMake configure
         run: |
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T ClangCL `
@@ -111,4 +121,4 @@ jobs:
         if: matrix.tests == 'ON'
         run: |
           cd build
-          ctest -C ${{ matrix.type }} -j4
+          ctest -C ${{ matrix.type }} -j4 --output-on-failure

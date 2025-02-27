@@ -12,11 +12,8 @@ target_sources(test-common PRIVATE
 
 target_link_libraries(test-common PUBLIC
 	3rdparty::catch2
-	3rdparty::glm
-)
-
-target_link_libraries(test-common PRIVATE
 	3rdparty::fmt
+	3rdparty::glm
 )
 
 add_subdirectory(extras)

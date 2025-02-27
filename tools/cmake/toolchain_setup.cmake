@@ -13,13 +13,15 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_VERSION VERSION_
 endif()
 
 # This function must be called on any Voxen C/C++ target (executable, static or shared library)
-function(voxen_setup_target target is_executable)
+function(voxen_setup_target target)
 	set(CLANG_OPTION_PREFIX "")
 
 	if(WIN32)
 		# clang-cl needs this prefix for non-cl (native clang) options
 		set(CLANG_OPTION_PREFIX "/clang:")
 	endif()
+
+	# TODO: these flags are partially duplicated in `build-3rdparty.py`
 
 	# Common stuff for all platforms
 	target_compile_options(${target} PRIVATE
@@ -121,6 +123,16 @@ function(voxen_setup_target target is_executable)
 			/showFilenames
 			# Compile multiple source files in parallel (why it's not the default?!)
 			/MP
+
+			# CMake+VS+ClangCL+IntelliSense interaction is broken beyond hope.
+			# Include dirs marked as SYSTEM compile fine but are not seen by IntelliSense.
+			# CMake adds these with `-imsvc` switch but VS expects `/external:I` seemingly.
+			# Fixes VS2019... but VS2022 is not satisfied even with that.
+			#
+			# I have no hope that it will ever get fixed, so use all three possible switches
+			# and pray that clang-cl won't start issuing warnings one day because of `/I`.
+			"/external:I${CMAKE_BINARY_DIR}/3rdparty-package/include"
+			"/I${CMAKE_BINARY_DIR}/3rdparty-package/include"
 		)
 
 		target_link_libraries(${target} PRIVATE
@@ -128,11 +140,16 @@ function(voxen_setup_target target is_executable)
 			synchronization
 		)
 
-		# Built-in clang-tidy also can't understand we're building for C++20...
+		# Built-in clang-tidy does not properly receive clang flags
+		# so we have to disable all that useless junk here as well
 		set_target_properties(${target} PROPERTIES VS_GLOBAL_ClangTidyChecks "\
 -clang-diagnostic-c++98-compat,-clang-diagnostic-c++98-compat-pedantic,\
 -clang-diagnostic-pre-c++17-compat,-clang-diagnostic-pre-c++20-compat-pedantic,\
--clang-diagnostic-pragma-once-outside-header,-clang-diagnostic-unsafe-buffer-usage"
+-clang-diagnostic-pre-c++14-compat,-clang-diagnostic-c++20-compat,-clang-diagnostic-pre-c++20-compat,\
+-clang-diagnostic-pragma-once-outside-header,-clang-diagnostic-unsafe-buffer-usage,\
+-clang-diagnostic-shadow-field-in-constructor,-clang-diagnostic-extra-semi-stmt,\
+-clang-diagnostic-switch-default,-clang-diagnostic-global-constructors,-clang-diagnostic-exit-time-destructors,\
+-clang-diagnostic-c++98-compat-local-type-template-args"
 		)
 	endif()
 
@@ -151,6 +168,11 @@ function(voxen_setup_target target is_executable)
 		# Use -fvisibility=hidden by default
 		C_VISIBILITY_PRESET hidden
 		CXX_VISIBILITY_PRESET hidden
+
+		# 3rdparty is always built in Release (/MD) and we must not mix it with /MDd,
+		# so set /MD for our code as well. This loses some hypothetical debug
+		# capabilities, but then, do we really need them anywhere?
+		MSVC_RUNTIME_LIBRARY MultiThreadedDLL
 
 		# Enable PIC for everything (executables, static and shared libs).
 		# Shared libs must be PIC anyways. Static libs are almost always linked into
@@ -185,7 +207,7 @@ endfunction()
 # All executable targets should be created via this function
 function(voxen_add_executable name sources)
 	add_executable(${name} ${sources})
-	voxen_setup_target(${name} true)
+	voxen_setup_target(${name})
 endfunction()
 
 # All library targets should be created via this function
@@ -193,6 +215,6 @@ function(voxen_add_library name type)
 	add_library(${name} ${type} "")
 
 	if(NOT type STREQUAL "INTERFACE")
-		voxen_setup_target(${name} false)
+		voxen_setup_target(${name})
 	endif()
 endfunction()
