@@ -60,7 +60,7 @@ jobs:
         if: matrix.tests == 'ON'
         run: |
           cd $XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
-          ctest -j`nproc`
+          ctest -j`nproc` --output-on-failure
 
   build-windows:
     runs-on: windows-2022
@@ -111,4 +111,4 @@ jobs:
         if: matrix.tests == 'ON'
         run: |
           cd build
-          ctest -C ${{ matrix.type }} -j4
+          ctest -C ${{ matrix.type }} -j4 --output-on-failure
