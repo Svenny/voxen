@@ -19,14 +19,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Set game executable startup by default in VS sln
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT game)
 
-# Strange, but CMAKE_CXX_COMPILER_ID don't work before `project`
+# XXX: ideally `project` should go as early as possible
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX "pre-alpha")
 
-# Python is used in buildsystem parts where CMake is too ugly
+# Python is used in buildsystem parts where CMake is too ugly.
+# Version requirement is arbitrary, I don't know if it's actually compatible.
 find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
 
-include(tools/cmake/bool_option.cmake)
 include(tools/cmake/toolchain_setup.cmake)
 
 # Build third-party dependencies
@@ -37,6 +37,7 @@ voxen_add_library(extras INTERFACE)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
+add_dependencies(voxen 3rdparty-pull-binaries)
 target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(Threads REQUIRED)
