@@ -143,6 +143,12 @@ private:
 					}
 				}
 
+				// Reset file pointer before marking completion, otherwise we might
+				// keep file handle opened longer than user code expects.
+				// In presense of file locking this will cause lock races on tightly
+				// scheduled dependent tasks. Discovered this while running tests.
+				item.file_ptr.reset();
+
 				me.m_counter_tracker.completeCounter(item.async_counter);
 			}
 
