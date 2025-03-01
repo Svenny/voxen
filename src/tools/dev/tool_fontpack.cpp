@@ -3,7 +3,7 @@
 
 #include <extras/defer.hpp>
 
-#include <ft2build.h>
+#include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 
@@ -80,9 +80,9 @@ int main(int argc, char *argv[])
 	{
 		printf("Font metrics:\n");
 
-		float ascent = float(ft_face->ascender) / 64.0f;
-		float descent = float(ft_face->descender) / 64.0f;
-		float height = float(ft_face->height) / 64.0f;
+		double ascent = double(ft_face->ascender) / 64.0;
+		double descent = double(ft_face->descender) / 64.0;
+		double height = double(ft_face->height) / 64.0;
 		printf("ascent = %f, descent = %f, height = %f\n\n", ascent, descent, height);
 
 		description << "constexpr float FONT_ASCENT = " << ascent << "f;" << std::endl;
@@ -171,8 +171,8 @@ int main(int argc, char *argv[])
 
 		printf(
 			"c = %d, cc = %c, x = %u, y = %u, width = %u, height = %u, bearing_x = %f, bearing_y = %f, advance_x = %f\n",
-			int(c), c, first_out_col, first_out_row, map_entry.bitmap_width, map_entry.bitmap_height, map_entry.bearing_x,
-			map_entry.bearing_y, map_entry.advance_x);
+			int(c), c, first_out_col, first_out_row, map_entry.bitmap_width, map_entry.bitmap_height,
+			double(map_entry.bearing_x), double(map_entry.bearing_y), double(map_entry.advance_x));
 
 		description << "\t{ '";
 		if (c != '\\' && c != '\'') {
