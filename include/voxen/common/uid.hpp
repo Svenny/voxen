@@ -89,8 +89,8 @@ namespace fmt
 {
 
 template<>
-struct VOXEN_API formatter<voxen::UID> : formatter<string_view> {
-	format_context::iterator format(voxen::UID id, format_context &ctx) const;
+struct formatter<voxen::UID> : formatter<string_view> {
+	VOXEN_API format_context::iterator format(voxen::UID id, format_context &ctx) const;
 };
 
 } // namespace fmt
