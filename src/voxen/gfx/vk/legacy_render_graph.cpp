@@ -440,6 +440,9 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 
 		// Upload render data
 		const uint32_t draw_count = static_cast<uint32_t>(ui_render_data.draw_setups.size());
+		if (draw_count == 0) [[unlikely]] {
+			return;
+		}
 
 		TransientBufferAllocator::Allocation indirect_buffer_alloc;
 		TransientBufferAllocator::Allocation per_item_buffer_alloc;
