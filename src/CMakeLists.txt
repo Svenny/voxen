@@ -15,7 +15,6 @@ set(VOXEN_SOURCES
 	src/common/player.cpp
 	src/common/runtime_config.cpp
 	src/util/aabb.cpp
-	src/util/allocator.cpp
 	src/util/debug.cpp
 	src/util/elapsed_timer.cpp
 	src/util/error_condition.cpp
