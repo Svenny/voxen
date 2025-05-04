@@ -5,8 +5,6 @@
 
 #include <extras/defer.hpp>
 
-#include <sago/platform_folders.h>
-
 #include <atomic>
 #include <cassert>
 #include <fstream>
