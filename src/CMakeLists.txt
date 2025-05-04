@@ -9,20 +9,6 @@ set(VOXEN_SOURCES
 	src/client/gui.cpp
 	src/client/input_event_adapter.cpp
 	src/common/assets/png_tools.cpp
-	src/common/terrain/allocator.cpp
-	src/common/terrain/cache.cpp
-	src/common/terrain/chunk.cpp
-	src/common/terrain/controller.cpp
-	src/common/terrain/control_block.cpp
-	src/common/terrain/coord.cpp
-	src/common/terrain/generator.cpp
-	src/common/terrain/hermite_data.cpp
-	src/common/terrain/loader.cpp
-	src/common/terrain/primary_data.cpp
-	src/common/terrain/qef_solver.cpp
-	src/common/terrain/surface.cpp
-	src/common/terrain/surface_builder.cpp
-	src/common/terrain/voxel_grid.cpp
 	src/common/config.cpp
 	src/common/filemanager.cpp
 	src/common/gameview.cpp

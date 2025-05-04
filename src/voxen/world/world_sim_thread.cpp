@@ -41,7 +41,7 @@ svc::CoroTask saveWorldTask(std::shared_ptr<const State> state, ControlService::
 
 } // namespace
 
-SimThread::SimThread(Private, svc::ServiceLocator &svc) : m_terrain_controller(svc)
+SimThread::SimThread(Private, svc::ServiceLocator &svc)
 {
 	m_land_service = &svc.requestService<land::LandService>();
 	m_task_service = &svc.requestService<svc::TaskService>();
