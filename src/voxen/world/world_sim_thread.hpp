@@ -1,11 +1,11 @@
 #pragma once
 
 #include <voxen/common/player_state_message.hpp>
-#include <voxen/common/terrain/controller.hpp>
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/svc/service_base.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>
@@ -50,7 +50,6 @@ private:
 		ControlService::SaveRequest request;
 	};
 
-	terrain::Controller m_terrain_controller;
 	land::LandService *m_land_service = nullptr;
 	svc::TaskService *m_task_service = nullptr;
 
