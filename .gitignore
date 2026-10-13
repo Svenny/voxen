@@ -2,12 +2,19 @@
 /build/
 /install/
 
-# Qt Creator user-specific files
+# User-specific IDE files
+
+# Qt Creator
 CMakeLists.txt.user
 .cmake/
-
-# KDevelop (IDE) program files
+# KDevelop
 *.kdev4
-
-# Visual Studio user-specific files
+# Visual Studio
 .vs/
+# VS Code
+.vscode/
+
+# Non-shared CMake presets
+CMakeUserPresets.json
+# clangd index
+.cache/
