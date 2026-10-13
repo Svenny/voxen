@@ -1,0 +1,124 @@
+{
+	"version": 10,
+	"cmakeMinimumRequired": {
+		"major": 4,
+		"minor": 2,
+		"patch": 0
+	},
+
+	"configurePresets": [
+		{
+			"name": "base",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"installDir": "${sourceDir}/install/${presetName}",
+			"cacheVariables": {
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+				"VOXEN_BUILD_TESTS": "ON"
+			}
+		},
+		{
+			"name": "linux",
+			"hidden": true,
+			"inherits": "base",
+			"generator": "Ninja",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Linux"
+			},
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang",
+				"CMAKE_CXX_COMPILER": "clang++"
+			}
+		},
+		{
+			"name": "linux-debug",
+			"displayName": "Linux Clang Debug",
+			"inherits": "linux",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "linux-release",
+			"displayName": "Linux Clang Release",
+			"inherits": "linux",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "windows-vs2026",
+			"displayName": "Visual Studio 2026 (ClangCL)",
+			"inherits": "base",
+			"generator": "Visual Studio 18 2026",
+			"architecture": "x64",
+			"toolset": "ClangCL",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
+			"cacheVariables": {
+				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+			}
+		}
+	],
+
+	"buildPresets": [
+		{
+			"name": "linux-debug",
+			"configurePreset": "linux-debug"
+		},
+		{
+			"name": "linux-release",
+			"configurePreset": "linux-release"
+		},
+		{
+			"name": "windows-vs2026-debug",
+			"configurePreset": "windows-vs2026",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-vs2026-release",
+			"configurePreset": "windows-vs2026",
+			"configuration": "Release"
+		}
+	],
+
+	"testPresets": [
+		{
+			"name": "base",
+			"hidden": true,
+			"output": {
+				"outputOnFailure": true
+			},
+			"execution": {
+				"jobs": 0
+			}
+		},
+		{
+			"name": "linux-debug",
+			"inherits": "base",
+			"configurePreset": "linux-debug"
+		},
+		{
+			"name": "linux-release",
+			"inherits": "base",
+			"configurePreset": "linux-release"
+		},
+		{
+			"name": "windows-vs2026-debug",
+			"inherits": "base",
+			"configurePreset": "windows-vs2026",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-vs2026-release",
+			"inherits": "base",
+			"configurePreset": "windows-vs2026",
+			"configuration": "Release"
+		}
+	]
+}
