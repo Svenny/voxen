@@ -1,88 +1,72 @@
 name: CI
 
-on: [ push, workflow_dispatch ]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  VULKAN_SDK_VERSION: 1.3.296
+  # Windows only needs `glslc` from it; Linux takes it from distro packages
+  VULKAN_SDK_VERSION: 1.4.363.0
+  # Must match `LLVMToolsVersion` in `Directory.Build.props`
+  LLVM_VERSION: 21.1.8
 
 jobs:
   build-ubuntu:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
+      fail-fast: false
       matrix:
-        name: [ clang-debug, clang-release ]
-        include:
-          - name: clang-debug
-            cc: clang
-            cxx: clang++
-            type: Debug
-            tests: ON
-          - name: clang-release
-            cc: clang
-            cxx: clang++
-            type: Release
-            tests: OFF
+        preset: [ linux-debug, linux-release ]
     steps:
       - name: Checkout the commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
-
-      - name: Provide additional repositories
-        run: |
-          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-${{ env.VULKAN_SDK_VERSION }}-jammy.list \
-              https://packages.lunarg.com/vulkan/${{ env.VULKAN_SDK_VERSION }}/lunarg-vulkan-${{ env.VULKAN_SDK_VERSION }}-jammy.list
-          sudo apt update
 
       - name: Install required packages
         run: |
-          sudo apt install ninja-build shaderc
-          sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-          sudo apt install libdw-dev
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build mold glslc
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev xorg-dev
+          sudo apt-get install -y libdw-dev
+          clang --version
+          cmake --version
 
-      - name: Install Mold linker
-        uses: rui314/setup-mold@v1
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
 
-      - name: Build Voxen
-        run: |
-          BUILD_DIR=$XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
-          mkdir -p $BUILD_DIR
-          rm -rf $BUILD_DIR/*
-          cmake -S . -B $BUILD_DIR -GNinja             \
-              -DCMAKE_C_COMPILER=${{ matrix.cc }}      \
-              -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}   \
-              -DCMAKE_BUILD_TYPE=${{ matrix.type }}    \
-              -DVOXEN_BUILD_TESTS=${{ matrix.tests }}
-          cmake --build $BUILD_DIR
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
 
-      - name: Run simple tests
-        if: matrix.tests == 'ON'
-        run: |
-          cd $XDG_RUNTIME_DIR/voxen-builds/${{ matrix.name }}
-          ctest -j`nproc` --output-on-failure
+      - name: Run tests
+        run: ctest --preset ${{ matrix.preset }}
 
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-2025
     strategy:
+      fail-fast: false
       matrix:
-        name: [ clang-cl-debug, clang-cl-release ]
-        include:
-          - name: clang-cl-debug
-            type: Debug
-            tests: ON
-          - name: clang-cl-release
-            type: Release
-            tests: OFF
+        config: [ debug, release ]
     steps:
       - name: Checkout the commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
 
+      - name: Install LLVM
+        run: |
+          choco install llvm --version=${{ env.LLVM_VERSION }} --allow-downgrade --force -y
+          & "C:\Program Files\LLVM\bin\clang-cl.exe" --version
+
       - name: Cache Vulkan SDK installer
         id: cache-vulkan-sdk
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: VulkanSDK-Installer.exe
           key: windows-vulkan-sdk-${{ env.VULKAN_SDK_VERSION }}
@@ -91,24 +75,17 @@ jobs:
         if: steps.cache-vulkan-sdk.outputs.cache-hit != 'true'
         run: |
           Invoke-WebRequest `
-              https://sdk.lunarg.com/sdk/download/${{ env.VULKAN_SDK_VERSION }}.0/windows/VulkanSDK-${{ env.VULKAN_SDK_VERSION }}.0-Installer.exe `
+              https://sdk.lunarg.com/sdk/download/${{ env.VULKAN_SDK_VERSION }}/windows/vulkansdk-windows-X64-${{ env.VULKAN_SDK_VERSION }}.exe `
               -OutFile VulkanSDK-Installer.exe
 
       - name: Install Vulkan SDK
         run: ./VulkanSDK-Installer.exe --accept-licenses --default-answer --confirm-command install
 
-      - name: CMake configure
-        run: |
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T ClangCL `
-              -DCMAKE_PROGRAM_PATH=C:/VulkanSDK/${{ env.VULKAN_SDK_VERSION }}.0/Bin `
-              -DCMAKE_CONFIGURATION_TYPES=${{ matrix.type }} `
-              -DVOXEN_BUILD_TESTS=${{ matrix.tests }}
+      - name: Configure
+        run: cmake --preset windows-vs2026 -DCMAKE_PROGRAM_PATH=C:/VulkanSDK/${{ env.VULKAN_SDK_VERSION }}/Bin
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.type }}
+        run: cmake --build --preset windows-vs2026-${{ matrix.config }}
 
-      - name: Run simple tests
-        if: matrix.tests == 'ON'
-        run: |
-          cd build
-          ctest -C ${{ matrix.type }} -j4 --output-on-failure
+      - name: Run tests
+        run: ctest --preset windows-vs2026-${{ matrix.config }}

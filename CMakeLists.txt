@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 4.2)
 
 # Can't use `if(GENERATOR_IS_MULTI_CONFIG)` without this line
 get_cmake_property(GENERATOR_IS_MULTI_CONFIG GENERATOR_IS_MULTI_CONFIG)
 if(GENERATOR_IS_MULTI_CONFIG)
 	if(CMAKE_CONFIGURATION_TYPES STREQUAL "")
 		message(WARNING "Build types not set, defaulting to Release")
-		set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING FORCE)
+		set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING "Available build types" FORCE)
 	endif()
 else()
 	if(CMAKE_BUILD_TYPE STREQUAL "")
 		message(WARNING "Build type not set, defaulting to Release")
-		set(CMAKE_BUILD_TYPE Release CACHE STRING FORCE)
+		set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 	endif()
 endif()
 
@@ -24,8 +24,8 @@ project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX "pre-alpha")
 
 # Python is used in buildsystem parts where CMake is too ugly.
-# Version requirement is arbitrary, I don't know if it's actually compatible.
-find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
+# Baseline is the version shipped with Ubuntu 26.04.
+find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter)
 
 include(tools/cmake/toolchain_setup.cmake)
 

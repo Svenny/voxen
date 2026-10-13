@@ -2,6 +2,6 @@
 <Project>
   <PropertyGroup>
     <LLVMInstallDir>C:\Program Files\LLVM</LLVMInstallDir>
-    <LLVMToolsVersion>18</LLVMToolsVersion>
+    <LLVMToolsVersion>21</LLVMToolsVersion>
   </PropertyGroup>
 </Project>
