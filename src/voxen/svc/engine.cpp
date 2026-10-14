@@ -6,6 +6,7 @@
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/debug/uid_registry.hpp>
+#include <voxen/os/time.hpp>
 #include <voxen/server/world.hpp>
 #include <voxen/svc/async_file_io_service.hpp>
 #include <voxen/svc/messaging_service.hpp>
@@ -199,7 +200,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 {
 	const AppInfo app_info = m_start_args.appInfo();
 
-	Log::info("Started at: {:%c UTC%z (%Z)}", fmt::localtime(std::time(nullptr)));
+	Log::info("Started at: {:%c UTC%z (%Z)}", os::Time::localTime(std::time(nullptr)));
 	Log::info("Engine: Voxen {}",
 		makeVersionString(Version::MAJOR, Version::MINOR, Version::PATCH, Version::SUFFIX, Version::GIT_HASH));
 	Log::info("Application: {} {}", app_info.name,

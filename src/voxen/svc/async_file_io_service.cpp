@@ -73,7 +73,7 @@ public:
 	}
 
 private:
-	AsyncFileIoService::Config m_cfg;
+	[[maybe_unused]] AsyncFileIoService::Config m_cfg;
 	AsyncCounterTracker &m_counter_tracker;
 
 	SharedObjectPool<os::File, AsyncFileIoService::FILE_HANDLE_POOL_HINT> m_file_handle_pool;

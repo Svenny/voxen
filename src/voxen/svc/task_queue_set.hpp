@@ -44,7 +44,7 @@ private:
 	};
 
 	struct alignas(extras::hardware_params::cache_line) RingBufferHeader {
-		std::atomic<ProduceConsumeIndex> current_index;
+		std::atomic<ProduceConsumeIndex> current_index { ProduceConsumeIndex {} };
 	};
 
 	struct alignas(extras::hardware_params::cache_line) RingBufferStorage {

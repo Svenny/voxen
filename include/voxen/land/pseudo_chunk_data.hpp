@@ -82,7 +82,7 @@ public:
 private:
 	CellEntryArray m_cell_entries;
 	// TODO: only for debugging
-	ChunkKey m_output_key;
+	[[maybe_unused]] ChunkKey m_output_key;
 };
 
 } // namespace voxen::land
