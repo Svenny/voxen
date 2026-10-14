@@ -15,10 +15,15 @@ endif()
 # This function must be called on any Voxen C/C++ target (executable, static or shared library)
 function(voxen_setup_target target)
 	set(CLANG_OPTION_PREFIX "")
+	set(CLANG_OPTION_WALL "-Wall")
 
 	if(WIN32)
 		# clang-cl needs this prefix for non-cl (native clang) options
 		set(CLANG_OPTION_PREFIX "/clang:")
+		# clang-cl treats `-Wall` like MSVC `/Wall`, i.e. `-Weverything`. `/clang:-Wall` won't do
+		# either, clang-cl moves all `/clang:` options to the end, overriding `-Wno-...` options.
+		# `-W4` is clang-cl's spelling of `-Wall -Wextra`, and it keeps its place.
+		set(CLANG_OPTION_WALL "-W4")
 	endif()
 
 	# TODO: these flags are partially duplicated in `build-3rdparty.py`
@@ -26,7 +31,7 @@ function(voxen_setup_target target)
 	# Common stuff for all platforms
 	target_compile_options(${target} PRIVATE
 		# Enforce good coding standards to at least some extent
-		-Wall -Wextra -Wpedantic -Werror
+		${CLANG_OPTION_WALL} -Wextra -Wpedantic -Werror
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
 		-Wshadow-uncaptured-local -Wunused-member-function -Wconditional-uninitialized
