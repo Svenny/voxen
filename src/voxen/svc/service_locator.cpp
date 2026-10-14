@@ -134,7 +134,10 @@ IService &ServiceLocator::requestService(UID id)
 	// - Otherwise we don't have it (at least so far)
 	//
 	// Linear search over the vector is totally fine, pending set should contain just a few items.
-	if (std::ranges::find(m_impl->pending_services, id) != m_impl->pending_services.end()) {
+	// XXX: `find_if` instead of `find` works around MSVC STL bug with clang-cl, `find` fails
+	// to compile on 16-byte types with defaulted `==` (https://github.com/microsoft/STL/issues/6294)
+	auto is_id = [&](const UID &item) { return item == id; };
+	if (std::ranges::find_if(m_impl->pending_services, is_id) != m_impl->pending_services.end()) {
 		// This can happen only once per call chain, no need to check this flag
 		m_impl->request_service_fail_logged = true;
 
