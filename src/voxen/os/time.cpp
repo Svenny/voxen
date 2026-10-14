@@ -13,6 +13,17 @@
 namespace voxen::os
 {
 
+std::tm Time::localTime(std::time_t time) noexcept
+{
+	std::tm result {};
+#ifndef _WIN32
+	localtime_r(&time, &result);
+#else
+	localtime_s(&result, &time);
+#endif
+	return result;
+}
+
 #ifndef _WIN32
 bool Time::nanosleepFor(struct timespec timeout) noexcept
 {

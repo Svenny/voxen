@@ -15,6 +15,10 @@ namespace Time
 // Returns `true` if the sleep ended and `false` if it was interrupted.
 VOXEN_API bool nanosleepFor(struct timespec timeout) noexcept;
 
+// Thread-safe wrapper for `localtime()`, converts time point to calendar time in local timezone.
+// Returns zero-initialized structure if the conversion fails.
+VOXEN_API std::tm localTime(std::time_t time) noexcept;
+
 } // namespace Time
 
 } // namespace voxen::os

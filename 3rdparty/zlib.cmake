@@ -20,6 +20,7 @@ target_compile_options(zlib PRIVATE
 	-Wno-format-nonliteral
 	-Wno-missing-prototypes
 	-Wno-missing-variable-declarations
+	-Wno-undef
 )
 
 if(LINUX)
