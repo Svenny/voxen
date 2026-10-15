@@ -8,13 +8,18 @@
 	#include <fcntl.h>
 	#include <sys/file.h>
 	#include <sys/stat.h>
+	#include <unistd.h>
 #else
 	#define NOMINMAX
 	#include <Windows.h>
 #endif
 
+#include <fmt/std.h>
+
+#include <atomic>
 #include <chrono>
 #include <cinttypes>
+#include <utility>
 
 namespace voxen::os
 {

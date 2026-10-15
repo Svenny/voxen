@@ -18,6 +18,7 @@
 
 #include "async_counter_tracker.hpp"
 
+#include <fmt/chrono.h>
 #include <fmt/ranges.h>
 
 #include <atomic>

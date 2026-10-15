@@ -3,7 +3,10 @@
 #include <voxen/debug/bug_found.hpp>
 #include <voxen/util/log.hpp>
 
+#include <fmt/format.h>
+
 #include <cassert>
+#include <limits>
 
 namespace voxen::detail
 {

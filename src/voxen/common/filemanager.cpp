@@ -5,6 +5,8 @@
 
 #include <extras/defer.hpp>
 
+#include <fmt/std.h>
+
 #include <system_error>
 
 using extras::dyn_array;

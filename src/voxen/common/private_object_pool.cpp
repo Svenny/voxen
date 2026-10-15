@@ -3,6 +3,7 @@
 #include <voxen/util/log.hpp>
 
 #include <cassert>
+#include <utility>
 
 namespace voxen::detail
 {
