@@ -35,7 +35,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build mold glslc
           sudo apt-get install -y libwayland-dev libxkbcommon-dev xorg-dev
-          sudo apt-get install -y libdw-dev
           clang --version
           cmake --version
 
