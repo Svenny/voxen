@@ -60,6 +60,7 @@ endfunction()
 voxen_take_package(fmt fmt::fmt 3rdparty::fmt)
 voxen_take_package(freetype freetype 3rdparty::freetype)
 voxen_take_package(glfw3 glfw 3rdparty::glfw)
+voxen_take_package(harfbuzz harfbuzz::harfbuzz 3rdparty::harfbuzz)
 voxen_take_package(jsoncpp jsoncpp_lib 3rdparty::jsoncpp)
 voxen_take_package(ZLIB ZLIB::ZLIB 3rdparty::zlib)
 

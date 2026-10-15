@@ -50,7 +50,9 @@ target_link_libraries(voxen PUBLIC
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
+	3rdparty::freetype
 	3rdparty::glfw
+	3rdparty::harfbuzz
 	3rdparty::pcg
 	3rdparty::vma
 	3rdparty::vulkan-headers

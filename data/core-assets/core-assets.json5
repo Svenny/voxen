@@ -1,0 +1,9 @@
+{
+	uid: "xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx",
+
+	index-file: "voxen-core-assets",
+
+	subdirs: [
+		"fonts",
+	],
+}
