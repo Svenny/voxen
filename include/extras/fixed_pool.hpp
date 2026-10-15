@@ -6,6 +6,7 @@
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <cstddef>
 #include <mutex>
 #include <new>
 #include <type_traits>
@@ -17,12 +18,18 @@ namespace extras
 namespace detail
 {
 
+// Uninitialized storage for one object
+template<typename T>
+struct alignas(T) fixed_pool_slot {
+	std::byte bytes[sizeof(T)];
+};
+
 template<typename T, uint32_t N, bool R>
 struct fixed_pool_storage;
 
 template<typename T, uint32_t N>
 struct fixed_pool_storage<T, N, false> {
-	using type = std::array<std::aligned_storage_t<sizeof(T), alignof(T)>, N>;
+	using type = std::array<fixed_pool_slot<T>, N>;
 };
 
 template<typename T, uint32_t N>

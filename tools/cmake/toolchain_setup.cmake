@@ -124,6 +124,12 @@ function(voxen_setup_target target)
 			# Triggers on ~any unchecked array access, total nonsense
 			-Wno-unsafe-buffer-usage
 
+			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
+			# Pin the standard explicitly, `/clang:` options win as they go last.
+			# NOTE: VS generator evaluates this for all sources of a target with
+			# any C++ sources, but at least it keeps C-only targets intact.
+			$<$<COMPILE_LANGUAGE:CXX>:/clang:-std=c++23>
+
 			# Display names of files being compiled (makes VS output window informative)
 			/showFilenames
 			# Compile multiple source files in parallel (why it's not the default?!)
@@ -162,9 +168,9 @@ function(voxen_setup_target target)
 	string(TOUPPER ${target} TARGET_UPPERCASE)
 
 	set_target_properties(${target} PROPERTIES
-		# Require C17 and C++20
+		# Require C17 and C++23
 		C_STANDARD 17 C_STANDARD_REQUIRED TRUE
-		CXX_STANDARD 20 CXX_STANDARD_REQUIRED TRUE
+		CXX_STANDARD 23 CXX_STANDARD_REQUIRED TRUE
 
 		# Target will be able to load .so's from its own directory
 		INSTALL_RPATH "\$ORIGIN"
