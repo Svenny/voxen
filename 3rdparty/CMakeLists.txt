@@ -70,7 +70,7 @@ if(MSVC)
 endif()
 
 # Embedded dependencies (sources in tree)
-include(catch.cmake)
+include(catch2.cmake)
 include(cxxopts.cmake)
 include(glm.cmake)
 include(json5cpp.cmake)

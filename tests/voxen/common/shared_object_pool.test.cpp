@@ -2,6 +2,7 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <random>
 #include <thread>
 
 namespace voxen

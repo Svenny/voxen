@@ -4,6 +4,8 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <random>
+
 namespace voxen::land
 {
 

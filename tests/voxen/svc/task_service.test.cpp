@@ -8,6 +8,7 @@
 #include "../../voxen_test_common.hpp"
 
 #include <atomic>
+#include <random>
 #include <thread>
 #include <unordered_set>
 
