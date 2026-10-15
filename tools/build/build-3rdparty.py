@@ -55,9 +55,9 @@ cmake_standard_args = [
 	f'-DCMAKE_MODULE_LINKER_FLAGS={standard_linker_flags}'
 ]
 
-def build_standard(lib_name: str, specific_args: list, override_build_path: str = None):
+def build_standard(lib_name: str, specific_args: list):
 	path_source = str(path_3rdparty / lib_name)
-	path_build = str(path_temp / lib_name) if override_build_path is None else str(override_build_path)
+	path_build = str(path_temp / lib_name)
 
 	print()
 	print('=====')
@@ -68,16 +68,6 @@ def build_standard(lib_name: str, specific_args: list, override_build_path: str 
 
 	subprocess.run([ 'cmake', *cmake_standard_args, '-S', path_source, '-B', path_build, *specific_args ], check=True)
 	subprocess.run([ 'cmake', '--build', path_build, '--config', 'Release', '--target', 'install' ], check=True)
-
-def build_temporary_freetype():
-	path_build = str(path_temp / 'freetype-temp')
-	path_install = str(path_temp / 'freetype-temp-install')
-
-	build_standard('freetype', [
-		f'-DCMAKE_INSTALL_PREFIX={path_install}',
-		'-DFT_DISABLE_BZIP2=ON', '-DFT_DISABLE_BROTLI=ON', '-DFT_DISABLE_HARFBUZZ=ON',
-		'-DFT_REQUIRE_ZLIB=ON', '-DFT_DISABLE_PNG=ON', '-DBUILD_SHARED_LIBS=ON'
-	], path_build)
 
 # Many other libs depend on this little boy, build it first
 # Don't disable static library - zlib's CMake config would fail to find it unless
@@ -92,18 +82,15 @@ build_standard('zlib', zlib_args)
 
 # FreeType depends on zlib, don't order before it.
 #
-# Also it has HarfBuzz integration but this forms a cyclic dependency.
-# Start by building a temporary copy of FreeType wihout this integration.
-#
-# Use temporary directories. Later we will build the proper variant,
-# and we don't want to put that in the same location, as then this
-# script would reconfigure and rebuild libs on every run.
-build_temporary_freetype()
+# It also has HarfBuzz integration (for auto-hinting), but this forms a cyclic
+# dependency. We only use FreeType for SDF rendering, which doesn't need hinting.
+build_standard('freetype', [
+	'-DFT_DISABLE_BZIP2=ON', '-DFT_DISABLE_BROTLI=ON', '-DFT_DISABLE_HARFBUZZ=ON',
+	'-DFT_REQUIRE_ZLIB=ON', '-DFT_DISABLE_PNG=ON', '-DBUILD_SHARED_LIBS=ON',
+])
 
-# HarfBuzz has integration with FreeType that we need, so build after it.
-# Make sure to use temporary freetype location, not the package directory.
+# HarfBuzz has integration with FreeType that we need, so build after it
 build_standard('harfbuzz', [
-	f'-DCMAKE_PREFIX_PATH={str(path_temp / 'freetype-temp-install')}',
 	'-DHB_HAVE_FREETYPE=ON', '-DHB_BUILD_SUBSET=OFF', '-DBUILD_SHARED_LIBS=ON',
 	'-DHB_BUILD_RASTER=OFF', '-DHB_BUILD_VECTOR=OFF', '-DHB_BUILD_GPU=OFF',
 	# HarfBuzz turns some warnings into errors with pragmas, and clang-cl
@@ -112,13 +99,6 @@ build_standard('harfbuzz', [
 	# HarfBuzz uses this variable before including `GNUInstallDirs`,
 	# its exported include directory is broken unless set explicitly
 	'-DCMAKE_INSTALL_INCLUDEDIR=include',
-])
-
-# Now that we have HarfBuzz build FreeType again with integration (for better auto-hinting)
-build_standard('freetype', [
-	'-DFT_DISABLE_BZIP2=ON', '-DFT_DISABLE_BROTLI=ON',
-	'-DFT_REQUIRE_ZLIB=ON', '-DFT_DISABLE_PNG=ON', '-DFT_REQUIRE_HARFBUZZ=ON',
-	'-DBUILD_SHARED_LIBS=ON',
 ])
 
 # Independent libraries
