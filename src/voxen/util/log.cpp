@@ -101,8 +101,8 @@ void Log::doLog(Level level, extras::source_location where, std::string_view for
 		// (these todos look kinda mutually exclusive though)
 		auto sys_time = std::chrono::system_clock::now();
 		auto local_time = sys_time + std::chrono::current_zone()->get_info(sys_time).offset;
-		fmt::print(sink, "[{:%F %T}][{} {}][{:s}:{:d}][{:s}] {:s}\n", local_time, pid, tid,
-			where.file_name(), where.line(), fmt::styled(extras::enum_name(level), styleForLevel(level)), text);
+		fmt::print(sink, "[{:%F %T}][{} {}][{:s}:{:d}][{:s}] {:s}\n", local_time, pid, tid, where.file_name(),
+			where.line(), fmt::styled(extras::enum_name(level), styleForLevel(level)), text);
 	}
 	catch (const std::system_error &err) {
 		// Reaching this clause means printing to `sink` failed for system reasons (bad file?).

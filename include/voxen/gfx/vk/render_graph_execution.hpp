@@ -31,7 +31,6 @@ public:
 	// Its command buffer is in recording state, do not end it manually.
 	FrameContext &frameContext() noexcept { return m_frame_context; }
 
-
 private:
 	RenderGraphPrivate &m_private;
 	FrameContext &m_frame_context;

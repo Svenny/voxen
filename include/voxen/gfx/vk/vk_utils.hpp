@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 #include <array>
 #include <string_view>
