@@ -12,6 +12,7 @@ concurrency:
 
 env:
   # Windows only needs `glslc` from it; Linux takes it from distro packages
+  # Keep in sync with `VULKAN_HEADERS_TAG` in `tools/maintenance/update-vulkan-headers.py`
   VULKAN_SDK_VERSION: 1.4.363.0
   # Must match `LLVMToolsVersion` in `Directory.Build.props`
   LLVM_VERSION: 21.1.8
