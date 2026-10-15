@@ -4,11 +4,14 @@ import pathlib
 import subprocess
 import sys
 
+# Keep in sync with `VULKAN_SDK_VERSION` in CI workflow
+VULKAN_HEADERS_TAG = 'vulkan-sdk-1.4.363.0'
+
 headers_dir = (pathlib.Path(sys.argv[0]).parent / '../../3rdparty/vulkan-headers/vulkan').resolve()
 print('Updating Vulkan headers in', headers_dir)
 
 def get_vulkan_header(header: str):
-	url = f'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vulkan/{header}'
+	url = f'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/{VULKAN_HEADERS_TAG}/include/vulkan/{header}'
 	path = headers_dir / header
 
 	print(f'Downloading {url} to {path}')
@@ -31,10 +34,12 @@ for header in [ 'vulkan.h', 'vulkan_core.h', 'vulkan_wayland.h', 'vulkan_win32.h
 
 video_dir = (headers_dir / '../vk_video').resolve()
 
-for header in [ 'vulkan_video_codecs_common.h', 'vulkan_video_codec_h264std.h', 'vulkan_video_codec_h265std.h', 'vulkan_video_codec_av1std.h',
-   'vulkan_video_codec_h264std_decode.h', 'vulkan_video_codec_h264std_encode.h', 'vulkan_video_codec_h265std_decode.h', 'vulkan_video_codec_h265std_encode.h',
-   'vulkan_video_codec_av1std_decode.h' ]:
-   url = f'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/{header}'
+for header in [ 'vulkan_video_codecs_common.h',
+   'vulkan_video_codec_h264std.h', 'vulkan_video_codec_h264std_decode.h', 'vulkan_video_codec_h264std_encode.h',
+   'vulkan_video_codec_h265std.h', 'vulkan_video_codec_h265std_decode.h', 'vulkan_video_codec_h265std_encode.h',
+   'vulkan_video_codec_av1std.h', 'vulkan_video_codec_av1std_decode.h', 'vulkan_video_codec_av1std_encode.h',
+   'vulkan_video_codec_vp9std.h', 'vulkan_video_codec_vp9std_decode.h' ]:
+   url = f'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/{VULKAN_HEADERS_TAG}/include/vk_video/{header}'
    path = video_dir / header
 
    print(f'Downloading {url} to {path}')
