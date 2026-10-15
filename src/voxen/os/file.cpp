@@ -175,11 +175,11 @@ std::expected<File::NativeHandle, std::error_code> doOpen(const std::filesystem:
 	// TODO: the current implementation of async I/O is a trivial
 	// thread offload with blocking calls. Uncomment once that is
 	// rewritten (see implementation of `AsyncFileIoService`).
-#if 0
+	#if 0
 	if (flags.test(FileFlagsBit::AsyncIo)) {
 		flags_attrs |= FILE_FLAG_OVERLAPPED;
 	}
-#endif
+	#endif
 
 	if (flags.test(FileFlagsBit::HintRandomAccess)) {
 		flags_attrs |= FILE_FLAG_RANDOM_ACCESS;

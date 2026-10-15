@@ -2,8 +2,8 @@
 
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
-#include <voxen/util/hash.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
+#include <voxen/util/hash.hpp>
 
 #include <extras/defer.hpp>
 

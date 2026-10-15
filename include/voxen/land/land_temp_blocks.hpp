@@ -50,10 +50,7 @@ public:
 		"Dirt",
 	};
 
-	static bool isBlockEmpty(Chunk::BlockId id) noexcept
-	{
-		return id == 0;
-	}
+	static bool isBlockEmpty(Chunk::BlockId id) noexcept { return id == 0; }
 
 	static uint16_t packColor555(PackedColorSrgb color) noexcept
 	{
