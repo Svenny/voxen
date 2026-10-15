@@ -19,6 +19,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cassert>
+#include <cstddef>
 #include <tuple>
 
 namespace voxen::client::vulkan
@@ -27,7 +28,7 @@ namespace voxen::client::vulkan
 struct Backend::Impl {
 	template<typename T>
 	struct Storage {
-		std::aligned_storage_t<sizeof(T), alignof(T)> storage;
+		alignas(T) std::byte storage[sizeof(T)];
 	};
 
 	std::tuple<Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
