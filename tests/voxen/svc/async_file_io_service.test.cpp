@@ -54,7 +54,7 @@ TEST_CASE("'AsyncFileIoService' test case 1", "[voxen::svc::async_file_io_servic
 			AsyncFileIoService::Ptr file = srv.registerFile(*std::move(maybe_file));
 			AsyncFileIoService::WriteResult result = co_await srv.asyncWrite(std::move(file), buffer, 0);
 
-			if (result.has_error()) {
+			if (!result.has_value()) {
 				errs.fetch_add(1);
 			}
 		};
@@ -80,7 +80,7 @@ TEST_CASE("'AsyncFileIoService' test case 1", "[voxen::svc::async_file_io_servic
 			AsyncFileIoService::Ptr file = srv.registerFile(*std::move(maybe_file));
 			AsyncFileIoService::ReadResult result = co_await srv.asyncRead(std::move(file), buffer.as_writable_bytes(), 0);
 
-			if (result.has_error() || *result != buffer.size_bytes()) {
+			if (!result.has_value() || *result != buffer.size_bytes()) {
 				errs.fetch_add(1);
 				co_return;
 			}

@@ -8,7 +8,7 @@
 
 #include <extras/pimpl.hpp>
 
-#include <cpp/result.hpp>
+#include <expected>
 
 #include <span>
 #include <system_error>
@@ -23,8 +23,8 @@ public:
 	constexpr static uint32_t FILE_HANDLE_POOL_HINT = 256;
 
 	using Ptr = SharedPoolPtr<os::File, FILE_HANDLE_POOL_HINT>;
-	using ReadResult = cpp::result<size_t, std::error_condition>;
-	using WriteResult = cpp::result<void, std::error_condition>;
+	using ReadResult = std::expected<size_t, std::error_condition>;
+	using WriteResult = std::expected<void, std::error_condition>;
 
 	struct Config {};
 

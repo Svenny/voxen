@@ -26,7 +26,7 @@ namespace voxen
 // Therefore you are strongly advised to avoid throwing exceptions for, umm, non-exceptional
 // results, i.e. where failures are a relatively "normal" part of the workflow. Sometimes
 // that makes implementing two interfaces for the same operation sensible - one that throws
-// and the other that returns some status object like `bool`, `std::optional` or `cpp::result`.
+// and the other that returns some status object like `bool`, `std::optional` or `std::expected`.
 // For example, that's how most of `std::filesystem` is implemented.
 class VOXEN_API Exception : public std::exception {
 public:

@@ -170,7 +170,7 @@ TEST_CASE("'File' test case 2", "[voxen::os::file]")
 		INFO("File path: " << path);
 
 		auto stat_result = File::stat(path);
-		CHECK(stat_result.has_error());
+		CHECK(!stat_result.has_value());
 		CHECK(stat_result.error() == std::errc::no_such_file_or_directory);
 	}
 }
