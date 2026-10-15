@@ -19,6 +19,7 @@ target_compile_options(vma PRIVATE
 	-Wno-unreachable-code-fallthrough
 	-Wno-unused-function
 	-Wno-unused-parameter
+	-Wno-unused-private-field
 	-Wno-unused-template
 	-Wno-unused-variable
 	-Wno-weak-vtables
