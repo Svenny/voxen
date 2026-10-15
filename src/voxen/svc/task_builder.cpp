@@ -7,6 +7,7 @@
 
 #include "task_handle_private.hpp"
 
+#include <algorithm>
 #include <vector>
 
 namespace voxen::svc

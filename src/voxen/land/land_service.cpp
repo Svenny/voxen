@@ -17,6 +17,9 @@
 #include "land_private_consts.hpp"
 #include "land_private_messages.hpp"
 
+#include <glm/common.hpp>
+#include <glm/vector_relational.hpp>
+
 #include <array>
 #include <unordered_map>
 #include <vector>
