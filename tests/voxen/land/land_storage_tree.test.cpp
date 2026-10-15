@@ -4,6 +4,7 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <random>
 #include <unordered_map>
 #include <unordered_set>
 

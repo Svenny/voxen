@@ -6,18 +6,20 @@
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 
+#include <catch2/matchers/catch_matchers_predicate.hpp>
+
 namespace voxen::test
 {
 
 // Usage: `CHECK_THROWS_MATCHES(<expr>, Exception, errcExceptionMatcher(VoxenErrc::<code>))`
 inline auto errcExceptionMatcher(VoxenErrc ec)
 {
-	return Catch::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
+	return Catch::Matchers::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
 }
 
 inline auto errcExceptionMatcher(std::errc ec)
 {
-	return Catch::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
+	return Catch::Matchers::Predicate<Exception>([ec](const Exception& ex) { return ex.error() == ec; });
 }
 
 } // namespace voxen::test
