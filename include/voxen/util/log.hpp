@@ -5,8 +5,7 @@
 #include <extras/enum_utils.hpp>
 #include <extras/source_location.hpp>
 
-#include <fmt/core.h>
-#include <fmt/std.h>
+#include <fmt/base.h>
 
 namespace voxen
 {

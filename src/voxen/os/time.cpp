@@ -8,6 +8,7 @@
 #endif
 
 #include <cassert>
+#include <cerrno>
 #include <cstdint>
 
 namespace voxen::os

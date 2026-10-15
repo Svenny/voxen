@@ -10,6 +10,7 @@
 #include <bit>
 #include <cassert>
 #include <chrono>
+#include <thread>
 
 namespace voxen::svc::detail
 {

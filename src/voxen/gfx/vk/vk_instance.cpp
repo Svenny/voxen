@@ -13,6 +13,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <vector>
+
 namespace voxen::gfx::vk
 {
 

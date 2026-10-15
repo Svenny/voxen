@@ -12,6 +12,7 @@
 #include <voxen/world/world_control_service.hpp>
 
 #include <mutex>
+#include <thread>
 
 namespace voxen::world::detail
 {
