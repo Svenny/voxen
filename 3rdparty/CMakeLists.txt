@@ -70,7 +70,6 @@ if(MSVC)
 endif()
 
 # Embedded dependencies (sources in tree)
-include(backward.cmake)
 include(catch.cmake)
 include(cxxopts.cmake)
 include(glm.cmake)
@@ -84,7 +83,6 @@ include(vma.cmake)
 # Fixup VS generated project IntelliSense in projects
 # that set SYSTEM include directories. Should be
 # a temporary thing until CMake+VS+ClangCL stabilizes.
-voxen_fixup_3rdparty_intellisense(backward)
 voxen_fixup_3rdparty_intellisense(cxxopts)
 voxen_fixup_3rdparty_intellisense(glm)
 voxen_fixup_3rdparty_intellisense(json5cpp)
