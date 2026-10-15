@@ -112,11 +112,7 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 	using DrawList = LandLoader::DrawList;
 
 	DrawList dlist;
-#if 0
-	land_loader->makeDrawList(glm::dvec3(0, 80, 0), dlist);
-#else
 	land_loader->makeDrawList(viewpoint, dlist);
-#endif
 
 	m_land_per_index_buffer_data.clear();
 

@@ -110,12 +110,6 @@ public:
 private:
 	constexpr static uint32_t REGIONAL_MAP_POOL_HINT = 128;
 
-	struct RegionalMapCacheEntry {
-		SharedPoolPtr<GeneratorRegionalMap, REGIONAL_MAP_POOL_HINT> ptr;
-		world::TickId last_referenced_tick = world::TickId::INVALID;
-		uint64_t gen_task_counter = 0;
-	};
-
 	uint64_t m_initial_seed = 0;
 
 	uint64_t m_global_map_sub_seed = 0;

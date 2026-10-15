@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include <filesystem>
-#include <future>
 #include <optional>
 
 namespace voxen
@@ -25,15 +24,6 @@ public:
 
 	static std::optional<extras::dyn_array<std::byte>> readFile(const std::filesystem::path& relative_path);
 	static std::optional<std::string> readTextFile(const std::filesystem::path& relative_path);
-
-	static std::future<std::optional<extras::dyn_array<std::byte>>> readUserFileAsync(
-		std::filesystem::path relative_path);
-	static std::future<std::optional<std::string>> readUserTextFileAsync(std::filesystem::path relative_path);
-	static std::future<bool> writeUserTextFileAsync(std::filesystem::path relative_path, std::string text,
-		bool create_directories = true);
-
-	static std::future<std::optional<extras::dyn_array<std::byte>>> readFileAsync(std::filesystem::path relative_path);
-	static std::future<std::optional<std::string>> readTextFileAsync(std::filesystem::path relative_path);
 
 	static bool makeDirsForFile(const std::filesystem::path& relative_path);
 

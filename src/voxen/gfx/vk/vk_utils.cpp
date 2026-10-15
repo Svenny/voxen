@@ -22,11 +22,6 @@ uint64_t VulkanUtils::alignUp(uint64_t size, uint64_t alignment) noexcept
 	return (size + alignment - 1u) & ~(alignment - 1u);
 }
 
-uint64_t VulkanUtils::calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept
-{
-	return (size * numerator + denomenator - 1u) / denomenator;
-}
-
 void VulkanUtils::fillBufferSharingInfo(Device &dev, VkBufferCreateInfo &info) noexcept
 {
 	auto &dev_info = dev.info();

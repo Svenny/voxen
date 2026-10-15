@@ -136,7 +136,6 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_coro.hpp
 	include/voxen/svc/task_handle.hpp
 	include/voxen/svc/task_service.hpp
-	include/voxen/util/aabb.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
 	include/voxen/util/error_condition.hpp
 	include/voxen/util/exception.hpp

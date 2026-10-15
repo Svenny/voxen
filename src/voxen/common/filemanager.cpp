@@ -5,29 +5,12 @@
 
 #include <extras/defer.hpp>
 
-#include <atomic>
-#include <cassert>
-#include <fstream>
-#include <functional>
-#include <future>
-#include <queue>
 #include <system_error>
-#include <thread>
-#include <vector>
 
 using extras::dyn_array;
-using std::atomic_bool;
 using std::filesystem::path;
-using std::future;
-using std::ifstream;
-using std::ofstream;
 using std::optional;
-using std::packaged_task;
 using std::string;
-using std::thread;
-using std::vector;
-
-using namespace std::chrono_literals;
 
 namespace voxen
 {
@@ -133,159 +116,7 @@ bool writeAbsPathFile(const path& filepath, std::span<const std::byte> data)
 	return true;
 }
 
-class FileIoThreadPool {
-private:
-	struct ReportableWorkerState {
-		std::mutex semaphore_mutex;
-		std::condition_variable semaphore;
-		atomic_bool is_exit = false;
-
-		std::mutex state_mutex;
-		bool has_task;
-		bool live_forever;
-		std::queue<packaged_task<void()>> tasks_queue;
-	};
-
-	struct ReportableWorker {
-		thread worker;
-		ReportableWorkerState state;
-	};
-
-public:
-	FileIoThreadPool()
-	{
-		for (size_t i = 0; i < START_THREAD_COUNT; i++) {
-			run_worker(make_worker());
-		}
-	}
-
-	~FileIoThreadPool()
-	{
-		for (ReportableWorker* worker : threads) {
-			std::unique_lock lock(worker->state.semaphore_mutex);
-
-			worker->state.is_exit.store(true);
-			worker->state.semaphore.notify_one();
-		}
-
-		for (ReportableWorker* worker : threads) {
-			worker->worker.join();
-		}
-
-		while (threads.size() > 0) {
-			delete threads.back();
-			threads.pop_back();
-		}
-	}
-
-	void enqueueTask(std::function<void()>&& task_function)
-	{
-		voxen::Log::info("enqueueTask");
-		cleanup_finished_workers();
-
-		packaged_task<void()> task(task_function);
-
-		for (size_t i = 0; i < threads.size(); i++) {
-			ReportableWorker* worker = threads[i];
-			worker->state.state_mutex.lock();
-			if (!worker->state.has_task) {
-				worker->state.tasks_queue.push(std::move(task));
-				worker->state.has_task = true;
-				worker->state.state_mutex.unlock();
-
-				worker->state.semaphore.notify_one();
-				return;
-			} else {
-				worker->state.state_mutex.unlock();
-			}
-		}
-		// If we here, then no free threads, so construct new for the task
-		// So, make worker, push task and run the worker
-		ReportableWorker* new_worker = make_worker();
-
-		new_worker->state.tasks_queue.push(std::move(task));
-		new_worker->state.has_task = true;
-
-		run_worker(new_worker);
-		return;
-	}
-
-private:
-	static void workerFunction(ReportableWorkerState* state)
-	{
-		state->state_mutex.lock();
-		bool is_eternal_thread = state->live_forever;
-		state->state_mutex.unlock();
-
-		std::unique_lock semaphore_lock(state->semaphore_mutex);
-
-		while (!state->is_exit.load()) {
-			state->state_mutex.lock();
-			if (state->tasks_queue.size() >= 1) {
-				packaged_task<void()> task = std::move(state->tasks_queue.front());
-				state->tasks_queue.pop();
-				state->state_mutex.unlock();
-
-				task();
-
-				state->state_mutex.lock();
-				state->has_task = false;
-			}
-			state->state_mutex.unlock();
-
-			if (is_eternal_thread) {
-				state->semaphore.wait(semaphore_lock);
-			} else {
-				std::cv_status status = state->semaphore.wait_for(semaphore_lock, THREAD_LIVE_TIMEOUT);
-				if (status == std::cv_status::timeout) {
-					state->is_exit.store(true);
-				}
-			}
-		}
-	}
-
-	ReportableWorker* make_worker()
-	{
-		ReportableWorker* new_worker = new ReportableWorker();
-		new_worker->state.has_task = false;
-		if (threads.size() < ETERNAL_THREAD_COUNT) {
-			new_worker->state.live_forever = true;
-		} else {
-			new_worker->state.live_forever = false;
-		}
-		threads.push_back(new_worker);
-		return new_worker;
-	}
-
-	void run_worker(ReportableWorker* worker)
-	{
-		packaged_task<void(ReportableWorkerState*)> main_work_task(&FileIoThreadPool::workerFunction);
-		worker->worker = std::thread(std::move(main_work_task), &worker->state);
-	}
-
-	void cleanup_finished_workers()
-	{
-		for (auto iter = threads.begin(); iter != threads.end();) {
-			if ((*iter)->state.is_exit.load()) {
-				delete *iter;
-				iter = threads.erase(iter);
-			} else {
-				iter++;
-			}
-		}
-	}
-
-private:
-	vector<ReportableWorker*> threads;
-
-	constexpr static std::chrono::milliseconds THREAD_LIVE_TIMEOUT = 5000ms;
-	constexpr static size_t ETERNAL_THREAD_COUNT = 2;
-	constexpr static size_t START_THREAD_COUNT = FileIoThreadPool::ETERNAL_THREAD_COUNT;
-};
-
 } // anonymous namespace
-
-static FileIoThreadPool file_manager_threadpool;
 
 path FileManager::user_data_path;
 path FileManager::game_data_path;
@@ -378,71 +209,6 @@ bool FileManager::makeDirsForFile(const std::filesystem::path& relative_path)
 	}
 
 	return true;
-}
-
-std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readFileAsync(std::filesystem::path relative_path)
-{
-	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
-		new std::promise<optional<dyn_array<std::byte>>>);
-	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
-
-	std::function<void()> task_function(
-		[filepath = std::move(relative_path), p = promise]() mutable { p->set_value(FileManager::readFile(filepath)); });
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
-}
-
-std::future<std::optional<extras::dyn_array<std::byte>>> FileManager::readUserFileAsync(
-	std::filesystem::path relative_path)
-{
-	std::shared_ptr<std::promise<optional<dyn_array<std::byte>>>> promise(
-		new std::promise<optional<dyn_array<std::byte>>>);
-	std::future<optional<dyn_array<std::byte>>> result = promise->get_future();
-
-	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readUserFile(filepath));
-	});
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
-}
-
-std::future<std::optional<std::string>> FileManager::readTextFileAsync(std::filesystem::path relative_path)
-{
-	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
-	std::future<optional<string>> result = promise->get_future();
-
-	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readTextFile(filepath));
-	});
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
-}
-
-std::future<std::optional<std::string>> FileManager::readUserTextFileAsync(std::filesystem::path relative_path)
-{
-	std::shared_ptr<std::promise<optional<string>>> promise(new std::promise<optional<string>>);
-	std::future<optional<string>> result = promise->get_future();
-
-	std::function<void()> task_function([filepath = std::move(relative_path), p = std::move(promise)]() mutable {
-		p->set_value(FileManager::readUserTextFile(filepath));
-	});
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
-}
-
-std::future<bool> FileManager::writeUserTextFileAsync(std::filesystem::path relative_path, std::string text,
-	bool create_directories)
-{
-	std::shared_ptr<std::promise<bool>> promise(new std::promise<bool>);
-	std::future<bool> result = promise->get_future();
-
-	std::function<void()> task_function(
-		[filepath = std::move(relative_path), p = std::move(promise), txt = std::move(text),
-			create_directories]() mutable {
-			p->set_value(FileManager::writeUserTextFile(filepath, std::move(txt), create_directories));
-		});
-	file_manager_threadpool.enqueueTask(std::move(task_function));
-	return result;
 }
 
 } // namespace voxen
