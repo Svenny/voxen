@@ -1,3 +1,4 @@
+# Formatting is checked in CI with clang-format 21, other versions may format differently
 Language: Cpp
 
 AccessModifierOffset: -3
