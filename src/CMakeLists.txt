@@ -35,6 +35,7 @@ set(VOXEN_SOURCES
 	src/voxen/debug/bug_found.cpp
 	src/voxen/debug/thread_name.cpp
 	src/voxen/debug/uid_registry.cpp
+	src/voxen/gfx/ui/text_layout_engine.cpp
 	src/voxen/gfx/ui/ui_builder.cpp
 	src/voxen/gfx/ui/ui_render_list_builder.cpp
 	src/voxen/gfx/ui/ui_render_list_builder.hpp
@@ -49,6 +50,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/standard_render_graph.cpp
 	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
@@ -81,6 +83,7 @@ set(VOXEN_SOURCES
 	src/voxen/land/land_storage_tree_node_ptr.cpp
 	src/voxen/land/land_storage_tree_nodes.cpp
 	src/voxen/land/land_storage_tree_private.hpp
+	src/voxen/land/private_storage_tree.cpp
 	src/voxen/land/pseudo_chunk_data.cpp
 	src/voxen/land/pseudo_chunk_surface.cpp
 	src/voxen/land/storage_tree_utils.cpp
@@ -91,6 +94,8 @@ set(VOXEN_SOURCES
 	src/voxen/os/process.cpp
 	src/voxen/os/stdlib.cpp
 	src/voxen/os/time.cpp
+	src/voxen/svc/asset_decoder.cpp
+	src/voxen/svc/asset_service.cpp
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
 	src/voxen/svc/async_file_io_service.cpp

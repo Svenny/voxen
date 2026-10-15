@@ -116,7 +116,10 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 	using DrawList = LandLoader::DrawList;
 
 	DrawList dlist;
-	land_loader->makeDrawList(viewpoint, dlist);
+	// TODO: kek, disable
+	if (land_loader) {
+		land_loader->makeDrawList(viewpoint, dlist);
+	}
 
 	m_land_per_index_buffer_data.clear();
 

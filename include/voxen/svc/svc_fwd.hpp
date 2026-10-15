@@ -3,12 +3,16 @@
 namespace voxen::svc
 {
 
+class AssetFileRef;
+class AssetService;
 template<typename>
 class CoroFuture;
 template<typename>
 class CoroSubTask;
 class CoroTask;
 class Engine;
+class IAsset;
+class IAssetDecoder;
 class IService;
 class MessageQueue;
 class MessageSender;

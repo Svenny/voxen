@@ -1,0 +1,12 @@
+{
+	uid: "xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx",
+
+	asset-type: "font-atlas",
+	font-atlas-render: "sdf",
+	font-atlas-size: 32,
+	font-atlas-sdf-spread: 3,
+	font-atlas-glyphset: "ascii",
+
+	source: "SourceCodePro-Regular.otf",
+	output: "SourceCodePro-Regular-ascii.png",
+}

@@ -48,7 +48,9 @@ target_link_libraries(voxen PUBLIC
 )
 target_link_libraries(voxen PRIVATE
 	tk
+	3rdparty::freetype
 	3rdparty::glfw
+	3rdparty::harfbuzz
 	3rdparty::vma
 	3rdparty::vulkan-headers
 	3rdparty::zlib

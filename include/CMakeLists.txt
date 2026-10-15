@@ -91,6 +91,9 @@ set(VOXEN_HEADERS
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
+	include/voxen/gfx/graph/land_render_passes.hpp
+	include/voxen/gfx/graph/render_graph_common.hpp
+	include/voxen/gfx/ui/text_layout_engine.hpp
 	include/voxen/gfx/ui/ui_builder.hpp
 	include/voxen/gfx/ui/ui_fwd.hpp
 	include/voxen/gfx/ui/ui_render_data.hpp
@@ -103,6 +106,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/standard_render_graph.hpp
 	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
@@ -138,6 +142,7 @@ set(VOXEN_HEADERS
 	include/voxen/land/land_storage_tree_node_ptr.hpp
 	include/voxen/land/land_temp_blocks.hpp
 	include/voxen/land/land_utils.hpp
+	include/voxen/land/private_storage_tree.hpp
 	include/voxen/land/pseudo_chunk_data.hpp
 	include/voxen/land/pseudo_chunk_surface.hpp
 	include/voxen/land/storage_tree_common.hpp
@@ -150,6 +155,9 @@ set(VOXEN_HEADERS
 	include/voxen/os/process.hpp
 	include/voxen/os/stdlib.hpp
 	include/voxen/os/time.hpp
+	include/voxen/svc/asset_base.hpp
+	include/voxen/svc/asset_decoder.hpp
+	include/voxen/svc/asset_service.hpp
 	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp
