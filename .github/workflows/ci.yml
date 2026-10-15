@@ -16,8 +16,26 @@ env:
   VULKAN_SDK_VERSION: 1.4.363.0
   # Must match `LLVMToolsVersion` in `Directory.Build.props`
   LLVM_VERSION: 21.1.8
+  CLANG_FORMAT_VERSION: 21
 
 jobs:
+  check-format:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout the commit
+        uses: actions/checkout@v7
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-${{ env.CLANG_FORMAT_VERSION }}
+          clang-format-${{ env.CLANG_FORMAT_VERSION }} --version
+
+      - name: Check formatting
+        run: |
+          git ls-files -z 'include/*.hpp' 'src/*.hpp' 'src/*.cpp' 'tests/*.hpp' 'tests/*.cpp' \
+            | xargs -0 clang-format-${{ env.CLANG_FORMAT_VERSION }} --dry-run --Werror
+
   build-ubuntu:
     runs-on: ubuntu-26.04
     strategy:
