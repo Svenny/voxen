@@ -124,10 +124,10 @@ private:
 						*read_cmd->result_ptr = item.file_ptr->pread(read_cmd->buffer, read_cmd->offset);
 					}
 					catch (Exception &ex) {
-						*read_cmd->result_ptr = cpp::failure(ex.error());
+						*read_cmd->result_ptr = std::unexpected(ex.error());
 					}
 					catch (...) {
-						*read_cmd->result_ptr = cpp::failure(VoxenErrc::UnknownError);
+						*read_cmd->result_ptr = std::unexpected(VoxenErrc::UnknownError);
 					}
 				}
 
@@ -136,10 +136,10 @@ private:
 						item.file_ptr->pwrite(write_cmd->buffer, write_cmd->offset);
 					}
 					catch (Exception &ex) {
-						*write_cmd->result_ptr = cpp::failure(ex.error());
+						*write_cmd->result_ptr = std::unexpected(ex.error());
 					}
 					catch (...) {
-						*write_cmd->result_ptr = cpp::failure(VoxenErrc::UnknownError);
+						*write_cmd->result_ptr = std::unexpected(VoxenErrc::UnknownError);
 					}
 				}
 

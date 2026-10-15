@@ -4,7 +4,7 @@
 
 #include <extras/enum_utils.hpp>
 
-#include <cpp/result.hpp>
+#include <expected>
 
 #include <cstdint>
 #include <filesystem>
@@ -211,12 +211,12 @@ public:
 	// Same as `open()` but returns result object instead of throwing.
 	// Use this to avoid costly throw operation if having this file is not critical
 	// for your further operation and therefore you can meaningfully react on an error.
-	static cpp::result<File, std::error_condition> tryOpen(const std::filesystem::path &path, FileFlags flags);
+	static std::expected<File, std::error_condition> tryOpen(const std::filesystem::path &path, FileFlags flags);
 
 	// Collect information about a file without opening it.
 	// Note that this is likely to incur (rather small) disk I/O
 	// if file metadata is not in memory cache.
-	static cpp::result<Stat, std::error_condition> stat(const std::filesystem::path &path);
+	static std::expected<Stat, std::error_condition> stat(const std::filesystem::path &path);
 
 private:
 	explicit File(NativeHandle native) noexcept;

@@ -75,7 +75,7 @@ void doClose(File::NativeHandle handle)
 #endif
 }
 
-cpp::result<File::NativeHandle, std::error_code> doOpen(const std::filesystem::path &path, FileFlags flags)
+std::expected<File::NativeHandle, std::error_code> doOpen(const std::filesystem::path &path, FileFlags flags)
 {
 #ifndef _WIN32
 	// 644 (rw-r--r--)
@@ -109,7 +109,7 @@ cpp::result<File::NativeHandle, std::error_code> doOpen(const std::filesystem::p
 	int fd = open(path.c_str(), open_flags, CREATE_MODE);
 	if (fd == -1) [[unlikely]] {
 		std::error_code ec(errno, std::system_category());
-		return cpp::failure(ec);
+		return std::unexpected(ec);
 	}
 
 	int flock_result = 0;
@@ -124,7 +124,7 @@ cpp::result<File::NativeHandle, std::error_code> doOpen(const std::filesystem::p
 	if (flock_result == -1) [[unlikely]] {
 		std::error_code ec(errno, std::system_category());
 		doClose(fd);
-		return cpp::failure(ec);
+		return std::unexpected(ec);
 	}
 
 	int fadvise_result = 0;
@@ -210,7 +210,7 @@ cpp::result<File::NativeHandle, std::error_code> doOpen(const std::filesystem::p
 		nullptr);
 	if (handle == INVALID_HANDLE_VALUE) [[unlikely]] {
 		std::error_code ec(static_cast<int>(GetLastError()), std::system_category());
-		return cpp::failure(ec);
+		return std::unexpected(ec);
 	}
 
 	return handle;
@@ -523,17 +523,17 @@ void File::pwrite(std::span<const std::byte> buffer, int64_t offset)
 File File::open(const std::filesystem::path &path, FileFlags flags)
 {
 	auto open_result = tryOpen(path, flags);
-	if (open_result.has_error()) {
+	if (!open_result.has_value()) {
 		throw Exception::fromError(open_result.error(), "'File::open' failed");
 	}
 
 	return *std::move(open_result);
 }
 
-cpp::result<File, std::error_condition> File::tryOpen(const std::filesystem::path &path, FileFlags flags)
+std::expected<File, std::error_condition> File::tryOpen(const std::filesystem::path &path, FileFlags flags)
 {
 	if (!sanitizeOpenFlags(flags)) [[unlikely]] {
-		return cpp::failure(std::errc::invalid_argument);
+		return std::unexpected(std::errc::invalid_argument);
 	}
 
 	if (flags.test(FileFlagsBit::CreateSubdirs)) {
@@ -542,7 +542,7 @@ cpp::result<File, std::error_condition> File::tryOpen(const std::filesystem::pat
 
 		if (ec) [[unlikely]] {
 			Log::error("Subdirectories create failed for '{}', error {} ({})", path, ec, ec.message());
-			return cpp::failure(ec.default_error_condition());
+			return std::unexpected(ec.default_error_condition());
 		}
 	}
 
@@ -555,25 +555,25 @@ cpp::result<File, std::error_condition> File::tryOpen(const std::filesystem::pat
 	// Don't log anything, failures here can be expected (e.g. trying to
 	// open a non-existing file when it's not critical for operation).
 	// Anyway the caller should react on this, it will likely log more informative than us.
-	return cpp::failure(open_result.error().default_error_condition());
+	return std::unexpected(open_result.error().default_error_condition());
 }
 
-cpp::result<File::Stat, std::error_condition> File::stat(const std::filesystem::path &path)
+std::expected<File::Stat, std::error_condition> File::stat(const std::filesystem::path &path)
 {
 #ifndef _WIN32
 	struct stat64 st {};
 
 	int res = stat64(path.c_str(), &st);
 	if (res < 0) [[unlikely]] {
-		return cpp::failure(std::system_category().default_error_condition(errno));
+		return std::unexpected(std::system_category().default_error_condition(errno));
 	}
 
 	return translateStat(st);
 #else
 	// Looks like there is nothing like `stat()` on windows...
 	auto open_result = tryOpen(path, FileFlags {});
-	if (open_result.has_error()) {
-		return cpp::failure(open_result.error());
+	if (!open_result.has_value()) {
+		return std::unexpected(open_result.error());
 	}
 
 	return open_result->stat();
