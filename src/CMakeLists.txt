@@ -101,7 +101,6 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_service.cpp
 	src/voxen/svc/task_service_slave.cpp
 	src/voxen/svc/task_service_slave.hpp
-	src/voxen/util/aabb.cpp
 	src/voxen/util/concentric_octahedra_walker.cpp
 	src/voxen/util/error_condition.cpp
 	src/voxen/util/exception.cpp

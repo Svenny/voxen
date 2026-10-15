@@ -1,7 +1,6 @@
 #ifndef VX_UTIL_AABB_GLSL
 #define VX_UTIL_AABB_GLSL
 
-// Mirroring CPU-side `voxen::Aabb` structure
 struct Aabb {
 	vec3 min;
 	vec3 max;

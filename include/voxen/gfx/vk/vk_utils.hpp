@@ -19,8 +19,6 @@ bool hasStencilComponent(VkFormat format) noexcept;
 // Returns minimal integer multiple of `alignment` not less than `size`. `alignment` must be a power of two.
 uint32_t alignUp(uint32_t size, uint32_t alignment) noexcept;
 uint64_t alignUp(uint64_t size, uint64_t alignment) noexcept;
-// Multiplies `size` by `numerator` and then divides by `denomenator` with rounding up.
-uint64_t calcFraction(uint64_t size, uint64_t numerator, uint64_t denomenator) noexcept;
 
 // All buffers can have concurrent sharing across all queue families,
 // because every GPU driver known to me ignores that value for buffers.
