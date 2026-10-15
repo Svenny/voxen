@@ -59,6 +59,7 @@ set(VOXEN_HEADERS
 	include/voxen/common/v8g_flat_map_impl.hpp
 	include/voxen/common/v8g_hash_trie.hpp
 	include/voxen/common/v8g_hash_trie_impl.hpp
+	include/voxen/common/v8g_helpers.hpp
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
@@ -89,6 +90,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vma_fwd.hpp
 	include/voxen/gfx/font_renderer.hpp
 	include/voxen/gfx/frame_tick_id.hpp
+	include/voxen/gfx/frame_tick_source.hpp
 	include/voxen/gfx/gfx_land_loader.hpp
 	include/voxen/gfx/gfx_public_consts.hpp
 	include/voxen/gfx/gfx_system.hpp
