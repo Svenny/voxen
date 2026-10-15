@@ -8,6 +8,7 @@
 #include "../../voxen_test_common.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <random>
 #include <thread>
 #include <unordered_set>
@@ -277,8 +278,12 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 	std::vector<bool> completed_bitset(NUM_TASKS);
 	size_t num_completed = 0;
 
+	// Consider it a deadlock if no task completes for this long. Should be generous,
+	// on a loaded machine our threads might not be scheduled for quite a while.
+	constexpr auto DEADLOCK_TIMEOUT = std::chrono::seconds(5);
+	auto last_progress_time = std::chrono::steady_clock::now();
+
 	while (num_completed < NUM_TASKS) {
-		// Certainly enough to finish at least a few tasks
 		std::this_thread::sleep_for(std::chrono::milliseconds(25));
 		size_t new_completions = 0;
 
@@ -290,7 +295,10 @@ TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 			}
 		}
 
-		if (new_completions == 0) {
+		const auto now = std::chrono::steady_clock::now();
+		if (new_completions > 0) {
+			last_progress_time = now;
+		} else if (now - last_progress_time > DEADLOCK_TIMEOUT) {
 			// Unfortunately TaskService destructor will hang waiting for deadlocked threads.
 			// Even if it didn't - test execution can't continue after this has happened.
 			INFO("TaskService test has deadlocked!");
