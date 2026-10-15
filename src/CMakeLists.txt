@@ -1,26 +1,22 @@
 set(VOXEN_SOURCES
-	src/client/vulkan/backend.cpp
-	src/client/vulkan/descriptor_set_layout.cpp
-	src/client/vulkan/pipeline.cpp
-	src/client/vulkan/pipeline_cache.cpp
-	src/client/vulkan/pipeline_layout.cpp
-	src/client/vulkan/shader_module.cpp
-	src/client/gfx_runtime_config.cpp
-	src/client/gui.cpp
-	src/client/input_event_adapter.cpp
-	src/common/assets/png_tools.cpp
-	src/common/config.cpp
-	src/common/filemanager.cpp
-	src/common/gameview.cpp
-	src/common/player.cpp
-	src/common/runtime_config.cpp
-	src/util/aabb.cpp
-	src/util/error_condition.cpp
-	src/util/exception.cpp
-	src/util/log.cpp
+	src/voxen/client/vulkan/backend.cpp
+	src/voxen/client/vulkan/descriptor_set_layout.cpp
+	src/voxen/client/vulkan/pipeline.cpp
+	src/voxen/client/vulkan/pipeline_cache.cpp
+	src/voxen/client/vulkan/pipeline_layout.cpp
+	src/voxen/client/vulkan/shader_module.cpp
+	src/voxen/client/gfx_runtime_config.cpp
+	src/voxen/client/gui.cpp
+	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
+	src/voxen/common/assets/png_tools.cpp
+	src/voxen/common/config.cpp
+	src/voxen/common/filemanager.cpp
+	src/voxen/common/gameview.cpp
 	src/voxen/common/pipe_memory_allocator.cpp
+	src/voxen/common/player.cpp
 	src/voxen/common/private_object_pool.cpp
+	src/voxen/common/runtime_config.cpp
 	src/voxen/common/scratch_memory_allocator.cpp
 	src/voxen/common/shared_object_pool.cpp
 	src/voxen/common/uid.cpp
@@ -70,8 +66,8 @@ set(VOXEN_SOURCES
 	src/voxen/land/land_service.cpp
 	src/voxen/land/land_state.cpp
 	src/voxen/land/land_storage_tree.cpp
-	src/voxen/land/land_storage_tree_nodes.cpp
 	src/voxen/land/land_storage_tree_node_ptr.cpp
+	src/voxen/land/land_storage_tree_nodes.cpp
 	src/voxen/land/land_storage_tree_private.hpp
 	src/voxen/land/pseudo_chunk_data.cpp
 	src/voxen/land/pseudo_chunk_surface.cpp
@@ -100,14 +96,18 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_coro.cpp
 	src/voxen/svc/task_handle.cpp
 	src/voxen/svc/task_handle_private.hpp
-	src/voxen/svc/task_queue_set.hpp
 	src/voxen/svc/task_queue_set.cpp
+	src/voxen/svc/task_queue_set.hpp
 	src/voxen/svc/task_service.cpp
-	src/voxen/svc/task_service_slave.hpp
 	src/voxen/svc/task_service_slave.cpp
+	src/voxen/svc/task_service_slave.hpp
+	src/voxen/util/aabb.cpp
 	src/voxen/util/concentric_octahedra_walker.cpp
+	src/voxen/util/error_condition.cpp
+	src/voxen/util/exception.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/hash.cpp
+	src/voxen/util/log.cpp
 	src/voxen/util/packed_color.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp
