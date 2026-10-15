@@ -15,6 +15,8 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <cstring>
 
 namespace voxen::gfx::vk

@@ -6,6 +6,8 @@
 
 #include <extras/pimpl.hpp>
 
+#include <glm/vec2.hpp>
+
 namespace voxen::gfx::ui
 {
 

@@ -12,6 +12,8 @@
 
 #include <atomic>
 #include <memory>
+#include <queue>
+#include <variant>
 
 namespace voxen::world::detail
 {

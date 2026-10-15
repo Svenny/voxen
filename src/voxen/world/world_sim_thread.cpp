@@ -11,6 +11,8 @@
 #include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
+#include <mutex>
+
 namespace voxen::world::detail
 {
 
