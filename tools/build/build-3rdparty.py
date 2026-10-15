@@ -41,7 +41,8 @@ if sys.platform == 'linux':
 elif sys.platform == 'win32':
 	cmake_generator_args = [ '-GVisual Studio 18 2026', '-Ax64', '-TClangCL', '-DCMAKE_CONFIGURATION_TYPES=Release' ]
 	# TODO: unify with `toolchain_setup.cmake`
-	standard_clang_flags = '/clang:-march=x86-64-v3 /clang:-flto=thin /EHsc /showFilenames /MP'
+	# No `/showFilenames`, clang-cl ignores it with LTO and warns about every file
+	standard_clang_flags = '/clang:-march=x86-64-v3 /clang:-flto=thin /EHsc /MP'
 else:
 	print('Unknown build platform!')
 	sys.exit(1)
