@@ -1,5 +1,8 @@
 set(TK_SOURCES
 	src/tk/rng.cpp
+	src/tk/text_utils.cpp
+	src/tk/text_utils.hpp
+	src/tk/toml.cpp
 )
 
 target_sources(tk PRIVATE ${TK_SOURCES})
