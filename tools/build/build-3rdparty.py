@@ -9,40 +9,46 @@ When more dependencies will be added, this might become relevant on Windows
 with its excruciatingly slow file IO and process startup.
 """
 
-import os
+import argparse
 import pathlib
 import subprocess
 import sys
 
-if len(sys.argv) != 4:
-	print('Usage: python3 build-3rdparty.py <3rdparty-dir> <temp-dir> <package-dir>')
-	sys.exit(1)
+parser = argparse.ArgumentParser(description='Build all external dependencies into a package directory.',
+	epilog='Any extra `-D...` arguments are passed to CMake configure step of every dependency.')
+parser.add_argument('path_3rdparty', type=pathlib.Path, help='3rdparty sources directory')
+parser.add_argument('path_temp', type=pathlib.Path, help='temporary build directory')
+parser.add_argument('path_package', type=pathlib.Path, help='package (installation) directory')
+parser.add_argument('--cmake', default='cmake', help='CMake executable to use')
+parser.add_argument('--compile-flags', default='', help='C/C++ compiler flags shared with the main build')
+parser.add_argument('--linker-flags', default='', help='linker flags shared with the main build')
+args, extra_cmake_args = parser.parse_known_args()
 
-path_3rdparty = pathlib.Path(sys.argv[1]).resolve()
-path_temp = pathlib.Path(sys.argv[2]).resolve()
-path_package = pathlib.Path(sys.argv[3]).resolve()
+for arg in extra_cmake_args:
+	if not arg.startswith('-D'):
+		parser.error(f'unrecognized argument: {arg}')
+
+path_3rdparty = args.path_3rdparty.resolve()
+path_temp = args.path_temp.resolve()
+path_package = args.path_package.resolve()
 
 print('3rdparty directory:', path_3rdparty)
 print('Temp directory:', path_temp)
 print('Package directory:', path_package)
 
 cmake_generator_args = []
-standard_clang_flags = ''
-standard_linker_flags = ''
+# Dependencies are always built with LTO
+standard_clang_flags = args.compile_flags
+standard_linker_flags = args.linker_flags
 
 if sys.platform == 'linux':
-	cmake_generator_args = [
-		'-GNinja', '-DCMAKE_BUILD_TYPE=Release',
-		'-DCMAKE_C_COMPILER=clang', '-DCMAKE_CXX_COMPILER=clang++'
-	]
-	# TODO: unify with `toolchain_setup.cmake`
-	standard_clang_flags = '-march=x86-64-v3 -fno-plt -fno-semantic-interposition -flto=thin'
-	standard_linker_flags = '-fuse-ld=mold -Wl,-Bsymbolic-functions -Wl,--no-undefined -flto=thin'
+	cmake_generator_args = [ '-GNinja', '-DCMAKE_BUILD_TYPE=Release' ]
+	standard_clang_flags += ' -flto=thin'
+	standard_linker_flags += ' -flto=thin'
 elif sys.platform == 'win32':
 	cmake_generator_args = [ '-GVisual Studio 18 2026', '-Ax64', '-TClangCL', '-DCMAKE_CONFIGURATION_TYPES=Release' ]
-	# TODO: unify with `toolchain_setup.cmake`
 	# No `/showFilenames`, clang-cl ignores it with LTO and warns about every file
-	standard_clang_flags = '/clang:-march=x86-64-v3 /clang:-flto=thin /EHsc /MP'
+	standard_clang_flags += ' /clang:-flto=thin /EHsc /MP'
 else:
 	print('Unknown build platform!')
 	sys.exit(1)
@@ -50,10 +56,10 @@ else:
 cmake_standard_args = [
 	*cmake_generator_args,
 	f'-DCMAKE_INSTALL_PREFIX={path_package}', f'-DCMAKE_PREFIX_PATH={path_package}',
-	#f'-DCMAKE_C_COMPILER={c_compiler}', f'-DCMAKE_CXX_COMPILER={cxx_compiler}',
 	f'-DCMAKE_C_FLAGS={standard_clang_flags}', f'-DCMAKE_CXX_FLAGS={standard_clang_flags}',
 	f'-DCMAKE_EXE_LINKER_FLAGS={standard_linker_flags}', f'-DCMAKE_SHARED_LINKER_FLAGS={standard_linker_flags}',
-	f'-DCMAKE_MODULE_LINKER_FLAGS={standard_linker_flags}'
+	f'-DCMAKE_MODULE_LINKER_FLAGS={standard_linker_flags}',
+	*extra_cmake_args,
 ]
 
 def build_standard(lib_name: str, specific_args: list):
@@ -67,8 +73,8 @@ def build_standard(lib_name: str, specific_args: list):
 	print('Build path:', path_build)
 	print()
 
-	subprocess.run([ 'cmake', *cmake_standard_args, '-S', path_source, '-B', path_build, *specific_args ], check=True)
-	subprocess.run([ 'cmake', '--build', path_build, '--config', 'Release', '--target', 'install' ], check=True)
+	subprocess.run([ args.cmake, *cmake_standard_args, '-S', path_source, '-B', path_build, *specific_args ], check=True)
+	subprocess.run([ args.cmake, '--build', path_build, '--config', 'Release', '--target', 'install' ], check=True)
 
 # Many other libs depend on this little boy, build it first
 # Don't disable static library - zlib's CMake config would fail to find it unless
