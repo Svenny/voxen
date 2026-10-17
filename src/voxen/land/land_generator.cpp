@@ -8,12 +8,11 @@
 
 #include "land_geometry_utils_private.hpp"
 
+#include <tk/rng.hpp>
+
 #include <glm/gtc/packing.hpp>
 
-#include <pcg/pcg_random.hpp>
-
 #include <array>
-#include <random>
 
 namespace voxen::land
 {
@@ -241,15 +240,15 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 
 	// Initialize with random values generated at low resolution grid,
 	// then progressively "upscale" it using diamond-square algorithm.
-	pcg64_oneseq rng(seed);
-	std::piecewise_linear_distribution<float> height_level_dist(std::begin(HEIGHT_LEVEL_POINTS),
-		std::end(HEIGHT_LEVEL_POINTS), std::begin(HEIGHT_LEVEL_WEIGHTS));
-	std::uniform_real_distribution<float> base_temperature_dist(MIN_BASE_TEMPERATURE, MAX_BASE_TEMPERATURE);
+	tk::rng::Pcg64 rng(seed);
+	tk::rng::PiecewiseLinearDistribution<float> height_level_dist(HEIGHT_LEVEL_POINTS, HEIGHT_LEVEL_WEIGHTS);
+
+	auto base_temperature_dist = [&]() { return tk::rng::uniformReal(rng, MIN_BASE_TEMPERATURE, MAX_BASE_TEMPERATURE); };
 
 	std::vector<glm::vec2> cur_image(size_t(cur_width * cur_height));
 	for (glm::vec2 &v : cur_image) {
 		float height_level = height_level_dist(rng);
-		float base_temperature = 0.5f * (base_temperature_dist(rng) + base_temperature_dist(rng));
+		float base_temperature = 0.5f * (base_temperature_dist() + base_temperature_dist());
 
 		v.x = height_level;
 		v.y = base_temperature;
@@ -295,10 +294,13 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 		cur_height = prev_height * 2;
 		cur_image = std::vector<glm::vec2>(size_t(cur_width * cur_height));
 
-		std::uniform_real_distribution<float> height_noise_dist(-HEIGHT_NOISE_WIDTH * noise_magnitude,
-			HEIGHT_NOISE_WIDTH * noise_magnitude);
-		std::uniform_real_distribution<float> temperature_noise_dist(-TEMPERATURE_NOISE_WIDTH * noise_magnitude,
-			TEMPERATURE_NOISE_WIDTH * noise_magnitude);
+		const float height_noise_width = HEIGHT_NOISE_WIDTH * noise_magnitude;
+		const float temperature_noise_width = TEMPERATURE_NOISE_WIDTH * noise_magnitude;
+
+		auto height_noise_dist = [&]() { return tk::rng::uniformReal(rng, -height_noise_width, height_noise_width); };
+		auto temperature_noise_dist = [&]() {
+			return tk::rng::uniformReal(rng, -temperature_noise_width, temperature_noise_width);
+		};
 
 		// Diamond step - copy/interpolate values in checkerboard pattern
 		for (int32_t row = 0; row < cur_height; row += 2) {
@@ -322,8 +324,8 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 				glm::vec2 lower_right = load_prev_image(row / 2 + 1, col / 2 + 1);
 
 				glm::vec2 dm = average_four(upper_left, upper_right, lower_left, lower_right);
-				dm.x += height_noise_dist(rng);
-				dm.y += temperature_noise_dist(rng);
+				dm.x += height_noise_dist();
+				dm.y += temperature_noise_dist();
 
 				store_cur_image(row, col, upper_left);
 				store_cur_image(row + 1, col + 1, dm);
@@ -359,11 +361,11 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 				glm::vec2 aa = average_four(dm_up, ul_this, ul_right, dm_this);
 				glm::vec2 bb = average_four(ul_this, dm_left, dm_this, ul_down);
 
-				aa.x += height_noise_dist(rng);
-				aa.y += temperature_noise_dist(rng);
+				aa.x += height_noise_dist();
+				aa.y += temperature_noise_dist();
 
-				bb.x += height_noise_dist(rng);
-				bb.y += temperature_noise_dist(rng);
+				bb.x += height_noise_dist();
+				bb.y += temperature_noise_dist();
 
 				store_cur_image(row, col + 1, aa);
 				store_cur_image(row + 1, col, bb);
