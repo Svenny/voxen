@@ -107,8 +107,6 @@ function(voxen_setup_target target)
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
 		-Wshadow-uncaptured-local -Wunused-member-function -Wconditional-uninitialized
-		# And disable some junk warnings
-		-Wno-c99-designator
 		# Does not recognize some member functions are needed to satisfy concepts
 		-Wno-unneeded-member-function
 
@@ -133,39 +131,10 @@ function(voxen_setup_target target)
 			-D_CRT_SECURE_NO_WARNINGS
 		)
 
-		# Disable nonsensical warnings triggering only on clang-cl for some reason
 		target_compile_options(${target} PRIVATE
-			# WTF? We're not compiling in C++98 mode...
-			-Wno-c++20-compat -Wno-c++20-extensions
-			-Wno-c++98-compat -Wno-c++98-compat-pedantic
-
-			# We're doing A LOT of incompatible function pointer casts in vulkan code
-			-Wno-cast-function-type
-			-Wno-cast-function-type-strict
-			# It thinks I shouldn't use automatic template deduction...
-			-Wno-ctad-maybe-unsupported
-			# Some M$-specific shit I don't care about
+			# Windows-only warning on `extern template class VOXEN_API ...`. The proper
+			# fix would be a separate dllimport-only macro for these declarations.
 			-Wno-dllexport-explicit-instantiation-decl
-			# Can't parse doxygen multi-variable "\param x,y,z" syntax; otherwise would be a nice thing
-			-Wno-documentation
-			# Some global variables have destructors. So what?
-			-Wno-exit-time-destructors
-			# Triggers on empty `;` statements that occur after some macros
-			-Wno-extra-semi-stmt
-			# Some global variables have constructors. So what?
-			-Wno-global-constructors
-			# Triggers on plain old C cast
-			-Wno-old-style-cast
-			# Cries about us using `__identifier` e.g. in `defer` implementation
-			-Wno-reserved-identifier
-			# We have lots of places like `MyClass(value) : value(value) {}`
-			-Wno-shadow-field-in-constructor
-			# Requires `default` label in all switches, even fully covered ones
-			-Wno-switch-default
-			# Triggers even when we have terminating `default` unlike `-Wswitch`
-			-Wno-switch-enum
-			# Triggers on ~any unchecked array access, total nonsense
-			-Wno-unsafe-buffer-usage
 
 			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
 			# Pin the standard explicitly, `/clang:` options win as they go last.
