@@ -2,4 +2,4 @@
 set(CMAKE_FOLDER tools/research)
 
 voxen_add_executable(demo-coroutines demo_coroutines.cpp)
-target_link_libraries(demo-coroutines PRIVATE voxen 3rdparty::pcg)
+target_link_libraries(demo-coroutines PRIVATE voxen tk)

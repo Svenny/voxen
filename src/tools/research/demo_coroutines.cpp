@@ -4,10 +4,9 @@
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/log.hpp>
 
-#include <pcg/pcg_random.hpp>
+#include <tk/rng.hpp>
 
 #include <chrono>
-#include <random>
 
 using namespace voxen::svc;
 
@@ -43,8 +42,7 @@ int main()
 	std::vector<float> output_values(BATCH_SIZE);
 	std::vector<int> iters_values(BATCH_SIZE);
 
-	pcg64 rng;
-	std::uniform_int_distribution<int> iters_dist(1, 50);
+	tk::rng::Pcg64 rng(42);
 
 	double sum_regular = 0.0;
 	double sum_coro = 0.0;
@@ -52,7 +50,7 @@ int main()
 	for (size_t batch = 0; batch < NUM_BATCHES; batch++) {
 		// Pre-generate values to be the same for both coroutine and regular tasks
 		for (size_t i = 0; i < BATCH_SIZE; i++) {
-			iters_values[i] = iters_dist(rng);
+			iters_values[i] = tk::rng::uniformInt(rng, 1, 50);
 		}
 
 		auto t1 = std::chrono::steady_clock::now();

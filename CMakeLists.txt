@@ -53,7 +53,6 @@ target_link_libraries(voxen PUBLIC
 target_link_libraries(voxen PRIVATE
 	tk
 	3rdparty::glfw
-	3rdparty::pcg
 	3rdparty::vma
 	3rdparty::vulkan-headers
 	3rdparty::zlib
