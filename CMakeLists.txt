@@ -47,7 +47,6 @@ target_link_libraries(voxen PUBLIC
 	3rdparty::cxxopts
 	3rdparty::fmt
 	3rdparty::glm
-	3rdparty::simpleini
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
