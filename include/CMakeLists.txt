@@ -29,6 +29,7 @@ target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
 set(TK_HEADERS
+	include/tk/cli.hpp
 	include/tk/parse_error.hpp
 	include/tk/rng.hpp
 	include/tk/toml.hpp
