@@ -16,4 +16,5 @@ target_link_libraries(test-common PUBLIC
 )
 
 add_subdirectory(extras)
+add_subdirectory(tk)
 add_subdirectory(voxen)

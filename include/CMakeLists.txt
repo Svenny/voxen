@@ -28,6 +28,14 @@ target_include_directories(extras INTERFACE include)
 target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
+set(TK_HEADERS
+	include/tk/rng.hpp
+)
+
+target_include_directories(tk PUBLIC include)
+target_sources(tk PRIVATE ${TK_HEADERS})
+source_group(TREE ${CMAKE_SOURCE_DIR}/include/tk PREFIX Headers FILES ${TK_HEADERS})
+
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp

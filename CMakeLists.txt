@@ -34,6 +34,7 @@ add_subdirectory(3rdparty)
 
 # CMake target setup
 voxen_add_library(extras INTERFACE)
+voxen_add_library(tk STATIC)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
@@ -50,6 +51,7 @@ target_link_libraries(voxen PUBLIC
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
+	tk
 	3rdparty::glfw
 	3rdparty::pcg
 	3rdparty::vma
