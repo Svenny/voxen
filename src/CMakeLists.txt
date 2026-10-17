@@ -1,5 +1,6 @@
 set(TK_SOURCES
 	src/tk/cli.cpp
+	src/tk/json.cpp
 	src/tk/rng.cpp
 	src/tk/text_utils.cpp
 	src/tk/text_utils.hpp

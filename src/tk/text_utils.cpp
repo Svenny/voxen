@@ -76,6 +76,40 @@ size_t findInvalidUtf8(std::string_view text) noexcept
 	return std::string_view::npos;
 }
 
+char32_t decodeUtf8(std::string_view text, size_t offset, size_t &length) noexcept
+{
+	if (offset >= text.size()) {
+		length = 0;
+		return 0;
+	}
+
+	const auto lead = static_cast<unsigned char>(text[offset]);
+
+	if (lead < 0x80) {
+		length = 1;
+		return lead;
+	}
+
+	uint32_t cp;
+	if (lead < 0xE0) {
+		length = 2;
+		cp = lead & 0x1F;
+	} else if (lead < 0xF0) {
+		length = 3;
+		cp = lead & 0x0F;
+	} else {
+		length = 4;
+		cp = lead & 0x07;
+	}
+
+	length = std::min(length, text.size() - offset);
+	for (size_t i = 1; i < length; i++) {
+		cp = (cp << 6) | (static_cast<unsigned char>(text[offset + i]) & 0x3F);
+	}
+
+	return char32_t(cp);
+}
+
 void appendUtf8(std::string &out, char32_t code_point)
 {
 	const auto cp = uint32_t(code_point);

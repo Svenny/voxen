@@ -30,6 +30,7 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTR
 
 set(TK_HEADERS
 	include/tk/cli.hpp
+	include/tk/json.hpp
 	include/tk/parse_error.hpp
 	include/tk/rng.hpp
 	include/tk/toml.hpp
