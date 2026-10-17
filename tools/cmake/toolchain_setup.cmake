@@ -12,26 +12,98 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_VERSION VERSION_
 	message(FATAL_ERROR "Only Clang 21 or newer is supported for C code!")
 endif()
 
+option(VOXEN_WERROR "Treat compiler warnings as errors" ON)
+set(VOXEN_ARCH_FLAGS "-march=x86-64-v3" CACHE STRING "Target CPU flags, space-separated")
+set(VOXEN_SANITIZERS "" CACHE STRING
+	"Sanitizers to enable, semicolon-separated (e.g. `address;undefined`). Linux only")
+
+if(VOXEN_SANITIZERS AND NOT LINUX)
+	message(FATAL_ERROR "VOXEN_SANITIZERS is only supported on Linux")
+endif()
+
+if(LINUX AND NOT CMAKE_LINKER_TYPE)
+	# The fastest linker we have on Linux, non-LTO builds are just instant.
+	# Not cached, so the default follows mold being (un)installed.
+	find_program(VOXEN_MOLD_EXECUTABLE mold NO_CACHE)
+	if(VOXEN_MOLD_EXECUTABLE)
+		set(CMAKE_LINKER_TYPE MOLD)
+	else()
+		set(CMAKE_LINKER_TYPE LLD)
+	endif()
+endif()
+
+if(CMAKE_LINKER_TYPE)
+	message(STATUS "Using linker type: ${CMAKE_LINKER_TYPE}")
+endif()
+
+set(CLANG_OPTION_PREFIX "")
+if(WIN32)
+	# clang-cl needs this prefix for non-cl (native clang) options
+	set(CLANG_OPTION_PREFIX "/clang:")
+endif()
+
+# Code generation and linker flags shared by Voxen targets and 3rdparty builds
+separate_arguments(VOXEN_CODEGEN_FLAGS NATIVE_COMMAND "${VOXEN_ARCH_FLAGS}")
+list(TRANSFORM VOXEN_CODEGEN_FLAGS PREPEND "${CLANG_OPTION_PREFIX}")
+set(VOXEN_LINKER_FLAGS "")
+
+if(LINUX)
+	list(APPEND VOXEN_CODEGEN_FLAGS
+		# We need more potentially-obscure-bugs-inducing optimizations...
+		# Don't use PLT thunks for dynamically linked function calls.
+		# This prevents lazy binding which we don't need anyway.
+		-fno-plt
+		# This allows interprocedural optimization for exported functions
+		# when calling them from the same library (a frequent case for us).
+		# Might be enabled in Clang by default but let's be sure.
+		-fno-semantic-interposition
+	)
+
+	list(APPEND VOXEN_LINKER_FLAGS
+		# Directly bind locally defined function symbols. Similar to
+		# `-fno-semantic-interposition` but works at link time.
+		# Possible side effect: inline functions can have different
+		# addresses across binary boundaries (who cares?).
+		# NOTE: needs `-Wl,`, clang driver takes bare `-B...` as a search path.
+		-Wl,-Bsymbolic-functions
+	)
+
+	if(NOT VOXEN_SANITIZERS)
+		# Treat unresolved symbols as errors when linking shared libraries.
+		# Useful to catch missing dependencies a bit faster. Sanitizer runtimes
+		# are linked only into executables, leaving shared libraries unresolved.
+		list(APPEND VOXEN_LINKER_FLAGS -Wl,--no-undefined)
+	endif()
+endif()
+
 # This function must be called on any Voxen C/C++ target (executable, static or shared library)
 function(voxen_setup_target target)
-	set(CLANG_OPTION_PREFIX "")
 	set(CLANG_OPTION_WALL "-Wall")
 
 	if(WIN32)
-		# clang-cl needs this prefix for non-cl (native clang) options
-		set(CLANG_OPTION_PREFIX "/clang:")
 		# clang-cl treats `-Wall` like MSVC `/Wall`, i.e. `-Weverything`. `/clang:-Wall` won't do
 		# either, clang-cl moves all `/clang:` options to the end, overriding `-Wno-...` options.
 		# `-W4` is clang-cl's spelling of `-Wall -Wextra`, and it keeps its place.
 		set(CLANG_OPTION_WALL "-W4")
 	endif()
 
-	# TODO: these flags are partially duplicated in `build-3rdparty.py`
+	if(VOXEN_WERROR)
+		target_compile_options(${target} PRIVATE -Werror)
+	endif()
+
+	if(VOXEN_SANITIZERS)
+		list(JOIN VOXEN_SANITIZERS "," sanitizers)
+		target_compile_options(${target} PRIVATE -fsanitize=${sanitizers} -fno-omit-frame-pointer)
+		target_link_options(${target} PRIVATE -fsanitize=${sanitizers})
+	endif()
+
+	target_compile_options(${target} PRIVATE ${VOXEN_CODEGEN_FLAGS})
+	target_link_options(${target} PRIVATE ${VOXEN_LINKER_FLAGS})
 
 	# Common stuff for all platforms
 	target_compile_options(${target} PRIVATE
 		# Enforce good coding standards to at least some extent
-		${CLANG_OPTION_WALL} -Wextra -Wpedantic -Werror
+		${CLANG_OPTION_WALL} -Wextra -Wpedantic
 		# Additional useful diagnostics not enabled by above flags
 		-Wconversion -Wdeprecated -Wshadow -Wundef -Wweak-vtables
 		-Wshadow-uncaptured-local -Wunused-member-function -Wconditional-uninitialized
@@ -52,39 +124,9 @@ function(voxen_setup_target target)
 		${CLANG_OPTION_PREFIX}-fno-signed-zeros # Assume +0.0 and -0.0 are the same
 		${CLANG_OPTION_PREFIX}-fno-trapping-math # Assume there are no floating point exceptions
 		${CLANG_OPTION_PREFIX}-ffp-contract=fast # Allow fusing multiply+add to FMA
-
-		# Generate code for modern CPUs (with BMI2/AVX2 etc.)
-		${CLANG_OPTION_PREFIX}-march=x86-64-v3
 	)
 
-	if(LINUX)
-		target_compile_options(${target} PRIVATE
-			# We need more potentially-obscure-bugs-inducing optimizations...
-			# Don't use PLT thunks for dynamically linked function calls.
-			# This prevents lazy binding but we don't need it anyway.
-			-fno-plt
-			# This allows interprocedural optimization for exported functions
-			# when calling them from the same library (a frequent case for us).
-			# Might be enabled in Clang by default but let's be sure.
-			-fno-semantic-interposition
-		)
-
-		target_link_options(${target} PRIVATE
-			# The fastest linker we have on Linux, non-LTO builds are just instant
-			-fuse-ld=mold
-
-			# Directly bind locally defined function symbols. Similar to
-			# `-fno-semantic-interposition` but works at link time.
-			# Possible side effect: inline functions can have different
-			# addresses across binary boundaries (but who cares?).
-			# NOTE: needs `-Wl,`, clang driver takes bare `-B...` as a search path.
-			-Wl,-Bsymbolic-functions
-
-			# Treat unresolved symbols as errors when linking shared libraries.
-			# Useful to catch missing dependencies a bit faster.
-			-Wl,--no-undefined
-		)
-	elseif(WIN32)
+	if(WIN32)
 		# Stop windows crt from bitching about innocent C functions
 		target_compile_definitions(${target} PRIVATE
 			-D_CRT_NONSTDC_NO_WARNINGS

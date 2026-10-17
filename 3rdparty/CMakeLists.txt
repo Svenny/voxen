@@ -5,11 +5,27 @@ set(CMAKE_FOLDER 3rdparty)
 
 include(${CMAKE_SOURCE_DIR}/tools/cmake/3rdparty_helpers.cmake)
 
+# Pass down the parts of our toolchain setup relevant for dependencies
+list(JOIN VOXEN_CODEGEN_FLAGS " " VOXEN_3RDPARTY_COMPILE_FLAGS)
+list(JOIN VOXEN_LINKER_FLAGS " " VOXEN_3RDPARTY_LINKER_FLAGS)
+set(VOXEN_3RDPARTY_CMAKE_ARGS "")
+if(LINUX)
+	list(APPEND VOXEN_3RDPARTY_CMAKE_ARGS
+		-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+		-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+		-DCMAKE_LINKER_TYPE=${CMAKE_LINKER_TYPE}
+	)
+endif()
+
 execute_process(COMMAND ${Python3_EXECUTABLE}
 	${CMAKE_SOURCE_DIR}/tools/build/build-3rdparty.py
 	${CMAKE_SOURCE_DIR}/3rdparty
 	${CMAKE_BINARY_DIR}/3rdparty-build
 	${CMAKE_BINARY_DIR}/3rdparty-package
+	--cmake=${CMAKE_COMMAND}
+	--compile-flags=${VOXEN_3RDPARTY_COMPILE_FLAGS}
+	--linker-flags=${VOXEN_3RDPARTY_LINKER_FLAGS}
+	${VOXEN_3RDPARTY_CMAKE_ARGS}
 
 	COMMAND_ERROR_IS_FATAL ANY
 )
