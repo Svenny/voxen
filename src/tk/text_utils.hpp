@@ -15,6 +15,10 @@ namespace tk::detail
 // (overlong, surrogate, out of range, truncated etc.), or `npos`
 size_t findInvalidUtf8(std::string_view text) noexcept;
 
+// Decodes a code point at `offset` of valid UTF-8 text, `length` receives its size in bytes.
+// Returns zero (with zero length) at the end of text.
+char32_t decodeUtf8(std::string_view text, size_t offset, size_t &length) noexcept;
+
 // Appends UTF-8 encoding of a code point, which must be a valid Unicode scalar value
 void appendUtf8(std::string &out, char32_t code_point);
 
