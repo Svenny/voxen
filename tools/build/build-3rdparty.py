@@ -38,7 +38,7 @@ print('Package directory:', path_package)
 
 cmake_generator_args = []
 # Dependencies are always built with LTO. Their warnings are not our business,
-# and some (e.g. jsoncpp) even enable `-Weverything` on clang-cl, flooding the log.
+# and some even enable `-Weverything` on clang-cl (as `-Wall`), flooding the log.
 standard_clang_flags = args.compile_flags + ' -w'
 standard_linker_flags = args.linker_flags
 
@@ -117,9 +117,6 @@ if sys.platform == 'win32':
 	# Pretend it's a subproject to avoid this, but then installation must be requested explicitly.
 	fmt_args += [ '-DFMT_MASTER_PROJECT=OFF', '-DFMT_INSTALL=ON' ]
 build_standard('fmt', fmt_args)
-build_standard('jsoncpp', [ '-DBUILD_SHARED_LIBS=ON',
-	'-DJSONCPP_WITH_TESTS=OFF', '-DBUILD_STATIC_LIBS=OFF', '-DBUILD_OBJECT_LIBS=OFF'
-])
 build_standard('glfw', [ '-DBUILD_SHARED_LIBS=ON',
 	'-DGLFW_BUILD_DOCS=OFF', '-DGLFW_BUILD_TESTS=OFF', '-DGLFW_BUILD_DOCS=OFF', '-DGLFW_BUILD_EXAMPLES=OFF'
 ])

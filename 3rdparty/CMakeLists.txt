@@ -76,7 +76,6 @@ endfunction()
 voxen_take_package(fmt fmt::fmt 3rdparty::fmt)
 voxen_take_package(freetype freetype 3rdparty::freetype)
 voxen_take_package(glfw3 glfw 3rdparty::glfw)
-voxen_take_package(jsoncpp jsoncpp_lib 3rdparty::jsoncpp)
 voxen_take_package(ZLIB ZLIB::ZLIB 3rdparty::zlib)
 
 # TODO: solve this shit more systematically
@@ -88,7 +87,6 @@ endif()
 # Embedded dependencies (sources in tree)
 include(catch2.cmake)
 include(glm.cmake)
-include(json5cpp.cmake)
 include(vulkan-headers.cmake)
 # Depends on `vulkan-headers`, include after them
 include(vma.cmake)
@@ -97,5 +95,4 @@ include(vma.cmake)
 # that set SYSTEM include directories. Should be
 # a temporary thing until CMake+VS+ClangCL stabilizes.
 voxen_fixup_3rdparty_intellisense(glm)
-voxen_fixup_3rdparty_intellisense(json5cpp)
 voxen_fixup_3rdparty_intellisense(vma)
