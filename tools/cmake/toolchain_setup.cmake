@@ -121,7 +121,9 @@ function(voxen_setup_target target)
 		${CLANG_OPTION_PREFIX}-fno-math-errno # Stdlib math functions do not change errno
 		${CLANG_OPTION_PREFIX}-fno-signed-zeros # Assume +0.0 and -0.0 are the same
 		${CLANG_OPTION_PREFIX}-fno-trapping-math # Assume there are no floating point exceptions
-		${CLANG_OPTION_PREFIX}-ffp-contract=fast # Allow fusing multiply+add to FMA
+		# Allow fusing multiply+add to FMA. Unlike plain `fast`, this one lets code opt out
+		# with `#pragma clang fp contract(off)` where bit-exact results are needed.
+		${CLANG_OPTION_PREFIX}-ffp-contract=fast-honor-pragmas
 	)
 
 	if(WIN32)
