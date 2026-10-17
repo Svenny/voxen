@@ -37,7 +37,7 @@ if sys.platform == 'linux':
 	]
 	# TODO: unify with `toolchain_setup.cmake`
 	standard_clang_flags = '-march=x86-64-v3 -fno-plt -fno-semantic-interposition -flto=thin'
-	standard_linker_flags = '-fuse-ld=mold -Bsymbolic-functions --no-undefined -flto=thin'
+	standard_linker_flags = '-fuse-ld=mold -Wl,-Bsymbolic-functions -Wl,--no-undefined -flto=thin'
 elif sys.platform == 'win32':
 	cmake_generator_args = [ '-GVisual Studio 18 2026', '-Ax64', '-TClangCL', '-DCMAKE_CONFIGURATION_TYPES=Release' ]
 	# TODO: unify with `toolchain_setup.cmake`
