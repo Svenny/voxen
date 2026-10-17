@@ -19,15 +19,15 @@ const client::GfxRuntimeConfig &RuntimeConfig::gfxConfig() const noexcept
 	return m_impl.object().gfx_config;
 }
 
-void RuntimeConfig::addOptions(cxxopts::Options &opts)
+void RuntimeConfig::addOptions(tk::cli::Parser &parser)
 {
-	client::GfxRuntimeConfig::addOptions(opts);
+	client::GfxRuntimeConfig::addOptions(parser);
 }
 
-void RuntimeConfig::fill(const cxxopts::ParseResult &result)
+void RuntimeConfig::fill(const tk::cli::Args &args)
 {
 	Impl &me = m_impl.object();
-	me.gfx_config.fill(result);
+	me.gfx_config.fill(args);
 }
 
 RuntimeConfig &RuntimeConfig::instance() noexcept

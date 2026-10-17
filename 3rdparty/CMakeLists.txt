@@ -87,7 +87,6 @@ endif()
 
 # Embedded dependencies (sources in tree)
 include(catch2.cmake)
-include(cxxopts.cmake)
 include(glm.cmake)
 include(json5cpp.cmake)
 include(vulkan-headers.cmake)
@@ -97,7 +96,6 @@ include(vma.cmake)
 # Fixup VS generated project IntelliSense in projects
 # that set SYSTEM include directories. Should be
 # a temporary thing until CMake+VS+ClangCL stabilizes.
-voxen_fixup_3rdparty_intellisense(cxxopts)
 voxen_fixup_3rdparty_intellisense(glm)
 voxen_fixup_3rdparty_intellisense(json5cpp)
 voxen_fixup_3rdparty_intellisense(vma)
