@@ -372,16 +372,24 @@ public:
 		return refItemIndex(std::popcount(m_item_bitmap & (bit - 1)));
 	}
 
+	// Nodes have dynamic size, `shared_ptr` must not use the default (sized) `delete`
+	static void destroyNode(Node *node) noexcept
+	{
+		const size_t size = sizeof(Node) + node->m_capacity_bytes;
+		node->~Node();
+		::operator delete(node, size);
+	}
+
 	static NodePtr allocateNode(uint32_t consumed_hash_bits)
 	{
 		void *ptr = ::operator new(sizeof(Node) + INITIAL_CAPACITY);
-		return NodePtr(new (ptr) Node(INITIAL_CAPACITY, consumed_hash_bits));
+		return NodePtr(new (ptr) Node(INITIAL_CAPACITY, consumed_hash_bits), destroyNode);
 	}
 
 	static NodePtr copyNode(const Node &old)
 	{
 		void *ptr = ::operator new(sizeof(Node) + old.m_capacity_bytes);
-		return NodePtr(new (ptr) Node(old, old.m_capacity_bytes));
+		return NodePtr(new (ptr) Node(old, old.m_capacity_bytes), destroyNode);
 	}
 
 	static NodePtr expandNode(const Node &old)
@@ -396,7 +404,7 @@ public:
 		}
 
 		void *ptr = ::operator new(sizeof(Node) + capacity);
-		return NodePtr(new (ptr) Node(old, capacity));
+		return NodePtr(new (ptr) Node(old, capacity), destroyNode);
 	}
 
 	static bool erase(uint64_t timeline, NodeItem &node_item, Key key, uint64_t hash_bits)
