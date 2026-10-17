@@ -44,7 +44,6 @@ target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PUBLIC
 	extras
-	3rdparty::cxxopts
 	3rdparty::fmt
 	3rdparty::glm
 	Threads::Threads

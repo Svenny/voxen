@@ -18,6 +18,8 @@
 
 #include "async_counter_tracker.hpp"
 
+#include <tk/cli.hpp>
+
 #include <fmt/chrono.h>
 #include <fmt/ranges.h>
 
@@ -31,33 +33,43 @@ namespace
 
 const std::string CLI_SECTION_SEPARATOR = "__";
 
-cxxopts::Options makeCliOptions()
+tk::cli::Parser makeCliParser()
 {
-	cxxopts::Options options("voxen", "Voxen - awesome VOXel ENgine");
-	Config::Scheme scheme = Config::mainConfigScheme();
+	tk::cli::Parser parser("voxen", "Voxen - awesome VOXel ENgine");
 
-	for (Config::SchemeEntry &entry : scheme) {
-		std::shared_ptr<cxxopts::Value> default_cli_value;
+	parser.addFlag("help", 'h', "Display help information");
+	parser.addOption({
+		.name = "profile",
+		.short_name = 'p',
+		.type = tk::cli::Parser::ValueType::String,
+		.description = "Profile name",
+		.default_value = "default",
+		.group = {},
+	});
+
+	for (const Config::SchemeEntry &entry : Config::mainConfigScheme()) {
+		tk::cli::Parser::ValueType type = tk::cli::Parser::ValueType::String;
+
 		switch (entry.default_value.index()) {
 		case 0:
 			static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, Config::option_t>>);
-			default_cli_value = cxxopts::value<std::string>();
+			type = tk::cli::Parser::ValueType::String;
 			break;
 
 		case 1:
 			static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, Config::option_t>>);
-			default_cli_value = cxxopts::value<int>();
+			type = tk::cli::Parser::ValueType::Integer;
 			break;
 
 		case 2:
 			static_assert(std::is_same_v<double, std::variant_alternative_t<2, Config::option_t>>);
-			default_cli_value = cxxopts::value<double>();
+			type = tk::cli::Parser::ValueType::Float;
 			break;
 
 		case 3:
 			static_assert(std::is_same_v<bool, std::variant_alternative_t<3, Config::option_t>>);
 			// Minor UX convenience. This allows use bool flag like `--dev__fps_logging` instead of strict `--dev__fps_loggin=true` form
-			default_cli_value = cxxopts::value<bool>()->default_value("true");
+			type = tk::cli::Parser::ValueType::Flag;
 			break;
 
 		default:
@@ -65,33 +77,33 @@ cxxopts::Options makeCliOptions()
 			break;
 		}
 
-		options.add_options(entry.section)(entry.section + CLI_SECTION_SEPARATOR + entry.parameter_name,
-			entry.description, default_cli_value);
+		parser.addOption({
+			.name = entry.section + CLI_SECTION_SEPARATOR + entry.parameter_name,
+			.short_name = 0,
+			.type = type,
+			.description = entry.description,
+			.default_value = std::nullopt,
+			.group = entry.section,
+		});
 	}
 
-	// clang-format off: breaks nice chaining syntax
-	options.add_options()
-		("h,help", "Display help information")
-		("p,profile", "Profile name", cxxopts::value<std::string>()->default_value("default"));
-	// clang-format on
+	RuntimeConfig::addOptions(parser);
 
-	RuntimeConfig::addOptions(options);
-
-	return options;
+	return parser;
 }
 
-void patchConfig(const cxxopts::ParseResult &result, Config *config)
+void patchConfig(const tk::cli::Args &args, Config *config)
 {
-	for (const auto &keyvalue : result.arguments()) {
-		size_t sep_idx = keyvalue.key().find(CLI_SECTION_SEPARATOR);
+	for (const tk::cli::Args::Entry &entry : args.entries()) {
+		size_t sep_idx = entry.name.find(CLI_SECTION_SEPARATOR);
 		if (sep_idx == std::string::npos) {
 			continue;
 		}
 
-		std::string section = keyvalue.key().substr(0, sep_idx);
-		std::string parameter = keyvalue.key().substr(sep_idx + CLI_SECTION_SEPARATOR.size());
+		std::string section = entry.name.substr(0, sep_idx);
+		std::string parameter = entry.name.substr(sep_idx + CLI_SECTION_SEPARATOR.size());
 
-		config->patch(section, parameter, keyvalue.value());
+		config->patch(section, parameter, entry.value);
 	}
 }
 
@@ -164,30 +176,36 @@ EngineStartArgs::~EngineStartArgs() = default;
 
 auto EngineStartArgs::fillFromArgv(int argc, const char *const *argv) -> ArgvParseResult
 {
-	cxxopts::Options opts = makeCliOptions();
+	tk::cli::Parser parser = makeCliParser();
 
-	try {
-		m_argv0 = argv[0];
-		m_parsed_cli_opts = opts.parse(argc, argv);
+	m_argv0 = argv[0];
+	auto result = parser.parse(argc, argv);
 
-		if (m_parsed_cli_opts.count("help")) {
-			return { ArgvParseStatus::HelpRequested, opts.help() };
-		}
-
-		const auto &unmatched = m_parsed_cli_opts.unmatched();
-
-		if (!unmatched.empty()) {
-			std::string help_text = fmt::format("Unknown arguments provided:\n{}", unmatched);
-			return { ArgvParseStatus::InvalidArguments, std::move(help_text) };
-		}
-
-		return { ArgvParseStatus::Success, "" };
-	}
-	catch (cxxopts::exceptions::exception &ex) {
+	if (!result) {
 		std::string help_text
-			= fmt::format("Invalid options provided, use -h (--help) to get usage help.\nError details:\n{}", ex.what());
+			= fmt::format("Invalid options provided, use -h (--help) to get usage help.\nError details:\n{}",
+				result.error());
 		return { ArgvParseStatus::InvalidArguments, std::move(help_text) };
 	}
+
+	if (result->flag("help")) {
+		return { ArgvParseStatus::HelpRequested, parser.helpText() };
+	}
+
+	if (!result->positional().empty()) {
+		std::string help_text = fmt::format("Unknown arguments provided:\n{}", result->positional());
+		return { ArgvParseStatus::InvalidArguments, std::move(help_text) };
+	}
+
+	m_parsed_cli_opts = std::make_unique<tk::cli::Args>(std::move(*result));
+	return { ArgvParseStatus::Success, "" };
+}
+
+const tk::cli::Args &EngineStartArgs::parsedCliOpts() const noexcept
+{
+	// Not filled (or moved-from) instance has no parse result
+	static const tk::cli::Args EMPTY;
+	return m_parsed_cli_opts ? *m_parsed_cli_opts : EMPTY;
 }
 
 void Engine::Deleter::operator()(Engine *engine) noexcept
@@ -208,7 +226,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 		makeVersionString(app_info.version_major, app_info.version_minor, app_info.version_patch,
 			app_info.version_appendix, app_info.git_commit_hash));
 
-	const cxxopts::ParseResult &cli_opts = m_start_args.parsedCliOpts();
+	const tk::cli::Args &cli_opts = m_start_args.parsedCliOpts();
 	RuntimeConfig::instance().fill(cli_opts);
 
 	// Don't do anything with configs/files when launched from test suite
@@ -217,7 +235,8 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	// TODO: detect test suite launch in a more appropriate way
 	if (!m_start_args.argv0().empty()) {
 		// TODO: convert `FileManager` to a service
-		voxen::FileManager::setProfileName(m_start_args.argv0(), cli_opts["profile"].as<std::string>());
+		voxen::FileManager::setProfileName(m_start_args.argv0(),
+			std::string(cli_opts.value("profile").value_or("default")));
 		// TODO: this is some old temporary junk, remove it
 		patchConfig(cli_opts, Config::mainConfig());
 	}

@@ -2,13 +2,13 @@
 
 #include <string>
 
-namespace cxxopts
+namespace tk::cli
 {
 
-class Options;
-class ParseResult;
+class Args;
+class Parser;
 
-} // namespace cxxopts
+} // namespace tk::cli
 
 namespace voxen::client
 {
@@ -25,9 +25,9 @@ public:
 	const std::string &preferredGpuName() const noexcept { return m_preferred_gpu_name; }
 
 	// Add commandline options related to this config
-	static void addOptions(cxxopts::Options &opts);
+	static void addOptions(tk::cli::Parser &parser);
 	// Fill config from parsed commandline options
-	void fill(const cxxopts::ParseResult &result);
+	void fill(const tk::cli::Args &args);
 
 private:
 	bool m_use_debugging = false;

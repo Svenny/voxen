@@ -4,13 +4,13 @@
 
 #include <extras/pimpl.hpp>
 
-namespace cxxopts
+namespace tk::cli
 {
 
-class Options;
-class ParseResult;
+class Args;
+class Parser;
 
-} // namespace cxxopts
+} // namespace tk::cli
 
 namespace voxen
 {
@@ -35,9 +35,9 @@ public:
 	const client::GfxRuntimeConfig &gfxConfig() const noexcept;
 
 	// Add commandline options related to each sub-config
-	static void addOptions(cxxopts::Options &opts);
+	static void addOptions(tk::cli::Parser &parser);
 	// Fill each sub-config from parsed commandline options
-	void fill(const cxxopts::ParseResult &result);
+	void fill(const tk::cli::Args &args);
 
 	// Get a global instance of this service
 	static RuntimeConfig &instance() noexcept;

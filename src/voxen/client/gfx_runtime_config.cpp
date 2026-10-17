@@ -1,27 +1,31 @@
 #include <voxen/client/gfx_runtime_config.hpp>
 
-#include <cxxopts/cxxopts.hpp>
+#include <tk/cli.hpp>
 
 namespace voxen::client
 {
 
-void GfxRuntimeConfig::addOptions(cxxopts::Options &opts)
+void GfxRuntimeConfig::addOptions(tk::cli::Parser &parser)
 {
-	// clang-format off: breaks nice chaining syntax
-	opts.add_options("Graphics")
-		("gfx-debugging", "Enable graphics API debugging extensions")
-		("gfx-validation", "Enable graphics API validation layers")
-		("gfx-gpu-name", "Name of GPU to use (empty to auto-select)", cxxopts::value<std::string>());
-	// clang-format on
+	parser.addFlag("gfx-debugging", 0, "Enable graphics API debugging extensions", "Graphics");
+	parser.addFlag("gfx-validation", 0, "Enable graphics API validation layers", "Graphics");
+	parser.addOption({
+		.name = "gfx-gpu-name",
+		.short_name = 0,
+		.type = tk::cli::Parser::ValueType::String,
+		.description = "Name of GPU to use (empty to auto-select)",
+		.default_value = std::nullopt,
+		.group = "Graphics",
+	});
 }
 
-void GfxRuntimeConfig::fill(const cxxopts::ParseResult &result)
+void GfxRuntimeConfig::fill(const tk::cli::Args &args)
 {
-	m_use_debugging = result["gfx-debugging"].as<bool>();
-	m_use_validation = result["gfx-validation"].as<bool>();
+	m_use_debugging = args.flag("gfx-debugging");
+	m_use_validation = args.flag("gfx-validation");
 
-	if (result.count("gfx-gpu-name")) {
-		m_preferred_gpu_name = result["gfx-gpu-name"].as<std::string>();
+	if (auto gpu_name = args.value("gfx-gpu-name"); gpu_name) {
+		m_preferred_gpu_name = *gpu_name;
 	}
 }
 

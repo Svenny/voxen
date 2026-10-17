@@ -3,10 +3,15 @@
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/visibility.hpp>
 
-#include <cxxopts/cxxopts.hpp>
-
 #include <memory>
 #include <string>
+
+namespace tk::cli
+{
+
+class Args;
+
+}
 
 namespace voxen::svc
 {
@@ -91,12 +96,13 @@ public:
 
 	AppInfo &appInfo() noexcept { return m_app_info; }
 	std::string &argv0() noexcept { return m_argv0; }
-	cxxopts::ParseResult &parsedCliOpts() noexcept { return m_parsed_cli_opts; }
+	// Empty until `fillFromArgv()` succeeds
+	const tk::cli::Args &parsedCliOpts() const noexcept;
 
 private:
 	AppInfo m_app_info;
 	std::string m_argv0;
-	cxxopts::ParseResult m_parsed_cli_opts;
+	std::unique_ptr<tk::cli::Args> m_parsed_cli_opts;
 };
 
 // Despite its formidable name, this class does a relatively mundane job

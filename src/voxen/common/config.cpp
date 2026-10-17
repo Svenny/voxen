@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <charconv>
+#include <stdexcept>
 
 using namespace std::filesystem;
 using std::string_view;
@@ -65,6 +67,25 @@ std::optional<Config::option_t> optionFromToml(const tk::toml::Value& value, siz
 	}
 
 	return std::nullopt;
+}
+
+// Unlike `std::stoi`/`std::stod`, requires the whole string to be a number
+// and covers the full `int64_t` range. Throws like them on failure.
+template<typename T>
+T parseNumber(std::string_view s)
+{
+	T value = 0;
+	auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value);
+
+	if (ec == std::errc::result_out_of_range) {
+		throw std::out_of_range("config option value is out of range");
+	}
+
+	if (ec != std::errc() || ptr != s.data() + s.size()) {
+		throw std::invalid_argument("config option value is not a number");
+	}
+
+	return value;
 }
 
 tk::toml::Value optionToToml(const Config::option_t& value)
@@ -323,11 +344,11 @@ Config::option_t Config::optionFromString(string_view s, size_t type)
 
 	case 1:
 		static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, Config::option_t>>);
-		return (int64_t) std::stoi(s.data());
+		return parseNumber<int64_t>(s);
 
 	case 2:
 		static_assert(std::is_same_v<double, std::variant_alternative_t<2, Config::option_t>>);
-		return std::stod(s.data());
+		return parseNumber<double>(s);
 
 	case 3: {
 		static_assert(std::is_same_v<bool, std::variant_alternative_t<3, Config::option_t>>);
