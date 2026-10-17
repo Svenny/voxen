@@ -77,11 +77,12 @@ function(voxen_setup_target target)
 			# `-fno-semantic-interposition` but works at link time.
 			# Possible side effect: inline functions can have different
 			# addresses across binary boundaries (but who cares?).
-			-Bsymbolic-functions
+			# NOTE: needs `-Wl,`, clang driver takes bare `-B...` as a search path.
+			-Wl,-Bsymbolic-functions
 
 			# Treat unresolved symbols as errors when linking shared libraries.
 			# Useful to catch missing dependencies a bit faster.
-			--no-undefined
+			-Wl,--no-undefined
 		)
 	elseif(WIN32)
 		# Stop windows crt from bitching about innocent C functions
