@@ -1,3 +1,10 @@
+set(TK_SOURCES
+	src/tk/rng.cpp
+)
+
+target_sources(tk PRIVATE ${TK_SOURCES})
+source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${TK_SOURCES})
+
 set(VOXEN_SOURCES
 	src/voxen/client/vulkan/backend.cpp
 	src/voxen/client/vulkan/descriptor_set_layout.cpp
