@@ -1,0 +1,22 @@
+// GENERATED FILE, DO NOT EDIT
+#pragma once
+
+namespace voxen::Version
+{
+
+// Voxen version, follows SemVer 2.0.0
+constexpr inline int MAJOR = @VERSION_MAJOR@;
+constexpr inline int MINOR = @VERSION_MINOR@;
+constexpr inline int PATCH = @VERSION_PATCH@;
+
+// Optional prerelease suffix
+constexpr inline char SUFFIX[] = "@VERSION_SUFFIX@";
+// Output of `git describe --always --dirty`: partial commit hash
+// with optional `-dirty` mark when there are local changes.
+// Can be `unknown` if the source tree has no Git history.
+constexpr inline char GIT_HASH[] = "@GIT_HASH@";
+
+// All components of version combined, usable for logging/display
+constexpr inline char STRING[] = "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@@VERSION_SUFFIX_DASHED@ (git-@GIT_HASH@)";
+
+}

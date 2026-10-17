@@ -163,12 +163,19 @@ target_sources(voxen PRIVATE ${VOXEN_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
 
 # Generate version header
+find_package(Git QUIET)
 add_custom_target(voxen-version-file
-	COMMAND Python3::Interpreter ${CMAKE_SOURCE_DIR}/tools/cmake/gen-version-header.py
-		${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
-		${VOXEN_VERSION_MAJOR} ${VOXEN_VERSION_MINOR} ${VOXEN_VERSION_PATCH} ${VOXEN_VERSION_SUFFIX}
+	COMMAND ${CMAKE_COMMAND}
+		-D OUTPUT_FILE=${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
+		-D VERSION_MAJOR=${VOXEN_VERSION_MAJOR}
+		-D VERSION_MINOR=${VOXEN_VERSION_MINOR}
+		-D VERSION_PATCH=${VOXEN_VERSION_PATCH}
+		-D VERSION_SUFFIX=${VOXEN_VERSION_SUFFIX}
+		-D GIT_EXECUTABLE=${GIT_EXECUTABLE}
+		-P ${CMAKE_SOURCE_DIR}/tools/cmake/gen_version_header.cmake
 	BYPRODUCTS ${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
 	COMMENT "Generating version.hpp file"
+	VERBATIM
 )
 set_target_properties(voxen-version-file PROPERTIES FOLDER codegen)
 add_dependencies(voxen voxen-version-file)
