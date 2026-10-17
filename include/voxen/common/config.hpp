@@ -12,9 +12,6 @@
 #include <variant>
 #include <vector>
 
-#define SI_CONVERT_GENERIC
-#include <simpleini/SimpleIni.h>
-
 namespace voxen
 {
 
@@ -31,12 +28,21 @@ public:
 	};
 	using Scheme = std::vector<SchemeEntry>;
 
-	Config(std::filesystem::path config_filepath, Scheme scheme);
+	// Loads TOML config file at `relative_path` (relative to user data directory).
+	// Options missing in the file, or having values of wrong types, get default values.
+	// If the file does not exist, it is created with default values.
+	// Existing files are never rewritten, to keep the user's formatting and comments.
+	Config(std::filesystem::path relative_path, Scheme scheme);
+	Config(Config&&) = delete;
+	Config(const Config&) = delete;
+	Config& operator=(Config&&) = delete;
+	Config& operator=(const Config&) = delete;
 	~Config() noexcept;
 
+	// Changes option value for this run only, the file is not updated.
 	// Throws voxen::Exception("wrong parameter value type"), voxen::Exception("Option not found"), voxen::Exception("Inconsistent types of option values")
 	void patch(std::string_view section, std::string_view parameter_name, std::string_view value_string,
-		bool saveToConfigFile = false, Location loc = Location::current());
+		Location loc = Location::current());
 
 	std::optional<std::string> optionString(std::string_view section, std::string_view parameter_name) const;
 	std::optional<int64_t> optionInt64(std::string_view section, std::string_view parameter_name) const;
@@ -59,13 +65,16 @@ public:
 
 	static std::string optionToString(option_t value);
 
+	// TOML text written to a newly created config file, all options
+	// have default values and descriptions as comments
+	static std::string defaultFileText(const Scheme& scheme);
+
 	// Throws std::invalid_argument, std::out_of_range
 	static option_t optionFromString(std::string_view s, size_t type);
 
 private:
 	std::map<std::string, std::map<std::string, option_t, std::less<>>, std::less<>> m_data;
 	std::filesystem::path m_path;
-	CSimpleIniA m_ini;
 
 private:
 	static std::unique_ptr<Config> g_instance;

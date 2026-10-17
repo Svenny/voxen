@@ -5,8 +5,11 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
+#include <tk/toml.hpp>
+
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cassert>
 
 using namespace std::filesystem;
@@ -15,50 +18,147 @@ using std::string_view;
 namespace voxen
 {
 
-const path Config::kMainConfigRelPath = "configs/main.ini";
+const path Config::kMainConfigRelPath = "configs/main.toml";
 std::unique_ptr<Config> Config::g_instance = nullptr;
 
-Config::Config(path path, Config::Scheme scheme) : m_path(path)
+namespace
 {
-	m_ini.SetUnicode();
-	std::string filepath = path.string();
-	//NOTE(sirgienko) maybe we should check erros. Even if missing file is expected behaviour, other errors may happens
-	m_ini.LoadFile(filepath.c_str());
+
+std::optional<Config::option_t> optionFromToml(const tk::toml::Value& value, size_t type)
+{
+	switch (type) {
+	case 0:
+		static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, Config::option_t>>);
+		if (const std::string* str = value.get<std::string>(); str) {
+			return *str;
+		}
+		break;
+
+	case 1:
+		static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, Config::option_t>>);
+		if (const int64_t* integer = value.get<int64_t>(); integer) {
+			return *integer;
+		}
+		break;
+
+	case 2:
+		static_assert(std::is_same_v<double, std::variant_alternative_t<2, Config::option_t>>);
+		if (const double* number = value.get<double>(); number) {
+			return *number;
+		}
+		// Allow writing integer values without `.0`
+		if (const int64_t* integer = value.get<int64_t>(); integer) {
+			return double(*integer);
+		}
+		break;
+
+	case 3:
+		static_assert(std::is_same_v<bool, std::variant_alternative_t<3, Config::option_t>>);
+		if (const bool* boolean = value.get<bool>(); boolean) {
+			return *boolean;
+		}
+		break;
+
+	default:
+		static_assert(std::variant_size_v<Config::option_t> == 4);
+		break;
+	}
+
+	return std::nullopt;
+}
+
+tk::toml::Value optionToToml(const Config::option_t& value)
+{
+	return std::visit([](const auto& v) { return tk::toml::Value(v); }, value);
+}
+
+} // namespace
+
+std::string Config::defaultFileText(const Scheme& scheme)
+{
+	std::vector<std::string_view> sections;
+	for (const Config::SchemeEntry& entry : scheme) {
+		if (std::find(sections.begin(), sections.end(), entry.section) == sections.end()) {
+			sections.push_back(entry.section);
+		}
+	}
+
+	std::string text = "# Generated with default values. Remove an option to reset it to the default.\n";
+
+	for (std::string_view section : sections) {
+		text += fmt::format("\n[{}]\n", tk::toml::formatKey(section));
+
+		for (const Config::SchemeEntry& entry : scheme) {
+			if (entry.section != section) {
+				continue;
+			}
+
+			// Keep multi-line descriptions inside the comment
+			std::string comment;
+			for (char c : entry.description) {
+				comment += c;
+				if (c == '\n') {
+					comment += "# ";
+				}
+			}
+
+			text += fmt::format("# {}\n{} = {}\n", comment, tk::toml::formatKey(entry.parameter_name),
+				tk::toml::formatValue(optionToToml(entry.default_value)));
+		}
+	}
+
+	return text;
+}
+
+Config::Config(path relative_path, Config::Scheme scheme) : m_path(std::move(relative_path))
+{
+	std::optional<tk::toml::Table> file_data;
+
+	std::error_code ec;
+	if (std::filesystem::exists(FileManager::userDataPath() / m_path, ec)) {
+		if (std::optional<std::string> text = FileManager::readUserTextFile(m_path); text) {
+			if (auto result = tk::toml::parse(*text); result) {
+				file_data = std::move(*result);
+			} else {
+				Log::error("Can't parse config file '{}', using default values: {}", m_path.string(),
+					result.error().toString());
+			}
+		} else {
+			Log::error("Can't read config file '{}', using default values", m_path.string());
+		}
+	} else {
+		Log::info("Config file '{}' does not exist, creating it with default values", m_path.string());
+		if (!FileManager::writeUserTextFile(m_path, defaultFileText(scheme))) {
+			Log::warn("Can't write config file '{}'", m_path.string());
+		}
+	}
 
 	for (const SchemeEntry& entry : scheme) {
-		option_t value;
-		const char* value_ptr = m_ini.GetValue(entry.section.c_str(), entry.parameter_name.c_str());
-		if (!value_ptr) {
-			const std::string& value_str = optionToString(entry.default_value);
-			// This logic work only for one-line description. For multiline, each new line should starts with '; '
-			const std::string& comment = "; " + entry.description;
-			m_ini.SetValue(entry.section.c_str(), entry.parameter_name.c_str(), value_str.c_str(), comment.c_str());
-			value = entry.default_value;
-		} else {
-			size_t type = entry.default_value.index();
-			value = Config::optionFromString(string_view(value_ptr), type);
+		option_t value = entry.default_value;
+
+		const tk::toml::Value* section = file_data ? file_data->find(entry.section) : nullptr;
+		const tk::toml::Table* section_table = section ? section->get<tk::toml::Table>() : nullptr;
+		const tk::toml::Value* file_value = section_table ? section_table->find(entry.parameter_name) : nullptr;
+
+		if (file_value) {
+			if (auto converted = optionFromToml(*file_value, entry.default_value.index()); converted) {
+				value = std::move(*converted);
+			} else {
+				Log::warn("Config option {}.{} in '{}' has wrong type, using the default value", entry.section,
+					entry.parameter_name, m_path.string());
+			}
 		}
 
-		if (m_data.count(entry.section) == 0) {
-			m_data[entry.section] = std::map<std::string, option_t, std::less<>>();
-		}
-		m_data[entry.section][entry.parameter_name] = value;
+		m_data[entry.section][entry.parameter_name] = std::move(value);
 	}
 }
 
-Config::~Config() noexcept
-{
-	// NOTE(sirgienko) Not sure, maybe we should move it in ::patch inside saveToConfigFile branch
-	FileManager::makeDirsForFile(m_path);
-	//TODO(sirgienko) checking save errors here from the method?
-	m_ini.SaveFile(m_path.string().c_str());
-}
+Config::~Config() noexcept = default;
 
 Config* Config::mainConfig()
 {
 	if (!g_instance) {
-		path config_path = FileManager::userDataPath() / kMainConfigRelPath;
-		g_instance = std::make_unique<Config>(config_path, mainConfigScheme());
+		g_instance = std::make_unique<Config>(kMainConfigRelPath, mainConfigScheme());
 	}
 	return g_instance.get();
 }
@@ -173,18 +273,11 @@ bool Config::getBool(string_view section, string_view parameter_name, Location l
 	throw Exception::fromError(VoxenErrc::OptionMissing, "missing config option assumed existing", loc);
 }
 
-void Config::patch(string_view section, string_view parameter_name, string_view value_string, bool saveToConfigFile,
-	Location loc)
+void Config::patch(string_view section, string_view parameter_name, string_view value_string, Location loc)
 {
 	if (auto it_ext = m_data.find(section); it_ext != m_data.end()) {
 		if (auto it_inter = it_ext->second.find(parameter_name); it_inter != it_ext->second.end()) {
 			it_inter->second = optionFromString(value_string, it_inter->second.index());
-
-			if (saveToConfigFile) {
-				const std::string& str = Config::optionToString(it_inter->second);
-				m_ini.SetValue(section.data(), parameter_name.data(), str.c_str());
-			}
-
 			return;
 		}
 	}

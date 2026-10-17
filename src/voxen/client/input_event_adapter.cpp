@@ -172,7 +172,7 @@ const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING
 std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToActionMap;
 std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::mouseKeyToActionMap;
 std::map<bool, PlayerActionEvent> InputEventAdapter::scrollToActionMap;
-string InputEventAdapter::actionSettingsPath = "configs/action_settings.ini";
+string InputEventAdapter::actionSettingsPath = "configs/action_settings.toml";
 Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
 Config *InputEventAdapter::actionSettingsConfig = nullptr;
 
@@ -225,7 +225,7 @@ std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseScrollToPlayerEve
 void InputEventAdapter::init()
 {
 	assert(actionSettingsConfig == nullptr);
-	actionSettingsConfig = new Config(FileManager::userDataPath() / actionSettingsPath, actionSettingConfigScheme);
+	actionSettingsConfig = new Config(actionSettingsPath, actionSettingConfigScheme);
 
 	for (const Config::SchemeEntry &entry : actionSettingConfigScheme) {
 		const string &default_value = std::get<string>(entry.default_value);
