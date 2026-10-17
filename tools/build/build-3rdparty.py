@@ -37,8 +37,9 @@ print('Temp directory:', path_temp)
 print('Package directory:', path_package)
 
 cmake_generator_args = []
-# Dependencies are always built with LTO
-standard_clang_flags = args.compile_flags
+# Dependencies are always built with LTO. Their warnings are not our business,
+# and some (e.g. jsoncpp) even enable `-Weverything` on clang-cl, flooding the log.
+standard_clang_flags = args.compile_flags + ' -w'
 standard_linker_flags = args.linker_flags
 
 if sys.platform == 'linux':
