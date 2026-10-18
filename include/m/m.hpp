@@ -7,4 +7,5 @@
 #include <m/matrix.hpp>
 #include <m/packing.hpp>
 #include <m/quaternion.hpp>
+#include <m/transform.hpp>
 #include <m/vector.hpp>

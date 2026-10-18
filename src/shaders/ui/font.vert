@@ -30,8 +30,9 @@ vec3 unpackColorSrgb(u8vec4 color_srgb)
 bvec2 calcQuadSelector()
 {
 	uint index = gl_VertexIndex;
-	bool bx = (gl_VertexIndex == 1 || gl_VertexIndex == 4 || gl_VertexIndex == 5);
-	bool by = (gl_VertexIndex == 2 || gl_VertexIndex == 3 || gl_VertexIndex == 5);
+	// Two counter-clockwise (on screen, Y down) triangles
+	bool bx = (gl_VertexIndex == 2 || gl_VertexIndex == 3 || gl_VertexIndex == 5);
+	bool by = (gl_VertexIndex == 1 || gl_VertexIndex == 4 || gl_VertexIndex == 5);
 	return bvec2(bx, by);
 }
 
