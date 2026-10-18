@@ -3,7 +3,7 @@
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 namespace voxen::land
 {
@@ -28,7 +28,7 @@ public:
 	~StorageTreeNodePtr();
 
 	// Construct (default initialize) a node and its user data block. UB if already constructed.
-	void init(const StorageTreeControl &ctl, world::TickId tick, glm::ivec3 min_coord);
+	void init(const StorageTreeControl &ctl, world::TickId tick, m::int3 min_coord);
 	// If `tick > tick()`, copy-construct a node and its user data block. Otherwise do nothing.
 	void moo(const StorageTreeControl &ctl, world::TickId tick);
 	// Release node reference, destroying it if this was the last one

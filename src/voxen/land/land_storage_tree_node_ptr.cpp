@@ -93,7 +93,7 @@ StorageTreeNodePtr<TNode>::~StorageTreeNodePtr()
 }
 
 template<typename TNode>
-void StorageTreeNodePtr<TNode>::init(const StorageTreeControl& ctl, world::TickId tick, glm::ivec3 min_coord)
+void StorageTreeNodePtr<TNode>::init(const StorageTreeControl& ctl, world::TickId tick, m::int3 min_coord)
 {
 	assert(!m_node);
 

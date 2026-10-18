@@ -63,7 +63,7 @@ public:
 	// if you plan to access many values at once.
 	T load(uint32_t x, uint32_t y, uint32_t z) const noexcept;
 	// Same as `load(pos.x, pos.y, pos.z)`
-	T operator[](glm::uvec3 pos) const noexcept { return load(pos.x, pos.y, pos.z); }
+	T operator[](m::uint3 pos) const noexcept { return load(pos.x, pos.y, pos.z); }
 
 private:
 	struct Leaf {
@@ -126,7 +126,7 @@ public:
 	// if you plan to access many values at once.
 	bool load(uint32_t x, uint32_t y, uint32_t z) const noexcept;
 	// Same as `load(pos.x, pos.y, pos.z)
-	bool operator[](glm::uvec3 pos) { return load(pos.x, pos.y, pos.z); }
+	bool operator[](m::uint3 pos) { return load(pos.x, pos.y, pos.z); }
 
 private:
 	struct Node {

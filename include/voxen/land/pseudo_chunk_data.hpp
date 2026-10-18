@@ -3,8 +3,7 @@
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_fwd.hpp>
 
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <m/vector.hpp>
 
 #include <vector>
 
@@ -15,7 +14,7 @@ class PseudoChunkData {
 public:
 	struct CellEntry {
 		// Cell index (x; y; z), coordinates are in range [0; Consts::CHUNK_SIZE_BLOCKS)
-		glm::u8vec3 cell_index;
+		m::uint8_t3 cell_index;
 		// Mask of "is block solid" bits (1 - solid, 0 - empty) for cell corners, YXZ order.
 		// There are 12 pairs of bits corresponding to 12 cube edges - these pairs will be
 		// examined when generating geometry to evaluate where the surface is crossed.
@@ -26,19 +25,19 @@ public:
 		// ID if its highest bit is zero ([0:2^15) range) or as fixed R5G5B5 color otherwise
 		// ([2^15:2^16) range). Material ID assignment and encoding/decoding of colors is
 		// the responsibility of block registry system, and is not covered here.
-		glm::u16vec4 mat_hist_entries;
+		m::uint16_t4 mat_hist_entries;
 		// Blending weights of `mat_hist_entries` elements, full range [0; 255].
 		// Zero weight means the entry is ignored, it can then contain garbage data.
 		//
 		// While the exact blending process is up to the renderer, these values are
 		// calculated relative to each other - basically they define a weighted sum.
-		glm::u8vec4 mat_hist_weights;
+		m::uint8_t4 mat_hist_weights;
 
 		// "Representative point" of this cell in chunk-local space stored
 		// as 16-bit UNORM values in [0..1] range. This represents an average
 		// of multiple surface points from finer resolution chunks and will
 		// be used to place vertex for this cell when generating geometry.
-		glm::u16vec3 surface_point_unorm;
+		m::uint16_t3 surface_point_unorm;
 		// Number of finer-resolution surface points contributed to `surface_point_unorm`
 		// calculation, clamped to UINT16_MAX. Acts as a weighting factor - during next
 		// aggregations points with larger counts will "drag" the average towards them.
@@ -72,7 +71,7 @@ public:
 
 	// Find `CellEntry` with `cell_index` by binary search.
 	// Returns pointer to this entry or null if it was not found.
-	const CellEntry *findEntry(glm::uvec3 cell_index) const noexcept;
+	const CellEntry *findEntry(m::uint3 cell_index) const noexcept;
 
 	bool empty() const noexcept { return m_cell_entries.empty(); }
 

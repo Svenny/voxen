@@ -3,7 +3,7 @@
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_storage_tree_node_ptr.hpp>
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 #include <atomic>
 #include <cstdint>
@@ -39,7 +39,7 @@ struct DuoctreeNodeBase : NodeBase {
 
 	using ChildItem = StorageTreeNodePtr<TChild>;
 
-	explicit DuoctreeNodeBase(glm::ivec3 min_coord) noexcept : m_key(min_coord, NODE_SCALE_LOG2) {}
+	explicit DuoctreeNodeBase(m::int3 min_coord) noexcept : m_key(min_coord, NODE_SCALE_LOG2) {}
 	DuoctreeNodeBase(DuoctreeNodeBase &&other) = delete;
 	DuoctreeNodeBase(const DuoctreeNodeBase &other) noexcept;
 	DuoctreeNodeBase &operator=(DuoctreeNodeBase &&) = delete;
@@ -84,7 +84,7 @@ struct TriquadtreeNodeBase : NodeBase {
 
 	using ChildItem = StorageTreeNodePtr<TChild>;
 
-	explicit TriquadtreeNodeBase(glm::ivec3 min_coord) noexcept : m_min_x(min_coord.x), m_min_z(min_coord.z) {}
+	explicit TriquadtreeNodeBase(m::int3 min_coord) noexcept : m_min_x(min_coord.x), m_min_z(min_coord.z) {}
 	TriquadtreeNodeBase(TriquadtreeNodeBase &&other) = delete;
 	TriquadtreeNodeBase(const TriquadtreeNodeBase &other) noexcept;
 	TriquadtreeNodeBase &operator=(TriquadtreeNodeBase &&) = delete;
@@ -126,7 +126,7 @@ struct ChunkNode : NodeBase {
 	constexpr static uint32_t TREE_PATH_BYTE = 0;
 	constexpr static bool IS_DUOCTREE_NODE = false;
 
-	explicit ChunkNode(glm::ivec3 min_coord) noexcept : m_key(min_coord, NODE_SCALE_LOG2) {}
+	explicit ChunkNode(m::int3 min_coord) noexcept : m_key(min_coord, NODE_SCALE_LOG2) {}
 	ChunkNode(ChunkNode &&other) = delete;
 	ChunkNode(const ChunkNode &other) = default;
 	ChunkNode &operator=(ChunkNode &&) = delete;

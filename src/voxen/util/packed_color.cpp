@@ -45,30 +45,30 @@ float u8SrgbToFloat(uint8_t v) noexcept
 } // namespace
 
 template<bool Linear>
-PackedColor<Linear>::PackedColor(const glm::vec3 &linear) noexcept : a(255)
+PackedColor<Linear>::PackedColor(const m::float3 &linear) noexcept : a(255)
 {
 	if constexpr (Linear) {
-		r = floatToU8Linear(linear.r);
-		g = floatToU8Linear(linear.g);
-		b = floatToU8Linear(linear.b);
+		r = floatToU8Linear(linear.x);
+		g = floatToU8Linear(linear.y);
+		b = floatToU8Linear(linear.z);
 	} else {
-		r = floatToU8Srgb(linear.r);
-		g = floatToU8Srgb(linear.g);
-		b = floatToU8Srgb(linear.b);
+		r = floatToU8Srgb(linear.x);
+		g = floatToU8Srgb(linear.y);
+		b = floatToU8Srgb(linear.z);
 	}
 }
 
 template<bool Linear>
-PackedColor<Linear>::PackedColor(const glm::vec4 &linear) noexcept : a(floatToU8Linear(linear.a))
+PackedColor<Linear>::PackedColor(const m::float4 &linear) noexcept : a(floatToU8Linear(linear.w))
 {
 	if constexpr (Linear) {
-		r = floatToU8Linear(linear.r);
-		g = floatToU8Linear(linear.g);
-		b = floatToU8Linear(linear.b);
+		r = floatToU8Linear(linear.x);
+		g = floatToU8Linear(linear.y);
+		b = floatToU8Linear(linear.z);
 	} else {
-		r = floatToU8Srgb(linear.r);
-		g = floatToU8Srgb(linear.g);
-		b = floatToU8Srgb(linear.b);
+		r = floatToU8Srgb(linear.x);
+		g = floatToU8Srgb(linear.y);
+		b = floatToU8Srgb(linear.z);
 	}
 }
 
@@ -87,7 +87,7 @@ PackedColor<Linear>::PackedColor(const PackedColor<!Linear> &other) noexcept : a
 }
 
 template<bool Linear>
-glm::vec3 PackedColor<Linear>::toVec3() const noexcept
+m::float3 PackedColor<Linear>::toVec3() const noexcept
 {
 	if (Linear) {
 		return { u8LinearToFloat(r), u8LinearToFloat(g), u8LinearToFloat(b) };
@@ -97,7 +97,7 @@ glm::vec3 PackedColor<Linear>::toVec3() const noexcept
 }
 
 template<bool Linear>
-glm::vec4 PackedColor<Linear>::toVec4() const noexcept
+m::float4 PackedColor<Linear>::toVec4() const noexcept
 {
 	if (Linear) {
 		return { u8LinearToFloat(r), u8LinearToFloat(g), u8LinearToFloat(b), u8LinearToFloat(a) };

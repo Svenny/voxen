@@ -16,7 +16,7 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 
-#include <glm/gtc/packing.hpp>
+#include <m/packing.hpp>
 
 #include <vma/vk_mem_alloc.h>
 
@@ -175,9 +175,9 @@ std::vector<FontRenderer::GlyphCommand> FontRenderer::getGlyphCommands(std::span
 	std::vector<GlyphCommand> cmds;
 
 	for (const TextItem &item : text_items) {
-		const glm::u8vec4 color_srgb(item.color.r, item.color.g, item.color.b, item.color.a);
+		const m::uint8_t4 color_srgb(item.color.r, item.color.g, item.color.b, item.color.a);
 
-		glm::vec2 screen_pos = item.origin_screen;
+		m::float2 screen_pos = item.origin_screen;
 
 		for (char c : item.text) {
 			if (c == '\n') {
@@ -191,14 +191,14 @@ std::vector<FontRenderer::GlyphCommand> FontRenderer::getGlyphCommands(std::span
 				continue;
 			}
 
-			constexpr glm::vec2 UV_SCALER = 1.0f / glm::vec2(FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT);
+			constexpr m::float2 UV_SCALER = 1.0f / m::float2(FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT);
 			const GlyphInfo &info = GLYPH_INFOS[c - MIN_RENDERABLE_CHAR];
 
 			GlyphCommand &cmd = cmds.emplace_back();
-			cmd.up_left_pos = screen_pos + glm::vec2(info.bearing_x, FONT_ASCENT - info.bearing_y) * m_font_scaling;
-			cmd.lo_right_pos = cmd.up_left_pos + glm::vec2(info.width, info.height) * m_font_scaling;
-			cmd.up_left_uv = glm::vec2(info.atlas_x, info.atlas_y) * UV_SCALER;
-			cmd.lo_right_uv = glm::vec2(info.atlas_x + info.width, info.atlas_y + info.height) * UV_SCALER;
+			cmd.up_left_pos = screen_pos + m::float2(info.bearing_x, FONT_ASCENT - info.bearing_y) * m_font_scaling;
+			cmd.lo_right_pos = cmd.up_left_pos + m::float2(info.width, info.height) * m_font_scaling;
+			cmd.up_left_uv = m::float2(info.atlas_x, info.atlas_y) * UV_SCALER;
+			cmd.lo_right_uv = m::float2(info.atlas_x + info.width, info.atlas_y + info.height) * UV_SCALER;
 			cmd.color_srgb = color_srgb;
 
 			screen_pos.x += info.advance_x * m_font_scaling;
@@ -208,7 +208,7 @@ std::vector<FontRenderer::GlyphCommand> FontRenderer::getGlyphCommands(std::span
 	return cmds;
 }
 
-void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> text_items, glm::vec2 inv_screen_size)
+void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> text_items, m::float2 inv_screen_size)
 {
 	auto font_cmds = getGlyphCommands(text_items);
 
@@ -264,8 +264,7 @@ void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> tex
 
 	ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		legacy_backend.pipelineCollection()[client::vulkan::PipelineCollection::UI_FONT_PIPELINE]);
-	ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec2),
-		glm::value_ptr(inv_screen_size));
+	ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2), &inv_screen_size);
 	ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, std::size(descriptors),
 		descriptors);
 	ddt.vkCmdDraw(cmd_buf, 6, uint32_t(font_cmds.size()), 0, 0);

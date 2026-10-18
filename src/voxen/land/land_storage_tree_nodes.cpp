@@ -89,8 +89,7 @@ void *DuoctreeNodeBase<TChild>::access(const StorageTreeControl &ctl, uint64_t t
 
 	ChildItem &child = *constructItem(storage_index, after_count);
 
-	glm::ivec3 child_min_coord = StorageTreeUtils::calcDuoctreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_key,
-		my_component);
+	m::int3 child_min_coord = StorageTreeUtils::calcDuoctreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_key, my_component);
 
 	try {
 		child.init(ctl, tick, child_min_coord);
@@ -276,8 +275,8 @@ void *TriquadtreeNodeBase<HILO, TChild>::access(const StorageTreeControl &ctl, u
 
 	ChildItem &child = *constructItem(storage_index, after_count);
 
-	glm::ivec3 child_min_coord = StorageTreeUtils::calcTriquadtreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_min_x,
-		m_min_z, my_component);
+	m::int3 child_min_coord = StorageTreeUtils::calcTriquadtreeChildMinCoord<TChild::NODE_SIZE_CHUNKS>(m_min_x, m_min_z,
+		my_component);
 
 	try {
 		child.init(ctl, tick, child_min_coord);

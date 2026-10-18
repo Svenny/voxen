@@ -11,17 +11,17 @@ namespace
 
 static_assert(Consts::CHUNK_SIZE_BLOCKS == 32, "CompressedChunkStorage is hardcoded for 32-chunks");
 
-glm::uvec3 nodeBaseOffset(uint32_t i) noexcept
+m::uint3 nodeBaseOffset(uint32_t i) noexcept
 {
 	// Node bases are aligned to 8 blocks (3 binary zeros)
-	glm::uvec3 res;
+	m::uint3 res;
 	res.x = (i & 0b001100) << 1;
 	res.y = (i & 0b110000) >> 1;
 	res.z = (i & 0b000011) << 3;
 	return res;
 }
 
-glm::uvec3 leafBaseOffset(glm::uvec3 base, uint32_t i) noexcept
+m::uint3 leafBaseOffset(m::uint3 base, uint32_t i) noexcept
 {
 	// Leaf bases are aligned to 2 blocks (1 binary zero)
 	base.x += (i & 0b001100) >> 1;
@@ -36,7 +36,7 @@ template<typename T>
 CompressedChunkStorage<T>::CompressedChunkStorage(ConstExpandedView expanded)
 {
 	auto construct_node = [&](uint32_t index, Node &output) {
-		const glm::uvec3 node_base = nodeBaseOffset(index);
+		const m::uint3 node_base = nodeBaseOffset(index);
 
 		Leaf leaves[64];
 
@@ -237,7 +237,7 @@ void CompressedChunkStorage<T>::expand(CubeArrayView<T, Consts::CHUNK_SIZE_BLOCK
 	const Node *node = m_nodes.get();
 
 	for (uint32_t i = 0; i < 64; i++) {
-		glm::uvec3 base = nodeBaseOffset(i);
+		m::uint3 base = nodeBaseOffset(i);
 
 		auto out_node_view = view.template view<8>(base);
 
@@ -257,7 +257,7 @@ void CompressedChunkStorage<T>::expand(CubeArrayView<T, Consts::CHUNK_SIZE_BLOCK
 		const T *uniform_leaf = (nonuniform_leaf + std::popcount(nonuniform_mask))->data;
 
 		for (uint32_t j = 0; j < 64; j++) {
-			glm::uvec3 leaf_base = leafBaseOffset(base, j);
+			m::uint3 leaf_base = leafBaseOffset(base, j);
 
 			auto out_leaf_view = view.template view<2>(leaf_base);
 
@@ -408,11 +408,11 @@ void CompressedChunkStorage<bool>::expand(ExpandedView expanded) const noexcept
 	const Node *node = m_nodes.get();
 
 	for (uint32_t i = 0; i < 64; i++) {
-		glm::uvec3 base = nodeBaseOffset(i);
+		m::uint3 base = nodeBaseOffset(i);
 		uint64_t i_bit = uint64_t(1) << i;
 
 		if (!(m_nonuniform_node_mask & i_bit)) {
-			expanded.fill(base, glm::uvec3(8), !!(m_uniform_value_mask & i_bit));
+			expanded.fill(base, m::uint3(8), !!(m_uniform_value_mask & i_bit));
 			continue;
 		}
 
@@ -421,7 +421,7 @@ void CompressedChunkStorage<bool>::expand(ExpandedView expanded) const noexcept
 			for (uint32_t x = base.x; x <= base.x + 8; x++) {
 				// TODO: optimize: uint64_t(mask) -> spread bits to bytes -> store 8 bools at once
 				for (uint32_t z = base.z; z <= base.z + 8; z++) {
-					expanded[glm::uvec3(x, y, z)] = !!(node->m_leaf_mask[j / 8] & (1u << j));
+					expanded[m::uint3(x, y, z)] = !!(node->m_leaf_mask[j / 8] & (1u << j));
 					j++;
 				}
 			}

@@ -6,7 +6,7 @@
 
 #include <extras/pimpl.hpp>
 
-#include <glm/vec2.hpp>
+#include <m/vector.hpp>
 
 namespace voxen::gfx::ui
 {
@@ -28,7 +28,7 @@ class UiSystem {
 public:
 	struct PerFrameData {
 		Resolution window_resolution;
-		glm::dvec2 cursor_position;
+		m::double2 cursor_position;
 		bool left_button_pressed;
 	};
 

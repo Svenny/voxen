@@ -8,12 +8,12 @@
 namespace voxen::land::StorageTreeUtils
 {
 
-inline glm::ivec3 calcRootItemMinCoord(uint32_t index) noexcept
+inline m::int3 calcRootItemMinCoord(uint32_t index) noexcept
 {
 	uint32_t min_x_unshifted = index / Consts::STORAGE_TREE_ROOT_ITEMS_Z * Consts::STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS;
 	uint32_t min_z_unshifted = index % Consts::STORAGE_TREE_ROOT_ITEMS_Z * Consts::STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS;
 
-	glm::ivec3 min_coord(min_x_unshifted, Consts::MIN_WORLD_Y_CHUNK, min_z_unshifted);
+	m::int3 min_coord(int32_t(min_x_unshifted), Consts::MIN_WORLD_Y_CHUNK, int32_t(min_z_unshifted));
 	min_coord.x += Consts::MIN_UNIQUE_WORLD_X_CHUNK;
 	min_coord.z += Consts::MIN_UNIQUE_WORLD_Z_CHUNK;
 
@@ -26,9 +26,9 @@ inline bool triquadtreeYNegative(uint64_t path_component) noexcept
 }
 
 template<int32_t CHILD_SIZE>
-inline glm::ivec3 calcTriquadtreeChildMinCoord(int32_t min_x, int32_t min_z, uint64_t path_component) noexcept
+inline m::int3 calcTriquadtreeChildMinCoord(int32_t min_x, int32_t min_z, uint64_t path_component) noexcept
 {
-	glm::ivec3 coord(min_x, 0, min_z);
+	m::int3 coord(min_x, 0, min_z);
 	if (triquadtreeYNegative(path_component)) {
 		coord.y = -CHILD_SIZE;
 	}
@@ -43,9 +43,9 @@ inline glm::ivec3 calcTriquadtreeChildMinCoord(int32_t min_x, int32_t min_z, uin
 }
 
 template<int32_t CHILD_SIZE>
-inline glm::ivec3 calcDuoctreeChildMinCoord(ChunkKey key, uint64_t path_component) noexcept
+inline m::int3 calcDuoctreeChildMinCoord(ChunkKey key, uint64_t path_component) noexcept
 {
-	glm::ivec3 coord = key.base();
+	m::int3 coord = key.base();
 
 	// Inverse Morton order of X/Y/Z bits. Could do that with PEXT as well.
 	uint64_t cx = ((path_component & 0b010000) >> 3) | ((path_component & 0b010) >> 1);

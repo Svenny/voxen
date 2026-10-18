@@ -207,9 +207,9 @@ ContainerImpl &UiSystemImpl::pushContainer(DivSetup setup)
 		if (iter != m_prev_frame_containers.end() && iter->id == container.id) {
 			// Found this container in the previous frame.
 			// Check its calculated layout against the current mouse position.
-			glm::vec2 cur_mouse = m_this_frame_data.cursor_position;
-			glm::vec2 pos_min { iter->x, iter->y };
-			glm::vec2 pos_max { iter->x + iter->width, iter->y + iter->height };
+			m::float2 cur_mouse(m_this_frame_data.cursor_position);
+			m::float2 pos_min { iter->x, iter->y };
+			m::float2 pos_max { iter->x + iter->width, iter->y + iter->height };
 			if (cur_mouse.x >= pos_min.x && cur_mouse.y >= pos_min.y && cur_mouse.x <= pos_max.x
 				&& cur_mouse.y <= pos_max.y) {
 				// TODO: we ignore stack layouts, multiple items can be hovered at once.
@@ -314,8 +314,8 @@ RenderData UiSystemImpl::endFrame()
 	RenderListBuilder render_list_builder(*m_scratch, m_prev_frame_render_data_rectangles);
 	m_prev_frame_render_data_rectangles = 0;
 
-	uint32_t root_item_id = render_list_builder.addItem(glm::vec2(0, 0),
-		glm::vec2(m_root_container->width, m_root_container->height));
+	uint32_t root_item_id = render_list_builder.addItem(m::float2(0, 0),
+		m::float2(m_root_container->width, m_root_container->height));
 
 	scratch_vector<std::pair<ContainerImpl *, uint32_t>> dfs(*m_scratch);
 	// Estimate the maximal container stack depth
@@ -344,14 +344,14 @@ RenderData UiSystemImpl::endFrame()
 			float inner_width = container->width - container->layout.padding.left - container->layout.padding.right;
 			float inner_height = container->height - container->layout.padding.top - container->layout.padding.bottom;
 
-			glm::vec2 min(container->x + container->layout.padding.left, container->y + container->layout.padding.top);
-			glm::vec2 max = min + glm::vec2(inner_width, inner_height);
+			m::float2 min(container->x + container->layout.padding.left, container->y + container->layout.padding.top);
+			m::float2 max = min + m::float2(inner_width, inner_height);
 			item_id = render_list_builder.addItem(min, max);
 		}
 
 		if (container->rectangle.color.a != 0) {
-			glm::vec2 min(container->x, container->y);
-			glm::vec2 max = min + glm::vec2(container->width, container->height);
+			m::float2 min(container->x, container->y);
+			m::float2 max = min + m::float2(container->width, container->height);
 			render_list_builder.addRectangle(min, max, container->rectangle.color, parent_item_id);
 			m_prev_frame_render_data_rectangles++;
 		}

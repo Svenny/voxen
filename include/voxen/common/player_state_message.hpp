@@ -2,8 +2,7 @@
 
 #include <voxen/svc/message_types.hpp>
 
-#include <glm/gtc/quaternion.hpp>
-#include <glm/vec3.hpp>
+#include <m/quaternion.hpp>
 
 namespace voxen
 {
@@ -13,8 +12,8 @@ struct PlayerStateMessage {
 	constexpr static UID MESSAGE_UID = UID("55503c30-3aa166ee-62fe1b53-718fde15");
 	constexpr static svc::MessageClass MESSAGE_CLASS = svc::MessageClass::Unicast;
 
-	glm::dvec3 player_position = {};
-	glm::dquat player_orientation = glm::identity<glm::dquat>();
+	m::double3 player_position;
+	m::dquat player_orientation;
 
 	bool lock_chunk_loading_position = false;
 };

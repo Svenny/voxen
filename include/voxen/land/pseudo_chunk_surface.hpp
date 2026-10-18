@@ -2,9 +2,7 @@
 
 #include <voxen/land/land_fwd.hpp>
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <m/vector.hpp>
 
 #include <cstdint>
 #include <span>
@@ -18,7 +16,7 @@ struct PseudoSurfaceVertexPosition {
 	// Vertex position in "extended" chunk-local space to allow
 	// going slightly out of chunk bounds for stitching/skirting.
 	// After UNORM unpacking expand it into [-0.125:1.125] range.
-	glm::u16vec3 position_unorm;
+	m::uint16_t3 position_unorm;
 };
 
 // TODO: move this struct to gfx codegen definitions
@@ -27,7 +25,7 @@ struct PseudoSurfaceVertexAttributes {
 	// Octahedral method is taken from paper "A Survey of Efficient Representations for Independent Unit Vectors":
 	// http://jcgt.org/published/0003/02/01/paper.pdf
 	// The only difference is that Y and Z axes are swapped in this implementation.
-	glm::i16vec2 normal_oct_snorm;
+	m::int16_t2 normal_oct_snorm;
 	// Material histogram (MatHist) stores up to 4 materials with the "highest presence"
 	// in this vertex. This attribute is guaranteed to be the same for all three vertices
 	// comprising a triangle.
@@ -35,13 +33,13 @@ struct PseudoSurfaceVertexAttributes {
 	// bit is zero ([0:2^15) range) or as fixed R5G5B5 color otherwise ([2^15:2^16) range).
 	// Material ID assignment and encoding/decoding of colors is the responsibility
 	// of block registry system, and is not covered here.
-	glm::u16vec4 mat_hist_entries;
+	m::uint16_t4 mat_hist_entries;
 	// Blending weights of `mat_hist_entries` elements, full range [0; 255].
 	// Zero weight means the entry is ignored, it can then contain garbage data.
 	//
 	// While the exact blending process is up to the renderer, these values are
 	// calculated relative to each other - basically they define a weighted sum.
-	glm::u8vec4 mat_hist_weights;
+	m::uint8_t4 mat_hist_weights;
 };
 
 class PseudoChunkSurface {

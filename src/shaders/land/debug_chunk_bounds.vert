@@ -13,7 +13,7 @@ struct DrawCommand {
 };
 
 layout(set = 0, binding = 0, std140) uniform CameraParameters {
-	mat4 translated_world_to_clip;
+	layout(row_major) mat4 translated_world_to_clip;
 	vec3 world_position; float _pad0;
 } g_ubo_cam_params;
 

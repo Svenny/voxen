@@ -59,7 +59,7 @@ private:
 	// threads simultaneously. Therefore this pointer is atomic.
 	std::atomic<std::shared_ptr<State>> m_last_state_ptr;
 
-	glm::dvec3 m_chunk_loading_position = {};
+	m::double3 m_chunk_loading_position = {};
 	State *m_next_state = nullptr;
 
 	svc::MessageQueue m_message_queue;

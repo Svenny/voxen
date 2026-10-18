@@ -14,7 +14,7 @@ RenderListBuilder::RenderListBuilder(ScratchMemoryAllocatorScope &scratch, size_
 	m_indices.reserve(6 * items_estimate);
 }
 
-uint32_t RenderListBuilder::addItem(glm::vec2 min, glm::vec2 max)
+uint32_t RenderListBuilder::addItem(m::float2 min, m::float2 max)
 {
 	uint32_t index = static_cast<uint32_t>(m_per_item_datas.size());
 
@@ -26,7 +26,7 @@ uint32_t RenderListBuilder::addItem(glm::vec2 min, glm::vec2 max)
 	return index;
 }
 
-void RenderListBuilder::addRectangle(glm::vec2 min, glm::vec2 max, PackedColorSrgb color, uint32_t item_id)
+void RenderListBuilder::addRectangle(m::float2 min, m::float2 max, PackedColorSrgb color, uint32_t item_id)
 {
 	using IDT = RenderData::IndexType;
 
@@ -48,10 +48,10 @@ void RenderListBuilder::addRectangle(glm::vec2 min, glm::vec2 max, PackedColorSr
 	vd.position = min;
 	m_vertices.emplace_back(vd);
 
-	vd.position = glm::vec2(min.x, max.y);
+	vd.position = m::float2(min.x, max.y);
 	m_vertices.emplace_back(vd);
 
-	vd.position = glm::vec2(max.x, min.y);
+	vd.position = m::float2(max.x, min.y);
 	m_vertices.emplace_back(vd);
 
 	vd.position = max;

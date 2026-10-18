@@ -3,7 +3,7 @@
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/util/packed_color.hpp>
 
-#include <glm/vec2.hpp>
+#include <m/vector.hpp>
 
 #include <memory>
 #include <span>
@@ -18,16 +18,16 @@ namespace voxen::gfx
 class FontRenderer {
 public:
 	struct GlyphCommand {
-		glm::vec2 up_left_pos;
-		glm::vec2 lo_right_pos;
-		glm::vec2 up_left_uv;
-		glm::vec2 lo_right_uv;
-		glm::u8vec4 color_srgb;
+		m::float2 up_left_pos;
+		m::float2 lo_right_pos;
+		m::float2 up_left_uv;
+		m::float2 lo_right_uv;
+		m::uint8_t4 color_srgb;
 	};
 
 	struct TextItem {
 		std::string_view text;
-		glm::vec2 origin_screen;
+		m::float2 origin_screen;
 		PackedColorSrgb color;
 	};
 
@@ -40,7 +40,7 @@ public:
 
 	void loadResources();
 	std::vector<GlyphCommand> getGlyphCommands(std::span<const TextItem> text_items);
-	void drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> text_items, glm::vec2 inv_screen_size);
+	void drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> text_items, m::float2 inv_screen_size);
 
 private:
 	struct Resources;

@@ -11,19 +11,66 @@
 #include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
-#include <extras/math.hpp>
+#include <m/m.hpp>
+
+#include <cmath>
 
 namespace voxen
 {
 
+namespace
+{
+
+// Reversed-Z projection: near plane maps to depth 1, far plane to 0
+m::float4x4 perspective(double fovx, double fovy, double znear, double zfar) noexcept
+{
+	const float x = float(1.0 / std::tan(fovx * 0.5));
+	const float y = float(1.0 / std::tan(fovy * 0.5));
+	const float z = float(-znear / (zfar - znear));
+	const float w = float((znear * zfar) / (zfar - znear));
+	return {
+		{ x, 0, 0, 0 },
+		{ 0, y, 0, 0 },
+		{ 0, 0, z, w },
+		{ 0, 0, 1, 0 },
+	};
+}
+
+// View space is X right, Y down (Vulkan clip space has Y down), Z forward
+m::float4x4 lookAt(const m::double3& pos, const m::double3& forward, const m::double3& up) noexcept
+{
+	const m::float3 p(pos);
+	const m::float3 f(forward);
+	const m::float3 u(up);
+	const m::float3 s = m::cross(u, f);
+	return {
+		{ s.x, s.y, s.z, -m::dot(p, s) },
+		{ -u.x, -u.y, -u.z, m::dot(p, u) },
+		{ f.x, f.y, f.z, -m::dot(p, f) },
+		{ 0, 0, 0, 1 },
+	};
+}
+
+m::dquat quatFromEulerAngles(double pitch, double yaw, double roll) noexcept
+{
+	const m::double3 half_angles(pitch * 0.5, yaw * 0.5, roll * 0.5);
+	const m::double3 c = m::cos(half_angles);
+	const m::double3 s = m::sin(half_angles);
+
+	return m::dquat(m::double4(s.x * c.y * c.z - c.x * s.y * s.z, c.x * s.y * c.z + s.x * c.y * s.z,
+		c.x * c.y * s.z - s.x * s.y * c.z, c.x * c.y * c.z + s.x * s.y * s.z));
+}
+
+} // namespace
+
 GameView::GameView(os::GlfwWindow& window) : m_window(window)
 {
 	auto window_size = window.windowSize();
-	m_window_size = glm::dvec2(window_size.width, window_size.height);
+	m_window_size = m::double2(window_size.width, window_size.height);
 
 	m_prev_cursor_pos = window.cursorPos();
 
-	m_fov_y = glm::radians(70.0);
+	m_fov_y = m::radians(70.0);
 	double tan_half_fovy = std::tan(m_fov_y / 2.0);
 	double aspect = m_window_size.x / m_window_size.y;
 	m_fov_x = 2.0 * std::atan(aspect * tan_half_fovy);
@@ -43,9 +90,9 @@ void voxen::GameView::init(const voxen::Player& player) noexcept
 {
 	m_local_player = player;
 
-	m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-	m_tr_world_to_view = extras::lookAt(glm::dvec3(0), player.lookVector(), player.upVector());
-	m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
+	m_view_to_clip = perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+	m_tr_world_to_view = lookAt(m::double3(0), player.lookVector(), player.upVector());
+	m_tr_world_to_clip = m::mul(m_view_to_clip, m_tr_world_to_view);
 
 	resetKeyState();
 }
@@ -142,23 +189,9 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 	}
 }
 
-static glm::dquat quatFromEulerAngles(double pitch, double yaw, double roll) noexcept
-{
-	glm::dvec3 eulerAngle(pitch * 0.5, yaw * 0.5, roll * 0.5);
-	glm::dvec3 c = glm::cos(eulerAngle);
-	glm::dvec3 s = glm::sin(eulerAngle);
-
-	glm::dquat res;
-	res.w = c.x * c.y * c.z + s.x * s.y * s.z;
-	res.x = s.x * c.y * c.z - c.x * s.y * s.z;
-	res.y = c.x * s.y * c.z + s.x * c.y * s.z;
-	res.z = c.x * c.y * s.z - s.x * s.y * c.z;
-	return res;
-}
-
 bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 {
-	m_newest_cursor_pos = glm::dvec2(xpos, ypos);
+	m_newest_cursor_pos = m::double2(xpos, ypos);
 	return true;
 }
 
@@ -184,8 +217,8 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 			m_is_used_orientation_cursor = false;
 		}
 
-		glm::dvec3 move_forward_direction { 0.0 };
-		glm::dvec3 move_strafe_direction { 0.0 };
+		m::double3 move_forward_direction;
+		m::double3 move_strafe_direction;
 
 		if (m_previous_tick_id < tick_id) {
 			// TODO: there might be a divergence between client and server.
@@ -241,16 +274,16 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 
 		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
 
-		glm::dvec3 new_position = m_local_player.position();
+		m::double3 new_position = m_local_player.position();
 		new_position += move_forward_direction * m_forward_speed;
 		new_position += move_strafe_direction * m_strafe_speed;
 
-		glm::dquat new_orientation = glm::normalize(rotQuat * m_local_player.orientation());
+		m::dquat new_orientation = m::normalize(m::mul(rotQuat, m_local_player.orientation()));
 		m_local_player.updateState(new_position, new_orientation);
 
-		m_view_to_clip = extras::perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-		m_tr_world_to_view = extras::lookAt(glm::dvec3(0), m_local_player.lookVector(), m_local_player.upVector());
-		m_tr_world_to_clip = m_view_to_clip * m_tr_world_to_view;
+		m_view_to_clip = perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
+		m_tr_world_to_view = lookAt(m::double3(0), m_local_player.lookVector(), m_local_player.upVector());
+		m_tr_world_to_clip = m::mul(m_view_to_clip, m_tr_world_to_view);
 
 		m_previous_tick_id = tick_id;
 	}
@@ -258,7 +291,7 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 	if (m_block_modify_requested) {
 		m_block_modify_requested = false;
 
-		glm::ivec3 position = modifyTargetBlockCoord();
+		m::int3 position = modifyTargetBlockCoord();
 		land::Chunk::BlockId new_block = m_current_block_id;
 
 		msend.send<land::BlockEditMessage>(land::LandService::SERVICE_UID, position, new_block);
@@ -272,9 +305,10 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 	msend.send<PlayerStateMessage>(world::ControlService::SERVICE_UID, message);
 }
 
-glm::ivec3 GameView::modifyTargetBlockCoord() const noexcept
+m::int3 GameView::modifyTargetBlockCoord() const noexcept
 {
-	return (m_local_player.position() + 5.0 * m_local_player.lookVector()) / land::Consts::BLOCK_SIZE_METRES;
+	const m::double3 target = m_local_player.position() + 5.0 * m_local_player.lookVector();
+	return m::int3(m::floor(target / land::Consts::BLOCK_SIZE_METRES));
 }
 
 } // namespace voxen

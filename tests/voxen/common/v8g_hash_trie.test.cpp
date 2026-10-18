@@ -28,8 +28,8 @@ TEST_CASE("'V8gHashTrie' sanity check", "[voxen::v8g_hash_trie]")
 {
 	V8gHashTrie<land::ChunkKey, std::string> vht;
 
-	land::ChunkKey ck1(glm::ivec3(0, 0, 0));
-	land::ChunkKey ck2(glm::ivec3(0, 0, 0), 1);
+	land::ChunkKey ck1(m::int3(0, 0, 0));
+	land::ChunkKey ck2(m::int3(0, 0, 0), 1);
 	vht.insert(10, ck1, vht.makeValuePtr("lol"));
 	vht.insert(10, ck2, vht.makeValuePtr("kek"));
 

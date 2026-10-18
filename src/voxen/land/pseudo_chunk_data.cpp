@@ -7,7 +7,7 @@
 
 #include "land_geometry_utils_private.hpp"
 
-#include <glm/gtc/packing.hpp>
+#include <m/packing.hpp>
 
 namespace voxen::land
 {
@@ -20,15 +20,15 @@ namespace
 {
 
 // Chunk-local coordinate space adjustments for finer LOD cells, see `generateFromFinerLod`
-constexpr glm::vec3 FINER_SURFACE_POINT_ADJUSTMENT[8] = {
-	glm::vec3(0.0f, 0.0f, 0.0f),
-	glm::vec3(0.0f, 0.0f, 0.5f),
-	glm::vec3(0.5f, 0.0f, 0.0f),
-	glm::vec3(0.5f, 0.0f, 0.5f),
-	glm::vec3(0.0f, 0.5f, 0.0f),
-	glm::vec3(0.0f, 0.5f, 0.5f),
-	glm::vec3(0.5f, 0.5f, 0.0f),
-	glm::vec3(0.5f, 0.5f, 0.5f),
+constexpr m::float3 FINER_SURFACE_POINT_ADJUSTMENT[8] = {
+	m::float3(0.0f, 0.0f, 0.0f),
+	m::float3(0.0f, 0.0f, 0.5f),
+	m::float3(0.5f, 0.0f, 0.0f),
+	m::float3(0.5f, 0.0f, 0.5f),
+	m::float3(0.0f, 0.5f, 0.0f),
+	m::float3(0.0f, 0.5f, 0.5f),
+	m::float3(0.5f, 0.5f, 0.0f),
+	m::float3(0.5f, 0.5f, 0.5f),
 };
 
 bool isBlockSolid(Chunk::BlockId block_id) noexcept
@@ -90,7 +90,7 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 		const uint32_t add_y = (i & 0b100) ? B : 0;
 		const uint32_t add_z = (i & 0b001) ? B : 0;
 
-		chunk->blockIds().expand(expanded_ids->view<B>(glm::uvec3(add_x, add_y, add_z)));
+		chunk->blockIds().expand(expanded_ids->view<B>(m::uint3(add_x, add_y, add_z)));
 	}
 
 	// Other chunks need a few blocks, gather them directly.
@@ -119,11 +119,11 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 	expanded_ids->store(B2, B2, B2, chunks[26]->blockIds().load(0, 0, 0));
 
 	std::vector<SurfaceMatHistEntry> material_histogram;
-	glm::vec4 surface_point_weighted_sum;
+	m::float4 surface_point_weighted_sum;
 
 	// Attempts to add an edge from 3x3x3 cell into the solver/histogram.
 	// Don't forget to reset their states before moving to the next cell.
-	auto try_add_edge = [&](Chunk::BlockId lower, Chunk::BlockId upper, glm::uvec3 edge_lower_coord_2x, int axis) {
+	auto try_add_edge = [&](Chunk::BlockId lower, Chunk::BlockId upper, m::uint3 edge_lower_coord_2x, int axis) {
 		bool lower_solid = isBlockSolid(lower);
 		bool upper_solid = isBlockSolid(upper);
 
@@ -131,12 +131,12 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 			return;
 		}
 
-		glm::uvec3 surface_point_coord_2x = edge_lower_coord_2x;
+		m::uint3 surface_point_coord_2x = edge_lower_coord_2x;
 		// Surface point is at the "upper" end of the edge regardless of which block is solid
-		surface_point_coord_2x[axis]++;
+		surface_point_coord_2x[size_t(axis)]++;
 
-		glm::vec3 surface_point = glm::vec3(surface_point_coord_2x) * (0.5f / float(Consts::CHUNK_SIZE_BLOCKS));
-		surface_point_weighted_sum += glm::vec4(surface_point, 1.0f);
+		m::float3 surface_point = m::float3(surface_point_coord_2x) * (0.5f / float(Consts::CHUNK_SIZE_BLOCKS));
+		surface_point_weighted_sum += m::float4(surface_point, 1.0f);
 
 		uint16_t color = TempBlockMeta::packColor555(TempBlockMeta::BLOCK_FIXED_COLOR[lower_solid ? lower : upper]);
 		detail::GeometryUtils::addMatHistEntry(material_histogram, SurfaceMatHistEntry { color, 255 });
@@ -147,7 +147,7 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 	// Now collect "Hermite data" by iterating over 3x3x3 cells.
 	// Every such cell might produce one output cell.
 	Utils::forYXZ<B>([&](uint32_t x, uint32_t y, uint32_t z) {
-		const glm::uvec3 cell_base_coord_2x = 2u * glm::uvec3(x, y, z);
+		const m::uint3 cell_base_coord_2x = 2u * m::uint3(x, y, z);
 
 		// We have 3x3x3 block ID grid.
 		// Only 8 corner blocks will determine if the generated cell crosses the surface.
@@ -172,11 +172,11 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 
 		// Reset states from previous cell aggregation
 		material_histogram.clear();
-		surface_point_weighted_sum = glm::vec4(0.0f);
+		surface_point_weighted_sum = m::float4(0.0f);
 
 		Utils::forYXZ<3>([&](uint32_t ax, uint32_t ay, uint32_t az) {
 			const Chunk::BlockId lower_block = cell_blocks.data[ay][ax][az];
-			const glm::uvec3 edge_lower_coord_2x = cell_base_coord_2x + glm::uvec3(ax, ay, az);
+			const m::uint3 edge_lower_coord_2x = cell_base_coord_2x + m::uint3(ax, ay, az);
 
 			if (ax + 1 < 3) {
 				try_add_edge(lower_block, cell_blocks.data[ay][ax + 1][az], edge_lower_coord_2x, 0);
@@ -195,13 +195,13 @@ void PseudoChunkData::generateFromLod0(std::span<const Chunk *const, 27> chunks)
 		// Because of `forYXZ` we will store produced entries already sorted in the required order.
 		CellEntry &out_cell_entry = m_cell_entries.emplace_back();
 
-		out_cell_entry.cell_index = glm::u8vec3(x, y, z);
+		out_cell_entry.cell_index = m::uint8_t3(uint8_t(x), uint8_t(y), uint8_t(z));
 		out_cell_entry.corner_solid_mask = solid_mask;
 
 		detail::GeometryUtils::resolveMatHist(material_histogram, out_cell_entry);
 
-		glm::vec3 surface_point = glm::vec3(surface_point_weighted_sum) / surface_point_weighted_sum.w;
-		out_cell_entry.surface_point_unorm = glm::packUnorm<uint16_t>(surface_point);
+		m::float3 surface_point = surface_point_weighted_sum.xyz() / surface_point_weighted_sum.w;
+		out_cell_entry.surface_point_unorm = m::packUnorm<uint16_t>(surface_point);
 		out_cell_entry.surface_point_sum_count = static_cast<uint16_t>(std::min(surface_point_weighted_sum.w, 65535.0f));
 	});
 }
@@ -211,12 +211,12 @@ void PseudoChunkData::generateFromFinerLod(std::span<const PseudoChunkData *cons
 	constexpr uint32_t B = Consts::CHUNK_SIZE_BLOCKS;
 
 	std::vector<SurfaceMatHistEntry> material_histogram;
-	glm::vec4 surface_point_weighted_sum;
+	m::float4 surface_point_weighted_sum;
 
 	// Iterate over all possible output cells, generating them as needed in order.
 	// XXX: this is quite inefficient if finer resolution data has just a few cells filled.
 	Utils::forYXZ<B>([&](uint32_t x, uint32_t y, uint32_t z) {
-		const glm::uvec3 cell_base_coord_2x = 2u * glm::uvec3(x, y, z);
+		const m::uint3 cell_base_coord_2x = 2u * m::uint3(x, y, z);
 
 		// Aggregation of `corner_solid_mask`s of finer cells
 		uint8_t solid_mask = 0;
@@ -225,11 +225,11 @@ void PseudoChunkData::generateFromFinerLod(std::span<const PseudoChunkData *cons
 
 		// Reset states from previous cell aggregation
 		material_histogram.clear();
-		surface_point_weighted_sum = glm::vec4(0.0f);
+		surface_point_weighted_sum = m::float4(0.0f);
 
 		// Collect finer resolution data from 2x2x2 cells
 		for (size_t i = 0; i < 8; i++) {
-			glm::uvec3 search_coord = cell_base_coord_2x;
+			m::uint3 search_coord = cell_base_coord_2x;
 			if (i & 0b001) {
 				search_coord.z++;
 			}
@@ -261,11 +261,11 @@ void PseudoChunkData::generateFromFinerLod(std::span<const PseudoChunkData *cons
 
 			detail::GeometryUtils::addMatHistEntry(material_histogram, *finer_cell);
 
-			glm::vec3 surface_point = glm::unpackUnorm<float>(finer_cell->surface_point_unorm);
+			m::float3 surface_point = m::unpackUnorm<float>(finer_cell->surface_point_unorm);
 			surface_point = surface_point * 0.5f + FINER_SURFACE_POINT_ADJUSTMENT[finer_index];
 
 			float surface_point_weight = static_cast<float>(finer_cell->surface_point_sum_count);
-			surface_point_weighted_sum += glm::vec4(surface_point * surface_point_weight, surface_point_weight);
+			surface_point_weighted_sum += m::float4(surface_point * surface_point_weight, surface_point_weight);
 
 			// i-th bit of solid mask is "owned" by i-th bit of i-th finer cell
 			const uint32_t this_bit = 1u << i;
@@ -288,13 +288,13 @@ void PseudoChunkData::generateFromFinerLod(std::span<const PseudoChunkData *cons
 		// Because of `forYXZ` we will store produced entries already sorted in the required order.
 		CellEntry &out_cell_entry = m_cell_entries.emplace_back();
 
-		out_cell_entry.cell_index = glm::u8vec3(x, y, z);
+		out_cell_entry.cell_index = m::uint8_t3(uint8_t(x), uint8_t(y), uint8_t(z));
 		out_cell_entry.corner_solid_mask = solid_mask;
 
 		detail::GeometryUtils::resolveMatHist(material_histogram, out_cell_entry);
 
-		glm::vec3 surface_point = glm::vec3(surface_point_weighted_sum) / surface_point_weighted_sum.w;
-		out_cell_entry.surface_point_unorm = glm::packUnorm<uint16_t>(surface_point);
+		m::float3 surface_point = surface_point_weighted_sum.xyz() / surface_point_weighted_sum.w;
+		out_cell_entry.surface_point_unorm = m::packUnorm<uint16_t>(surface_point);
 		out_cell_entry.surface_point_sum_count = static_cast<uint16_t>(std::min(surface_point_weighted_sum.w, 65535.0f));
 	});
 }
@@ -304,7 +304,7 @@ void PseudoChunkData::generateExternally(std::span<const CellEntry> cells)
 	m_cell_entries = { cells.begin(), cells.end() };
 }
 
-const PseudoChunkData::CellEntry *PseudoChunkData::findEntry(glm::uvec3 cell_index) const noexcept
+const PseudoChunkData::CellEntry *PseudoChunkData::findEntry(m::uint3 cell_index) const noexcept
 {
 	auto projection = [](const CellEntry &e) -> uint32_t {
 		// Note YXZ order - it conforms to cell iteration order

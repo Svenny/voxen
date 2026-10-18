@@ -23,7 +23,7 @@ struct BlockEditMessage {
 	constexpr static UID MESSAGE_UID = UID("340d78cd-5a543514-8d4a8a15-de39ab3c");
 	constexpr static svc::MessageClass MESSAGE_CLASS = svc::MessageClass::Unicast;
 
-	glm::ivec3 position;
+	m::int3 position;
 	Chunk::BlockId new_id;
 };
 

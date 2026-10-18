@@ -191,7 +191,7 @@ Resolution GlfwWindow::framebufferSize() const
 	return { width, height };
 }
 
-glm::dvec2 GlfwWindow::cursorPos() const
+m::double2 GlfwWindow::cursorPos() const
 {
 	double xpos, ypos;
 	glfwGetCursorPos(m_window, &xpos, &ypos);

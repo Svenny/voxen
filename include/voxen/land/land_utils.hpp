@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 #include <cstdint>
 #include <type_traits>
