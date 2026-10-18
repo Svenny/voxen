@@ -5,6 +5,7 @@ target_sources(test-m PRIVATE
 	matrix.test.cpp
 	packing.test.cpp
 	quaternion.test.cpp
+	transform.test.cpp
 	vector.test.cpp
 )
 
@@ -16,4 +17,5 @@ target_link_libraries(test-m PRIVATE
 add_test(NAME m-matrix COMMAND test-m "[m::matrix]")
 add_test(NAME m-packing COMMAND test-m "[m::packing]")
 add_test(NAME m-quaternion COMMAND test-m "[m::quaternion]")
+add_test(NAME m-transform COMMAND test-m "[m::transform]")
 add_test(NAME m-vector COMMAND test-m "[m::vector]")

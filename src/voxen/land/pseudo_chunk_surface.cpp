@@ -259,12 +259,11 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 
 	constexpr uint32_t B = Consts::CHUNK_SIZE_BLOCKS;
 
-	// `v0`, `v1`, `v2` must be in the correct winding order (front-face is clockwise)
+	// `v0`, `v1`, `v2` must be in the correct winding order (front-face is counter-clockwise)
 	auto add_triangle = [&](const ProcessedCellEntry &v0, const ProcessedCellEntry &v1, const ProcessedCellEntry &v2) {
-		m::float3 v10 = v0.position_mainchunk_local_space - v1.position_mainchunk_local_space;
-		m::float3 v12 = v2.position_mainchunk_local_space - v1.position_mainchunk_local_space;
-		// TODO: something is wrong, negation is not needed
-		m::float3 normal = m::normalize(-m::cross(v10, v12));
+		m::float3 v01 = v1.position_mainchunk_local_space - v0.position_mainchunk_local_space;
+		m::float3 v02 = v2.position_mainchunk_local_space - v0.position_mainchunk_local_space;
+		m::float3 normal = m::normalize(m::cross(v01, v02));
 
 		// TODO: use indexing!
 		// No need to repeat the same vertices if there is no significant difference

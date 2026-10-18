@@ -18,51 +18,6 @@
 namespace voxen
 {
 
-namespace
-{
-
-// Reversed-Z projection: near plane maps to depth 1, far plane to 0
-m::float4x4 perspective(double fovx, double fovy, double znear, double zfar) noexcept
-{
-	const float x = float(1.0 / std::tan(fovx * 0.5));
-	const float y = float(1.0 / std::tan(fovy * 0.5));
-	const float z = float(-znear / (zfar - znear));
-	const float w = float((znear * zfar) / (zfar - znear));
-	return {
-		{ x, 0, 0, 0 },
-		{ 0, y, 0, 0 },
-		{ 0, 0, z, w },
-		{ 0, 0, 1, 0 },
-	};
-}
-
-// View space is X right, Y down (Vulkan clip space has Y down), Z forward
-m::float4x4 lookAt(const m::double3& pos, const m::double3& forward, const m::double3& up) noexcept
-{
-	const m::float3 p(pos);
-	const m::float3 f(forward);
-	const m::float3 u(up);
-	const m::float3 s = m::cross(u, f);
-	return {
-		{ s.x, s.y, s.z, -m::dot(p, s) },
-		{ -u.x, -u.y, -u.z, m::dot(p, u) },
-		{ f.x, f.y, f.z, -m::dot(p, f) },
-		{ 0, 0, 0, 1 },
-	};
-}
-
-m::dquat quatFromEulerAngles(double pitch, double yaw, double roll) noexcept
-{
-	const m::double3 half_angles(pitch * 0.5, yaw * 0.5, roll * 0.5);
-	const m::double3 c = m::cos(half_angles);
-	const m::double3 s = m::sin(half_angles);
-
-	return m::dquat(m::double4(s.x * c.y * c.z - c.x * s.y * s.z, c.x * s.y * c.z + s.x * c.y * s.z,
-		c.x * c.y * s.z - s.x * s.y * c.z, c.x * c.y * c.z + s.x * s.y * s.z));
-}
-
-} // namespace
-
 GameView::GameView(os::GlfwWindow& window) : m_window(window)
 {
 	auto window_size = window.windowSize();
@@ -90,9 +45,7 @@ void voxen::GameView::init(const voxen::Player& player) noexcept
 {
 	m_local_player = player;
 
-	m_view_to_clip = perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-	m_tr_world_to_view = lookAt(m::double3(0), player.lookVector(), player.upVector());
-	m_tr_world_to_clip = m::mul(m_view_to_clip, m_tr_world_to_view);
+	updateMatrices();
 
 	resetKeyState();
 }
@@ -195,6 +148,15 @@ bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
 	return true;
 }
 
+void GameView::updateMatrices() noexcept
+{
+	const double aspect = m_window_size.x / m_window_size.y;
+	m_view_to_clip = m::float4x4(m::perspectiveInfinite(m_fov_y, aspect, m_z_near));
+	// Rendering is camera-relative, the view transform has no translation
+	m_tr_world_to_view = m::float4x4(m::homogeneous(m::viewFromCamera(m_local_player.orientation(), m::double3())));
+	m_tr_world_to_clip = m::mul(m_view_to_clip, m_tr_world_to_view);
+}
+
 void GameView::resetKeyState() noexcept
 {
 	for (int i = 0; i < Direction::Count; i++) {
@@ -272,18 +234,21 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 			rollAngle += m_roll_speed * dt;
 		}
 
-		auto rotQuat = quatFromEulerAngles(pitchAngle, yawAngle, rollAngle);
+		// Rotations are about camera axes (looking along -Z), so they are applied
+		// before the current orientation. Positive angles follow the right-hand rule.
+		const m::dquat pitch = m::dquat::fromAxisAngle(m::double3(1, 0, 0), pitchAngle);
+		const m::dquat yaw = m::dquat::fromAxisAngle(m::double3(0, 1, 0), yawAngle);
+		const m::dquat roll = m::dquat::fromAxisAngle(m::double3(0, 0, -1), rollAngle);
+		const m::dquat rotation = m::mul(yaw, m::mul(pitch, roll));
 
 		m::double3 new_position = m_local_player.position();
 		new_position += move_forward_direction * m_forward_speed;
 		new_position += move_strafe_direction * m_strafe_speed;
 
-		m::dquat new_orientation = m::normalize(m::mul(rotQuat, m_local_player.orientation()));
+		m::dquat new_orientation = m::normalize(m::mul(m_local_player.orientation(), rotation));
 		m_local_player.updateState(new_position, new_orientation);
 
-		m_view_to_clip = perspective(m_fov_x, m_fov_y, m_z_near, m_z_far);
-		m_tr_world_to_view = lookAt(m::double3(0), m_local_player.lookVector(), m_local_player.upVector());
-		m_tr_world_to_clip = m::mul(m_view_to_clip, m_tr_world_to_view);
+		updateMatrices();
 
 		m_previous_tick_id = tick_id;
 	}

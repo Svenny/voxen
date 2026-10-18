@@ -62,7 +62,7 @@ private:
 	m::double2 m_prev_cursor_pos;
 	// Gamer view data and parameters
 	double m_fov_x, m_fov_y;
-	double m_z_near = 0.1, m_z_far = 1'000'000.0;
+	double m_z_near = 0.1;
 
 	// Local copy of player state - updated directly here instead of
 	// requesting it from world, eliminates lag from messaging latency.
@@ -86,6 +86,7 @@ private:
 	bool m_state[Direction::Count];
 
 private:
+	void updateMatrices() noexcept;
 	void resetKeyState() noexcept;
 };
 

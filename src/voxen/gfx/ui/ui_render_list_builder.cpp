@@ -58,8 +58,9 @@ void RenderListBuilder::addRectangle(m::float2 min, m::float2 max, PackedColorSr
 	m_vertices.emplace_back(vd);
 
 	const IDT base = static_cast<IDT>(m_cur_draw_setup.vertex_count);
-	m_indices.insert(m_indices.end(), { IDT(base + 0), IDT(base + 2), IDT(base + 1) });
-	m_indices.insert(m_indices.end(), { IDT(base + 3), IDT(base + 1), IDT(base + 2) });
+	// Counter-clockwise on screen (Y down)
+	m_indices.insert(m_indices.end(), { IDT(base + 0), IDT(base + 1), IDT(base + 2) });
+	m_indices.insert(m_indices.end(), { IDT(base + 3), IDT(base + 2), IDT(base + 1) });
 
 	m_cur_draw_setup.vertex_count += 4;
 	m_cur_draw_setup.index_count += 6;

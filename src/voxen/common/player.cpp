@@ -17,13 +17,10 @@ void Player::updateState(m::double3 new_pos, m::dquat new_rot) noexcept
 
 void Player::updateSecondaryFactors() noexcept
 {
-	// Orientation rotates world space into camera space,
-	// so camera axes expressed in world space are the matrix rows
-	const m::double3x3 rot_mat = m::toMatrix(m_orientation);
-
-	m_right_vector = rot_mat[0];
-	m_up_vector = rot_mat[1];
-	m_look_vector = rot_mat[2];
+	// Orientation rotates camera space into world space, camera looks along -Z
+	m_right_vector = m::mul(m_orientation, m::double3(1, 0, 0));
+	m_up_vector = m::mul(m_orientation, m::double3(0, 1, 0));
+	m_look_vector = m::mul(m_orientation, m::double3(0, 0, -1));
 }
 
 } // namespace voxen
