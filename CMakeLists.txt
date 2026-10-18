@@ -47,7 +47,6 @@ target_link_libraries(voxen PUBLIC
 	extras
 	m
 	3rdparty::fmt
-	3rdparty::glm
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE

@@ -20,7 +20,6 @@ set(EXTRAS_HEADERS
 	# but I don't want to invent one more directory
 	# just to place 3rdparty nativs files there.
 	include/extras/extras.natvis
-	include/extras/glm.natvis
 )
 
 target_include_directories(extras INTERFACE include)

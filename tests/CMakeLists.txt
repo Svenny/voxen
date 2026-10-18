@@ -12,7 +12,6 @@ target_sources(test-common PRIVATE
 target_link_libraries(test-common PUBLIC
 	3rdparty::catch2-main
 	3rdparty::fmt
-	3rdparty::glm
 	m
 )
 
