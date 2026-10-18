@@ -4,7 +4,7 @@
 #include <catch2/catch_tostring.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 
-#include <glm/glm.hpp>
+#include <glm/fwd.hpp>
 
 #include <system_error>
 
