@@ -15,9 +15,8 @@
 #include <extras/source_location.hpp>
 #include <extras/string_utils.hpp>
 
-// `glm.hpp` and `ext.hpp` should include all non-experimental GLM
-#include <glm/ext.hpp>
-#include <glm/glm.hpp>
+// Math library is used nearly everywhere and is all templates
+#include <m/m.hpp>
 
 // Not sure if there are headers not transitively included by these
 #include <fmt/chrono.h>
