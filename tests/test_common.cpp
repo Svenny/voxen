@@ -1,6 +1,7 @@
 #include "test_common.hpp"
 
 #include <fmt/format.h>
+#include <glm/glm.hpp>
 
 namespace Catch
 {
