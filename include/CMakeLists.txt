@@ -28,6 +28,23 @@ target_include_directories(extras INTERFACE include)
 target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
 
+set(M_HEADERS
+	include/m/format.hpp
+	include/m/fwd.hpp
+	include/m/m.hpp
+	include/m/matrix.hpp
+	include/m/packing.hpp
+	include/m/quaternion.hpp
+	include/m/vector.hpp
+
+	# Visualizers for VS debugger
+	include/m/m.natvis
+)
+
+target_include_directories(m INTERFACE include)
+target_sources(m PRIVATE ${M_HEADERS})
+source_group(TREE ${CMAKE_SOURCE_DIR}/include/m PREFIX Headers FILES ${M_HEADERS})
+
 set(TK_HEADERS
 	include/tk/cli.hpp
 	include/tk/json.hpp

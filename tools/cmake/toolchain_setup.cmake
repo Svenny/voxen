@@ -127,10 +127,12 @@ function(voxen_setup_target target)
 	)
 
 	if(WIN32)
-		# Stop windows crt from bitching about innocent C functions
 		target_compile_definitions(${target} PRIVATE
+			# Stop windows crt from bitching about innocent C functions
 			-D_CRT_NONSTDC_NO_WARNINGS
 			-D_CRT_SECURE_NO_WARNINGS
+			# `min`/`max` macros from `windows.h` would break `std::min` and `m::min`
+			-DNOMINMAX
 		)
 
 		target_compile_options(${target} PRIVATE

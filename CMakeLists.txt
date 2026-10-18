@@ -34,6 +34,7 @@ add_subdirectory(3rdparty)
 
 # CMake target setup
 voxen_add_library(extras INTERFACE)
+voxen_add_library(m INTERFACE)
 voxen_add_library(tk STATIC)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
@@ -44,6 +45,7 @@ target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PUBLIC
 	extras
+	m
 	3rdparty::fmt
 	3rdparty::glm
 	Threads::Threads
