@@ -8,7 +8,6 @@
 #ifndef _WIN32
 	#include <pthread.h>
 #else
-	#define NOMINMAX
 	#include <Windows.h>
 	#include <processthreadsapi.h>
 
