@@ -7,9 +7,9 @@ namespace voxen
 
 static_assert(sizeof(ConcentricOctahedraWalker) == sizeof(uint32_t), "ConcentricOctahedraWalker packing is broken");
 
-glm::ivec3 ConcentricOctahedraWalker::step() noexcept
+m::int3 ConcentricOctahedraWalker::step() noexcept
 {
-	glm::ivec3 result;
+	m::int3 result;
 
 	int32_t radius = m_radius;
 	int32_t dx = m_dx;

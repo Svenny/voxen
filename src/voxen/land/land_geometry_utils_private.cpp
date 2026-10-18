@@ -1,6 +1,6 @@
 #include "land_geometry_utils_private.hpp"
 
-#include <glm/gtc/packing.hpp>
+#include <m/packing.hpp>
 
 #include <algorithm>
 
@@ -59,9 +59,8 @@ void GeometryUtils::resolveMatHist(std::span<SurfaceMatHistEntry> entries, Pseud
 	cell.mat_hist_weights = {};
 
 	for (size_t i = 0; i < num_entries; i++) {
-		int ii = static_cast<int>(i);
-		cell.mat_hist_entries[ii] = entries[i].mat_id_or_color;
-		cell.mat_hist_weights[ii] = glm::packUnorm1x8(entries[i].weight / weight_sum);
+		cell.mat_hist_entries[i] = entries[i].mat_id_or_color;
+		cell.mat_hist_weights[i] = m::packUnorm<uint8_t>(entries[i].weight / weight_sum);
 	}
 }
 

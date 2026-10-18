@@ -7,8 +7,7 @@
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <m/m.hpp>
 
 namespace voxen
 {
@@ -26,15 +25,15 @@ public:
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
 
-	const glm::mat4& viewToClip() const noexcept { return m_view_to_clip; }
-	const glm::mat4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
-	const glm::mat4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
-	const glm::dvec3& cameraPosition() const noexcept { return m_local_player.position(); }
+	const m::float4x4& viewToClip() const noexcept { return m_view_to_clip; }
+	const m::float4x4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
+	const m::float4x4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
+	const m::double3& cameraPosition() const noexcept { return m_local_player.position(); }
 
 	// Block ID currently selected for insertion
 	auto selectedBlockId() const noexcept { return m_current_block_id; }
 	// Block coordinate (in block space, not world space) where the player is currently targeting
-	glm::ivec3 modifyTargetBlockCoord() const noexcept;
+	m::int3 modifyTargetBlockCoord() const noexcept;
 
 private:
 	enum Direction : int {
@@ -50,7 +49,7 @@ private:
 		Count
 	};
 
-	glm::dvec2 m_window_size;
+	m::double2 m_window_size;
 
 	double m_mouse_sensitivity;
 	double m_forward_speed;
@@ -58,9 +57,9 @@ private:
 	double m_roll_speed;
 
 	// Mouse position at the time of the latest call to `handleCursor`
-	glm::dvec2 m_newest_cursor_pos;
+	m::double2 m_newest_cursor_pos;
 	// Mouse position at the time of the latest call to `update`
-	glm::dvec2 m_prev_cursor_pos;
+	m::double2 m_prev_cursor_pos;
 	// Gamer view data and parameters
 	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1, m_z_far = 1'000'000.0;
@@ -69,9 +68,9 @@ private:
 	// requesting it from world, eliminates lag from messaging latency.
 	Player m_local_player;
 
-	glm::mat4 m_view_to_clip;
-	glm::mat4 m_tr_world_to_view;
-	glm::mat4 m_tr_world_to_clip;
+	m::float4x4 m_view_to_clip;
+	m::float4x4 m_tr_world_to_view;
+	m::float4x4 m_tr_world_to_clip;
 
 	// Previous tick id
 	world::TickId m_previous_tick_id;

@@ -2,7 +2,7 @@
 
 #include <voxen/visibility.hpp>
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 namespace voxen
 {
@@ -34,7 +34,7 @@ public:
 	// Do one walk step and return its offset.
 	// If this was the last offset before repeating starts,
 	// `wrappedAround()` will return true after this call.
-	glm::ivec3 step() noexcept;
+	m::int3 step() noexcept;
 	// Returns true when `step()` calls have returned all possible
 	// offsets for this `max_radius` and now are repeating values.
 	bool wrappedAround() const noexcept { return m_wrapped_around; }

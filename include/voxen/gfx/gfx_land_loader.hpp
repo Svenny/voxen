@@ -7,7 +7,7 @@
 
 #include <extras/pimpl.hpp>
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 #include <vector>
 
@@ -61,7 +61,7 @@ public:
 	// Commands in the list are not sorted in any particular order.
 	//
 	// Note: no frustum or any other kind of culling is performed.
-	void makeDrawList(const glm::dvec3 &viewpoint, DrawList &dlist);
+	void makeDrawList(const m::double3 &viewpoint, DrawList &dlist);
 
 private:
 	extras::pimpl<detail::LandLoaderImpl, 1024, alignof(void *)> m_impl;

@@ -3,7 +3,7 @@
 #include <voxen/util/resolution.hpp>
 #include <voxen/visibility.hpp>
 
-#include <glm/fwd.hpp>
+#include <m/fwd.hpp>
 
 struct GLFWwindow;
 
@@ -55,7 +55,7 @@ public:
 	// NOTE: can return empty (zeros) if the window is minimized.
 	Resolution framebufferSize() const;
 
-	glm::dvec2 cursorPos() const;
+	m::double2 cursorPos() const;
 	// HACK: do not use this, it can miss short clicks
 	bool mouseLeftButtonPressed() const;
 

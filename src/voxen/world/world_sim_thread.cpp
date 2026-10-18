@@ -95,13 +95,13 @@ void SimThread::update()
 	m_next_state = nullptr;
 
 #if 1
-	static glm::dvec3 s_prev_pos = last_state.player().position();
+	static m::double3 s_prev_pos = last_state.player().position();
 	static std::chrono::steady_clock::time_point s_prev_time = std::chrono::steady_clock::now();
 	if (next_state.tickId().value % 750 == 0) {
-		glm::dvec3 now_pos = next_state.player().position();
+		m::double3 now_pos = next_state.player().position();
 		auto now_time = std::chrono::steady_clock::now();
 
-		double distance = glm::distance(s_prev_pos, now_pos);
+		double distance = m::distance(s_prev_pos, now_pos);
 		double speed = distance / std::chrono::duration<double>(now_time - s_prev_time).count();
 		if (distance > 0.0) {
 			Log::info("Velocity {} m/s; position: {} {} {}", speed, now_pos.x, now_pos.y, now_pos.z);

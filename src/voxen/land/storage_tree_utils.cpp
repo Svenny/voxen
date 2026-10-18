@@ -127,7 +127,7 @@ ChunkKey StorageTreeUtils::treePathToKey(uint64_t tree_path) noexcept
 
 	// Find root item index, it's the only thing encoded in the highest byte
 	uint32_t root_component = tree_path >> (64 - 8);
-	glm::ivec3 coord = calcRootItemMinCoord(root_component);
+	m::int3 coord = calcRootItemMinCoord(root_component);
 
 	coord.x += static_cast<int32_t>(x);
 	coord.y = static_cast<int32_t>(y); // Note: not adding, overwriting

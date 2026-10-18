@@ -21,7 +21,7 @@ void ChunkAdjacencyRef::expandBlockIds(CubeArrayView<Chunk::BlockId, SIZE> view)
 	view.fill(0);
 
 	// Fill the main part (always available)
-	chunk.blockIds().expand(view.view<N>(glm::uvec3(1)));
+	chunk.blockIds().expand(view.view<N>(m::uint3(1)));
 
 	if (adjacent[0]) { // X+
 		const auto &ids = adjacent[0]->blockIds();

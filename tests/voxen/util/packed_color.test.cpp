@@ -7,9 +7,9 @@ namespace voxen
 
 TEST_CASE("'PackedColor' sanity check", "[voxen::packed_color]")
 {
-	const glm::vec3 C1 = glm::vec3(20, 40, 50) / 255.0f;
-	const glm::vec4 C2 = glm::vec4(4, 47, 240, 192) / 255.0f;
-	const glm::vec3 C3 = glm::vec3(0.9f, 127.5f, 255.0f) / 255.0f;
+	const m::float3 C1 = m::float3(20, 40, 50) / 255.0f;
+	const m::float4 C2 = m::float4(4, 47, 240, 192) / 255.0f;
+	const m::float3 C3 = m::float3(0.9f, 127.5f, 255.0f) / 255.0f;
 
 	PackedColorSrgb srgb1(C1);
 	PackedColorSrgb srgb2(C2);

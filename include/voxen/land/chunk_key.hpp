@@ -3,7 +3,7 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/util/hash.hpp>
 
-#include <glm/vec3.hpp>
+#include <m/vector.hpp>
 
 #include <bit>
 #include <functional>
@@ -22,7 +22,7 @@ struct ChunkKey {
 	explicit ChunkKey(uint64_t packed) noexcept { *this = std::bit_cast<ChunkKey>(packed); }
 
 	// Construct from unpacked chunk base position in chunk coordinates and log2(scale)
-	explicit ChunkKey(glm::ivec3 base, uint32_t scale_log2 = 0) noexcept : scale_log2(scale_log2)
+	explicit ChunkKey(m::int3 base, uint32_t scale_log2 = 0) noexcept : scale_log2(scale_log2)
 	{
 		x = base.x;
 		y = base.y;
@@ -39,7 +39,7 @@ struct ChunkKey {
 
 	uint64_t packed() const noexcept { return std::bit_cast<uint64_t>(*this); }
 
-	glm::ivec3 base() const noexcept { return glm::ivec3(x, y, z); }
+	m::int3 base() const noexcept { return m::int3(x, y, z); }
 	uint32_t scaleLog2() const noexcept { return scale_log2; }
 	int32_t scaleMultiplier() const noexcept { return 1 << scale_log2; }
 

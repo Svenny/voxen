@@ -12,8 +12,8 @@ class RenderListBuilder {
 public:
 	RenderListBuilder(ScratchMemoryAllocatorScope &scratch, size_t items_estimate);
 
-	uint32_t addItem(glm::vec2 min, glm::vec2 max);
-	void addRectangle(glm::vec2 min, glm::vec2 max, PackedColorSrgb color, uint32_t item_id);
+	uint32_t addItem(m::float2 min, m::float2 max);
+	void addRectangle(m::float2 min, m::float2 max, PackedColorSrgb color, uint32_t item_id);
 
 	RenderData produceRenderData();
 

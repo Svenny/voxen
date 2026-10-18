@@ -12,7 +12,7 @@
 
 #include "land_geometry_utils_private.hpp"
 
-#include <glm/gtc/packing.hpp>
+#include <m/packing.hpp>
 
 #include <cassert>
 #include <unordered_map>
@@ -31,41 +31,41 @@ namespace
 {
 
 struct ProcessedCellEntry {
-	glm::vec3 position_mainchunk_local_space;
+	m::float3 position_mainchunk_local_space;
 	SurfaceMatHistEntry mat_hist[4] = {};
 };
 
-constexpr glm::ivec3 FACE_COORD_OFFSET[6][4] = {
-	{ glm::ivec3(1, 0, 1), glm::ivec3(1, 0, 0), glm::ivec3(1, 1, 0), glm::ivec3(1, 1, 1) }, // 3 2 6 7
-	{ glm::ivec3(0, 1, 0), glm::ivec3(0, 0, 0), glm::ivec3(0, 0, 1), glm::ivec3(0, 1, 1) }, // 4 0 1 5
-	{ glm::ivec3(1, 1, 0), glm::ivec3(0, 1, 0), glm::ivec3(0, 1, 1), glm::ivec3(1, 1, 1) }, // 6 4 5 7
-	{ glm::ivec3(0, 0, 1), glm::ivec3(0, 0, 0), glm::ivec3(1, 0, 0), glm::ivec3(1, 0, 1) }, // 1 0 2 3
-	{ glm::ivec3(0, 1, 1), glm::ivec3(0, 0, 1), glm::ivec3(1, 0, 1), glm::ivec3(1, 1, 1) }, // 5 1 3 7
-	{ glm::ivec3(1, 0, 0), glm::ivec3(0, 0, 0), glm::ivec3(0, 1, 0), glm::ivec3(1, 1, 0) }, // 2 0 4 6
+constexpr m::int3 FACE_COORD_OFFSET[6][4] = {
+	{ m::int3(1, 0, 1), m::int3(1, 0, 0), m::int3(1, 1, 0), m::int3(1, 1, 1) }, // 3 2 6 7
+	{ m::int3(0, 1, 0), m::int3(0, 0, 0), m::int3(0, 0, 1), m::int3(0, 1, 1) }, // 4 0 1 5
+	{ m::int3(1, 1, 0), m::int3(0, 1, 0), m::int3(0, 1, 1), m::int3(1, 1, 1) }, // 6 4 5 7
+	{ m::int3(0, 0, 1), m::int3(0, 0, 0), m::int3(1, 0, 0), m::int3(1, 0, 1) }, // 1 0 2 3
+	{ m::int3(0, 1, 1), m::int3(0, 0, 1), m::int3(1, 0, 1), m::int3(1, 1, 1) }, // 5 1 3 7
+	{ m::int3(1, 0, 0), m::int3(0, 0, 0), m::int3(0, 1, 0), m::int3(1, 1, 0) }, // 2 0 4 6
 };
 
-constexpr glm::vec3 FACE_NORMAL[6] = {
-	glm::vec3(1, 0, 0),
-	glm::vec3(-1, 0, 0),
-	glm::vec3(0, 1, 0),
-	glm::vec3(0, -1, 0),
-	glm::vec3(0, 0, 1),
-	glm::vec3(0, 0, -1),
+constexpr m::float3 FACE_NORMAL[6] = {
+	m::float3(1, 0, 0),
+	m::float3(-1, 0, 0),
+	m::float3(0, 1, 0),
+	m::float3(0, -1, 0),
+	m::float3(0, 0, 1),
+	m::float3(0, 0, -1),
 };
 
 // Store vertex position, `pos` must be in [-0.125:1.125] range or it will get clipped
-void packVertexPosition(glm::vec3 pos, PseudoSurfaceVertexPosition &output) noexcept
+void packVertexPosition(m::float3 pos, PseudoSurfaceVertexPosition &output) noexcept
 {
-	output.position_unorm = glm::packUnorm<uint16_t>(pos * 0.8f + 0.1f);
+	output.position_unorm = m::packUnorm<uint16_t>(pos * 0.8f + 0.1f);
 }
 
 // Store vertex normal, `normal` must have unit length
-void packNormal(glm::vec3 normal, PseudoSurfaceVertexAttributes &output) noexcept
+void packNormal(m::float3 normal, PseudoSurfaceVertexAttributes &output) noexcept
 {
 	// Project the sphere onto the octahedron, and then onto the XZ plane
 	float inv = 1.0f / (std::abs(normal.x) + std::abs(normal.y) + std::abs(normal.z));
-	glm::vec2 p = glm::vec2(normal.x, normal.z) * inv;
-	glm::vec2 result;
+	m::float2 p = m::float2(normal.x, normal.z) * inv;
+	m::float2 result;
 
 	// Reflect the folds of the lower hemisphere over the diagonals.
 	// This code has swapped Y and Z axes relative to the original paper.
@@ -78,10 +78,10 @@ void packNormal(glm::vec3 normal, PseudoSurfaceVertexAttributes &output) noexcep
 		result = p;
 	}
 
-	output.normal_oct_snorm = glm::packSnorm<int16_t>(result);
+	output.normal_oct_snorm = m::packSnorm<int16_t>(result);
 }
 
-glm::vec3 adjustSkirtPosition(glm::vec3 pos, const glm::vec3 &normal, uint32_t lod) noexcept
+m::float3 adjustSkirtPosition(m::float3 pos, const m::float3 &normal, uint32_t lod) noexcept
 {
 	if (pos.x < 0.0f || pos.y < 0.0f || pos.z < 0.0f) {
 		pos -= (lod == 1 ? 0.03f : 0.01f) * normal;
@@ -111,21 +111,20 @@ void packMaterialHistogram(const ProcessedCellEntry &c0, const ProcessedCellEntr
 	}
 
 	auto resolve_vertex = [&](const ProcessedCellEntry &in, PseudoSurfaceVertexAttributes &out) {
-		glm::vec4 weights(0.0f);
+		m::float4 weights(0.0f);
 
 		for (size_t i = 0; i < 4; i++) {
-			int ii = static_cast<int>(i);
-			out.mat_hist_entries[ii] = entries[i].mat_id_or_color;
+			out.mat_hist_entries[i] = entries[i].mat_id_or_color;
 
 			for (size_t j = 0; j < 4; j++) {
 				if (in.mat_hist[j].mat_id_or_color == entries[i].mat_id_or_color) {
-					weights[ii] += in.mat_hist[j].weight;
+					weights[i] += in.mat_hist[j].weight;
 				}
 			}
 		}
 
 		float weight_sum = std::max(0.000001f, weights.x + weights.y + weights.z + weights.w);
-		out.mat_hist_weights = glm::packUnorm<uint8_t>(weights / weight_sum);
+		out.mat_hist_weights = m::packUnorm<uint8_t>(weights / weight_sum);
 	};
 
 	resolve_vertex(c0, a0);
@@ -150,7 +149,7 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 	std::unordered_map<int64_t, uint32_t> vertex_index_map;
 	std::vector<uint32_t> index_buffer;
 
-	auto get_vertex_index = [&](glm::ivec3 position, int32_t orientation, Chunk::BlockId block_id) {
+	auto get_vertex_index = [&](m::int3 position, int32_t orientation, Chunk::BlockId block_id) {
 		int64_t key = (position.x << 16) | (position.y << 8) | position.z;
 		key = (key << 24) | (orientation << 8) | block_id;
 
@@ -166,7 +165,7 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 		auto &vertex_attrib = m_vertex_attributes.emplace_back();
 
 		constexpr float DIVISOR = 1.0f / static_cast<float>(B);
-		glm::vec3 pos_normalized = glm::vec3(position) * DIVISOR;
+		m::float3 pos_normalized = m::float3(position) * DIVISOR;
 		packVertexPosition(pos_normalized, vertex_pos);
 
 		packNormal(FACE_NORMAL[orientation], vertex_attrib);
@@ -174,19 +173,19 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 		PackedColorSrgb packed_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
 		uint16_t color = TempBlockMeta::packColor555(packed_color);
 
-		vertex_attrib.mat_hist_entries = glm::u16vec4(color, 0, 0, 0);
-		vertex_attrib.mat_hist_weights = glm::u8vec4(255, 0, 0, 0);
+		vertex_attrib.mat_hist_entries = m::uint16_t4(color, 0, 0, 0);
+		vertex_attrib.mat_hist_weights = m::uint8_t4(255, 0, 0, 0);
 
 		return vertex_index;
 	};
 
 	auto add_face = [&](uint32_t x, uint32_t y, uint32_t z, int32_t orientation, Chunk::BlockId block_id) {
-		glm::ivec3 base_coord(x, y, z);
+		m::int3 base_coord(m::uint3(x, y, z));
 
 		uint32_t vertex_indices[4];
 
 		for (int i = 0; i < 4; i++) {
-			glm::ivec3 vertex_coord = base_coord + FACE_COORD_OFFSET[orientation][i];
+			m::int3 vertex_coord = base_coord + FACE_COORD_OFFSET[orientation][i];
 			vertex_indices[i] = get_vertex_index(vertex_coord, orientation, block_id);
 		}
 
@@ -262,10 +261,10 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 
 	// `v0`, `v1`, `v2` must be in the correct winding order (front-face is clockwise)
 	auto add_triangle = [&](const ProcessedCellEntry &v0, const ProcessedCellEntry &v1, const ProcessedCellEntry &v2) {
-		glm::vec3 v10 = v0.position_mainchunk_local_space - v1.position_mainchunk_local_space;
-		glm::vec3 v12 = v2.position_mainchunk_local_space - v1.position_mainchunk_local_space;
+		m::float3 v10 = v0.position_mainchunk_local_space - v1.position_mainchunk_local_space;
+		m::float3 v12 = v2.position_mainchunk_local_space - v1.position_mainchunk_local_space;
 		// TODO: something is wrong, negation is not needed
-		glm::vec3 normal = glm::normalize(-glm::cross(v10, v12));
+		m::float3 normal = m::normalize(-m::cross(v10, v12));
 
 		// TODO: use indexing!
 		// No need to repeat the same vertices if there is no significant difference
@@ -316,13 +315,13 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 		}
 	};
 
-	constexpr glm::ivec3 EDGE_AXIS_OFFSETS[3][3] = {
+	constexpr m::int3 EDGE_AXIS_OFFSETS[3][3] = {
 		// X edges
-		{ glm::ivec3(0, -1, 0), glm::ivec3(0, 0, -1), glm::ivec3(0, -1, -1) },
+		{ m::int3(0, -1, 0), m::int3(0, 0, -1), m::int3(0, -1, -1) },
 		// Y edges
-		{ glm::ivec3(0, 0, -1), glm::ivec3(-1, 0, 0), glm::ivec3(-1, 0, -1) },
+		{ m::int3(0, 0, -1), m::int3(-1, 0, 0), m::int3(-1, 0, -1) },
 		// Z edges
-		{ glm::ivec3(-1, 0, 0), glm::ivec3(0, -1, 0), glm::ivec3(-1, -1, 0) },
+		{ m::int3(-1, 0, 0), m::int3(0, -1, 0), m::int3(-1, -1, 0) },
 	};
 
 	constexpr uint32_t DATA_INDEX_3CUBE_MAP[27] = { // Y < 0
@@ -333,18 +332,18 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 		UINT32_MAX, 17, UINT32_MAX, 9, 3, 10, UINT32_MAX, 18, UINT32_MAX
 	};
 
-	auto add_edge = [&](glm::ivec3 edge_base_coord, int axis, bool lower_solid) {
+	auto add_edge = [&](m::int3 edge_base_coord, int axis, bool lower_solid) {
 		ProcessedCellEntry processed_cells[4];
 
 		// Load four cells adjacent to this edge
 		for (int i = 0; i < 4; i++) {
-			glm::ivec3 coord = edge_base_coord;
+			m::int3 coord = edge_base_coord;
 			if (i < 3) {
 				coord += EDGE_AXIS_OFFSETS[axis][2 - i];
 			}
 
 			uint32_t data_index_3cube = 0;
-			glm::vec3 adjustment(0.0f);
+			m::float3 adjustment(0.0f);
 
 			if (coord.y < 0) {
 				coord.y += B;
@@ -383,11 +382,11 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 			// We must never index into vertex-adjacent chunks
 			assert(data_index != UINT32_MAX);
 
-			const PseudoChunkData::CellEntry *cell = datas[data_index]->findEntry(coord);
+			const PseudoChunkData::CellEntry *cell = datas[data_index]->findEntry(m::uint3(coord));
 
 			if (cell) [[likely]] {
 				// Have cell - this is expected to be true nearly always.
-				processed_cells[i].position_mainchunk_local_space = glm::unpackUnorm<float>(cell->surface_point_unorm)
+				processed_cells[i].position_mainchunk_local_space = m::unpackUnorm<float>(cell->surface_point_unorm)
 					+ adjustment;
 				detail::GeometryUtils::unpackCellEntryMatHist(processed_cells[i].mat_hist, *cell);
 			} else {
@@ -395,7 +394,7 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 				// It can happen as a rare edge (pun intended) case when directly-generated
 				// and aggregated pseudo-chunks meet at the boundary. This will "cure" itself naturally
 				// as more true chunks are generated, but for while simply substitute cell midpoint.
-				glm::vec3 bogus_position = (glm::vec3(coord) + 0.5f) / float(Consts::CHUNK_SIZE_BLOCKS) + adjustment;
+				m::float3 bogus_position = (m::float3(coord) + 0.5f) / float(Consts::CHUNK_SIZE_BLOCKS) + adjustment;
 				processed_cells[i].position_mainchunk_local_space = bogus_position;
 				processed_cells[i].mat_hist[0].mat_id_or_color = 0b1'11111'00000'00000;
 				processed_cells[i].mat_hist[0].weight = 255;
@@ -408,23 +407,23 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 	const auto &main_cells = datas[0]->cellEntries();
 
 	// Specialization of `add_edge` for inner edges (all adjacent cells are from `main_cells`)
-	auto add_inner_edge = [&](glm::ivec3 edge_base_coord, int axis, bool lower_solid, const CellEntry &cell) {
+	auto add_inner_edge = [&](m::int3 edge_base_coord, int axis, bool lower_solid, const CellEntry &cell) {
 		ProcessedCellEntry processed_cells[4];
 
 		const CellEntry *cells[4];
-		cells[0] = datas[0]->findEntry(edge_base_coord + EDGE_AXIS_OFFSETS[axis][2]);
-		cells[1] = datas[0]->findEntry(edge_base_coord + EDGE_AXIS_OFFSETS[axis][1]);
-		cells[2] = datas[0]->findEntry(edge_base_coord + EDGE_AXIS_OFFSETS[axis][0]);
+		cells[0] = datas[0]->findEntry(m::uint3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][2]));
+		cells[1] = datas[0]->findEntry(m::uint3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][1]));
+		cells[2] = datas[0]->findEntry(m::uint3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][0]));
 		cells[3] = &cell;
 
 		for (int i = 0; i < 4; i++) {
 			// TODO: all cells must be present, this covers a bug in our generator
 			if (cells[i]) {
-				processed_cells[i].position_mainchunk_local_space = glm::unpackUnorm<float>(cells[i]->surface_point_unorm);
+				processed_cells[i].position_mainchunk_local_space = m::unpackUnorm<float>(cells[i]->surface_point_unorm);
 				detail::GeometryUtils::unpackCellEntryMatHist(processed_cells[i].mat_hist, *cells[i]);
 			} else {
 				processed_cells[i].position_mainchunk_local_space
-					= (glm::vec3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][2 - i]) + 0.5f)
+					= (m::float3(edge_base_coord + EDGE_AXIS_OFFSETS[axis][2 - i]) + 0.5f)
 					/ float(Consts::CHUNK_SIZE_BLOCKS);
 			}
 		}
@@ -469,7 +468,7 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 			has_edge[edge] = test_mask != 0 && test_mask != EDGE_MASKS[edge];
 		}
 
-		glm::ivec3 cell_index(cell.cell_index);
+		m::int3 cell_index(cell.cell_index);
 
 		if (has_edge[0]) {
 			cell_index.y > 0 && cell_index.z > 0
@@ -493,37 +492,37 @@ void PseudoChunkSurface::generate(std::span<const PseudoChunkData *const, 19> da
 
 		if (x_border) {
 			if (has_edge[6]) {
-				add_edge(cell_index + glm::ivec3(1, 0, 0), 1, solid[2]);
+				add_edge(cell_index + m::int3(1, 0, 0), 1, solid[2]);
 			}
 			if (has_edge[9]) {
-				add_edge(cell_index + glm::ivec3(1, 0, 0), 2, solid[2]);
+				add_edge(cell_index + m::int3(1, 0, 0), 2, solid[2]);
 			}
 		}
 		if (y_border) {
 			if (has_edge[2]) {
-				add_edge(cell_index + glm::ivec3(0, 1, 0), 0, solid[4]);
+				add_edge(cell_index + m::int3(0, 1, 0), 0, solid[4]);
 			}
 			if (has_edge[10]) {
-				add_edge(cell_index + glm::ivec3(0, 1, 0), 2, solid[4]);
+				add_edge(cell_index + m::int3(0, 1, 0), 2, solid[4]);
 			}
 		}
 		if (z_border) {
 			if (has_edge[1]) {
-				add_edge(cell_index + glm::ivec3(0, 0, 1), 0, solid[1]);
+				add_edge(cell_index + m::int3(0, 0, 1), 0, solid[1]);
 			}
 			if (has_edge[5]) {
-				add_edge(cell_index + glm::ivec3(0, 0, 1), 1, solid[1]);
+				add_edge(cell_index + m::int3(0, 0, 1), 1, solid[1]);
 			}
 		}
 
 		if (has_edge[3] && (y_border || z_border)) {
-			add_edge(cell_index + glm::ivec3(0, 1, 1), 0, solid[5]);
+			add_edge(cell_index + m::int3(0, 1, 1), 0, solid[5]);
 		}
 		if (has_edge[7] && (x_border || z_border)) {
-			add_edge(cell_index + glm::ivec3(1, 0, 1), 1, solid[3]);
+			add_edge(cell_index + m::int3(1, 0, 1), 1, solid[3]);
 		}
 		if (has_edge[11] && (x_border || y_border)) {
-			add_edge(cell_index + glm::ivec3(1, 1, 0), 2, solid[6]);
+			add_edge(cell_index + m::int3(1, 1, 0), 2, solid[6]);
 		}
 	}
 }

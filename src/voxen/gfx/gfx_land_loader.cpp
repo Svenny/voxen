@@ -116,7 +116,7 @@ public:
 	// Returns true if all subtree volume was successfully covered with
 	// draw commands. If false is returned, there will be non-rendered holes
 	// in places of some chunks (unless you cover the area with lower res).
-	bool makeDrawListSubtree(DrawList &dlist, const glm::ivec3 chunk_base, const uint8_t level)
+	bool makeDrawListSubtree(DrawList &dlist, const m::int3 chunk_base, const uint8_t level)
 	{
 		const auto &lod_box = m_chunk_ticket_boxes[level];
 		if (chunk_base.x < lod_box.begin.x || chunk_base.x >= lod_box.end.x || chunk_base.y < lod_box.begin.y
@@ -131,13 +131,13 @@ public:
 			const int32_t k = 1 << n;
 
 			bool res = makeDrawListSubtree(dlist, chunk_base, n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(k, 0, 0), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(0, k, 0), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(0, 0, k), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(k, k, 0), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(0, k, k), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(k, 0, k), n);
-			res &= makeDrawListSubtree(dlist, chunk_base + glm::ivec3(k, k, k), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(k, 0, 0), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(0, k, 0), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(0, 0, k), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(k, k, 0), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(0, k, k), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(k, 0, k), n);
+			res &= makeDrawListSubtree(dlist, chunk_base + m::int3(k, k, k), n);
 
 			return res;
 		};
@@ -185,7 +185,7 @@ public:
 		return true;
 	}
 
-	void makeDrawList(const glm::dvec3 &viewpoint, DrawList &dlist)
+	void makeDrawList(const m::double3 &viewpoint, DrawList &dlist)
 	{
 		// Request land service to generate surface for chunks in render area.
 		// If N = CHUNK_SIZE_METRES
@@ -199,12 +199,12 @@ public:
 		for (uint32_t lod = 0; lod <= LAST_RENDERED_LOD; lod++) {
 			// Render area size in chunks
 			double load_box_chunks = double(lod ? LOAD_BOX_DISTANCE_LODN << lod : LOAD_BOX_DISTANCE_LOD0);
-			glm::dvec3 box_lo = viewpoint / land::Consts::CHUNK_SIZE_METRES - load_box_chunks;
-			glm::dvec3 box_hi = viewpoint / land::Consts::CHUNK_SIZE_METRES + load_box_chunks;
+			m::double3 box_lo = viewpoint / land::Consts::CHUNK_SIZE_METRES - load_box_chunks;
+			m::double3 box_hi = viewpoint / land::Consts::CHUNK_SIZE_METRES + load_box_chunks;
 
 			// Load box coords in chunks
-			glm::ivec3 lo_coord = glm::ivec3(glm::floor(box_lo));
-			glm::ivec3 hi_coord = glm::ivec3(glm::ceil(box_hi));
+			m::int3 lo_coord = m::int3(m::floor(box_lo));
+			m::int3 hi_coord = m::int3(m::ceil(box_hi));
 
 			// Align to two times the scaled chunk boundaries, basically to the parent LOD grid.
 			// This gives a nice property: for every chunk key with LOD > 0 either this key
@@ -266,7 +266,7 @@ public:
 		for (int64_t y = lo.y; y < hi.y; y += step) {
 			for (int64_t x = lo.x; x < hi.x; x += step) {
 				for (int64_t z = lo.z; z < hi.z; z += step) {
-					makeDrawListSubtree(dlist, glm::ivec3(x, y, z), lo.scale_log2);
+					makeDrawListSubtree(dlist, m::int3(int32_t(x), int32_t(y), int32_t(z)), lo.scale_log2);
 				}
 			}
 		}
@@ -291,7 +291,7 @@ void LandLoader::onNewState(const world::State &state)
 	m_impl->onNewState(state);
 }
 
-void LandLoader::makeDrawList(const glm::dvec3 &viewpoint, DrawList &dlist)
+void LandLoader::makeDrawList(const m::double3 &viewpoint, DrawList &dlist)
 {
 	m_impl->makeDrawList(viewpoint, dlist);
 }

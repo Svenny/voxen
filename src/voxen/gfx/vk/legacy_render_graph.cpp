@@ -15,7 +15,7 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
-#include <glm/gtc/type_ptr.hpp>
+#include <m/m.hpp>
 
 #include <cstring>
 
@@ -26,10 +26,12 @@ namespace
 {
 
 struct MainSceneUbo {
-	glm::mat4 translated_world_to_clip;
-	glm::vec3 world_position;
+	m::float4x4 translated_world_to_clip;
+	m::float3 world_position;
 	float _pad0;
 };
+
+static_assert(sizeof(MainSceneUbo) == 80, "MainSceneUbo layout mismatch with shaders");
 
 constexpr VkClearColorValue CLEAR_COLOR = { { 0.53f, 0.77f, 0.9f, 1.0f } };
 constexpr VkClearDepthStencilValue CLEAR_DEPTH = { 0.0f, 0 };
@@ -39,7 +41,7 @@ struct PseudoSurfacePreCullingDrawCommand {
 	VkDeviceAddress pos_data_address;
 	VkDeviceAddress attrib_data_address;
 
-	glm::vec3 chunk_base_camworld;
+	m::float3 chunk_base_camworld;
 	float chunk_size_metres;
 
 	uint32_t first_index;
@@ -51,7 +53,7 @@ struct PseudoSurfaceDrawCommand {
 	VkDeviceAddress pos_data_address;
 	VkDeviceAddress attrib_data_address;
 
-	glm::vec3 chunk_base_camworld;
+	m::float3 chunk_base_camworld;
 	float chunk_size_metres;
 };
 
@@ -105,7 +107,7 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 
 	// Upload pre-culling land chunk draw commands
 
-	const glm::dvec3 viewpoint = m_game_view->cameraPosition();
+	const m::double3 viewpoint = m_game_view->cameraPosition();
 
 	LandLoader *land_loader = m_gfx->landLoader();
 	TransientBufferAllocator *tsballoc = m_gfx->transientBufferAllocator();
@@ -167,11 +169,11 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 
 			// Calculate chunk world position in doubles, subtract from camera position in doubles,
 			// and only then cast the difference (smaller value) to floats to pass it to GPU.
-			glm::dvec3 chunk_base_world = glm::dvec3(in_cmd.chunk_key.base()) * land::Consts::CHUNK_SIZE_METRES;
+			m::double3 chunk_base_world = m::double3(in_cmd.chunk_key.base()) * land::Consts::CHUNK_SIZE_METRES;
 
 			out_cmd.pos_data_address = in_cmd.pos_data_address;
 			out_cmd.attrib_data_address = in_cmd.attrib_data_address;
-			out_cmd.chunk_base_camworld = glm::vec3(chunk_base_world - viewpoint);
+			out_cmd.chunk_base_camworld = m::float3(chunk_base_world - viewpoint);
 			out_cmd.chunk_size_metres = float(land::Consts::CHUNK_SIZE_METRES) * float(in_cmd.chunk_key.scaleMultiplier());
 			out_cmd.first_index = in_cmd.first_index;
 			out_cmd.num_indices = in_cmd.num_indices;
@@ -373,16 +375,16 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 
 	// Draw target block selector
 	{
-		glm::dvec3 modify_target_block_pos = glm::dvec3(m_game_view->modifyTargetBlockCoord())
+		m::double3 modify_target_block_pos = m::double3(m_game_view->modifyTargetBlockCoord())
 			* land::Consts::BLOCK_SIZE_METRES;
 
 		struct {
-			glm::vec3 modify_target_camworld;
+			m::float3 modify_target_camworld;
 			float cube_size_world;
 		} push_const;
 
-		const glm::dvec3 viewpoint = m_game_view->cameraPosition();
-		push_const.modify_target_camworld = glm::vec3(modify_target_block_pos - viewpoint);
+		const m::double3 viewpoint = m_game_view->cameraPosition();
+		push_const.modify_target_camworld = m::float3(modify_target_block_pos - viewpoint);
 		push_const.cube_size_world = float(land::Consts::BLOCK_SIZE_METRES);
 
 		VkPipelineLayout layout = legacy_layout_collection.landSelectorLayout();
@@ -422,12 +424,12 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 
 		FontRenderer::TextItem texts[] = { {
 			.text = land::TempBlockMeta::BLOCK_NAME[current_block],
-			.origin_screen = glm::vec2(viewport.width * 0.5f - 75.0f, 50.0f),
+			.origin_screen = m::float2(viewport.width * 0.5f - 75.0f, 50.0f),
 			.color = land::TempBlockMeta::BLOCK_FIXED_COLOR[current_block],
 		} };
 
 		FontRenderer &font = *m_gfx->fontRenderer();
-		font.drawUi(cmd_buf, texts, glm::vec2(1.0f / viewport.width, 1.0f / viewport.height));
+		font.drawUi(cmd_buf, texts, m::float2(1.0f / viewport.width, 1.0f / viewport.height));
 	}
 
 	// Draw UI
@@ -531,12 +533,12 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 
 		auto &pipeline_layout = legacy_backend.pipelineLayoutCollection().uiBasicLayout();
 
-		const glm::vec2 inv_screen_size = glm::vec2(1.0f) / glm::vec2(viewport.width, viewport.height);
+		const m::float2 inv_screen_size = m::float2(1.0f) / m::float2(viewport.width, viewport.height);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			legacy_backend.pipelineCollection()[client::vulkan::PipelineCollection::UI_BASIC_PIPELINE]);
-		ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec2),
-			glm::value_ptr(inv_screen_size));
+		ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2),
+			&inv_screen_size);
 		ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
 			std::size(descriptors), descriptors);
 
@@ -556,7 +558,7 @@ VkDescriptorSet LegacyRenderGraph::createMainSceneDset(FrameContext &fctx)
 	auto *ubo_data = reinterpret_cast<MainSceneUbo *>(upload.host_mapped_span.data());
 
 	ubo_data->translated_world_to_clip = m_game_view->translatedWorldToClip();
-	ubo_data->world_position = m_game_view->cameraPosition();
+	ubo_data->world_position = m::float3(m_game_view->cameraPosition());
 
 	auto &dslc = client::vulkan::Backend::backend().descriptorSetLayoutCollection();
 	VkDescriptorSet dset = fctx.allocateDescriptorSet(dslc.mainSceneLayout());

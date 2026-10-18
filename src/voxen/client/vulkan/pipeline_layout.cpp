@@ -83,7 +83,7 @@ PipelineLayout PipelineLayoutCollection::createLandSelectorLayout()
 	VkPushConstantRange push_const_range {
 		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 		.offset = 0,
-		.size = sizeof(glm::vec4),
+		.size = sizeof(m::float4),
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
@@ -106,7 +106,7 @@ PipelineLayout PipelineLayoutCollection::createUiFontLayout()
 	VkPushConstantRange push_const_range {
 		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 		.offset = 0,
-		.size = sizeof(glm::vec2),
+		.size = sizeof(m::float2),
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {
@@ -129,7 +129,7 @@ PipelineLayout PipelineLayoutCollection::createUiBasicLayout()
 	VkPushConstantRange push_const_range {
 		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 		.offset = 0,
-		.size = sizeof(glm::vec2),
+		.size = sizeof(m::float2),
 	};
 
 	return PipelineLayout(VkPipelineLayoutCreateInfo {

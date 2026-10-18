@@ -2,8 +2,7 @@
 
 #include <voxen/visibility.hpp>
 
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <m/vector.hpp>
 
 #include <bit>
 
@@ -23,9 +22,9 @@ struct VOXEN_API PackedColor {
 	constexpr PackedColor(uint32_t rgba) noexcept { *this = std::bit_cast<PackedColor>(rgba); }
 
 	// Construct from linear [0; 1] RGB values (with sRGB conversion if !Linear); A will be 255
-	PackedColor(const glm::vec3 &linear) noexcept;
+	PackedColor(const m::float3 &linear) noexcept;
 	// Construct from linear [0; 1] RGBA values (with sRGB conversion if !Linear)
-	PackedColor(const glm::vec4 &linear) noexcept;
+	PackedColor(const m::float4 &linear) noexcept;
 	// Construct from a differently encoded value
 	PackedColor(const PackedColor<!Linear> &other) noexcept;
 
@@ -35,9 +34,9 @@ struct VOXEN_API PackedColor {
 	// Pack to a single `uint32_t` without conversion; endian-dependent
 	uint32_t toUint32() const noexcept { return std::bit_cast<uint32_t>(*this); }
 	// Get linearized [0; 1] values of RGB components
-	glm::vec3 toVec3() const noexcept;
+	m::float3 toVec3() const noexcept;
 	// Get linearized [0; 1] values of RGBA components
-	glm::vec4 toVec4() const noexcept;
+	m::float4 toVec4() const noexcept;
 
 	// Get linearized value
 	PackedColor<true> toLinear() const noexcept { return PackedColor<true>(*this); }

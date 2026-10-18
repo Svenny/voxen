@@ -10,7 +10,7 @@
 
 #include <tk/rng.hpp>
 
-#include <glm/gtc/packing.hpp>
+#include <m/packing.hpp>
 
 #include <array>
 
@@ -48,7 +48,7 @@ struct LocalPlaneSample {
 	float surface_height;
 };
 
-glm::bvec2 fillLocalPlaneSample(GeneratorGlobalMap::SampledPoint sampled, LocalPlaneSample &output, float ymin,
+m::bool2 fillLocalPlaneSample(GeneratorGlobalMap::SampledPoint sampled, LocalPlaneSample &output, float ymin,
 	float ymax)
 {
 	output.global_map_height = sampled.height;
@@ -57,7 +57,7 @@ glm::bvec2 fillLocalPlaneSample(GeneratorGlobalMap::SampledPoint sampled, LocalP
 
 	bool have_empty = ymax > output.surface_height;
 	bool have_solid = ymin <= output.surface_height;
-	return glm::bvec2(have_empty, have_solid);
+	return m::bool2(have_empty, have_solid);
 }
 
 Chunk::BlockId assignMaterial(LocalPlaneSample &sample, float y_height, bool true_chunk)
@@ -86,7 +86,7 @@ Chunk::BlockId assignMaterial(LocalPlaneSample &sample, float y_height, bool tru
 	return TempBlockMeta::BlockEmpty;
 }
 
-glm::vec2 grad(int32_t x, int32_t z) noexcept
+m::float2 grad(int32_t x, int32_t z) noexcept
 {
 	uint64_t kek = Hash::xxh64Fixed((uint64_t(x) << 32) | uint64_t(z));
 
@@ -97,7 +97,7 @@ glm::vec2 grad(int32_t x, int32_t z) noexcept
 	constexpr uint32_t M = 16777215u;
 	float gx = ((k1 & S) ? -float(k1 & M) : float(k1 & M)) / float(M);
 	float gy = ((k2 & S) ? -float(k2 & M) : float(k2 & M)) / float(M);
-	return glm::vec2(gx, gy);
+	return m::float2(gx, gy);
 }
 
 float sampleRawSimplexNoise(double x, double z)
@@ -113,7 +113,7 @@ float sampleRawSimplexNoise(double x, double z)
 	int32_t x0 = static_cast<int32_t>(x0d);
 	int32_t z0 = static_cast<int32_t>(z0d);
 
-	glm::vec2 inner(xskew - x0d, zskew - z0d);
+	m::float2 inner(m::double2(xskew - x0d, zskew - z0d));
 
 	int32_t x1 = inner.x >= inner.y ? x0 + 1 : x0;
 	int32_t z1 = inner.x < inner.y ? z0 + 1 : z0;
@@ -132,9 +132,9 @@ float sampleRawSimplexNoise(double x, double z)
 	double x2_unskew = x2d - (x2d + z2d) * G;
 	double z2_unskew = z2d - (x2d + z2d) * G;
 
-	glm::vec2 r0(x - x0_unskew, z - z0_unskew);
-	glm::vec2 r1(x - x1_unskew, z - z1_unskew);
-	glm::vec2 r2(x - x2_unskew, z - z2_unskew);
+	m::float2 r0(m::double2(x - x0_unskew, z - z0_unskew));
+	m::float2 r1(m::double2(x - x1_unskew, z - z1_unskew));
+	m::float2 r2(m::double2(x - x2_unskew, z - z2_unskew));
 
 	float d0 = std::max(0.0f, 0.5f - r0.x * r0.x - r0.y * r0.y);
 	float d1 = std::max(0.0f, 0.5f - r1.x * r1.x - r1.y * r1.y);
@@ -147,9 +147,9 @@ float sampleRawSimplexNoise(double x, double z)
 	d2 = d2 * d2;
 	d2 = d2 * d2;
 
-	float g0 = glm::dot(grad(x0, z0), r0);
-	float g1 = glm::dot(grad(x1, z1), r1);
-	float g2 = glm::dot(grad(x2, z2), r2);
+	float g0 = m::dot(grad(x0, z0), r0);
+	float g1 = m::dot(grad(x1, z1), r1);
+	float g2 = m::dot(grad(x2, z2), r2);
 
 	float result = d0 * g0 + d1 * g1 + d2 * g2;
 	// TODO: why this multiplication?
@@ -245,8 +245,8 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 
 	auto base_temperature_dist = [&]() { return tk::rng::uniformReal(rng, MIN_BASE_TEMPERATURE, MAX_BASE_TEMPERATURE); };
 
-	std::vector<glm::vec2> cur_image(size_t(cur_width * cur_height));
-	for (glm::vec2 &v : cur_image) {
+	std::vector<m::float2> cur_image(size_t(cur_width * cur_height));
+	for (m::float2 &v : cur_image) {
 		float height_level = height_level_dist(rng);
 		float base_temperature = 0.5f * (base_temperature_dist() + base_temperature_dist());
 
@@ -256,25 +256,25 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 
 	int32_t prev_width = cur_width;
 	int32_t prev_height = cur_height;
-	std::vector<glm::vec2> prev_image = std::move(cur_image);
+	std::vector<m::float2> prev_image = std::move(cur_image);
 
-	auto load_prev_image = [&](int32_t row, int32_t col) -> glm::vec2 {
+	auto load_prev_image = [&](int32_t row, int32_t col) -> m::float2 {
 		row = (row + prev_height) % prev_height;
 		col = (col + prev_width) % prev_width;
 		return prev_image[size_t(row * prev_width + col)];
 	};
 
-	auto load_cur_image = [&](int32_t row, int32_t col) -> glm::vec2 {
+	auto load_cur_image = [&](int32_t row, int32_t col) -> m::float2 {
 		row = (row + cur_height) % cur_height;
 		col = (col + cur_width) % cur_width;
 		return cur_image[size_t(row * cur_width + col)];
 	};
 
-	auto store_cur_image = [&](int32_t row, int32_t col, glm::vec2 value) {
+	auto store_cur_image = [&](int32_t row, int32_t col, m::float2 value) {
 		cur_image[size_t(row * cur_width + col)] = value;
 	};
 
-	auto average_four = [](const glm::vec2 &a, const glm::vec2 &b, const glm::vec2 &c, const glm::vec2 &d) -> glm::vec2 {
+	auto average_four = [](const m::float2 &a, const m::float2 &b, const m::float2 &c, const m::float2 &d) -> m::float2 {
 		// Weight elements inversely by height to shift the average towards zero.
 		// This should make elevation features more sharply pronounced.
 		float heights[4] = { a.x, b.x, c.x, d.x };
@@ -282,7 +282,7 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 
 		const float height = 0.35f * heights[0] + 0.3f * heights[1] + 0.2f * heights[2] + 0.15f * heights[3];
 		const float temperature = 0.25f * (a.y + b.y + c.y + d.y);
-		return glm::vec2(height, temperature);
+		return m::float2(height, temperature);
 	};
 
 	float noise_magnitude = 1.0f;
@@ -292,7 +292,7 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 	while (cur_height != GLOBAL_MAP_HEIGHT) {
 		cur_width = prev_width * 2;
 		cur_height = prev_height * 2;
-		cur_image = std::vector<glm::vec2>(size_t(cur_width * cur_height));
+		cur_image = std::vector<m::float2>(size_t(cur_width * cur_height));
 
 		const float height_noise_width = HEIGHT_NOISE_WIDTH * noise_magnitude;
 		const float temperature_noise_width = TEMPERATURE_NOISE_WIDTH * noise_magnitude;
@@ -318,12 +318,12 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 				// - UL is copied upper-left (1 pixel from this location at previous resolution)
 				// - DM is diamond-averaged from four adjacent ULs
 				// - XX are missed for now and left for square step
-				glm::vec2 upper_left = load_prev_image(row / 2, col / 2);
-				glm::vec2 upper_right = load_prev_image(row / 2, col / 2 + 1);
-				glm::vec2 lower_left = load_prev_image(row / 2 + 1, col / 2);
-				glm::vec2 lower_right = load_prev_image(row / 2 + 1, col / 2 + 1);
+				m::float2 upper_left = load_prev_image(row / 2, col / 2);
+				m::float2 upper_right = load_prev_image(row / 2, col / 2 + 1);
+				m::float2 lower_left = load_prev_image(row / 2 + 1, col / 2);
+				m::float2 lower_right = load_prev_image(row / 2 + 1, col / 2 + 1);
 
-				glm::vec2 dm = average_four(upper_left, upper_right, lower_left, lower_right);
+				m::float2 dm = average_four(upper_left, upper_right, lower_left, lower_right);
 				dm.x += height_noise_dist();
 				dm.y += temperature_noise_dist();
 
@@ -348,18 +348,18 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 				// - AA/BB will be square-averaged from four adjacent UL/DMs
 
 				// row - 1
-				glm::vec2 dm_up = load_cur_image(row - 1, col + 1);
+				m::float2 dm_up = load_cur_image(row - 1, col + 1);
 				// row
-				glm::vec2 ul_this = load_cur_image(row, col);
-				glm::vec2 ul_right = load_cur_image(row, col + 2);
+				m::float2 ul_this = load_cur_image(row, col);
+				m::float2 ul_right = load_cur_image(row, col + 2);
 				// row + 1
-				glm::vec2 dm_left = load_cur_image(row + 1, col - 1);
-				glm::vec2 dm_this = load_cur_image(row + 1, col + 1);
+				m::float2 dm_left = load_cur_image(row + 1, col - 1);
+				m::float2 dm_this = load_cur_image(row + 1, col + 1);
 				// row + 2
-				glm::vec2 ul_down = load_cur_image(row + 2, col);
+				m::float2 ul_down = load_cur_image(row + 2, col);
 
-				glm::vec2 aa = average_four(dm_up, ul_this, ul_right, dm_this);
-				glm::vec2 bb = average_four(ul_this, dm_left, dm_this, ul_down);
+				m::float2 aa = average_four(dm_up, ul_this, ul_right, dm_this);
+				m::float2 bb = average_four(ul_this, dm_left, dm_this, ul_down);
 
 				aa.x += height_noise_dist();
 				aa.y += temperature_noise_dist();
@@ -386,7 +386,7 @@ void GeneratorGlobalMap::doGenerate(uint64_t seed)
 	m_points = std::make_unique<Point[]>(num_points);
 
 	for (size_t i = 0; i < num_points; i++) {
-		const glm::vec2 &in = prev_image[i];
+		const m::float2 &in = prev_image[i];
 		Point &out = m_points[i];
 
 		out.height = static_cast<int16_t>(in.x);
@@ -432,14 +432,14 @@ auto GeneratorGlobalMap::sample(double x, double z) const noexcept -> SampledPoi
 	const Point &ld = m_points[size_t(z1 * m_width + x0)];
 	const Point &rd = m_points[size_t(z1 * m_width + x1)];
 
-	float hz0 = glm::mix(float(lu.height), float(ru.height), tx);
-	float tz0 = glm::mix(float(lu.temperature), float(ru.temperature), tx);
+	float hz0 = m::lerp(float(lu.height), float(ru.height), tx);
+	float tz0 = m::lerp(float(lu.temperature), float(ru.temperature), tx);
 
-	float hz1 = glm::mix(float(ld.height), float(rd.height), tx);
-	float tz1 = glm::mix(float(ld.temperature), float(rd.temperature), tx);
+	float hz1 = m::lerp(float(ld.height), float(rd.height), tx);
+	float tz1 = m::lerp(float(ld.temperature), float(rd.temperature), tx);
 
-	float hres = glm::mix(hz0, hz1, tz);
-	float tres = glm::mix(tz0, tz1, tz);
+	float hres = m::lerp(hz0, hz1, tz);
+	float tres = m::lerp(tz0, tz1, tz);
 	assert(std::isfinite(hres));
 	assert(std::isfinite(tres));
 
@@ -487,9 +487,9 @@ uint64_t Generator::prepareKeyGeneration(ChunkKey key, svc::TaskBuilder &bld)
 
 void Generator::generateChunk(ChunkKey key, Chunk &output)
 {
-	const glm::ivec3 min_blockspace = key.base() * Consts::CHUNK_SIZE_BLOCKS;
+	const m::int3 min_blockspace = key.base() * Consts::CHUNK_SIZE_BLOCKS;
 	// Sample points are shifted by 0.5 to be in centers of block volumes
-	const glm::dvec3 min_world = (glm::dvec3(min_blockspace) + 0.5) * Consts::BLOCK_SIZE_METRES;
+	const m::double3 min_world = (m::double3(min_blockspace) + 0.5) * Consts::BLOCK_SIZE_METRES;
 
 	float y_height[Consts::CHUNK_SIZE_BLOCKS];
 	for (int32_t y = 0; y < Consts::CHUNK_SIZE_BLOCKS; y++) {
@@ -502,7 +502,7 @@ void Generator::generateChunk(ChunkKey key, Chunk &output)
 	using LocalPlane = std::array<std::array<LocalPlaneSample, Consts::CHUNK_SIZE_BLOCKS>, Consts::CHUNK_SIZE_BLOCKS>;
 	auto local_plane = std::make_unique<LocalPlane>();
 
-	glm::bvec2 have_empty_solid(false, false);
+	m::bool2 have_empty_solid(false, false);
 
 	for (uint32_t x = 0; x < Consts::CHUNK_SIZE_BLOCKS; x++) {
 		for (uint32_t z = 0; z < Consts::CHUNK_SIZE_BLOCKS; z++) {
@@ -533,7 +533,7 @@ void Generator::generateChunk(ChunkKey key, Chunk &output)
 
 void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 {
-	const glm::ivec3 min_blockspace = key.base() * Consts::CHUNK_SIZE_BLOCKS;
+	const m::int3 min_blockspace = key.base() * Consts::CHUNK_SIZE_BLOCKS;
 	const int32_t step_blockspace = key.scaleMultiplier();
 
 	float y_height[Consts::CHUNK_SIZE_BLOCKS + 1];
@@ -549,7 +549,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 	using LocalPlane = std::array<std::array<LocalPlaneSample, NP>, NP>;
 	auto local_plane = std::make_unique<LocalPlane>();
 
-	glm::bvec2 have_empty_solid(false, false);
+	m::bool2 have_empty_solid(false, false);
 
 	for (int32_t x = 0; x <= Consts::CHUNK_SIZE_BLOCKS; x++) {
 		for (int32_t z = 0; z <= Consts::CHUNK_SIZE_BLOCKS; z++) {
@@ -592,7 +592,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 		material_histogram.clear();
 
 		PseudoChunkData::CellEntry cell {};
-		cell.cell_index = glm::u8vec3(x, y, z);
+		cell.cell_index = m::uint8_t3(uint8_t(x), uint8_t(y), uint8_t(z));
 
 		for (int i = 0; i < 8; i++) {
 			if (values[i] <= 0.0f) {
@@ -611,7 +611,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 		}
 
 		// Calculate the average of surface intersections positions
-		glm::vec3 surface_point_sum(0.0f);
+		m::float3 surface_point_sum(0.0f);
 		uint16_t surface_point_count = 0;
 
 		for (int i = 0; i < 8; i++) {
@@ -633,7 +633,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 				// X edge, reverse offset if we are in "upper" end now
 				float offset = ((i & 0b010) ? -NORM_DIV : NORM_DIV) * solve(values[i], values[i ^ 0b010]);
 
-				surface_point_sum += glm::vec3(edge_x_norm + offset, edge_y_norm, edge_z_norm);
+				surface_point_sum += m::float3(edge_x_norm + offset, edge_y_norm, edge_z_norm);
 				surface_point_count++;
 			}
 
@@ -641,7 +641,7 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 				// Y edge, reverse offset if we are in "upper" end now
 				float offset = ((i & 0b100) ? -NORM_DIV : NORM_DIV) * solve(values[i], values[i ^ 0b100]);
 
-				surface_point_sum += glm::vec3(edge_x_norm, edge_y_norm + offset, edge_z_norm);
+				surface_point_sum += m::float3(edge_x_norm, edge_y_norm + offset, edge_z_norm);
 				surface_point_count++;
 			}
 
@@ -649,13 +649,13 @@ void Generator::generatePseudoChunk(ChunkKey key, PseudoChunkData &output)
 				// Z edge, reverse offset if we are in "upper" end now
 				float offset = ((i & 0b001) ? -NORM_DIV : NORM_DIV) * solve(values[i], values[i ^ 0b001]);
 
-				surface_point_sum += glm::vec3(edge_x_norm, edge_y_norm, edge_z_norm + offset);
+				surface_point_sum += m::float3(edge_x_norm, edge_y_norm, edge_z_norm + offset);
 				surface_point_count++;
 			}
 		}
 
 		detail::GeometryUtils::resolveMatHist(material_histogram, cell);
-		cell.surface_point_unorm = glm::packUnorm<uint16_t>(surface_point_sum / float(surface_point_count));
+		cell.surface_point_unorm = m::packUnorm<uint16_t>(surface_point_sum / float(surface_point_count));
 		cell.surface_point_sum_count = surface_point_count;
 
 		cells.emplace_back(cell);

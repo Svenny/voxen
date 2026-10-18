@@ -17,8 +17,7 @@
 #include "land_private_consts.hpp"
 #include "land_private_messages.hpp"
 
-#include <glm/common.hpp>
-#include <glm/vector_relational.hpp>
+#include <m/vector.hpp>
 
 #include <array>
 #include <unordered_map>
@@ -107,10 +106,10 @@ void generatePseudoChunkSurface(ChunkKey key, std::array<PseudoDataPtr, 19> ref,
 	}
 }
 
-void editBlock(ChunkKey key, ChunkPtr chunk, glm::ivec3 position, Chunk::BlockId block_id, svc::MessageSender *sender)
+void editBlock(ChunkKey key, ChunkPtr chunk, m::int3 position, Chunk::BlockId block_id, svc::MessageSender *sender)
 {
-	assert(glm::all(glm::greaterThanEqual(position, glm::ivec3(0))));
-	assert(glm::all(glm::lessThan(position, glm::ivec3(Consts::CHUNK_SIZE_BLOCKS))));
+	assert(m::all(m::greaterThanEqual(position, m::int3(0))));
+	assert(m::all(m::lessThan(position, m::int3(Consts::CHUNK_SIZE_BLOCKS))));
 
 	// TODO: we really need to expand everything to change a single block ID?
 	// That won't scale... at all.
@@ -300,7 +299,7 @@ public:
 					// It can be either box or octahedron
 					assert(octa_area != nullptr);
 
-					const glm::ivec3 pivot = octa_area->pivot.base();
+					const m::int3 pivot = octa_area->pivot.base();
 					const int32_t scale = octa_area->pivot.scaleMultiplier();
 
 					ConcentricOctahedraWalker cwk(octa_area->scaled_radius);
@@ -473,14 +472,14 @@ private:
 				wait_counters[index] = mm.chunk_gen_task_counter;
 			};
 
-			const glm::ivec3 B = ck.base();
+			const m::int3 B = ck.base();
 
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 0, 0)), 1);
-			collect_dependency(ChunkKey(B - glm::ivec3(1, 0, 0)), 2);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 1, 0)), 3);
-			collect_dependency(ChunkKey(B - glm::ivec3(0, 1, 0)), 4);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 1)), 5);
-			collect_dependency(ChunkKey(B - glm::ivec3(0, 0, 1)), 6);
+			collect_dependency(ChunkKey(B + m::int3(1, 0, 0)), 1);
+			collect_dependency(ChunkKey(B - m::int3(1, 0, 0)), 2);
+			collect_dependency(ChunkKey(B + m::int3(0, 1, 0)), 3);
+			collect_dependency(ChunkKey(B - m::int3(0, 1, 0)), 4);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, 1)), 5);
+			collect_dependency(ChunkKey(B - m::int3(0, 0, 1)), 6);
 
 			if (!outdated) {
 				return;
@@ -521,31 +520,31 @@ private:
 				wait_counters[index] = mm.pseudo_data_gen_task_counter;
 			};
 
-			const glm::ivec3 B = ck.base();
+			const m::int3 B = ck.base();
 			const int32_t S = ck.scaleMultiplier();
 			const uint32_t lod = ck.scaleLog2();
 
-			collect_dependency(ChunkKey(B + glm::ivec3(S, 0, 0), lod), 1);
-			collect_dependency(ChunkKey(B - glm::ivec3(S, 0, 0), lod), 2);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, S, 0), lod), 3);
-			collect_dependency(ChunkKey(B - glm::ivec3(0, S, 0), lod), 4);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, S), lod), 5);
-			collect_dependency(ChunkKey(B - glm::ivec3(0, 0, S), lod), 6);
+			collect_dependency(ChunkKey(B + m::int3(S, 0, 0), lod), 1);
+			collect_dependency(ChunkKey(B - m::int3(S, 0, 0), lod), 2);
+			collect_dependency(ChunkKey(B + m::int3(0, S, 0), lod), 3);
+			collect_dependency(ChunkKey(B - m::int3(0, S, 0), lod), 4);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, S), lod), 5);
+			collect_dependency(ChunkKey(B - m::int3(0, 0, S), lod), 6);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, -S, -S), lod), 7);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, -S, +S), lod), 8);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, +S, -S), lod), 9);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, +S, +S), lod), 10);
+			collect_dependency(ChunkKey(B + m::int3(0, -S, -S), lod), 7);
+			collect_dependency(ChunkKey(B + m::int3(0, -S, +S), lod), 8);
+			collect_dependency(ChunkKey(B + m::int3(0, +S, -S), lod), 9);
+			collect_dependency(ChunkKey(B + m::int3(0, +S, +S), lod), 10);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(-S, 0, -S), lod), 11);
-			collect_dependency(ChunkKey(B + glm::ivec3(-S, 0, +S), lod), 12);
-			collect_dependency(ChunkKey(B + glm::ivec3(+S, 0, -S), lod), 13);
-			collect_dependency(ChunkKey(B + glm::ivec3(+S, 0, +S), lod), 14);
+			collect_dependency(ChunkKey(B + m::int3(-S, 0, -S), lod), 11);
+			collect_dependency(ChunkKey(B + m::int3(-S, 0, +S), lod), 12);
+			collect_dependency(ChunkKey(B + m::int3(+S, 0, -S), lod), 13);
+			collect_dependency(ChunkKey(B + m::int3(+S, 0, +S), lod), 14);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(-S, -S, 0), lod), 15);
-			collect_dependency(ChunkKey(B + glm::ivec3(+S, -S, 0), lod), 16);
-			collect_dependency(ChunkKey(B + glm::ivec3(-S, +S, 0), lod), 17);
-			collect_dependency(ChunkKey(B + glm::ivec3(+S, +S, 0), lod), 18);
+			collect_dependency(ChunkKey(B + m::int3(-S, -S, 0), lod), 15);
+			collect_dependency(ChunkKey(B + m::int3(+S, -S, 0), lod), 16);
+			collect_dependency(ChunkKey(B + m::int3(-S, +S, 0), lod), 17);
+			collect_dependency(ChunkKey(B + m::int3(+S, +S, 0), lod), 18);
 
 			if (!outdated) {
 				return;
@@ -608,40 +607,40 @@ private:
 				wait_counters[index] = mm.chunk_gen_task_counter;
 			};
 
-			const glm::ivec3 B = ck.base();
+			const m::int3 B = ck.base();
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 0), 0), 0);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 1), 0), 1);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 0, 0), 0), 2);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 0, 1), 0), 3);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 1, 0), 0), 4);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 1, 1), 0), 5);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 1, 0), 0), 6);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 1, 1), 0), 7);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, 0), 0), 0);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, 1), 0), 1);
+			collect_dependency(ChunkKey(B + m::int3(1, 0, 0), 0), 2);
+			collect_dependency(ChunkKey(B + m::int3(1, 0, 1), 0), 3);
+			collect_dependency(ChunkKey(B + m::int3(0, 1, 0), 0), 4);
+			collect_dependency(ChunkKey(B + m::int3(0, 1, 1), 0), 5);
+			collect_dependency(ChunkKey(B + m::int3(1, 1, 0), 0), 6);
+			collect_dependency(ChunkKey(B + m::int3(1, 1, 1), 0), 7);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 0, 0), 0), 8);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 0, 1), 0), 9);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 1, 0), 0), 10);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 1, 1), 0), 11);
+			collect_dependency(ChunkKey(B + m::int3(2, 0, 0), 0), 8);
+			collect_dependency(ChunkKey(B + m::int3(2, 0, 1), 0), 9);
+			collect_dependency(ChunkKey(B + m::int3(2, 1, 0), 0), 10);
+			collect_dependency(ChunkKey(B + m::int3(2, 1, 1), 0), 11);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 2, 0), 0), 12);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 2, 1), 0), 13);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 2, 0), 0), 14);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 2, 1), 0), 15);
+			collect_dependency(ChunkKey(B + m::int3(0, 2, 0), 0), 12);
+			collect_dependency(ChunkKey(B + m::int3(0, 2, 1), 0), 13);
+			collect_dependency(ChunkKey(B + m::int3(1, 2, 0), 0), 14);
+			collect_dependency(ChunkKey(B + m::int3(1, 2, 1), 0), 15);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 2), 0), 16);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 0, 2), 0), 17);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 1, 2), 0), 18);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 1, 2), 0), 19);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, 2), 0), 16);
+			collect_dependency(ChunkKey(B + m::int3(1, 0, 2), 0), 17);
+			collect_dependency(ChunkKey(B + m::int3(0, 1, 2), 0), 18);
+			collect_dependency(ChunkKey(B + m::int3(1, 1, 2), 0), 19);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 2, 2), 0), 20);
-			collect_dependency(ChunkKey(B + glm::ivec3(1, 2, 2), 0), 21);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 0, 2), 0), 22);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 1, 2), 0), 23);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 2, 0), 0), 24);
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 2, 1), 0), 25);
+			collect_dependency(ChunkKey(B + m::int3(0, 2, 2), 0), 20);
+			collect_dependency(ChunkKey(B + m::int3(1, 2, 2), 0), 21);
+			collect_dependency(ChunkKey(B + m::int3(2, 0, 2), 0), 22);
+			collect_dependency(ChunkKey(B + m::int3(2, 1, 2), 0), 23);
+			collect_dependency(ChunkKey(B + m::int3(2, 2, 0), 0), 24);
+			collect_dependency(ChunkKey(B + m::int3(2, 2, 1), 0), 25);
 
-			collect_dependency(ChunkKey(B + glm::ivec3(2, 2, 2), 0), 26);
+			collect_dependency(ChunkKey(B + m::int3(2, 2, 2), 0), 26);
 
 			if (!outdated) {
 				return;
@@ -695,18 +694,18 @@ private:
 				wait_counters[index] = mm.pseudo_data_gen_task_counter;
 			};
 
-			const glm::ivec3 B = ck.base();
+			const m::int3 B = ck.base();
 			const uint32_t S = ck.scale_log2 - 1u;
 			const int32_t K = ck.scaleMultiplier() / 2;
 
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, 0), S), 0);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, 0, K), S), 1);
-			collect_dependency(ChunkKey(B + glm::ivec3(K, 0, 0), S), 2);
-			collect_dependency(ChunkKey(B + glm::ivec3(K, 0, K), S), 3);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, K, 0), S), 4);
-			collect_dependency(ChunkKey(B + glm::ivec3(0, K, K), S), 5);
-			collect_dependency(ChunkKey(B + glm::ivec3(K, K, 0), S), 6);
-			collect_dependency(ChunkKey(B + glm::ivec3(K, K, K), S), 7);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, 0), S), 0);
+			collect_dependency(ChunkKey(B + m::int3(0, 0, K), S), 1);
+			collect_dependency(ChunkKey(B + m::int3(K, 0, 0), S), 2);
+			collect_dependency(ChunkKey(B + m::int3(K, 0, K), S), 3);
+			collect_dependency(ChunkKey(B + m::int3(0, K, 0), S), 4);
+			collect_dependency(ChunkKey(B + m::int3(0, K, K), S), 5);
+			collect_dependency(ChunkKey(B + m::int3(K, K, 0), S), 6);
+			collect_dependency(ChunkKey(B + m::int3(K, K, K), S), 7);
 
 			if (!outdated) {
 				return;
@@ -797,13 +796,13 @@ private:
 
 	void handleBlockEditMessage(const BlockEditMessage &msg)
 	{
-		glm::ivec3 chunk_lowest_block = msg.position & ~(Consts::CHUNK_SIZE_BLOCKS - 1);
+		m::int3 chunk_lowest_block = msg.position & ~(Consts::CHUNK_SIZE_BLOCKS - 1);
 		ChunkKey chunk_key(chunk_lowest_block / Consts::CHUNK_SIZE_BLOCKS, 0);
 
 		ChunkMetastate &m = getMetastate(chunk_key);
 		enqueueChunkDataGen(chunk_key, m);
 
-		glm::ivec3 edit_position = msg.position - chunk_lowest_block;
+		m::int3 edit_position = msg.position - chunk_lowest_block;
 
 		svc::TaskBuilder bld(m_task_service);
 		// This will ensure successive chunk gen/edit tasks complete in order
@@ -829,26 +828,26 @@ private:
 		// XXX: for chunk modifications (not full data gen) trim the potentially
 		// affected data set. E.g. no need to rebuild adjacent chunks' geometries
 		// if only internal (not border) blocks were changed. Similar with pseudo-data.
-		const glm::ivec3 base = msg.key.base();
+		const m::int3 base = msg.key.base();
 
 		// Invalidate geometry of this and adjacent 6 chunks
 		m.pseudo_surface_invalidated = 1;
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(1, 0, 0)));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 0, 0)));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 1, 0)));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 1, 0)));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 0, 1)));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 0, 1)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(1, 0, 0)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(1, 0, 0)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, 1, 0)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(0, 1, 0)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, 0, 1)));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(0, 0, 1)));
 
 		// Invalidate pseudo-data of parents of 8 chunks in "tail" direction
 		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key.parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 0, 1)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 0, 0)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 0, 1)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 1, 0)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 1, 1)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 1, 0)).parentLodKey());
-		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - glm::ivec3(1, 1, 1)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(0, 0, 1)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(1, 0, 0)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(1, 0, 1)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(0, 1, 0)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(0, 1, 1)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(1, 1, 0)).parentLodKey());
+		m_this_tick_pseudo_data_invalidations.emplace_back(ChunkKey(base - m::int3(1, 1, 1)).parentLodKey());
 	}
 
 	void handlePseudoDataGenCompletion(PseudoChunkDataGenCompletionMessage &msg)
@@ -858,33 +857,33 @@ private:
 
 		// XXX: this might be quite hard to track, but invalidating adjacent chunks
 		// pseudo-surfaces is only needed if border cell entries were changed.
-		const glm::ivec3 base = msg.key.base();
+		const m::int3 base = msg.key.base();
 		const int32_t S = msg.key.scaleMultiplier();
 		const uint32_t lod = msg.key.scaleLog2();
 
 		// Invalidate pseudo-surface geometry of this and adjacent 18 chunks
 		m.pseudo_surface_invalidated = 1;
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(S, 0, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(S, 0, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, S, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, S, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, 0, S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - glm::ivec3(0, 0, S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(S, 0, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(S, 0, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(0, S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, 0, S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base - m::int3(0, 0, S), lod));
 
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(+S, 0, +S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(+S, 0, -S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(-S, 0, +S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(-S, 0, -S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(+S, 0, +S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(+S, 0, -S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(-S, 0, +S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(-S, 0, -S), lod));
 
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, +S, +S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, +S, -S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, -S, +S), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(0, -S, -S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, +S, +S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, +S, -S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, -S, +S), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(0, -S, -S), lod));
 
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(+S, +S, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(+S, -S, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(-S, +S, 0), lod));
-		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + glm::ivec3(-S, -S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(+S, +S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(+S, -S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(-S, +S, 0), lod));
+		m_this_tick_pseudo_surface_invalidations.emplace_back(ChunkKey(base + m::int3(-S, -S, 0), lod));
 
 		// Invalidate pseudo-data of the parent chunk (force reaggregation)
 		m_this_tick_pseudo_data_invalidations.emplace_back(msg.key.parentLodKey());
@@ -914,8 +913,8 @@ private:
 				return false;
 			}
 
-			glm::ivec3 blo = lo.base();
-			glm::ivec3 bhi = hi.base();
+			m::int3 blo = lo.base();
+			m::int3 bhi = hi.base();
 
 			if (blo.x >= bhi.x || blo.y >= bhi.y || blo.z >= bhi.z) {
 				Log::warn("Bad chunk ticket request: box ({}, {}, {})-({}, {}, {}) is empty or negative", blo.x, blo.y,
@@ -923,7 +922,7 @@ private:
 				return false;
 			}
 
-			glm::ivec3 diff = glm::abs(bhi - blo);
+			m::int3 diff = m::abs(bhi - blo);
 			int32_t max_dist = std::max({ diff.x, diff.y, diff.z }) >> lo.scale_log2;
 			if (max_dist > Consts::MAX_TICKET_BOX_AREA_SIZE) {
 				Log::warn("Bad chunk ticket request: box max scaled size {} is larger than maximally allowed {}", max_dist,
