@@ -29,7 +29,7 @@ find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter)
 
 include(tools/cmake/toolchain_setup.cmake)
 
-# Build third-party dependencies
+# Third-party dependencies, vendored and built in-graph
 add_subdirectory(3rdparty)
 
 # CMake target setup
@@ -39,7 +39,6 @@ voxen_add_library(tk STATIC)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
-add_dependencies(voxen 3rdparty-pull-binaries)
 target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
 
 find_package(Threads REQUIRED)

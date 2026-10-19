@@ -150,16 +150,6 @@ function(voxen_setup_target target)
 			/showFilenames
 			# Compile multiple source files in parallel (why it's not the default?!)
 			/MP
-
-			# CMake+VS+ClangCL+IntelliSense interaction is broken beyond hope.
-			# Include dirs marked as SYSTEM compile fine but are not seen by IntelliSense.
-			# CMake adds these with `-imsvc` switch but VS expects `/external:I` seemingly.
-			# Fixes VS2019... but VS2022 is not satisfied even with that.
-			#
-			# I have no hope that it will ever get fixed, so use all three possible switches
-			# and pray that clang-cl won't start issuing warnings one day because of `/I`.
-			"/external:I${CMAKE_BINARY_DIR}/3rdparty-package/include"
-			"/I${CMAKE_BINARY_DIR}/3rdparty-package/include"
 		)
 
 		target_link_libraries(${target} PRIVATE
@@ -198,9 +188,9 @@ function(voxen_setup_target target)
 		C_VISIBILITY_PRESET hidden
 		CXX_VISIBILITY_PRESET hidden
 
-		# 3rdparty is always built in Release (/MD) and we must not mix it with /MDd,
-		# so set /MD for our code as well. This loses some hypothetical debug
-		# capabilities, but then, do we really need them anywhere?
+		# Use the release CRT in every configuration. The debug one (/MDd) adds
+		# checked iterators and heap checks that cost a lot of Debug performance,
+		# sanitizers on Linux cover that ground better.
 		MSVC_RUNTIME_LIBRARY MultiThreadedDLL
 
 		# Enable PIC for everything (executables, static and shared libs).
@@ -245,5 +235,13 @@ function(voxen_add_library name type)
 
 	if(NOT type STREQUAL "INTERFACE")
 		voxen_setup_target(${name})
+	endif()
+
+	if(type STREQUAL "SHARED" AND LINUX)
+		# Static third-party libraries are linked into our shared libraries and must
+		# not leak out of them: FreeType marks its API as default-visibility, and any
+		# exported symbol could be interposed by a system copy of the same library
+		# loaded into the process (e.g. through the Wayland/X11 stack).
+		target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
 	endif()
 endfunction()

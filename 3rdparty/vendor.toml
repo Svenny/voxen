@@ -14,6 +14,45 @@ license = "BSL-1.0"
 keep = ["src/catch2/**", "LICENSE.txt"]
 exclude = ["src/catch2/meson.build"]
 
+[fmt]
+version = "12.2.0"
+url = "https://github.com/fmtlib/fmt/releases/download/{version}/fmt-{version}.zip"
+sha256 = "a2f4a8d51178f954e4c339007f77edd76ba0cb2e36f87a48e5a5403d9be5878f"
+license = "MIT"
+keep = ["include/fmt/*.h", "src/format.cc", "LICENSE"]
+
+[freetype]
+version = "2.15.0"
+url = "https://download.savannah.gnu.org/releases/freetype/freetype-{version}.tar.xz"
+sha256 = "93cd47eb719c325107f2d3cf087d06299e944c3b48a40b55537302304dea1dd5"
+license = "FTL"
+# Only the modules listed in `ftmodule.h` (see the patch) plus the base
+keep = [
+	"include/**",
+	"src/autofit/*", "src/base/*", "src/cff/*", "src/psaux/*", "src/pshinter/*",
+	"src/psnames/*", "src/sdf/*", "src/sfnt/*", "src/smooth/*", "src/truetype/*",
+	"LICENSE.TXT", "docs/FTL.TXT",
+]
+exclude = ["src/*/*.mk", "src/autofit/*.cin", "src/autofit/*.hin", "src/autofit/*.dat", "src/base/ftver.rc"]
+# Project build configuration: no compressed fonts, no SVG, trimmed module list
+patches = ["config.patch"]
+
+[glfw]
+version = "3.4"
+url = "https://github.com/glfw/glfw/releases/download/{version}/glfw-{version}.zip"
+sha256 = "b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9"
+license = "Zlib"
+keep = ["include/GLFW/*.h", "src/*.c", "src/*.h", "deps/wayland/*.xml", "LICENSE.md"]
+exclude = ["src/cocoa_*"]
+
+[harfbuzz]
+version = "14.6.0"
+url = "https://github.com/harfbuzz/harfbuzz/releases/download/{version}/harfbuzz-{version}.tar.xz"
+sha256 = "d07a007327277708a2a73ae437887cdbaf282937f6d03ca5467723e9099af586"
+license = "MIT-old-style"
+keep = ["src/*.cc", "src/*.hh", "src/*.h", "src/OT/**", "src/graph/**", "COPYING"]
+exclude = ["src/harfbuzz-subset.cc", "src/harfbuzz-world.cc", "src/hb-subset*.cc", "src/main.cc", "src/test*.cc"]
+
 [vma]
 version = "3.4.0"
 url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v{version}.tar.gz"
@@ -41,3 +80,12 @@ patches = ["vkapi-noexcept-macro.patch"]
 files = ["include/vulkan/vulkan*.h"]
 regex = '\);'
 with = ') VKAPI_NOEXCEPT;'
+
+[zlib]
+version = "1.3.2"
+url = "https://github.com/madler/zlib/releases/download/v{version}/zlib-{version}.tar.gz"
+sha256 = "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+license = "Zlib"
+# Only deflate/inflate/crc32, no gzip file API
+keep = ["*.c", "*.h", "LICENSE"]
+exclude = ["compress.c", "uncompr.c", "gz*.c", "infback.c"]
