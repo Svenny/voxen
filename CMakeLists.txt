@@ -39,8 +39,6 @@ voxen_add_library(tk STATIC)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
-target_compile_definitions(voxen PUBLIC VOXEN_DEBUG_BUILD=$<CONFIG:Debug>)
-
 find_package(Threads REQUIRED)
 target_link_libraries(voxen PUBLIC
 	extras
@@ -74,7 +72,7 @@ if(VOXEN_BUILD_DATA)
 	add_subdirectory(data)
 endif()
 
-option(VOXEN_BUILD_TESTS "Build tests for some small parts of codebase" OFF)
+option(VOXEN_BUILD_TESTS "Build the test suite" OFF)
 if(VOXEN_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
