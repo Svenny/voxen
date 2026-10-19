@@ -84,7 +84,14 @@ if(MSVC)
 	target_compile_options(freetype INTERFACE "/I${CMAKE_BINARY_DIR}/3rdparty-package/include/freetype2")
 endif()
 
-# Embedded dependencies (sources in tree)
+# Embedded dependencies (sources in tree). They get the full engine toolchain
+# setup but none of our warnings, it's not our code to fix. `-w` works in clang-cl too.
+function(voxen_add_3rdparty_library name)
+	voxen_add_library(${name} STATIC)
+	add_library(3rdparty::${name} ALIAS ${name})
+	target_compile_options(${name} PRIVATE -w)
+endfunction()
+
 include(catch2.cmake)
 include(vulkan-headers.cmake)
 # Depends on `vulkan-headers`, include after them

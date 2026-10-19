@@ -1,8 +1,6 @@
-diff --git a/3rdparty/vulkan-headers/vulkan/vk_platform.h b/3rdparty/vulkan-headers/vulkan/vk_platform.h
-index 3ff8c5d..ed6211b 100644
---- a/3rdparty/vulkan-headers/vulkan/vk_platform.h
-+++ b/3rdparty/vulkan-headers/vulkan/vk_platform.h
-@@ -32,9 +32,11 @@ extern "C"
+--- a/include/vulkan/vk_platform.h
++++ b/include/vulkan/vk_platform.h
+@@ -31,9 +31,11 @@
   * VKAPI_CALL - Placed after the return type in function declarations.
   *              Useful for MSVC-style calling convention syntax.
   * VKAPI_PTR  - Placed between the '(' and '*' in function pointer types.
@@ -16,10 +14,10 @@ index 3ff8c5d..ed6211b 100644
   */
  #if defined(_WIN32)
      // On Windows, Vulkan commands use the stdcall convention
-@@ -58,6 +60,12 @@ extern "C"
+@@ -57,6 +59,12 @@
      #define VKAPI_PTR
  #endif
- 
+
 +#ifdef __cplusplus
 +    #define VKAPI_NOEXCEPT noexcept
 +#else

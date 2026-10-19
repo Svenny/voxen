@@ -1,11 +1,13 @@
-voxen_add_library(vma STATIC)
-add_library(3rdparty::vma ALIAS vma)
+voxen_add_3rdparty_library(vma)
 
-# Not our code, don't bother with its warnings (same as for Catch2)
-target_compile_options(vma PRIVATE -w)
-
-# Interface header of this library triggers many of our warnings.
-# Mark it as system header to avoid failures in user code.
-target_include_directories(vma SYSTEM INTERFACE vma)
+# VMA is a single header, this TU instantiates its implementation. Vulkan functions
+# are fetched at runtime through `VmaVulkanFunctions`, nothing links `vulkan-1`.
+file(CONFIGURE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/vma-generated/vk_mem_alloc.cpp CONTENT [[
+#define VMA_IMPLEMENTATION
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#include <vk_mem_alloc.h>
+]])
+target_sources(vma PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/vma-generated/vk_mem_alloc.cpp)
+target_include_directories(vma SYSTEM PUBLIC vma/include)
 target_link_libraries(vma PUBLIC 3rdparty::vulkan-headers)
-target_sources(vma PRIVATE vma/vma/vk_mem_alloc.cpp)
