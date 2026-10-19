@@ -1,0 +1,40 @@
+name: Vendored sources
+
+# Checks that `3rdparty/` is exactly what `3rdparty/vendor.toml` describes,
+# i.e. no local edits were made outside of the manifest and its patches
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '3rdparty/**'
+      - 'tools/maintenance/vendor.py'
+      - '.github/workflows/vendor.yml'
+  pull_request:
+    paths:
+      - '3rdparty/**'
+      - 'tools/maintenance/vendor.py'
+      - '.github/workflows/vendor.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout the commit
+        uses: actions/checkout@v7
+
+      - name: Cache downloaded archives
+        uses: actions/cache@v6
+        with:
+          path: build/vendor-cache
+          key: vendor-archives-${{ hashFiles('3rdparty/vendor.toml') }}
+
+      - name: Check the tree against the manifest
+        run: |
+          python3 --version
+          python3 tools/maintenance/vendor.py check --diff
