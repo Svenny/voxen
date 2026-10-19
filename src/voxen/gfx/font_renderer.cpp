@@ -18,7 +18,7 @@
 
 #include <m/packing.hpp>
 
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 
 namespace voxen::gfx
 {

@@ -1,0 +1,43 @@
+# Third-party sources vendored into this directory, one table per `3rdparty/<name>`.
+# `tools/maintenance/vendor.py` derives the directories from these entries
+# (see its docstring for the keys), CI checks that the tree matches.
+#
+# Bumping a version: edit `version` (and `sha256`, the script prints the new one),
+# run `vendor.py update <name>`, fix whatever `keep`/`patches` stopped matching,
+# review the diff and check that `3rdparty/<name>.cmake` still lists the right sources.
+
+[catch2]
+version = "3.16.1"
+url = "https://github.com/catchorg/Catch2/archive/refs/tags/v{version}.tar.gz"
+sha256 = "d16bd1b8b2364918bd472cb216394acb93bde6784890df0d91bccfb3f28d777d"
+license = "BSL-1.0"
+keep = ["src/catch2/**", "LICENSE.txt"]
+exclude = ["src/catch2/meson.build"]
+
+[vma]
+version = "3.4.0"
+url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v{version}.tar.gz"
+sha256 = "822aa850c6ce77346ae96a8a1d351d52e77e85929f35363849a0a4e638e0a2a1"
+license = "MIT"
+keep = ["include/vk_mem_alloc.h", "LICENSE.txt"]
+
+[vulkan-headers]
+# Keep in sync with `VULKAN_SDK_VERSION` in `.github/workflows/ci.yml`
+version = "1.4.363.0"
+url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-{version}.tar.gz"
+sha256 = "4a078be12bef21cfebc09d878b77a63cff9d68f899254a0b00d0e37ef73e7f7e"
+license = "Apache-2.0 OR MIT"
+keep = [
+	"include/vulkan/vk_platform.h", "include/vulkan/vulkan.h", "include/vulkan/vulkan_core.h",
+	"include/vulkan/vulkan_wayland.h", "include/vulkan/vulkan_win32.h", "include/vulkan/vulkan_xcb.h",
+	"include/vulkan/vulkan_xlib.h", "include/vulkan/vulkan_xlib_xrandr.h",
+	"include/vk_video/*.h", "LICENSE.md",
+]
+# Tiny size/codegen optimization, trim exception handler sections around Vulkan API calls.
+# Declares `VKAPI_NOEXCEPT`, the substitution below appends it to every function prototype.
+patches = ["vkapi-noexcept-macro.patch"]
+
+[[vulkan-headers.replace]]
+files = ["include/vulkan/vulkan*.h"]
+regex = '\);'
+with = ') VKAPI_NOEXCEPT;'

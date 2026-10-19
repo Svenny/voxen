@@ -7,7 +7,7 @@
 
 #include "render_graph_private.hpp"
 
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 
 #include <cassert>
 
