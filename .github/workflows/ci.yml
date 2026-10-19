@@ -45,8 +45,6 @@ jobs:
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
-        with:
-          submodules: true
 
       - name: Install required packages
         run: |
@@ -74,8 +72,6 @@ jobs:
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
-        with:
-          submodules: true
 
       - name: Install LLVM
         run: |
