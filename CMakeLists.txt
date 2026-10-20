@@ -19,6 +19,21 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Set game executable startup by default in VS sln
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT game)
 
+# EXPERIMENT: `import std;` support, must be enabled before `project()`.
+# The activation UUID changes with CMake versions, see `Help/dev/experimental.rst`.
+option(VOXEN_IMPORT_STD "EXPERIMENT: build the `import std;` test" OFF)
+if(VOXEN_IMPORT_STD)
+	if(CMAKE_VERSION VERSION_LESS 4.3)
+		set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+	elseif(CMAKE_VERSION VERSION_LESS 4.4)
+		set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "451f2fe2-a8a2-47c3-bc32-94786d8fc91b")
+	elseif(CMAKE_VERSION VERSION_LESS 4.5)
+		set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "f35a9ac6-8463-4d38-8eec-5d6008153e7d")
+	else()
+		message(FATAL_ERROR "Look up `import std` activation UUID for CMake ${CMAKE_VERSION}")
+	endif()
+endif()
+
 # XXX: ideally `project` should go as early as possible
 project(VOXEN LANGUAGES C CXX VERSION 0.1.0)
 set(VOXEN_VERSION_SUFFIX "pre-alpha")

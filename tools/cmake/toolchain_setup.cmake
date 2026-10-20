@@ -71,6 +71,19 @@ separate_arguments(VOXEN_CODEGEN_FLAGS NATIVE_COMMAND "${VOXEN_ARCH_FLAGS}")
 list(TRANSFORM VOXEN_CODEGEN_FLAGS PREPEND "${CLANG_OPTION_PREFIX}")
 set(VOXEN_LINKER_FLAGS "")
 
+if(VOXEN_IMPORT_STD)
+	# EXPERIMENT: CMake builds the `std` module in its own `__cmake_cxx23` target which only
+	# gets global flags. BMIs must be built with compatible flags (Clang refuses to load
+	# `std.pcm` built without our `-fno-math-errno`), so make all such flags global.
+	set(import_std_flags ${VOXEN_CODEGEN_FLAGS}
+		-fno-math-errno -fno-signed-zeros -fno-trapping-math -ffp-contract=fast-honor-pragmas)
+	if(WIN32)
+		list(TRANSFORM import_std_flags PREPEND "/clang:" REGEX "^-f")
+	endif()
+	list(JOIN import_std_flags " " import_std_flags)
+	string(APPEND CMAKE_CXX_FLAGS " ${import_std_flags}")
+endif()
+
 if(LINUX)
 	list(APPEND VOXEN_CODEGEN_FLAGS
 		# We need more potentially-obscure-bugs-inducing optimizations...
