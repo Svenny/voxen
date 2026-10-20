@@ -138,7 +138,6 @@ include(VoxenShaders)
 
 voxen_add_shaders(voxen-shaders
 	SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/shaders
-	INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/shaders/include
 	SHADERS
 		land/chunk_mesh.vert
 		land/chunk_mesh.frag
@@ -147,10 +146,16 @@ voxen_add_shaders(voxen-shaders
 		land/frustum_cull.comp
 		land/selector.vert
 		land/selector.frag
+)
+
+voxen_add_glsl_shaders(voxen-glsl-shaders
+	SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/shaders
+	INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/shaders/include
+	SHADERS
 		ui/font.vert
 		ui/font.frag
 		ui/ui_basic.vert
 		ui/ui_basic.frag
 )
 
-add_dependencies(voxen voxen-shaders)
+add_dependencies(voxen voxen-shaders voxen-glsl-shaders)
