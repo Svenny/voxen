@@ -1,5 +1,5 @@
 # Third-party dependencies. Sources are vendored into `3rdparty/<name>` by
-# `tools/maintenance/vendor.py` from `vendor.toml`, each `<name>.cmake` builds
+# `tools/scripts/vendor.py` from `vendor.toml`, each `<name>.cmake` builds
 # them in-graph as static libraries or interface targets for header-only ones.
 # Only the parts we actually use are built, these files do not try to mirror
 # the upstream build systems.
