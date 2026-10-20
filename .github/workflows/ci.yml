@@ -45,9 +45,9 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Fetch LFS objects
-        # Built-in source assets are compiled by the build, the shader compiler is in `toolchains/`.
+        # Built-in source assets are compiled by the build, the host's shader compiler is in `toolchains/`.
         # `lfs: true` of `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
-        run: git lfs pull
+        run: git lfs pull --exclude="toolchains/*/windows-*"
 
       - name: Install required packages
         run: |
@@ -81,9 +81,9 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Fetch LFS objects
-        # Built-in source assets are compiled by the build, the shader compiler is in `toolchains/`.
+        # Built-in source assets are compiled by the build, the host's shader compiler is in `toolchains/`.
         # `lfs: true` of `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
-        run: git lfs pull
+        run: git lfs pull --exclude="toolchains/*/linux-*"
 
       - name: Install LLVM
         run: |
