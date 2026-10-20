@@ -57,6 +57,19 @@ struct PseudoSurfaceDrawCommand {
 	float chunk_size_metres;
 };
 
+// Draw commands buffer starts with uint32 counter of valid commands, padded
+// to 16 bytes, followed by an array of `PseudoSurfaceDrawCommand`.
+// Matches `DrawCmdsSsbo`/`CmdList` layouts in land shaders.
+constexpr VkDeviceSize DRAW_COMMANDS_HEADER_SIZE = 16;
+
+static_assert(sizeof(PseudoSurfacePreCullingDrawCommand) == 40, "Pre-culling command layout mismatch with shaders");
+static_assert(sizeof(PseudoSurfaceDrawCommand) == 32, "Draw command layout mismatch with shaders");
+
+constexpr VkDeviceSize drawCommandsBufferSize(uint32_t num_commands) noexcept
+{
+	return DRAW_COMMANDS_HEADER_SIZE + sizeof(PseudoSurfaceDrawCommand) * num_commands;
+}
+
 void recordMemoryBarrier(const DeviceDispatchTable &ddt, VkCommandBuffer cmd_buf, VkPipelineStageFlags2 src_stages,
 	VkAccessFlags2 src_access, VkPipelineStageFlags2 dst_stages, VkAccessFlags2 dst_access)
 {
@@ -164,7 +177,7 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 		const VkDeviceSize pre_culling_cmds_size = sizeof(PseudoSurfacePreCullingDrawCommand) * draws;
 		// 4 bytes for uint32 draws counter, 12 more to align to vec4 (16 bytes).
 		// That alignment is not really needed (we have scalar buffer layout) but why not.
-		const VkDeviceSize draw_cmds_size = 16 + sizeof(PseudoSurfaceDrawCommand) * draws;
+		const VkDeviceSize draw_cmds_size = drawCommandsBufferSize(draws);
 		const VkDeviceSize indirect_cmds_size = sizeof(VkDrawIndexedIndirectCommand) * draws;
 
 		LandPerIndexBufferData &per_ib_data = m_land_per_index_buffer_data.emplace_back();
@@ -258,7 +271,7 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 				// 1 - output buffer (draw cmds + counter)
 				.buffer = per_ib_data.draw_commands.buffer,
 				.offset = per_ib_data.draw_commands.buffer_offset,
-				.range = sizeof(PseudoSurfaceDrawCommand) * per_ib_data.num_all_commands,
+				.range = drawCommandsBufferSize(per_ib_data.num_all_commands),
 			},
 			{
 				// 2 - output buffer (indirect cmds)
@@ -326,7 +339,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 			VkDescriptorBufferInfo buffer_descriptor {
 				.buffer = per_ib_data.draw_commands.buffer,
 				.offset = per_ib_data.draw_commands.buffer_offset,
-				.range = sizeof(PseudoSurfaceDrawCommand) * per_ib_data.num_all_commands,
+				.range = drawCommandsBufferSize(per_ib_data.num_all_commands),
 			};
 
 			VkWriteDescriptorSet descriptor_write {
@@ -376,7 +389,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 			VkDescriptorBufferInfo buffer_descriptor {
 				.buffer = per_ib_data.draw_commands.buffer,
 				.offset = per_ib_data.draw_commands.buffer_offset,
-				.range = sizeof(PseudoSurfaceDrawCommand) * per_ib_data.num_all_commands,
+				.range = drawCommandsBufferSize(per_ib_data.num_all_commands),
 			};
 
 			VkWriteDescriptorSet descriptor_write {
