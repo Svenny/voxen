@@ -40,6 +40,11 @@ if(CMAKE_LINKER_TYPE)
 	message(STATUS "Using linker type: ${CMAKE_LINKER_TYPE}")
 endif()
 
+set(VOXEN_IS_VS_GENERATOR OFF)
+if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+	set(VOXEN_IS_VS_GENERATOR ON)
+endif()
+
 # Release builds carry full debug info, there is no separate config for profiling and
 # debugging them: the binaries we ship should be exactly the ones we've looked into.
 # Don't expect stepping through optimized code to work, use Debug or mark
@@ -168,16 +173,20 @@ function(voxen_setup_target target)
 			# NOTE: VS generator evaluates this for all sources of a target with
 			# any C++ sources, but at least it keeps C-only targets intact.
 			$<$<COMPILE_LANGUAGE:CXX>:/clang:-std=c++23>
-
-			# Display names of files being compiled (makes VS output window informative)
-			/showFilenames
-			# Compile multiple source files in parallel (why it's not the default?!)
-			/MP
 		)
 
 		target_link_libraries(${target} PRIVATE
 			# Futex ops like WaitOnAddress/WakeByAddress...
 			synchronization
+		)
+	endif()
+
+	if(VOXEN_IS_VS_GENERATOR)
+		target_compile_options(${target} PRIVATE
+			# Display names of files being compiled (makes VS output window informative)
+			/showFilenames
+			# Compile multiple source files in parallel (why it's not the default?!)
+			/MP
 		)
 
 		# Built-in clang-tidy does not properly receive clang flags
