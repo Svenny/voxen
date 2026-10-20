@@ -31,12 +31,26 @@ if(VOXEN_IMPORT_STD)
 	voxen_add_executable(test-import-std "")
 	target_sources(test-import-std PRIVATE import_std.test.cpp)
 	target_link_libraries(test-import-std PRIVATE test-common modstd tk)
-	set_target_properties(modstd test-import-std PROPERTIES CXX_MODULE_STD ON)
-	# CMake 4.4 builds the `std` module in a synthesized target per consumer, with its flags.
-	# libstdc++ `std.cc` trips our warnings: `-Wreserved-module-identifier` (for `export
-	# module std;` itself) and `-Wundef` (`#if __cpp_lib_...` of not implemented features).
-	target_compile_options(modstd PRIVATE -Wno-reserved-module-identifier -Wno-undef)
-	target_compile_options(test-import-std PRIVATE -Wno-reserved-module-identifier -Wno-undef)
+	if(MSVC)
+		# CMake supports `import std;` with Clang only for libc++ and libstdc++, not MS STL.
+		# clang-cl does build MS STL `std.ixx` though, so do what CMake does for MSVC by hand.
+		cmake_path(SET std_dir NORMALIZE "$ENV{VCToolsInstallDir}/modules")
+		if(NOT EXISTS "${std_dir}/std.ixx")
+			message(FATAL_ERROR "`std.ixx` not found in `${std_dir}`, run from VS developer environment")
+		endif()
+		voxen_add_library(voxen-std STATIC)
+		target_sources(voxen-std PUBLIC FILE_SET CXX_MODULES BASE_DIRS "${std_dir}" FILES "${std_dir}/std.ixx")
+		# Not our code, and it includes STL headers in the module purview on purpose
+		target_compile_options(voxen-std PRIVATE -w)
+		target_link_libraries(modstd PUBLIC voxen-std)
+	else()
+		set_target_properties(modstd test-import-std PROPERTIES CXX_MODULE_STD ON)
+		# CMake 4.4 builds the `std` module in a synthesized target per consumer, with its flags.
+		# libstdc++ `std.cc` trips our warnings: `-Wreserved-module-identifier` (for `export
+		# module std;` itself) and `-Wundef` (`#if __cpp_lib_...` of not implemented features).
+		target_compile_options(modstd PRIVATE -Wno-reserved-module-identifier -Wno-undef)
+		target_compile_options(test-import-std PRIVATE -Wno-reserved-module-identifier -Wno-undef)
+	endif()
 
 	add_test(NAME modules-import-std COMMAND test-import-std "[modules::import_std]")
 endif()
