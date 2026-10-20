@@ -1,5 +1,6 @@
-#include <voxen/common/assets/png_tools.hpp>
 #include <voxen/common/filemanager.hpp>
+
+#include <tk/png.hpp>
 
 #include <extras/defer.hpp>
 
@@ -195,15 +196,20 @@ int main(int argc, char *argv[])
 
 	description << "};" << std::endl;
 
-	auto packed_png = voxen::assets::PngTools::pack(combined_pixmap,
-		voxen::assets::PngInfo {
-			.resolution = { int32_t(pixmap_width), int32_t(pixmap_height) },
+	auto packed_png = tk::png::pack(combined_pixmap,
+		tk::png::Info {
+			.width = pixmap_width,
+			.height = pixmap_height,
 			.is_16bpc = false,
 			.channels = 1,
 		},
 		false);
+	if (!packed_png) {
+		printf("PNG packing failed: %s\n", packed_png.error().c_str());
+		return 1;
+	}
 
-	bool result = voxen::FileManager::writeUserFile(out_atlas_path, packed_png, true);
+	bool result = voxen::FileManager::writeUserFile(out_atlas_path, *packed_png, true);
 	if (!result) {
 		printf("Write file failed!\n");
 		return 1;

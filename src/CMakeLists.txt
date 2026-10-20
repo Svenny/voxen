@@ -1,6 +1,7 @@
 set(TK_SOURCES
 	src/tk/cli.cpp
 	src/tk/json.cpp
+	src/tk/png.cpp
 	src/tk/rng.cpp
 	src/tk/text_utils.cpp
 	src/tk/text_utils.hpp
@@ -21,7 +22,6 @@ set(VOXEN_SOURCES
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
-	src/voxen/common/assets/png_tools.cpp
 	src/voxen/common/config.cpp
 	src/voxen/common/filemanager.cpp
 	src/voxen/common/gameview.cpp
