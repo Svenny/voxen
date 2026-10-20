@@ -46,6 +46,7 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/include/m PREFIX Headers FILES ${M_HEADERS
 
 set(TK_HEADERS
 	include/tk/cli.hpp
+	include/tk/fs.hpp
 	include/tk/json.hpp
 	include/tk/parse_error.hpp
 	include/tk/png.hpp
@@ -148,7 +149,6 @@ set(VOXEN_HEADERS
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/os_fwd.hpp
 	include/voxen/os/process.hpp
-	include/voxen/os/stdlib.hpp
 	include/voxen/os/time.hpp
 	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp

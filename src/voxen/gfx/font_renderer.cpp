@@ -280,9 +280,7 @@ void FontRenderer::createFontAtlasTexture()
 		throw Exception::fromError(VoxenErrc::InvalidData, "font atlas read failed");
 	}
 
-	auto png_bytes = maybe_png_array->as_bytes();
-
-	auto maybe_image = tk::png::unpack(png_bytes, false);
+	auto maybe_image = tk::png::unpack(*maybe_png_array, false);
 	if (!maybe_image) {
 		Log::error("Can't unpack font atlas PNG: {}", maybe_image.error());
 		throw Exception::fromError(VoxenErrc::InvalidData, "font unpacking failed");

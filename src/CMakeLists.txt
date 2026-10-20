@@ -1,5 +1,6 @@
 set(TK_SOURCES
 	src/tk/cli.cpp
+	src/tk/fs.cpp
 	src/tk/json.cpp
 	src/tk/png.cpp
 	src/tk/rng.cpp
@@ -89,7 +90,6 @@ set(VOXEN_SOURCES
 	src/voxen/os/futex.cpp
 	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
-	src/voxen/os/stdlib.cpp
 	src/voxen/os/time.cpp
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
