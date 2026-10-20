@@ -14,17 +14,13 @@ set(EXTRAS_HEADERS
 	include/extras/refcnt_ptr.hpp
 	include/extras/source_location.hpp
 	include/extras/string_utils.hpp
-
-	# Visualizers for VS debugger.
-	# External libs also go here - not the best place
-	# but I don't want to invent one more directory
-	# just to place 3rdparty nativs files there.
-	include/extras/extras.natvis
 )
 
 target_include_directories(extras INTERFACE include)
 target_sources(extras PRIVATE ${EXTRAS_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTRAS_HEADERS})
+# Also has visualizers for 3rdparty types, not to invent one more directory for them
+voxen_target_natvis(extras include/extras/extras.natvis)
 
 set(M_HEADERS
 	include/m/format.hpp
@@ -35,14 +31,12 @@ set(M_HEADERS
 	include/m/quaternion.hpp
 	include/m/transform.hpp
 	include/m/vector.hpp
-
-	# Visualizers for VS debugger
-	include/m/m.natvis
 )
 
 target_include_directories(m INTERFACE include)
 target_sources(m PRIVATE ${M_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/m PREFIX Headers FILES ${M_HEADERS})
+voxen_target_natvis(m include/m/m.natvis)
 
 set(TK_HEADERS
 	include/tk/cli.hpp
@@ -181,14 +175,12 @@ set(VOXEN_HEADERS
 	include/voxen/world/world_state.hpp
 	include/voxen/world/world_tick_id.hpp
 	include/voxen/visibility.hpp
-
-	# Visualizers for VS debugger
-	include/voxen/svc/svc.natvis
 )
 
 target_include_directories(voxen PUBLIC include)
 target_sources(voxen PRIVATE ${VOXEN_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN_HEADERS})
+voxen_target_natvis(voxen include/voxen/svc/svc.natvis)
 
 # Generate version header
 include(VoxenCodegen)

@@ -277,3 +277,35 @@ function(voxen_add_library name type)
 	endif()
 endfunction()
 
+# Embed a natvis (VS debugger visualizers) file into PDBs of binaries containing `target`
+# code: the target itself for executables and shared libraries, its consumers otherwise.
+function(voxen_target_natvis target file)
+	if(NOT WIN32)
+		return()
+	endif()
+
+	get_target_property(type ${target} TYPE)
+	cmake_path(ABSOLUTE_PATH file NORMALIZE)
+	set(linkable OFF)
+	if(type STREQUAL "EXECUTABLE" OR type STREQUAL "SHARED_LIBRARY" OR type STREQUAL "MODULE_LIBRARY")
+		set(linkable ON)
+	endif()
+
+	if(VOXEN_IS_VS_GENERATOR)
+		# MSBuild passes `Natvis` project items to the linker. CMake turns `.natvis` sources into
+		# them, but `/NATVIS:` link options into a `<Link><Natvis>` setting ignored by ClangCL
+		# toolset. Interface sources become items in consumer projects, use them instead.
+		if(linkable)
+			target_sources(${target} PRIVATE ${file})
+		else()
+			target_sources(${target} INTERFACE ${file})
+		endif()
+		return()
+	endif()
+
+	if(linkable)
+		target_link_options(${target} PRIVATE /NATVIS:${file})
+	else()
+		target_link_options(${target} INTERFACE /NATVIS:${file})
+	endif()
+endfunction()
