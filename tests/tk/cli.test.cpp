@@ -1,8 +1,9 @@
-#include <tk/cli.hpp>
-
 #include "../test_common.hpp"
 
 #include <array>
+#include <expected>
+
+import tk.cli;
 
 namespace tk::cli
 {

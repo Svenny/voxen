@@ -6,12 +6,9 @@
 #include <memory>
 #include <string>
 
-namespace tk::cli
-{
-
-class Args;
-
-}
+// EXPERIMENT: `tk.cli` entities are attached to the module, they can not be
+// forward-declared outside of it (that would declare different entities)
+import tk.cli;
 
 namespace voxen::svc
 {

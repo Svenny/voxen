@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <bit>
 #include <cassert>
@@ -9,6 +9,8 @@
 #include <span>
 #include <type_traits>
 #include <vector>
+
+export module tk.rng;
 
 // Random number generation: engines, seeding utilities and distributions.
 //
@@ -21,7 +23,7 @@
 // `-ffp-contract=fast` (implied by `-ffast-math`) which ignores all pragmas,
 // use `-ffp-contract=fast-honor-pragmas` instead.
 
-namespace tk::rng
+export namespace tk::rng
 {
 
 // Any engine producing full-range 64-bit outputs

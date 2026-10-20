@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <cstdint>
 #include <expected>
@@ -7,6 +7,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+export module tk.cli;
 
 // Command-line arguments parser.
 //
@@ -22,7 +24,7 @@
 //
 // Options can be repeated, the last occurrence wins.
 
-namespace tk::cli
+export namespace tk::cli
 {
 
 class Args;

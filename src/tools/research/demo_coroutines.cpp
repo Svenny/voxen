@@ -4,9 +4,10 @@
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/log.hpp>
 
-#include <tk/rng.hpp>
-
 #include <chrono>
+#include <cmath>
+
+import tk.rng;
 
 using namespace voxen::svc;
 

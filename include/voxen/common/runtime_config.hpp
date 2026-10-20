@@ -4,13 +4,9 @@
 
 #include <extras/pimpl.hpp>
 
-namespace tk::cli
-{
-
-class Args;
-class Parser;
-
-} // namespace tk::cli
+// EXPERIMENT: `tk.cli` entities are attached to the module, they can not be
+// forward-declared outside of it (that would declare different entities)
+import tk.cli;
 
 namespace voxen
 {

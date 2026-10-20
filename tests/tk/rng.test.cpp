@@ -1,10 +1,10 @@
-#include <tk/rng.hpp>
-
 #include "../test_common.hpp"
 
 #include <algorithm>
 #include <array>
 #include <bit>
+
+import tk.rng;
 
 namespace tk::rng
 {

@@ -1,14 +1,27 @@
-#include <tk/toml.hpp>
-
-#include "text_utils.hpp"
+module;
 
 #include <algorithm>
 #include <cassert>
 #include <charconv>
 #include <cmath>
+#include <compare>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
+#include <expected>
+#include <initializer_list>
 #include <limits>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
+#include <vector>
+
+module tk.toml;
+
+import tk.text_utils;
 
 namespace tk::toml
 {

@@ -5,14 +5,14 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
-#include <tk/toml.hpp>
-
 #include <fmt/format.h>
 
 #include <algorithm>
 #include <cassert>
 #include <charconv>
 #include <stdexcept>
+
+import tk.toml;
 
 using namespace std::filesystem;
 using std::string_view;

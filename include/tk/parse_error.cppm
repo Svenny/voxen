@@ -1,9 +1,11 @@
-#pragma once
+module;
 
 #include <cstdint>
 #include <string>
 
-namespace tk
+export module tk.parse_error;
+
+export namespace tk
 {
 
 // Error from parsing a text format (TOML, JSON etc.)

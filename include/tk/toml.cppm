@@ -1,49 +1,44 @@
-#pragma once
 
-#include <tk/parse_error.hpp>
+module;
 
+#include <compare>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
 #include <initializer_list>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
 
-// JSON (RFC 8259) and JSON5 (https://spec.json5.org) parser.
-// Read-only: writing JSON is a separate task with different needs.
+export module tk.toml;
 
-namespace tk::json
-{
+export import tk.parse_error;
+export import :datetime;
 
-enum class Dialect : uint8_t {
-	// Strict JSON as defined by RFC 8259
-	Json,
-	// JSON5: comments, trailing commas, unquoted keys, single-quoted strings,
-	// hexadecimal numbers, `Infinity`/`NaN` and some more relaxations
-	Json5,
-};
+// TOML 1.0.0 parser and writer, https://toml.io/en/v1.0.0
 
-namespace detail
+namespace tk::toml::detail
 {
 
 class Parser;
 
 }
 
+export namespace tk::toml
+{
+
 class Value;
 
 class Array {
 public:
-	using iterator = std::vector<Value>::iterator;
-	using const_iterator = std::vector<Value>::const_iterator;
-
 	Array() = default;
 	Array(std::initializer_list<Value> values);
+
+	using iterator = std::vector<Value>::iterator;
+	using const_iterator = std::vector<Value>::const_iterator;
 
 	size_t size() const noexcept;
 	bool empty() const noexcept;
@@ -62,18 +57,23 @@ public:
 
 private:
 	std::vector<Value> m_values;
+	// Parser state, see `detail::Parser`
+	uint8_t m_flags = 0;
+
+	friend class detail::Parser;
 };
 
-// Keys are kept in document order. Lookup is linear, which is fine for
-// typical asset/config files but not for objects with thousands of keys.
-class Object {
+// Keys are kept in insertion order. Lookup is linear, which is
+// fine for config-sized tables but not for thousands of keys.
+class Table {
 public:
 	using Item = std::pair<std::string, Value>;
+
+	Table() = default;
+	Table(std::initializer_list<Item> items);
+
 	using iterator = std::vector<Item>::iterator;
 	using const_iterator = std::vector<Item>::const_iterator;
-
-	Object() = default;
-	Object(std::initializer_list<Item> items);
 
 	size_t size() const noexcept;
 	bool empty() const noexcept;
@@ -91,11 +91,12 @@ public:
 	// Inserts a new key or replaces the value of existing one
 	Value &insertOrAssign(std::string key, Value value);
 
-	// Key order does not matter
-	bool operator==(const Object &other) const noexcept;
+	bool operator==(const Table &other) const noexcept;
 
 private:
 	std::vector<Item> m_items;
+	// Parser state, see `detail::Parser`
+	uint8_t m_flags = 0;
 
 	friend class detail::Parser;
 };
@@ -103,25 +104,28 @@ private:
 class Value {
 public:
 	// Alternatives are in the same order as `Type` values
-	using Variant = std::variant<std::nullptr_t, bool, int64_t, double, std::string, Array, Object>;
+	using Variant = std::variant<std::string, int64_t, double, bool, OffsetDateTime, LocalDateTime, LocalDate, LocalTime,
+		Array, Table>;
 
 	enum class Type : uint8_t {
-		Null,
-		Boolean,
-		// Numbers without fraction and exponent that fit into `int64_t`, except `-0`
-		Integer,
-		// All other numbers
-		Float,
 		String,
+		Integer,
+		Float,
+		Boolean,
+		OffsetDateTime,
+		LocalDateTime,
+		LocalDate,
+		LocalTime,
 		Array,
-		Object,
+		Table,
 	};
 
-	// Null value
+	// Empty table
 	Value() = default;
 
-	Value(std::nullptr_t) noexcept {}
-	Value(bool value) noexcept : m_data(value) {}
+	Value(std::string value) noexcept : m_data(std::move(value)) {}
+	Value(std::string_view value) : m_data(std::string(value)) {}
+	Value(const char *value) : m_data(std::string(value)) {}
 
 	template<std::integral T>
 		requires(!std::same_as<T, bool> && !std::same_as<T, char>)
@@ -137,14 +141,15 @@ public:
 	Value(T value) noexcept : m_data(double(value))
 	{}
 
-	Value(std::string value) noexcept : m_data(std::move(value)) {}
-	Value(std::string_view value) : m_data(std::string(value)) {}
-	Value(const char *value) : m_data(std::string(value)) {}
+	Value(bool value) noexcept : m_data(value) {}
+	Value(OffsetDateTime value) noexcept : m_data(value) {}
+	Value(LocalDateTime value) noexcept : m_data(value) {}
+	Value(LocalDate value) noexcept : m_data(value) {}
+	Value(LocalTime value) noexcept : m_data(value) {}
 	Value(Array value) noexcept : m_data(std::move(value)) {}
-	Value(Object value) noexcept : m_data(std::move(value)) {}
+	Value(Table value) noexcept : m_data(std::move(value)) {}
 
 	Type type() const noexcept { return Type(m_data.index()); }
-	bool isNull() const noexcept { return type() == Type::Null; }
 
 	// Returns null if the value has another type
 	template<typename T>
@@ -160,15 +165,12 @@ public:
 		return std::get_if<T>(&m_data);
 	}
 
-	// Numeric value of either `Integer` or `Float`, empty for other types
-	std::optional<double> number() const noexcept;
-
 	const Variant &variant() const noexcept { return m_data; }
 
 	bool operator==(const Value &other) const noexcept = default;
 
 private:
-	Variant m_data;
+	Variant m_data { Table() };
 };
 
 // These need `Value` to be a complete type
@@ -213,42 +215,52 @@ inline auto Array::end() const noexcept -> const_iterator
 	return m_values.end();
 }
 
-inline size_t Object::size() const noexcept
+inline size_t Table::size() const noexcept
 {
 	return m_items.size();
 }
 
-inline bool Object::empty() const noexcept
+inline bool Table::empty() const noexcept
 {
 	return m_items.empty();
 }
 
-inline auto Object::begin() noexcept -> iterator
+inline auto Table::begin() noexcept -> iterator
 {
 	return m_items.begin();
 }
 
-inline auto Object::begin() const noexcept -> const_iterator
+inline auto Table::begin() const noexcept -> const_iterator
 {
 	return m_items.begin();
 }
 
-inline auto Object::end() noexcept -> iterator
+inline auto Table::end() noexcept -> iterator
 {
 	return m_items.end();
 }
 
-inline auto Object::end() const noexcept -> const_iterator
+inline auto Table::end() const noexcept -> const_iterator
 {
 	return m_items.end();
 }
 
-inline bool Object::contains(std::string_view key) const noexcept
+inline bool Table::contains(std::string_view key) const noexcept
 {
 	return find(key) != nullptr;
 }
 
-// Parses a document. Text must be valid UTF-8. Duplicate object keys are errors.
-std::expected<Value, ParseError> parse(std::string_view text, Dialect dialect);
+// Parses a TOML document. Text must be valid UTF-8.
+std::expected<Table, ParseError> parse(std::string_view text);
 
-} // namespace tk::json
+// Formats a key, quoting it if it can't be bare
+std::string formatKey(std::string_view key);
+// Formats a value as it would appear after `key = `. Tables are written inline.
+// Dates and times must be valid (as produced by `parse()`), this is only asserted.
+std::string formatValue(const Value &value);
+// Formats a complete document. Sub-tables are written as `[table]` sections,
+// arrays of tables as `[[array]]` sections. Comments and original formatting
+// are not preserved (there is nowhere to keep them in the DOM).
+std::string serialize(const Table &table);
+
+} // namespace tk::toml

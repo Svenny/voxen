@@ -1,9 +1,9 @@
-#include <tk/toml.hpp>
-
 #include "../test_common.hpp"
 
 #include <cmath>
 #include <limits>
+
+import tk.toml;
 
 namespace tk::toml
 {

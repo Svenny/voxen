@@ -47,17 +47,19 @@ target_sources(m PUBLIC FILE_SET CXX_MODULES BASE_DIRS include FILES include/m/m
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/m PREFIX Headers FILES ${M_HEADERS})
 voxen_target_natvis(m include/m/m.natvis)
 
-set(TK_HEADERS
-	include/tk/cli.hpp
-	include/tk/json.hpp
-	include/tk/parse_error.hpp
-	include/tk/rng.hpp
-	include/tk/toml.hpp
+# EXPERIMENT: `tk` has no headers, only modules
+set(TK_MODULES
+	include/tk/cli.cppm
+	include/tk/json.cppm
+	include/tk/parse_error.cppm
+	include/tk/rng.cppm
+	include/tk/tk.cppm
+	include/tk/toml.cppm
+	include/tk/toml-datetime.cppm
 )
 
-target_include_directories(tk PUBLIC include)
-target_sources(tk PRIVATE ${TK_HEADERS})
-source_group(TREE ${CMAKE_SOURCE_DIR}/include/tk PREFIX Headers FILES ${TK_HEADERS})
+target_sources(tk PUBLIC FILE_SET CXX_MODULES BASE_DIRS include FILES ${TK_MODULES})
+source_group(TREE ${CMAKE_SOURCE_DIR}/include/tk PREFIX Modules FILES ${TK_MODULES})
 
 set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
