@@ -27,6 +27,14 @@ public:
 	void doTick(world::TickId tick_id);
 	const LandState &stateForCopy() const noexcept;
 
+	// Make all pending and future land generation jobs exit immediately without doing
+	// any work. Intended to be called once the world is stopping: otherwise its save
+	// task (and our destructor) would wait for the whole generation backlog, which can
+	// take tens of seconds in debug builds. Block edits are not cancelled.
+	// This is irreversible, land state will not be updated properly after the call.
+	// Thread-safe, can be called concurrently with any other function.
+	void cancelGenerationJobs() noexcept;
+
 private:
 	extras::pimpl<detail::LandServiceImpl, 2048, 8> m_impl;
 };
