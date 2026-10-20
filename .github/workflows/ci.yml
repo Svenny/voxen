@@ -34,7 +34,7 @@ jobs:
       - name: Check formatting
         run: |
           git ls-files -z 'include/*.hpp' 'src/*.hpp' 'src/*.cpp' 'tests/*.hpp' 'tests/*.cpp' \
-            'sandbox/*.hpp' 'sandbox/*.cpp' \
+            'tools/*.hpp' 'tools/*.cpp' 'sandbox/*.hpp' 'sandbox/*.cpp' \
             | xargs -0 clang-format-${{ env.CLANG_FORMAT_VERSION }} --dry-run --Werror
 
   build-ubuntu:
