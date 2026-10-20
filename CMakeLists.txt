@@ -70,6 +70,8 @@ if(VOXEN_USE_PCH)
 	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
 endif()
 
+add_subdirectory(tools)
+
 option(VOXEN_BUILD_DATA "Build/pack data (assets) files" ON)
 if(VOXEN_BUILD_DATA)
 	add_subdirectory(data)
