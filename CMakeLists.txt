@@ -27,7 +27,10 @@ set(VOXEN_VERSION_SUFFIX "pre-alpha")
 # Baseline is the version shipped with Ubuntu 26.04.
 find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter)
 
-include(tools/cmake/toolchain_setup.cmake)
+# Voxen CMake modules, `include(Voxen...)`
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+include(VoxenToolchain)
 
 # Third-party dependencies, vendored and built in-graph
 add_subdirectory(3rdparty)

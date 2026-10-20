@@ -200,7 +200,7 @@ add_custom_target(voxen-version-file
 		-D VERSION_PATCH=${VOXEN_VERSION_PATCH}
 		-D VERSION_SUFFIX=${VOXEN_VERSION_SUFFIX}
 		-D GIT_EXECUTABLE=${GIT_EXECUTABLE}
-		-P ${CMAKE_SOURCE_DIR}/tools/cmake/gen_version_header.cmake
+		-P ${CMAKE_SOURCE_DIR}/cmake/scripts/gen_version_header.cmake
 	BYPRODUCTS ${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
 	COMMENT "Generating version.hpp file"
 	VERBATIM
