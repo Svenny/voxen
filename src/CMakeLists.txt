@@ -154,5 +154,3 @@ voxen_add_shaders(voxen-shaders
 )
 
 add_dependencies(voxen voxen-shaders)
-
-add_subdirectory(src/tools)
