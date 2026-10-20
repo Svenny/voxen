@@ -54,12 +54,12 @@ target_link_libraries(voxen PRIVATE
 	3rdparty::glfw
 	3rdparty::vma
 	3rdparty::vulkan-headers
-	3rdparty::zlib
 )
 if (LINUX)
 	# `std::stacktrace` implementation in libstdc++
 	target_link_libraries(voxen PRIVATE stdc++exp)
 endif()
+target_link_libraries(tk PRIVATE 3rdparty::zlib)
 target_link_libraries(game PRIVATE voxen)
 
 include(include/CMakeLists.txt)

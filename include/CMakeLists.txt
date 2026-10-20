@@ -48,6 +48,7 @@ set(TK_HEADERS
 	include/tk/cli.hpp
 	include/tk/json.hpp
 	include/tk/parse_error.hpp
+	include/tk/png.hpp
 	include/tk/rng.hpp
 	include/tk/toml.hpp
 )
@@ -68,7 +69,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
-	include/voxen/common/assets/png_tools.hpp
 	include/voxen/common/common_fwd.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
