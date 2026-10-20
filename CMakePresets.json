@@ -49,20 +49,25 @@
 			}
 		},
 		{
-			"name": "windows-vs2026",
-			"displayName": "Visual Studio 2026 (ClangCL)",
+			"name": "windows",
+			"hidden": true,
 			"inherits": "base",
-			"generator": "Visual Studio 18 2026",
-			"architecture": "x64",
-			"toolset": "ClangCL",
 			"condition": {
 				"type": "equals",
 				"lhs": "${hostSystemName}",
 				"rhs": "Windows"
 			},
 			"cacheVariables": {
-				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+				"CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo"
 			}
+		},
+		{
+			"name": "windows-vs2026",
+			"displayName": "Visual Studio 2026 (ClangCL)",
+			"inherits": "windows",
+			"generator": "Visual Studio 18 2026",
+			"architecture": "x64",
+			"toolset": "ClangCL"
 		}
 	],
 
@@ -84,6 +89,11 @@
 			"name": "windows-vs2026-release",
 			"configurePreset": "windows-vs2026",
 			"configuration": "Release"
+		},
+		{
+			"name": "windows-vs2026-relwithdebinfo",
+			"configurePreset": "windows-vs2026",
+			"configuration": "RelWithDebInfo"
 		}
 	],
 
@@ -119,6 +129,12 @@
 			"inherits": "base",
 			"configurePreset": "windows-vs2026",
 			"configuration": "Release"
+		},
+		{
+			"name": "windows-vs2026-relwithdebinfo",
+			"inherits": "base",
+			"configurePreset": "windows-vs2026",
+			"configuration": "RelWithDebInfo"
 		}
 	]
 }
