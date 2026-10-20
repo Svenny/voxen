@@ -232,14 +232,14 @@ PrivateTaskHandle TaskQueueSet::popTaskOrWait(size_t queue) noexcept
 
 		if (index.produce == index.consume) [[unlikely]] {
 			// Buffer is empty - try setting the wait flag and going to sleep
-			bool success = header.current_index.compare_exchange_weak(index,
-				{
-					.produce = index.produce,
-					.wait_flag = 1,
-					.consume = index.consume,
-				},
-				// XXX: I'm not sure if this is the most appropriate memory order
-				std::memory_order_acq_rel);
+			const ProduceConsumeIndex waiting_index {
+				.produce = index.produce,
+				.wait_flag = 1,
+				.consume = index.consume,
+			};
+
+			// XXX: I'm not sure if this is the most appropriate memory order
+			bool success = header.current_index.compare_exchange_weak(index, waiting_index, std::memory_order_acq_rel);
 
 			if (!success) [[unlikely]] {
 				// Something changed beneath us - try again
@@ -255,7 +255,13 @@ PrivateTaskHandle TaskQueueSet::popTaskOrWait(size_t queue) noexcept
 			// bit in the first word it will properly wake us up, clearing that bit as well.
 			//
 			// So from futex standpoint it's is totally fine, the only ugly thing is this cast.
-			auto words = std::bit_cast<std::array<uint32_t, 2>>(index);
+			//
+			// The expected value must be the one we've just stored (with the wait bit set),
+			// not `index` - a successful CAS leaves it holding the previous value. Stop request
+			// clears the wait bit without touching the produce index, so if it lands between
+			// our CAS and the wait, the word would match a wait-bit-less `index` again,
+			// and we would sleep forever, missing its wakeup (`~TaskServiceImpl` hangs).
+			auto words = std::bit_cast<std::array<uint32_t, 2>>(waiting_index);
 			os::Futex::waitInfinite(reinterpret_cast<std::atomic_uint32_t *>(&header.current_index), words[0]);
 
 			index = header.current_index.load(std::memory_order_relaxed);
