@@ -1,18 +1,21 @@
 name: Vendored sources
 
-# Checks that `3rdparty/` is exactly what `3rdparty/vendor.toml` describes,
-# i.e. no local edits were made outside of the manifest and its patches
+# Checks that `3rdparty/` and `toolchains/` are exactly what their `vendor.toml`
+# manifests describe, i.e. no local edits were made outside of the manifests and
+# patches, and the LFS-tracked prebuilt binaries are the upstream release files
 
 on:
   push:
     branches: [ master ]
     paths:
       - '3rdparty/**'
+      - 'toolchains/**'
       - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   pull_request:
     paths:
       - '3rdparty/**'
+      - 'toolchains/**'
       - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   workflow_dispatch:
@@ -28,13 +31,17 @@ jobs:
       - name: Checkout the commit
         uses: actions/checkout@v7
 
+      - name: Fetch LFS objects of prebuilt toolchains
+        # `lfs: true` of `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server
+        run: git lfs pull --include="toolchains/**"
+
       - name: Cache downloaded archives
         uses: actions/cache@v6
         with:
           path: build/vendor-cache
-          key: vendor-archives-${{ hashFiles('3rdparty/vendor.toml') }}
+          key: vendor-archives-${{ hashFiles('3rdparty/vendor.toml', 'toolchains/vendor.toml') }}
 
-      - name: Check the tree against the manifest
+      - name: Check the tree against the manifests
         run: |
           python3 --version
           python3 tools/scripts/vendor.py check --diff
