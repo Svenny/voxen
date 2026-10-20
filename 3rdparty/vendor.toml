@@ -1,5 +1,5 @@
 # Third-party sources vendored into this directory, one table per `3rdparty/<name>`.
-# `tools/maintenance/vendor.py` derives the directories from these entries
+# `tools/scripts/vendor.py` derives the directories from these entries
 # (see its docstring for the keys), CI checks that the tree matches.
 #
 # Bumping a version: edit `version` (and `sha256`, the script prints the new one),
