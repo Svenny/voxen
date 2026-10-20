@@ -20,6 +20,10 @@ export namespace modshared
 class MODSHARED_API Counter {
 public:
 	Counter() = default;
+	// `dllexport` instantiates all special members, implicit copy ones would trigger
+	// `-Wdeprecated-copy-with-user-provided-dtor` on Windows only
+	Counter(const Counter &) = default;
+	Counter &operator=(const Counter &) = default;
 	virtual ~Counter();
 
 	void add(int32_t value) noexcept;
