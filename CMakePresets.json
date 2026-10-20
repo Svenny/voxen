@@ -68,6 +68,20 @@
 			"generator": "Visual Studio 18 2026",
 			"architecture": "x64",
 			"toolset": "ClangCL"
+		},
+		{
+			"name": "windows-ninja",
+			"displayName": "Windows Ninja Multi-Config (clang-cl)",
+			"$comment": [
+				"Needs to run in the VS x64 developer environment (for the linker to find Windows SDK and CRT).",
+				"LLVM location must match `LLVMInstallDir` in `Directory.Build.props`."
+			],
+			"inherits": "windows",
+			"generator": "Ninja Multi-Config",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
+				"CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe"
+			}
 		}
 	],
 
@@ -88,6 +102,16 @@
 		{
 			"name": "windows-vs2026-release",
 			"configurePreset": "windows-vs2026",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows-ninja-debug",
+			"configurePreset": "windows-ninja",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-ninja-release",
+			"configurePreset": "windows-ninja",
 			"configuration": "Release"
 		}
 	],
@@ -123,6 +147,18 @@
 			"name": "windows-vs2026-release",
 			"inherits": "base",
 			"configurePreset": "windows-vs2026",
+			"configuration": "Release"
+		},
+		{
+			"name": "windows-ninja-debug",
+			"inherits": "base",
+			"configurePreset": "windows-ninja",
+			"configuration": "Debug"
+		},
+		{
+			"name": "windows-ninja-release",
+			"inherits": "base",
+			"configurePreset": "windows-ninja",
 			"configuration": "Release"
 		}
 	]
