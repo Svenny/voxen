@@ -84,23 +84,10 @@ bool tryExecuteAndResetTask(SlaveState &state, PrivateTaskHandle &task)
 		}
 	}
 
-	// TODO: defer enqueueing continuations until this point.
-	// There is a (very slight) chance that all of them finish before
-	// this check, or between the check and `task.reset()` for `else` branch.
-	// In the first case we will have double completion (from a continuation
-	// and from here), in the second we will not release resources before task
-	// counter is completed if this was the last ref - which might break the
-	// behavior of e.g. system destructors waiting on task counters to finish.
-	//
-	// Both cases are errors, and both are solved if we simply enqueue continuations
-	// after this check. Actually, deferring just one continuation launch is enough,
-	// all others can be enqueued immediately during the task execution.
-	if (!task.hasContinuations()) {
-		// Signal task completion, otherwise some child will do it
-		task.completeAndReset(state.counter_tracker);
-	} else {
-		task.reset();
-	}
+	// Continuations enqueued during execution may have finished already, but they can't
+	// complete this task while the execution holds its own continuation. Drop it now:
+	// whoever drops the last one (us or a continuation) completes the task.
+	task.finishExecutionAndReset(state.counter_tracker);
 
 	return true;
 }
