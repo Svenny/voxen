@@ -8,12 +8,12 @@ on:
     branches: [ master ]
     paths:
       - '3rdparty/**'
-      - 'tools/maintenance/vendor.py'
+      - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   pull_request:
     paths:
       - '3rdparty/**'
-      - 'tools/maintenance/vendor.py'
+      - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   workflow_dispatch:
 
@@ -37,4 +37,4 @@ jobs:
       - name: Check the tree against the manifest
         run: |
           python3 --version
-          python3 tools/maintenance/vendor.py check --diff
+          python3 tools/scripts/vendor.py check --diff
