@@ -1,3 +1,5 @@
+#include "font_atlas.hpp"
+
 #include <tk/fs.hpp>
 #include <tk/png.hpp>
 
@@ -8,58 +10,62 @@
 #include FT_MODULE_H
 
 #include <algorithm>
-#include <cassert>
-#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 
-int main(int argc, char *argv[])
+namespace assetc
 {
-	if (argc != 4) {
-		printf("Usage: %s <input/font.otf> <output/atlas.png> <output/header.json>\n", argv[0]);
-		return 1;
-	}
 
-	const char *in_font_path = argv[1];
-	const char *out_atlas_path = argv[2];
-	const char *out_header_path = argv[3];
+namespace
+{
+
+std::string ftErrorString(std::string_view what, FT_Error error)
+{
+	// Error strings might be compiled out of FreeType
+	const char *str = FT_Error_String(error);
+	return std::string(what) + " failed: " + (str ? std::string(str) : "FreeType error " + std::to_string(error));
+}
+
+} // namespace
+
+std::expected<void, std::string> compileFontAtlas(const FontAtlasParams &params)
+{
+	auto font_data = tk::fs::readFile(params.font_path);
+	if (!font_data) {
+		return std::unexpected(std::move(font_data.error()));
+	}
 
 	FT_Library ft_library;
 	FT_Error error = FT_Init_FreeType(&ft_library);
 	if (error != FT_Err_Ok) {
-		printf("FreeType init failed: %s\n", FT_Error_String(error));
-		return 1;
+		return std::unexpected(ftErrorString("FreeType init", error));
 	}
 
 	defer { FT_Done_FreeType(ft_library); };
 
 	FT_Face ft_face;
-	error = FT_New_Face(ft_library, in_font_path, 0, &ft_face);
+	error = FT_New_Memory_Face(ft_library, reinterpret_cast<const FT_Byte *>(font_data->data()),
+		FT_Long(font_data->size()), 0, &ft_face);
 	if (error != FT_Err_Ok) {
-		printf("Font open failed: %s\n", FT_Error_String(error));
-		return 1;
+		return std::unexpected(ftErrorString("Font open", error));
 	}
 
 	defer { FT_Done_Face(ft_face); };
 
 	// Note: rendered glyph sizes will be all over the place, this is only a "baseline" value
-	constexpr int GLYPH_SIZE = 32;
 	constexpr int RENDER_DPI = 96;
-	constexpr int SDF_SPREAD = 4;
 
-	error = FT_Set_Char_Size(ft_face, 0, GLYPH_SIZE * 64, 0, RENDER_DPI);
+	error = FT_Set_Char_Size(ft_face, 0, params.glyph_size * 64, 0, RENDER_DPI);
 	if (error != FT_Err_Ok) {
-		printf("Setting char size failed: %s\n", FT_Error_String(error));
-		return 1;
+		return std::unexpected(ftErrorString("Setting char size", error));
 	}
 
-	error = FT_Property_Set(ft_library, "sdf", "spread", &SDF_SPREAD);
+	error = FT_Property_Set(ft_library, "sdf", "spread", &params.sdf_spread);
 	if (error != FT_Err_Ok) {
-		printf("Setting SDF spread failed: %s\n", FT_Error_String(error));
-		return 1;
+		return std::unexpected(ftErrorString("Setting SDF spread", error));
 	}
 
 	constexpr char RENDER_CHAR_MIN = ' ';
@@ -82,12 +88,14 @@ int main(int argc, char *argv[])
 	std::stringstream description;
 
 	{
-		printf("Font metrics:\n");
-
 		double ascent = double(ft_face->ascender) / 64.0;
 		double descent = double(ft_face->descender) / 64.0;
 		double height = double(ft_face->height) / 64.0;
-		printf("ascent = %f, descent = %f, height = %f\n\n", ascent, descent, height);
+
+		if (params.verbose) {
+			printf("Font metrics:\n");
+			printf("ascent = %f, descent = %f, height = %f\n\n", ascent, descent, height);
+		}
 
 		description << "constexpr float FONT_ASCENT = " << ascent << "f;" << std::endl;
 		description << "constexpr float FONT_DESCENT = " << descent << "f;" << std::endl;
@@ -102,20 +110,17 @@ int main(int argc, char *argv[])
 	for (char c = RENDER_CHAR_MIN; c <= RENDER_CHAR_MAX; c++) {
 		error = FT_Load_Char(ft_face, FT_ULong(c), FT_LOAD_DEFAULT);
 		if (error != FT_Err_Ok) {
-			printf("FT_Load_Char failed for '%c': %s\n", c, FT_Error_String(error));
-			return 1;
+			return std::unexpected(ftErrorString(std::string("FT_Load_Char for '") + c + "'", error));
 		}
 
 		error = FT_Render_Glyph(ft_face->glyph, FT_RENDER_MODE_SDF);
 		if (error != FT_Err_Ok) {
-			printf("FT_Render_Glyph failed: %s\n", FT_Error_String(error));
-			return 1;
+			return std::unexpected(ftErrorString("FT_Render_Glyph", error));
 		}
 
 		FT_Bitmap *bitmap = &ft_face->glyph->bitmap;
 		if (bitmap->pixel_mode != FT_PIXEL_MODE_GRAY) {
-			printf("Unexpected FreeType bitmap pixel format %d\n", bitmap->pixel_mode);
-			return 1;
+			return std::unexpected("unexpected FreeType bitmap pixel format " + std::to_string(bitmap->pixel_mode));
 		}
 
 		max_width = std::max(max_width, bitmap->width);
@@ -134,8 +139,6 @@ int main(int argc, char *argv[])
 		map_entry.bitmap = std::vector<std::byte>(data_begin, data_end);
 	}
 
-	printf("Max glyph dimensions: %ux%u\n", max_width, max_height);
-
 	constexpr int NUM_GLYPHS = RENDER_CHAR_MAX + 1 - RENDER_CHAR_MIN;
 	constexpr int GLYPHS_PER_ROW = 12;
 	constexpr int GLYPH_ROWS = (NUM_GLYPHS + GLYPHS_PER_ROW - 1) / GLYPHS_PER_ROW;
@@ -143,7 +146,12 @@ int main(int argc, char *argv[])
 	uint32_t pixmap_width = GLYPHS_PER_ROW * max_width;
 	uint32_t pixmap_height = GLYPH_ROWS * max_height;
 
-	printf("Pixmap size: %ux%u\n", pixmap_width, pixmap_height);
+	if (params.verbose) {
+		printf("Max glyph dimensions: %ux%u\n", max_width, max_height);
+		printf("Pixmap size: %ux%u\n", pixmap_width, pixmap_height);
+		printf("\nGlyph metrics:\n");
+	}
+
 	std::vector<std::byte> combined_pixmap(pixmap_width * pixmap_height);
 
 	description << "constexpr int32_t FONT_ATLAS_WIDTH = " << pixmap_width << ';' << std::endl;
@@ -161,8 +169,6 @@ int main(int argc, char *argv[])
 	description << "\tfloat advance_x;" << std::endl;
 	description << "} GLYPH_INFOS[] = {" << std::endl;
 
-	printf("\nGlyph metrics:\n");
-
 	for (char c = RENDER_CHAR_MIN; c <= RENDER_CHAR_MAX; c++) {
 		const auto &map_entry = glyph_map[c];
 
@@ -173,10 +179,13 @@ int main(int argc, char *argv[])
 		first_out_row += (max_height - map_entry.bitmap_height) / 2;
 		first_out_col += (max_width - map_entry.bitmap_width) / 2;
 
-		printf(
-			"c = %d, cc = %c, x = %u, y = %u, width = %u, height = %u, bearing_x = %f, bearing_y = %f, advance_x = %f\n",
-			int(c), c, first_out_col, first_out_row, map_entry.bitmap_width, map_entry.bitmap_height,
-			double(map_entry.bearing_x), double(map_entry.bearing_y), double(map_entry.advance_x));
+		if (params.verbose) {
+			printf(
+				"c = %d, cc = %c, x = %u, y = %u, width = %u, height = %u, "
+				"bearing_x = %f, bearing_y = %f, advance_x = %f\n",
+				int(c), c, first_out_col, first_out_row, map_entry.bitmap_width, map_entry.bitmap_height,
+				double(map_entry.bearing_x), double(map_entry.bearing_y), double(map_entry.advance_x));
+		}
 
 		description << "\t{ '";
 		if (c != '\\' && c != '\'') {
@@ -208,19 +217,20 @@ int main(int argc, char *argv[])
 		},
 		false);
 	if (!packed_png) {
-		printf("PNG packing failed: %s\n", packed_png.error().c_str());
-		return 1;
+		return std::unexpected("PNG packing failed: " + packed_png.error());
 	}
 
-	if (auto result = tk::fs::writeFile(out_atlas_path, *packed_png); !result) {
-		printf("Write atlas file failed: %s\n", result.error().c_str());
-		return 1;
+	if (auto result = tk::fs::writeFile(params.atlas_path, *packed_png); !result) {
+		return result;
 	}
 
-	if (auto result = tk::fs::writeTextFile(out_header_path, description.str()); !result) {
-		printf("Write description file failed: %s\n", result.error().c_str());
-		return 1;
+	if (!params.metrics_path.empty()) {
+		if (auto result = tk::fs::writeTextFile(params.metrics_path, description.str()); !result) {
+			return result;
+		}
 	}
 
-	return 0;
+	return {};
 }
+
+} // namespace assetc
