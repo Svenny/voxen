@@ -1,5 +1,4 @@
-#include <voxen/common/filemanager.hpp>
-
+#include <tk/fs.hpp>
 #include <tk/png.hpp>
 
 #include <extras/defer.hpp>
@@ -8,8 +7,12 @@
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -209,18 +212,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	bool result = voxen::FileManager::writeUserFile(out_atlas_path, *packed_png, true);
-	if (!result) {
-		printf("Write file failed!\n");
+	if (auto result = tk::fs::writeFile(out_atlas_path, *packed_png); !result) {
+		printf("Write atlas file failed: %s\n", result.error().c_str());
 		return 1;
 	}
 
-	std::string descr = description.str();
-	std::span<const char> descr_span = descr;
-
-	result = voxen::FileManager::writeUserFile(out_header_path, std::as_bytes(descr_span), true);
-	if (!result) {
-		printf("Write description file failed!\n");
+	if (auto result = tk::fs::writeTextFile(out_header_path, description.str()); !result) {
+		printf("Write description file failed: %s\n", result.error().c_str());
 		return 1;
 	}
 
