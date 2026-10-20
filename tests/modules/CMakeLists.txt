@@ -32,6 +32,11 @@ if(VOXEN_IMPORT_STD)
 	target_sources(test-import-std PRIVATE import_std.test.cpp)
 	target_link_libraries(test-import-std PRIVATE test-common modstd tk)
 	set_target_properties(modstd test-import-std PROPERTIES CXX_MODULE_STD ON)
+	# CMake 4.4 builds the `std` module in a synthesized target per consumer, with its flags.
+	# libstdc++ `std.cc` trips our warnings: `-Wreserved-module-identifier` (for `export
+	# module std;` itself) and `-Wundef` (`#if __cpp_lib_...` of not implemented features).
+	target_compile_options(modstd PRIVATE -Wno-reserved-module-identifier -Wno-undef)
+	target_compile_options(test-import-std PRIVATE -Wno-reserved-module-identifier -Wno-undef)
 
 	add_test(NAME modules-import-std COMMAND test-import-std "[modules::import_std]")
 endif()
