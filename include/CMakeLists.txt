@@ -48,8 +48,10 @@ voxen_target_natvis(m include/m/m.natvis)
 
 set(TK_HEADERS
 	include/tk/cli.hpp
+	include/tk/fs.hpp
 	include/tk/json.hpp
 	include/tk/parse_error.hpp
+	include/tk/png.hpp
 	include/tk/rng.hpp
 	include/tk/toml.hpp
 )
@@ -70,7 +72,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
-	include/voxen/common/assets/png_tools.hpp
 	include/voxen/common/common_fwd.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
@@ -150,7 +151,6 @@ set(VOXEN_HEADERS
 	include/voxen/os/glfw_window.hpp
 	include/voxen/os/os_fwd.hpp
 	include/voxen/os/process.hpp
-	include/voxen/os/stdlib.hpp
 	include/voxen/os/time.hpp
 	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp
@@ -194,22 +194,5 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/include/voxen PREFIX Headers FILES ${VOXEN
 voxen_target_natvis(voxen include/voxen/svc/svc.natvis)
 
 # Generate version header
-find_package(Git QUIET)
-add_custom_target(voxen-version-file
-	COMMAND ${CMAKE_COMMAND}
-		-D OUTPUT_FILE=${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
-		-D VERSION_MAJOR=${VOXEN_VERSION_MAJOR}
-		-D VERSION_MINOR=${VOXEN_VERSION_MINOR}
-		-D VERSION_PATCH=${VOXEN_VERSION_PATCH}
-		-D VERSION_SUFFIX=${VOXEN_VERSION_SUFFIX}
-		-D GIT_EXECUTABLE=${GIT_EXECUTABLE}
-		-P ${CMAKE_SOURCE_DIR}/tools/cmake/gen_version_header.cmake
-	BYPRODUCTS ${CMAKE_BINARY_DIR}/configs/voxen/version.hpp
-	COMMENT "Generating version.hpp file"
-	VERBATIM
-)
-set_target_properties(voxen-version-file PROPERTIES FOLDER codegen)
-add_dependencies(voxen voxen-version-file)
-
-# Include directory with generated headers
-target_include_directories(voxen PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/configs)
+include(VoxenCodegen)
+voxen_add_version_header(voxen voxen/version.hpp)

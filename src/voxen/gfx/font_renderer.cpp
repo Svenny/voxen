@@ -1,6 +1,5 @@
 #include <voxen/gfx/font_renderer.hpp>
 
-#include <voxen/common/assets/png_tools.hpp>
 #include <voxen/common/filemanager.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
@@ -15,6 +14,8 @@
 #include <voxen/client/vulkan/backend.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
+
+#include <tk/png.hpp>
 
 #include <m/packing.hpp>
 
@@ -279,19 +280,18 @@ void FontRenderer::createFontAtlasTexture()
 		throw Exception::fromError(VoxenErrc::InvalidData, "font atlas read failed");
 	}
 
-	auto png_bytes = maybe_png_array->as_bytes();
-
-	assets::PngInfo png_info;
-	auto unpacked_bitmap = assets::PngTools::unpack(png_bytes, png_info, false);
-
-	if (unpacked_bitmap.empty()) {
-		Log::error("Can't unpack font atlas PNG");
+	auto maybe_image = tk::png::unpack(*maybe_png_array, false);
+	if (!maybe_image) {
+		Log::error("Can't unpack font atlas PNG: {}", maybe_image.error());
 		throw Exception::fromError(VoxenErrc::InvalidData, "font unpacking failed");
 	}
 
-	if (png_info.resolution.width != FONT_ATLAS_WIDTH || png_info.resolution.height != FONT_ATLAS_HEIGHT) {
-		Log::error("Font atlas PNG has unpexpected dimensions {}x{} (expected {}x{})", png_info.resolution.width,
-			png_info.resolution.height, FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT);
+	const tk::png::Info &png_info = maybe_image->info;
+	const std::vector<std::byte> &unpacked_bitmap = maybe_image->pixels;
+
+	if (png_info.width != uint32_t(FONT_ATLAS_WIDTH) || png_info.height != uint32_t(FONT_ATLAS_HEIGHT)) {
+		Log::error("Font atlas PNG has unpexpected dimensions {}x{} (expected {}x{})", png_info.width, png_info.height,
+			FONT_ATLAS_WIDTH, FONT_ATLAS_HEIGHT);
 		throw Exception::fromError(VoxenErrc::InvalidData, "font atlas has unexpected dimensions");
 	}
 

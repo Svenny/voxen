@@ -27,7 +27,10 @@ set(VOXEN_VERSION_SUFFIX "pre-alpha")
 # Baseline is the version shipped with Ubuntu 26.04.
 find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter)
 
-include(tools/cmake/toolchain_setup.cmake)
+# Voxen CMake modules, `include(Voxen...)`
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+include(VoxenToolchain)
 
 # Third-party dependencies, vendored and built in-graph
 add_subdirectory(3rdparty)
@@ -51,12 +54,12 @@ target_link_libraries(voxen PRIVATE
 	3rdparty::glfw
 	3rdparty::vma
 	3rdparty::vulkan-headers
-	3rdparty::zlib
 )
 if (LINUX)
 	# `std::stacktrace` implementation in libstdc++
 	target_link_libraries(voxen PRIVATE stdc++exp)
 endif()
+target_link_libraries(tk PRIVATE 3rdparty::zlib)
 target_link_libraries(game PRIVATE voxen)
 
 include(include/CMakeLists.txt)
@@ -67,6 +70,8 @@ if(VOXEN_USE_PCH)
 	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
 endif()
 
+add_subdirectory(tools)
+
 option(VOXEN_BUILD_DATA "Build/pack data (assets) files" ON)
 if(VOXEN_BUILD_DATA)
 	add_subdirectory(data)
@@ -76,4 +81,9 @@ option(VOXEN_BUILD_TESTS "Build the test suite" OFF)
 if(VOXEN_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
+endif()
+
+option(VOXEN_BUILD_SANDBOX "Build research demos from sandbox/" OFF)
+if(VOXEN_BUILD_SANDBOX)
+	add_subdirectory(sandbox)
 endif()

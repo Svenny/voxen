@@ -34,6 +34,7 @@ jobs:
       - name: Check formatting
         run: |
           git ls-files -z 'include/*.hpp' 'src/*.hpp' 'src/*.cpp' 'tests/*.hpp' 'tests/*.cpp' \
+            'tools/*.hpp' 'tools/*.cpp' 'sandbox/*.hpp' 'sandbox/*.cpp' \
             | xargs -0 clang-format-${{ env.CLANG_FORMAT_VERSION }} --dry-run --Werror
 
   build-ubuntu:
@@ -45,6 +46,11 @@ jobs:
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
+
+      - name: Fetch LFS objects
+        # Source assets (fonts) are compiled by the build. `lfs: true` of
+        # `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
+        run: git lfs pull
 
       - name: Install required packages
         run: |
@@ -76,6 +82,11 @@ jobs:
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
+
+      - name: Fetch LFS objects
+        # Source assets (fonts) are compiled by the build. `lfs: true` of
+        # `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
+        run: git lfs pull
 
       - name: Install LLVM
         run: |

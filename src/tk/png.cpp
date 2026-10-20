@@ -1,20 +1,15 @@
-#include <voxen/common/assets/png_tools.hpp>
-
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/hash.hpp>
-#include <voxen/util/log.hpp>
-
-#include <extras/defer.hpp>
+#include <tk/png.hpp>
 
 #define ZLIB_CONST
 #include <zlib.h>
 
 #include <bit>
 #include <cassert>
-#include <vector>
+#include <cstring>
+#include <limits>
+#include <memory>
 
-namespace voxen::assets
+namespace tk::png
 {
 
 namespace
@@ -22,6 +17,8 @@ namespace
 
 constexpr uint8_t PNG_HEADER[8] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 constexpr uint8_t PNG_IDAT_TYPE[4] = { 0x49, 0x44, 0x41, 0x54 }; // Letters IDAT
+
+constexpr char UNSUPPORTED_NOTE[] = " (this implementation supports only a small subset of PNG)";
 
 #pragma pack(push, 1)
 struct IhdrChunk {
@@ -69,21 +66,55 @@ uint32_t bigEndianUnpack(const void *input) noexcept
 	return output | bytes[3];
 }
 
-std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo &info, bool flip_y, int level)
+uint32_t checksumCrc32(std::span<const std::byte> data) noexcept
+{
+	// Size argument to crc32 is `uInt`, not `uLong` or `size_t`.
+	// So loop several times if requested size is bigger.
+	constexpr size_t limit = std::numeric_limits<uInt>::max();
+
+	uLong crc = crc32(0, Z_NULL, 0);
+
+	while (data.size() >= limit) {
+		crc = crc32(crc, reinterpret_cast<const Bytef *>(data.data()), limit);
+		data = data.subspan(limit);
+	}
+
+	// Now we can safely shorten span size to `uInt`
+	crc = crc32(crc, reinterpret_cast<const Bytef *>(data.data()), static_cast<uInt>(data.size()));
+
+	// Don't know why zlib uses `uLong` for crc32 value
+	return static_cast<uint32_t>(crc);
+}
+
+std::string zlibMessage(const z_stream &strm)
+{
+	return strm.msg ? std::string(strm.msg) : std::string("no message");
+}
+
+// Calls `deflateEnd` or `inflateEnd` when leaving the scope
+template<int (*End)(z_streamp)>
+struct ZStreamGuard {
+	z_stream &strm;
+
+	~ZStreamGuard() { End(&strm); }
+};
+
+size_t rowBytes(const Info &info) noexcept
+{
+	return size_t(info.width) * info.channels * (info.is_16bpc ? 2 : 1);
+}
+
+std::expected<std::vector<std::byte>, std::string> zlibPack(std::span<const std::byte> input, const Info &info,
+	bool flip_y, int level)
 {
 	assert(level >= 0 && level <= 9);
 
 	z_stream strm = {};
 	if (deflateInit(&strm, level) != Z_OK) [[unlikely]] {
-		Log::error("deflateInit failed, msg = {}", strm.msg);
-		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "'zlib/deflateInit' failed");
+		return std::unexpected("zlib deflateInit failed: " + zlibMessage(strm));
 	}
 
-	defer {
-		[[maybe_unused]] int res = deflateEnd(&strm);
-		// Failing deflateEnd guarantees a bug in our code
-		assert(res == Z_OK);
-	};
+	ZStreamGuard<deflateEnd> guard { strm };
 
 	std::vector<std::byte> output;
 	std::byte chunk[1024];
@@ -104,8 +135,8 @@ std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo 
 		} while (strm.avail_out == 0);
 	};
 
-	const int32_t height = info.resolution.height;
-	const uint32_t row_bytes = static_cast<uint32_t>(info.resolution.width) * info.channels * (info.is_16bpc ? 2 : 1);
+	const int64_t height = info.height;
+	const size_t row_bytes = rowBytes(info);
 
 	// This buffer will hold the entire image row plus filter type byte.
 	// Each PNG line starts with special byte specifying which filter was applied.
@@ -115,30 +146,32 @@ std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo 
 
 	// If `flip_y == true` then loop from `height - 1` to `-1` with step `-1` (excluding `-1`)
 	// If `flip_y == false` then loop from `0` to `height` with step `+1` (excluding `height`)
-	const int32_t first_y = flip_y ? height - 1 : 0;
-	const int32_t last_y = flip_y ? -1 : height;
-	const int32_t y_step = flip_y ? -1 : +1;
+	const int64_t first_y = flip_y ? height - 1 : 0;
+	const int64_t last_y = flip_y ? -1 : height;
+	const int64_t y_step = flip_y ? -1 : +1;
 
-	for (int32_t y = first_y; y != last_y; y += y_step) {
+	for (int64_t y = first_y; y != last_y; y += y_step) {
+		const std::byte *input_row = input.data() + size_t(y) * row_bytes;
+
 		// Copy input row into the buffer
 		if (std::endian::native != std::endian::big && info.is_16bpc) {
 			// 16 bits per channel in little endian - byteswap them
-			for (uint32_t i = 0; i < row_bytes; i += 2) {
-				input_buffer[i + 1] = static_cast<Byte>(input[i + 1]);
-				input_buffer[i + 2] = static_cast<Byte>(input[i]);
+			for (size_t i = 0; i < row_bytes; i += 2) {
+				input_buffer[i + 1] = static_cast<Byte>(input_row[i + 1]);
+				input_buffer[i + 2] = static_cast<Byte>(input_row[i]);
 			}
 		} else {
 			// Trivially copy the row to input buffer
-			memcpy(input_buffer.get() + 1, input.data(), row_bytes);
+			memcpy(input_buffer.get() + 1, input_row, row_bytes);
 		}
-		input = input.subspan(row_bytes);
 
 		// Feed the row into zlib
-		strm.avail_in = 1 + row_bytes;
+		strm.avail_in = static_cast<uInt>(1 + row_bytes);
 		strm.next_in = input_buffer.get();
 		// Ask zlib to finish the stream when we are on the last row
 		do_deflate(y + y_step == last_y ? Z_FINISH : Z_NO_FLUSH);
 		// The whole row must be consumed by zlib at this point
+		assert(strm.avail_in == 0);
 	}
 
 	return output;
@@ -146,7 +179,8 @@ std::vector<std::byte> zlibPack(std::span<const std::byte> input, const PngInfo 
 
 // Perform deflate when input (packed) is known to contain the whole image
 // and output (unpacked) data size can be known in advance (hence "fixed")
-extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, const PngInfo &info, bool flip_y)
+std::expected<std::vector<std::byte>, std::string> zlibUnpackFixed(std::span<const std::byte> packed, const Info &info,
+	bool flip_y)
 {
 	assert(packed.size() <= UINT32_MAX);
 
@@ -155,54 +189,48 @@ extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, 
 	strm.next_in = reinterpret_cast<const Bytef *>(packed.data());
 
 	if (inflateInit(&strm) != Z_OK) [[unlikely]] {
-		Log::error("inflateInit failed, msg = {}", strm.msg);
-		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "'zlib/inflateInit' failed");
+		return std::unexpected("zlib inflateInit failed: " + zlibMessage(strm));
 	}
 
-	defer {
-		[[maybe_unused]] int res = inflateEnd(&strm);
-		// Failing inflateEnd guarantees a bug in our code
-		assert(res == Z_OK);
-	};
+	ZStreamGuard<inflateEnd> guard { strm };
 
-	extras::dyn_array<std::byte> output(PngTools::numRawBytes(info));
+	std::vector<std::byte> output(numRawBytes(info));
 
 	// If `flip_y == true` then loop from `height - 1` to `-1` with step `-1` (excluding `-1`)
 	// If `flip_y == false` then loop from `0` to `height` with step `+1` (excluding `height`)
-	const int32_t first_y = flip_y ? info.resolution.height - 1 : 0;
-	const int32_t last_y = flip_y ? -1 : info.resolution.height;
-	const int32_t y_step = flip_y ? -1 : +1;
+	const int64_t height = info.height;
+	const int64_t first_y = flip_y ? height - 1 : 0;
+	const int64_t last_y = flip_y ? -1 : height;
+	const int64_t y_step = flip_y ? -1 : +1;
 
-	const uint32_t row_bytes = static_cast<uint32_t>(info.resolution.width) * info.channels * (info.is_16bpc ? 2 : 1);
+	const size_t row_bytes = rowBytes(info);
 	// Row stores one extra byte specifying which filtering was applied.
 	auto row_chunk = std::make_unique<Byte[]>(row_bytes + 1);
 
-	for (int32_t y = first_y; y != last_y; y += y_step) {
-		strm.avail_out = row_bytes + 1;
+	for (int64_t y = first_y; y != last_y; y += y_step) {
+		strm.avail_out = static_cast<uInt>(row_bytes + 1);
 		strm.next_out = row_chunk.get();
 
 		int res = inflate(&strm, Z_NO_FLUSH);
 		if (res != Z_OK && res != Z_STREAM_END) [[unlikely]] {
-			Log::error("inflate failed, msg = {}, code = {}", strm.msg, res);
-			throw Exception::fromError(VoxenErrc::InvalidData, "'zlib/inflate' failed");
+			return std::unexpected("zlib inflate failed (code " + std::to_string(res) + "): " + zlibMessage(strm));
 		}
 
 		if (strm.avail_out != 0) [[unlikely]] {
-			Log::error("inflate did not fill the whole image row, PNG data likely mismatches info");
-			throw Exception::fromError(VoxenErrc::InvalidData, "packed PNG data likely mismatches info");
+			return std::unexpected("compressed data ends before the last image row, it mismatches IHDR");
 		}
 
 		if (row_chunk[0] != 0) [[unlikely]] {
-			Log::error("Unsupported PNG line filter {} encountered (only 0 is supported)", row_chunk[0]);
-			throw Exception::fromError(VoxenErrc::OutOfResource, "TODO: unsupported PNG stream");
+			return std::unexpected(
+				"unsupported PNG line filter " + std::to_string(row_chunk[0]) + ", only 0 is supported" + UNSUPPORTED_NOTE);
 		}
 
-		std::byte *output_row = output.data() + y * static_cast<ptrdiff_t>(row_bytes);
+		std::byte *output_row = output.data() + size_t(y) * row_bytes;
 
 		if (std::endian::native != std::endian::big && info.is_16bpc) {
 			// 16 bits per channel in little endian - byteswap them.
 			// One more 1 is added to offset for that first filter mode byte.
-			for (uint32_t i = 0; i < row_bytes; i += 2) {
+			for (size_t i = 0; i < row_bytes; i += 2) {
 				output_row[i] = static_cast<std::byte>(row_chunk[i + 2]);
 				output_row[i + 1] = static_cast<std::byte>(row_chunk[i + 1]);
 			}
@@ -213,8 +241,7 @@ extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, 
 	}
 
 	if (strm.avail_in != 0) [[unlikely]] {
-		Log::error("inflate did not consume the whole packed image, PNG data likely mismatches info");
-		throw Exception::fromError(VoxenErrc::InvalidData, "packed PNG data likely mismatches info");
+		return std::unexpected("compressed data continues after the last image row, it mismatches IHDR");
 	}
 
 	return output;
@@ -222,31 +249,35 @@ extras::dyn_array<std::byte> zlibUnpackFixed(std::span<const std::byte> packed, 
 
 } // anonymous namespace
 
-size_t PngTools::numRawBytes(const PngInfo &info) noexcept
+size_t numRawBytes(const Info &info) noexcept
 {
-	assert(info.resolution.valid());
+	assert(info.width > 0 && info.height > 0);
 	assert(info.channels > 0 && info.channels <= 4);
 
-	size_t pixels = size_t(info.resolution.width) * size_t(info.resolution.height);
-	return pixels * info.channels * (info.is_16bpc ? 2 : 1);
+	return rowBytes(info) * info.height;
 }
 
-extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, const PngInfo &info, bool flip_y)
+std::expected<std::vector<std::byte>, std::string> pack(std::span<const std::byte> bytes, const Info &info, bool flip_y)
 {
 	constexpr int COMP_LEVEL = 6;
 	assert(bytes.size() == numRawBytes(info));
 
-	std::vector<std::byte> packed_image = zlibPack(bytes, info, flip_y, COMP_LEVEL);
+	auto packed = zlibPack(bytes, info, flip_y, COMP_LEVEL);
+	if (!packed) [[unlikely]] {
+		return std::unexpected(std::move(packed.error()));
+	}
+
+	const std::vector<std::byte> &packed_image = *packed;
 
 	// PNG chunks have 32-bit length field which limits the maximum amount of packed data
 	if (packed_image.size() > UINT32_MAX) {
-		Log::error("Packed image takes {} bytes which is too large for PNG format", packed_image.size());
-		throw Exception::fromError(VoxenErrc::DataTooLarge, "packed image too large");
+		return std::unexpected(
+			"packed image takes " + std::to_string(packed_image.size()) + " bytes which is too large for PNG format");
 	}
 
 	// Overhead consists of PNG header, IHDR, IDAT (3x32bit) and IEND chunks
 	const size_t overhead = std::size(PNG_HEADER) + sizeof(IhdrChunk) + 3 * sizeof(uint32_t) + sizeof(IendChunk);
-	extras::dyn_array<std::byte> output(packed_image.size() + overhead);
+	std::vector<std::byte> output(packed_image.size() + overhead);
 	std::span<std::byte> output_bytes(output.data(), output.size());
 
 	// Write PNG header
@@ -255,8 +286,8 @@ extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, co
 
 	// Fill out IHDR chunk
 	IhdrChunk ihdr;
-	bigEndianPack(static_cast<uint32_t>(info.resolution.width), ihdr.width);
-	bigEndianPack(static_cast<uint32_t>(info.resolution.height), ihdr.height);
+	bigEndianPack(info.width, ihdr.width);
+	bigEndianPack(info.height, ihdr.height);
 	ihdr.bit_depth = info.is_16bpc ? 16 : 8;
 
 	switch (info.channels) {
@@ -309,68 +340,67 @@ extras::dyn_array<std::byte> PngTools::pack(std::span<const std::byte> bytes, co
 	return output;
 }
 
-extras::dyn_array<std::byte> PngTools::unpack(std::span<const std::byte> bytes, PngInfo &info, bool flip_y)
+std::expected<Image, std::string> unpack(std::span<const std::byte> bytes, bool flip_y)
 {
-	if (bytes.size() < std::size(PNG_HEADER) + sizeof(IhdrChunk)) [[unlikely]] {
-		Log::error("Too few data bytes ({}) to be a valid PNG stream", bytes.size());
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG data has too few bytes");
+	// IDAT chunk length, type and CRC
+	constexpr size_t IDAT_OVERHEAD = 3 * sizeof(uint32_t);
+
+	if (bytes.size() < std::size(PNG_HEADER) + sizeof(IhdrChunk) + IDAT_OVERHEAD + sizeof(IendChunk)) [[unlikely]] {
+		return std::unexpected("too few data bytes (" + std::to_string(bytes.size()) + ") to be a valid PNG stream");
 	}
 
 	if (memcmp(PNG_HEADER, bytes.data(), std::size(PNG_HEADER)) != 0) [[unlikely]] {
-		Log::error("PNG header mismatch");
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG magic header mismatch");
+		return std::unexpected("PNG magic header mismatch");
 	}
 
 	// Do some validation just to be nice.
 	// This is not expected to be used with anything created not by `pack()` function from above.
-	const IhdrChunk &ihdr = *reinterpret_cast<const IhdrChunk *>(bytes.data() + std::size(PNG_HEADER));
+	IhdrChunk ihdr;
+	memcpy(&ihdr, bytes.data() + std::size(PNG_HEADER), sizeof(ihdr));
 
-	if (ihdr.chunk_type[0] != 'I' || ihdr.chunk_type[1] != 'H' || ihdr.chunk_type[2] != 'D' || ihdr.chunk_type[3] != 'R')
-		[[unlikely]] {
-		Log::error("The first chunk is not IHDR");
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG first chunk is not IHDR");
+	if (memcmp(ihdr.chunk_type, "IHDR", 4) != 0) [[unlikely]] {
+		return std::unexpected("the first PNG chunk is not IHDR");
 	}
 
 	if (uint32_t ihdr_length = bigEndianUnpack(ihdr.chunk_length); ihdr_length != 13) [[unlikely]] {
-		Log::error("Unexpected IHDR chunk length {} (expected 13)", ihdr_length);
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG IHDR chunk length mismatch");
+		return std::unexpected("unexpected IHDR chunk length " + std::to_string(ihdr_length) + " (expected 13)");
 	}
 
 	auto ihdr_crc_zone = std::as_bytes(std::span(ihdr.chunk_type, ihdr.chunk_crc));
 	if (bigEndianUnpack(ihdr.chunk_crc) != checksumCrc32(ihdr_crc_zone)) [[unlikely]] {
-		Log::error("IHDR CRC mismatch");
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG IHDR CRC mismatch");
+		return std::unexpected("IHDR CRC mismatch");
 	}
 
 	if (ihdr.compression_method != 0 || ihdr.filter_method != 0 || ihdr.interlace_method != 0) [[unlikely]] {
-		Log::error("Unsupported PNG compression/filter/interlace method ({}/{}/{})", ihdr.compression_method,
-			ihdr.filter_method, ihdr.interlace_method);
-		Log::info("Note that this implementation is extremely barebone and is not indended for production usage");
-		throw Exception::fromError(VoxenErrc::OutOfResource, "TODO: unsupported PNG stream");
+		return std::unexpected("unsupported PNG compression/filter/interlace method ("
+			+ std::to_string(ihdr.compression_method) + "/" + std::to_string(ihdr.filter_method) + "/"
+			+ std::to_string(ihdr.interlace_method) + ")" + UNSUPPORTED_NOTE);
 	}
 
 	if (ihdr.bit_depth != 8 && ihdr.bit_depth != 16) [[unlikely]] {
-		Log::error("Unsupported PNG bit depth {} (support only 8 or 16)", ihdr.bit_depth);
-		throw Exception::fromError(VoxenErrc::OutOfResource, "TODO: unsupported PNG stream");
+		return std::unexpected(
+			"unsupported PNG bit depth " + std::to_string(ihdr.bit_depth) + ", only 8 or 16" + UNSUPPORTED_NOTE);
 	}
 
-	const uint32_t width = bigEndianUnpack(ihdr.width);
-	const uint32_t height = bigEndianUnpack(ihdr.height);
+	Image image;
+	image.info.width = bigEndianUnpack(ihdr.width);
+	image.info.height = bigEndianUnpack(ihdr.height);
+	image.info.is_16bpc = ihdr.bit_depth == 16;
 
-	info.resolution = { int32_t(width), int32_t(height) };
-	info.is_16bpc = ihdr.bit_depth == 16;
+	if (image.info.width == 0 || image.info.height == 0) [[unlikely]] {
+		return std::unexpected("PNG image has zero width or height");
+	}
 
 	if (ihdr.colour_type == IhdrChunk::CHANNELS_GREY) {
-		info.channels = 1;
+		image.info.channels = 1;
 	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_GREY_ALPHA) {
-		info.channels = 2;
+		image.info.channels = 2;
 	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_RGB) {
-		info.channels = 3;
+		image.info.channels = 3;
 	} else if (ihdr.colour_type == IhdrChunk::CHANNELS_RGBA) {
-		info.channels = 4;
+		image.info.channels = 4;
 	} else {
-		Log::error("Unsupported PNG colour type {}", ihdr.colour_type);
-		return {};
+		return std::unexpected("unsupported PNG colour type " + std::to_string(ihdr.colour_type) + UNSUPPORTED_NOTE);
 	}
 
 	// Assume IDAT starts immediately after IHDR (as `pack()` does).
@@ -380,33 +410,39 @@ extras::dyn_array<std::byte> PngTools::unpack(std::span<const std::byte> bytes, 
 	const uint32_t packed_image_size = bigEndianUnpack(idat_bytes.data());
 
 	if (memcmp(idat_bytes.data() + 4, PNG_IDAT_TYPE, std::size(PNG_IDAT_TYPE)) != 0) [[unlikely]] {
-		Log::error("The second PNG chunk is not IDAT");
-		Log::info("Note that this implementation is extremely barebone and is not indended for production usage");
-		throw Exception::fromError(VoxenErrc::OutOfResource, "TODO: unsupported PNG stream");
+		return std::unexpected(std::string("the second PNG chunk is not IDAT") + UNSUPPORTED_NOTE);
+	}
+
+	if (idat_bytes.size() < IDAT_OVERHEAD + size_t(packed_image_size)) [[unlikely]] {
+		return std::unexpected("IDAT chunk length " + std::to_string(packed_image_size) + " exceeds PNG stream size");
 	}
 
 	const uint32_t actual_crc = checksumCrc32(idat_bytes.subspan(4, 4 + packed_image_size));
 	const uint32_t expected_crc = bigEndianUnpack(idat_bytes.data() + 8 + packed_image_size);
 
 	if (actual_crc != expected_crc) [[unlikely]] {
-		Log::error("IDAT CRC mismatch");
-		throw Exception::fromError(VoxenErrc::InvalidData, "PNG IDAT CRC mismatch");
+		return std::unexpected("IDAT CRC mismatch");
 	}
 
 	// Assume the image ends immediately after that
-	std::span<const std::byte> iend_bytes = idat_bytes.subspan(12 + packed_image_size);
+	std::span<const std::byte> iend_bytes = idat_bytes.subspan(IDAT_OVERHEAD + packed_image_size);
 	// Its default constructor fills all properly
 	IendChunk iend_reference;
 
 	if (iend_bytes.size() != sizeof(IendChunk) || memcmp(iend_bytes.data(), &iend_reference, sizeof(IendChunk)) != 0)
 		[[unlikely]] {
-		Log::error("PNG is not terminated with IEND immediately after IDAT, this is unsupported");
-		Log::info("Note that this implementation is extremely barebone and is not indended for production usage");
-		throw Exception::fromError(VoxenErrc::OutOfResource, "TODO: unsupported PNG stream");
+		return std::unexpected(
+			std::string("PNG stream does not end with IEND immediately after IDAT") + UNSUPPORTED_NOTE);
 	}
 
 	std::span<const std::byte> packed_image = idat_bytes.subspan(8, packed_image_size);
-	return zlibUnpackFixed(packed_image, info, flip_y);
+	auto pixels = zlibUnpackFixed(packed_image, image.info, flip_y);
+	if (!pixels) [[unlikely]] {
+		return std::unexpected(std::move(pixels.error()));
+	}
+
+	image.pixels = std::move(*pixels);
+	return image;
 }
 
-} // namespace voxen::assets
+} // namespace tk::png
