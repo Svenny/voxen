@@ -13,8 +13,10 @@ namespace voxen
 // Supports conversion between various representations
 // and bit-casting to `uint32_t` for bulk memory operations.
 // As usual with sRGB, alpha channel is always linear.
+// NOTE: not `VOXEN_API`, it would propagate to `extern template` declarations below where
+// `dllexport` is not allowed. Explicit instantiations carry the export attributes instead.
 template<bool Linear>
-struct VOXEN_API PackedColor {
+struct PackedColor {
 	constexpr PackedColor() = default;
 	// Directly construct from byte values without conversion
 	constexpr PackedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept : r(r), g(g), b(b), a(a) {}
@@ -55,8 +57,8 @@ struct VOXEN_API PackedColor {
 };
 
 // Templates are instantiated externally in `packed_color.cpp`
-extern template struct PackedColor<true>;
-extern template struct PackedColor<false>;
+extern template struct VOXEN_EXTERN_TEMPLATE_API PackedColor<true>;
+extern template struct VOXEN_EXTERN_TEMPLATE_API PackedColor<false>;
 
 using PackedColorLinear = PackedColor<true>;
 using PackedColorSrgb = PackedColor<false>;

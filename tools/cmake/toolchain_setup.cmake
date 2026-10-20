@@ -36,6 +36,30 @@ if(CMAKE_LINKER_TYPE)
 	message(STATUS "Using linker type: ${CMAKE_LINKER_TYPE}")
 endif()
 
+set(VOXEN_IS_VS_GENERATOR OFF)
+if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+	set(VOXEN_IS_VS_GENERATOR ON)
+endif()
+
+# RelWithDebInfo is Release plus debug info. CMake defaults give it less optimization
+# (`-O2`, `/Ob1`), use Release flags instead. Debug info flags are added on top on
+# Linux, on Windows they come from `MSVC_DEBUG_INFORMATION_FORMAT` (policy CMP0141).
+# NOTE: these shadow the cache variables, edit them here rather than in the cache.
+foreach(lang IN ITEMS C CXX)
+	set(CMAKE_${lang}_FLAGS_RELWITHDEBINFO "${CMAKE_${lang}_FLAGS_RELEASE}")
+	if(NOT WIN32)
+		string(APPEND CMAKE_${lang}_FLAGS_RELWITHDEBINFO " -g")
+	endif()
+endforeach()
+
+if(WIN32)
+	# `/debug` makes the linker default to `/OPT:NOREF,NOICF` and `/INCREMENTAL`,
+	# restore Release linker optimizations. lld-link can't link incrementally anyway.
+	foreach(type IN ITEMS EXE SHARED MODULE)
+		set(CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO /OPT:REF /OPT:ICF")
+	endforeach()
+endif()
+
 set(CLANG_OPTION_PREFIX "")
 if(WIN32)
 	# clang-cl needs this prefix for non-cl (native clang) options
@@ -136,25 +160,25 @@ function(voxen_setup_target target)
 		)
 
 		target_compile_options(${target} PRIVATE
-			# Windows-only warning on `extern template class VOXEN_API ...`. The proper
-			# fix would be a separate dllimport-only macro for these declarations.
-			-Wno-dllexport-explicit-instantiation-decl
-
 			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
 			# Pin the standard explicitly, `/clang:` options win as they go last.
 			# NOTE: VS generator evaluates this for all sources of a target with
 			# any C++ sources, but at least it keeps C-only targets intact.
 			$<$<COMPILE_LANGUAGE:CXX>:/clang:-std=c++23>
-
-			# Display names of files being compiled (makes VS output window informative)
-			/showFilenames
-			# Compile multiple source files in parallel (why it's not the default?!)
-			/MP
 		)
 
 		target_link_libraries(${target} PRIVATE
 			# Futex ops like WaitOnAddress/WakeByAddress...
 			synchronization
+		)
+	endif()
+
+	if(VOXEN_IS_VS_GENERATOR)
+		target_compile_options(${target} PRIVATE
+			# Display names of files being compiled (makes VS output window informative)
+			/showFilenames
+			# Compile multiple source files in parallel (why it's not the default?!)
+			/MP
 		)
 
 		# Built-in clang-tidy does not properly receive clang flags
@@ -200,11 +224,11 @@ function(voxen_setup_target target)
 		# we should not lose any measurable perf from making executables PIE too.
 		POSITION_INDEPENDENT_CODE ON
 
-		# Use LTO for release builds (this is ThinLTO on Clang)
+		# Use LTO for optimized builds (this is ThinLTO on Clang)
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF
 		INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON
 		INTERPROCEDURAL_OPTIMIZATION_RELEASE ON
-		INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO OFF
+		INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON
 
 		# Define `TARGET_EXPORTS` instead of `target_EXPORTS` when compiling.
 		# Should be only needed on windows to switch between dllexport/dllimport.
@@ -243,5 +267,40 @@ function(voxen_add_library name type)
 		# exported symbol could be interposed by a system copy of the same library
 		# loaded into the process (e.g. through the Wayland/X11 stack).
 		target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
+	endif()
+endfunction()
+
+# Embed a natvis (VS debugger visualizers) file into PDBs of binaries containing `target`
+# code: the target itself for executables and shared libraries, its consumers otherwise.
+function(voxen_target_natvis target file)
+	if(NOT WIN32)
+		return()
+	endif()
+
+	get_target_property(type ${target} TYPE)
+	cmake_path(ABSOLUTE_PATH file NORMALIZE)
+	set(linkable OFF)
+	if(type STREQUAL "EXECUTABLE" OR type STREQUAL "SHARED_LIBRARY" OR type STREQUAL "MODULE_LIBRARY")
+		set(linkable ON)
+	endif()
+
+	if(VOXEN_IS_VS_GENERATOR)
+		# MSBuild passes `Natvis` project items to the linker. CMake turns `.natvis` sources into
+		# them, but `/NATVIS:` link options into a `<Link><Natvis>` setting ignored by ClangCL
+		# toolset. Interface sources become items in consumer projects, use them instead.
+		if(linkable)
+			target_sources(${target} PRIVATE ${file})
+		else()
+			target_sources(${target} INTERFACE ${file})
+		endif()
+		return()
+	endif()
+
+	# Only configurations producing PDBs
+	set(option "$<$<CONFIG:Debug,RelWithDebInfo>:/NATVIS:${file}>")
+	if(linkable)
+		target_link_options(${target} PRIVATE ${option})
+	else()
+		target_link_options(${target} INTERFACE ${option})
 	endif()
 endfunction()

@@ -68,7 +68,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [ debug, release ]
+        include:
+          - { configure-preset: windows-ninja, preset: windows-ninja-debug }
+          - { configure-preset: windows-ninja, preset: windows-ninja-release }
+          - { configure-preset: windows-vs2026, preset: windows-vs2026-relwithdebinfo }
+    name: build-windows (${{ matrix.preset }})
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
@@ -95,11 +99,24 @@ jobs:
       - name: Install Vulkan SDK
         run: ./VulkanSDK-Installer.exe --accept-licenses --default-answer --confirm-command install
 
+      # Ninja needs `INCLUDE`/`LIB`/`PATH` for Windows SDK and MSVC CRT, MSBuild finds them on its own.
+      # Does what `ilammy/msvc-dev-cmd` does, third-party actions are not allowed in this repo.
+      - name: Enter MSVC developer environment
+        if: matrix.configure-preset == 'windows-ninja'
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * `
+              -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          cmd /c "`"$vs/VC/Auxiliary/Build/vcvars64.bat`" >nul && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { "$($Matches[1])=$($Matches[2])" >> $env:GITHUB_ENV }
+          }
+
       - name: Configure
-        run: cmake --preset windows-vs2026 -DCMAKE_PROGRAM_PATH=C:/VulkanSDK/${{ env.VULKAN_SDK_VERSION }}/Bin
+        run: |
+          cmake --version
+          cmake --preset ${{ matrix.configure-preset }} -DCMAKE_PROGRAM_PATH=C:/VulkanSDK/${{ env.VULKAN_SDK_VERSION }}/Bin
 
       - name: Build
-        run: cmake --build --preset windows-vs2026-${{ matrix.config }}
+        run: cmake --build --preset ${{ matrix.preset }}
 
       - name: Run tests
-        run: ctest --preset windows-vs2026-${{ matrix.config }}
+        run: ctest --preset ${{ matrix.preset }}
