@@ -460,6 +460,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats13.maintenance4) {
 		missing.emplace_back("maintenance4");
 	}
+	if (!ext_info.feats_maximal_reconvergence.shaderMaximalReconvergence) {
+		missing.emplace_back("shaderMaximalReconvergence");
+	}
 
 	if (!missing.empty()) {
 		Log::debug("Device lacks required features:");
@@ -477,8 +480,13 @@ bool Device::isSupported(PhysicalDevice &pd)
 void Device::createDevice()
 {
 	// Fill VkPhysicalDevice*Features chain
+	VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR features_maximal_reconvergence = {};
+	features_maximal_reconvergence.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR;
+	features_maximal_reconvergence.shaderMaximalReconvergence = VK_TRUE;
+
 	VkPhysicalDeviceMaintenance5FeaturesKHR features_maintenance5 = {};
 	features_maintenance5.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+	features_maintenance5.pNext = &features_maximal_reconvergence;
 	features_maintenance5.maintenance5 = VK_TRUE;
 
 	VkPhysicalDeviceVulkan13Features features13 = {};
