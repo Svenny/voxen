@@ -40,6 +40,11 @@ jobs:
       fail-fast: false
       matrix:
         preset: [ linux-debug, linux-release ]
+        cmake-args: [ '' ]
+        include:
+          # EXPERIMENT: `import std;`
+          - { preset: linux-debug, cmake-args: -DVOXEN_IMPORT_STD=ON }
+    name: build-ubuntu (${{ matrix.preset }} ${{ matrix.cmake-args }})
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
@@ -58,7 +63,7 @@ jobs:
           cmake --version
 
       - name: Configure
-        run: cmake --preset ${{ matrix.preset }}
+        run: cmake --preset ${{ matrix.preset }} ${{ matrix.cmake-args }}
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }}
@@ -74,8 +79,12 @@ jobs:
         include:
           - { configure-preset: windows-ninja, preset: windows-ninja-debug }
           - { configure-preset: windows-ninja, preset: windows-ninja-release }
-          - { configure-preset: windows-vs2026, preset: windows-vs2026-release }
-    name: build-windows (${{ matrix.preset }})
+          # EXPERIMENT: `import std;` with clang-cl and MS STL
+          - { configure-preset: windows-ninja, preset: windows-ninja-debug, cmake-args: -DVOXEN_IMPORT_STD=ON, may-fail: true }
+          # EXPERIMENT: modules are not supported by MSBuild with ClangCL toolset
+          - { configure-preset: windows-vs2026, preset: windows-vs2026-release, may-fail: true }
+    name: build-windows (${{ matrix.preset }} ${{ matrix.cmake-args }})
+    continue-on-error: ${{ matrix.may-fail == true }}
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
@@ -100,7 +109,19 @@ jobs:
       - name: Configure
         run: |
           cmake --version
-          cmake --preset ${{ matrix.configure-preset }}
+          cmake --preset ${{ matrix.configure-preset }} ${{ matrix.cmake-args }}
+
+      # EXPERIMENT: look for C++ modules support in MSBuild ClangCL toolset files
+      - name: Inspect MSBuild modules support
+        if: matrix.configure-preset == 'windows-vs2026'
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -property installationPath
+          Get-ChildItem -Recurse "$vs/MSBuild/Microsoft/VC" -Include *.targets,*.props,*.xml |
+            Select-String -Pattern 'ScanSourceForModuleDependencies|EnableModules|BuildStlModules' -List |
+            ForEach-Object { $_.Path }
+          $clang = Get-ChildItem -Recurse "$vs/MSBuild/Microsoft/VC" -Filter '*ClangCl*' | Select-Object -ExpandProperty FullName
+          $clang
+          $clang | ForEach-Object { Select-String -Path $_ -Pattern 'Module' } | Select-Object -First 40
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }}
