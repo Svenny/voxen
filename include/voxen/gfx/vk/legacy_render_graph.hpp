@@ -8,6 +8,8 @@
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/world/world_fwd.hpp>
 
+#include <vector>
+
 namespace voxen::gfx::vk
 {
 
