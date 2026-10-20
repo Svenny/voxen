@@ -31,8 +31,10 @@ namespace voxen::land
 //
 // Hardcoded for `Consts::CHUNK_SIZE_BLOCKS == 32`,
 // changing it will require rewriting this class.
+// NOTE: not `VOXEN_API`, it would propagate to `extern template` declarations below where
+// `dllexport` is not allowed. Explicit instantiations carry the export attributes instead.
 template<typename T>
-class VOXEN_API CompressedChunkStorage {
+class CompressedChunkStorage {
 public:
 	using ConstExpandedView = CubeArrayView<const T, Consts::CHUNK_SIZE_BLOCKS>;
 	using ExpandedView = CubeArrayView<T, Consts::CHUNK_SIZE_BLOCKS>;
@@ -138,8 +140,8 @@ private:
 	std::unique_ptr<Node[]> m_nodes;
 };
 
-extern template class VOXEN_API CompressedChunkStorage<uint8_t>;
-extern template class VOXEN_API CompressedChunkStorage<uint16_t>;
-extern template class VOXEN_API CompressedChunkStorage<uint32_t>;
+extern template class VOXEN_EXTERN_TEMPLATE_API CompressedChunkStorage<uint8_t>;
+extern template class VOXEN_EXTERN_TEMPLATE_API CompressedChunkStorage<uint16_t>;
+extern template class VOXEN_EXTERN_TEMPLATE_API CompressedChunkStorage<uint32_t>;
 
 } // namespace voxen::land

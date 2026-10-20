@@ -164,10 +164,6 @@ function(voxen_setup_target target)
 		)
 
 		target_compile_options(${target} PRIVATE
-			# Windows-only warning on `extern template class VOXEN_API ...`. The proper
-			# fix would be a separate dllimport-only macro for these declarations.
-			-Wno-dllexport-explicit-instantiation-decl
-
 			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
 			# Pin the standard explicitly, `/clang:` options win as they go last.
 			# NOTE: VS generator evaluates this for all sources of a target with
