@@ -107,7 +107,7 @@ m::float4 PackedColor<Linear>::toVec4() const noexcept
 }
 
 // External templates instantiation (declared in the header)
-template struct PackedColor<true>;
-template struct PackedColor<false>;
+template struct VOXEN_API PackedColor<true>;
+template struct VOXEN_API PackedColor<false>;
 
 } // namespace voxen
