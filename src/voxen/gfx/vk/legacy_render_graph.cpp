@@ -57,23 +57,43 @@ struct PseudoSurfaceDrawCommand {
 	float chunk_size_metres;
 };
 
+void recordMemoryBarrier(const DeviceDispatchTable &ddt, VkCommandBuffer cmd_buf, VkPipelineStageFlags2 src_stages,
+	VkAccessFlags2 src_access, VkPipelineStageFlags2 dst_stages, VkAccessFlags2 dst_access)
+{
+	VkMemoryBarrier2 barrier {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		.pNext = nullptr,
+		.srcStageMask = src_stages,
+		.srcAccessMask = src_access,
+		.dstStageMask = dst_stages,
+		.dstAccessMask = dst_access,
+	};
+
+	VkDependencyInfo dep_info {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.pNext = nullptr,
+		.dependencyFlags = 0,
+		.memoryBarrierCount = 1,
+		.pMemoryBarriers = &barrier,
+		.bufferMemoryBarrierCount = 0,
+		.pBufferMemoryBarriers = nullptr,
+		.imageMemoryBarrierCount = 0,
+		.pImageMemoryBarriers = nullptr,
+	};
+
+	ddt.vkCmdPipelineBarrier2(cmd_buf, &dep_info);
+}
+
 } // namespace
 
 void LegacyRenderGraph::rebuild(RenderGraphBuilder &bld)
 {
 	m_gfx = &bld.gfxSystem();
 
-	// Frustum culling pass
-	{
-		m_res.dummy_sync_buffer = bld.makeBuffer("dummy_sync_buffer", { .size = 16 });
-
-		RenderGraphBuilder::ResourceUsage usage[] = {
-			bld.makeBufferUsage(m_res.dummy_sync_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-				VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, true),
-		};
-
-		bld.makeComputePass<&LegacyRenderGraph::doFrustumCullingPass>("Frustum culling", usage);
-	}
+	// Frustum culling pass.
+	// Its buffers are allocated dynamically per frame and are not tracked by the
+	// render graph, the pass records all needed synchronization by itself.
+	bld.makeComputePass<&LegacyRenderGraph::doFrustumCullingPass>("Frustum culling", {});
 
 	// Main pass
 	{
@@ -89,12 +109,7 @@ void LegacyRenderGraph::rebuild(RenderGraphBuilder &bld)
 		auto rtv = bld.makeOutputRenderTarget(true, CLEAR_COLOR);
 		auto dsv = bld.makeDepthStencilTargetClearDiscard(m_res.depth_buffer, CLEAR_DEPTH);
 
-		RenderGraphBuilder::ResourceUsage usage[] = {
-			bld.makeBufferUsage(m_res.dummy_sync_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-				VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT),
-		};
-
-		bld.makeRenderPass<&LegacyRenderGraph::doMainPass>("Main pass", rtv, dsv, usage);
+		bld.makeRenderPass<&LegacyRenderGraph::doMainPass>("Main pass", rtv, dsv, {});
 	}
 }
 
@@ -220,11 +235,18 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 		legacy_pipeline_collection[client::vulkan::PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE]);
 	ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1, &m_main_scene_dset, 0, nullptr);
 
+	// Clear all draw counters to zero first, then wait for all clears with one barrier
 	for (LandPerIndexBufferData &per_ib_data : m_land_per_index_buffer_data) {
-		// Clear draw counter to zero
 		ddt.vkCmdFillBuffer(cmd_buf, per_ib_data.draw_commands.buffer, per_ib_data.draw_commands.buffer_offset,
 			sizeof(uint32_t), 0);
+	}
 
+	// Culling shader reads and atomically increments the counter after the clear
+	recordMemoryBarrier(ddt, cmd_buf, VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT);
+
+	for (LandPerIndexBufferData &per_ib_data : m_land_per_index_buffer_data) {
 		VkDescriptorBufferInfo buffer_descriptors[3] = {
 			{
 				// 0 - input buffer (pre-culled cmds)
@@ -262,6 +284,13 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 		ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 1, 1, &descriptor_write);
 		ddt.vkCmdDispatch(cmd_buf, (per_ib_data.num_all_commands + 63) / 64, 1, 1);
 	}
+
+	// Culling results are consumed by the main pass:
+	// - Indirect commands and draw counter by `vkCmdDrawIndexedIndirectCount`
+	// - Draw commands by chunk mesh and debug chunk bounds vertex shaders
+	recordMemoryBarrier(ddt, cmd_buf, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+		VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
 }
 
 void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
