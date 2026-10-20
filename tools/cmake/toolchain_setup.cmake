@@ -173,6 +173,11 @@ function(voxen_setup_target target)
 		)
 
 		target_compile_options(${target} PRIVATE
+			# EXPERIMENT: clang-cl picks module interface mode from the `.cppm` extension
+			# and warns that CMake's `-TP` (compile as C++) is unused. No way to target
+			# module units only, so this has to be disabled for all C++ sources.
+			$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-command-line-argument>
+
 			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
 			# Pin the standard explicitly, `/clang:` options win as they go last.
 			# NOTE: VS generator evaluates this for all sources of a target with
