@@ -1,6 +1,7 @@
-#include <m/m.hpp>
 
 #include "../test_common.hpp"
+
+import m;
 
 namespace m
 {

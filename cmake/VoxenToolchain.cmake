@@ -224,8 +224,9 @@ function(voxen_setup_target target)
 		# Require C17 and C++23
 		C_STANDARD 17 C_STANDARD_REQUIRED TRUE
 		CXX_STANDARD 23 CXX_STANDARD_REQUIRED TRUE
-		# We don't use C++ modules, don't spend time scanning sources for them
-		CXX_SCAN_FOR_MODULES OFF
+		# EXPERIMENT: C++20 named modules. Scanning costs a dependency scan step
+		# per source and is only needed by targets using (or exporting) modules.
+		CXX_SCAN_FOR_MODULES ON
 
 		# Target will be able to load .so's from its own directory
 		INSTALL_RPATH "\$ORIGIN"
