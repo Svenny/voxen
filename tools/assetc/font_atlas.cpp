@@ -50,7 +50,16 @@ std::expected<void, std::string> compileFontAtlas(const FontAtlasParams &params)
 	error = FT_New_Memory_Face(ft_library, reinterpret_cast<const FT_Byte *>(font_data->data()),
 		FT_Long(font_data->size()), 0, &ft_face);
 	if (error != FT_Err_Ok) {
-		return std::unexpected(ftErrorString("Font open", error));
+		std::string message = ftErrorString("Font open", error);
+
+		constexpr std::string_view LFS_POINTER_PREFIX = "version https://git-lfs";
+		const std::string_view head(reinterpret_cast<const char *>(font_data->data()),
+			std::min(font_data->size(), LFS_POINTER_PREFIX.size()));
+		if (head == LFS_POINTER_PREFIX) {
+			message += " (the file is a Git LFS pointer, run `git lfs pull`)";
+		}
+
+		return std::unexpected(std::move(message));
 	}
 
 	defer { FT_Done_Face(ft_face); };

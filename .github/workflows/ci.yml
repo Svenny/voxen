@@ -47,6 +47,11 @@ jobs:
       - name: Checkout the commit
         uses: actions/checkout@v7
 
+      - name: Fetch LFS objects
+        # Source assets (fonts) are compiled by the build. `lfs: true` of
+        # `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
+        run: git lfs pull
+
       - name: Install required packages
         run: |
           sudo apt-get update
@@ -73,6 +78,11 @@ jobs:
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
+
+      - name: Fetch LFS objects
+        # Source assets (fonts) are compiled by the build. `lfs: true` of
+        # `actions/checkout` would ask GitHub LFS, not the `.lfsconfig` server.
+        run: git lfs pull
 
       - name: Install LLVM
         run: |
