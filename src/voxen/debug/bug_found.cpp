@@ -2,6 +2,8 @@
 
 #include <voxen/util/log.hpp>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <bit>
 #include <cassert>

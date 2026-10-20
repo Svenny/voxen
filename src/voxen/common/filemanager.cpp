@@ -2,6 +2,8 @@
 
 #include <voxen/util/log.hpp>
 
+#include <expected>
+
 import tk.fs;
 
 using std::filesystem::path;
