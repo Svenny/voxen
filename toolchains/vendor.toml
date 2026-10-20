@@ -1,0 +1,11 @@
+# Prebuilt host tools vendored into this directory, one table per `toolchains/<name>`,
+# one subdirectory per host platform. Binaries are tracked with Git LFS (see `.gitattributes`),
+# `tools/scripts/vendor.py` derives the directories from these entries (see its docstring
+# for the keys), CI checks that the tree matches.
+#
+# Upstream release files are kept byte for byte (not even stripped) so their
+# provenance can be verified against the published archives at any time.
+#
+# Bumping a version: edit `version` and every `sha256` (the script prints the new ones),
+# run `vendor.py update <name>`, fix whatever `keep` stopped matching, check that the
+# set is still self-sufficient (see the notes on each entry).
