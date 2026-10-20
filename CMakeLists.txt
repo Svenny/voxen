@@ -85,6 +85,13 @@ include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
 
 option(VOXEN_USE_PCH "Use precompiled headers" ON)
+if(VOXEN_USE_PCH AND MSVC)
+	# EXPERIMENT: clang-scan-deps silently reports no imports for sources compiled with
+	# MSVC-style PCH (`/Yu`, what CMake uses with clang-cl), so their BMIs are never passed
+	# and the compilation fails with "module not found". Clang-style PCH on Linux is fine.
+	message(WARNING "PCH is incompatible with C++ modules scanning on Windows, disabling it")
+	set(VOXEN_USE_PCH OFF)
+endif()
 if(VOXEN_USE_PCH)
 	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
 endif()
