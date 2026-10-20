@@ -24,7 +24,7 @@ namespace
 
 TEST_CASE("Modules from shared and static libraries work together", "[modules]")
 {
-	const int32_t calls_before = modshared::g_calls;
+	const int32_t calls_before = modshared::calls();
 
 	modstatic::NamedCounter counter("named");
 	counter.add(2);
@@ -44,7 +44,7 @@ TEST_CASE("Modules from shared and static libraries work together", "[modules]")
 	// Same generator through the module of a shared library and directly
 	CHECK(modshared::seededRandom(42) == tk::rng::SplitMix64(42)());
 
-	CHECK(modshared::g_calls == calls_before + 4);
+	CHECK(modshared::calls() == calls_before + 4);
 
 	CHECK(modshared::twice(21) == 42);
 	CHECK(modshared::answer() == 42);

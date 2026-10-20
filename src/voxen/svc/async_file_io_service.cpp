@@ -13,6 +13,7 @@
 
 #include <extras/defer.hpp>
 
+#include <mutex>
 #include <queue>
 #include <thread>
 #include <variant>

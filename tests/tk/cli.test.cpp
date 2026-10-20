@@ -2,6 +2,7 @@
 
 #include <array>
 #include <expected>
+#include <span>
 
 import tk.cli;
 

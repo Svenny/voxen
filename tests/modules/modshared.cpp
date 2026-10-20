@@ -12,7 +12,17 @@ import tk.rng;
 namespace modshared
 {
 
+namespace
+{
+
 int32_t g_calls = 0;
+
+} // namespace
+
+int32_t calls() noexcept
+{
+	return g_calls;
+}
 
 Counter::~Counter() = default;
 

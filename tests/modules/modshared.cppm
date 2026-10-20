@@ -39,8 +39,11 @@ private:
 MODSHARED_API m::float3 scaled(const m::float3 &v, float s) noexcept;
 MODSHARED_API uint64_t seededRandom(uint64_t seed) noexcept;
 
-// Exported variable
-MODSHARED_API extern int32_t g_calls;
+// Number of calls to the above functions. NOTE: not an exported variable: `dllexport` from
+// the BMI applies in importers too (Clang does not turn it into `dllimport` there), so they
+// reference `g_calls` directly instead of `__imp_g_calls` and fail to link on Windows.
+// Functions work only thanks to import library thunks.
+MODSHARED_API int32_t calls() noexcept;
 
 // Templates and inline functions are instantiated/emitted by importers
 template<typename T>
