@@ -7,6 +7,7 @@
 #include "task_handle_private.hpp"
 
 #include <cassert>
+#include <utility>
 
 namespace voxen::svc
 {
@@ -76,6 +77,31 @@ void doCompleteAndUnref(detail::TaskHeader *header, detail::AsyncCounterTracker 
 	}
 }
 
+// Drops one continuation of `header` together with the reference it holds, completing
+// the task if this was the last continuation. Both are dropped in one atomic operation:
+// with separate decrements, another continuation finishing in between could complete
+// the task (and its counter) while we still hold a reference, so its resources would
+// be released only after the completion is acknowledged.
+//
+// Not being the last continuation means someone else still holds a continuation
+// and its reference, so dropping ours never frees the task here.
+void doReleaseContinuation(detail::TaskHeader *header, detail::AsyncCounterTracker &tracker)
+{
+	uint32_t word = header->atomic_word.load(std::memory_order_relaxed);
+	bool last = false;
+
+	do {
+		last = (word & ATOMIC_WORD_CONTINUATION_COUNT_MASK) == ATOMIC_WORD_CONTINUATION_ADD;
+	} while (!header->atomic_word.compare_exchange_weak(word,
+		word - (last ? ATOMIC_WORD_CONTINUATION_ADD : ATOMIC_WORD_CONTINUATION_REF_ADD), std::memory_order_acq_rel,
+		std::memory_order_relaxed));
+
+	if (last) {
+		// Completion releases the reference
+		doCompleteAndUnref(header, tracker);
+	}
+}
+
 } // namespace
 
 detail::ParentTaskHandle::~ParentTaskHandle()
@@ -101,16 +127,7 @@ void detail::ParentTaskHandle::onTaskComplete(AsyncCounterTracker &tracker)
 		return;
 	}
 
-	uint32_t old_word = m_parent->atomic_word.fetch_sub(ATOMIC_WORD_CONTINUATION_ADD, std::memory_order_acq_rel);
-	if ((old_word & ATOMIC_WORD_CONTINUATION_COUNT_MASK) == ATOMIC_WORD_CONTINUATION_ADD) {
-		// This was the last continuation, complete the parent
-		doCompleteAndUnref(m_parent, tracker);
-	} else {
-		// Parent has more incomplete continuations, but we no longer need to ref it
-		doReleaseRef(m_parent);
-	}
-
-	m_parent = nullptr;
+	doReleaseContinuation(std::exchange(m_parent, nullptr), tracker);
 }
 
 TaskHandle::TaskHandle(detail::PrivateTaskHandle &&handle) noexcept : m_header(std::exchange(handle.m_header, nullptr))
@@ -186,15 +203,9 @@ void TaskHandle::addRef() noexcept
 	}
 }
 
-bool detail::PrivateTaskHandle::hasContinuations() const noexcept
+void detail::PrivateTaskHandle::finishExecutionAndReset(AsyncCounterTracker &tracker)
 {
-	return !!(m_header->atomic_word.load(std::memory_order_acquire) & ATOMIC_WORD_CONTINUATION_COUNT_MASK);
-}
-
-void detail::PrivateTaskHandle::completeAndReset(AsyncCounterTracker &tracker)
-{
-	doCompleteAndUnref(m_header, tracker);
-	m_header = nullptr;
+	doReleaseContinuation(std::exchange(m_header, nullptr), tracker);
 }
 
 } // namespace voxen::svc
