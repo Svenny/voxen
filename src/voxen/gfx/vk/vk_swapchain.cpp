@@ -80,6 +80,11 @@ void Swapchain::acquireImage()
 	if (res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR) [[likely]] {
 		// Ignore SUBOPTIMAL here, it will be handled during present
 		m_image_index = acquired_index;
+		if (m_presented_images_mask & (1u << acquired_index)) {
+			// Previous present of this image is complete (we will wait
+			// on the acquire semaphore), and so are all presents before it
+			releaseRetiredSwapchains();
+		}
 		return;
 	}
 
@@ -119,7 +124,8 @@ void Swapchain::acquireImage()
 		res = m_device.dt().vkAcquireNextImageKHR(m_device.handle(), m_swapchain, UINT64_MAX,
 			m_acquire_semaphores[m_frame_index], VK_NULL_HANDLE, &acquired_index);
 		if (res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR) {
-			// Same as with the first attempt, SUBOPTIMAL will be handled during present
+			// Same as with the first attempt, SUBOPTIMAL will be handled during present.
+			// The swapchain was just recreated, no presents from it to check.
 			m_image_index = acquired_index;
 			return;
 		}
@@ -182,13 +188,13 @@ void Swapchain::presentImage(uint64_t timeline)
 	// With other return codes the image is released and semaphore wait operation is enqueued.
 	// Therefore we can forget about image acquisition and advance the frame index right away.
 	uint32_t image_index = std::exchange(m_image_index, NO_IMAGE_MARKER);
-	uint32_t frame_index = std::exchange(m_frame_index, (m_frame_index + 1) % gfx::Consts::MAX_PENDING_FRAMES);
+	m_frame_index = (m_frame_index + 1) % gfx::Consts::MAX_PENDING_FRAMES;
 
 	VkPresentInfoKHR present_info {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = nullptr,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &m_present_semaphores[frame_index],
+		.pWaitSemaphores = &m_present_semaphores[image_index],
 		.swapchainCount = 1,
 		.pSwapchains = &m_swapchain,
 		.pImageIndices = &image_index,
@@ -197,6 +203,7 @@ void Swapchain::presentImage(uint64_t timeline)
 
 	VkResult res = m_device.dt().vkQueuePresentKHR(m_device.mainQueue(), &present_info);
 	if (res == VK_SUCCESS) [[likely]] {
+		m_presented_images_mask |= 1u << image_index;
 		return;
 	}
 
@@ -257,7 +264,7 @@ VkSemaphore Swapchain::currentAcquireSemaphore()
 VkSemaphore Swapchain::currentPresentSemaphore()
 {
 	assert(imageAcquired());
-	return m_present_semaphores[m_frame_index];
+	return m_present_semaphores[m_image_index];
 }
 
 bool Swapchain::isCompatible(Device &device)
@@ -281,9 +288,6 @@ void Swapchain::createPerFrame()
 
 		snprintf(buf, std::size(buf), "swapchain/sema/acquire@%u", i);
 		m_acquire_semaphores[i] = m_device.vkCreateSemaphore(semaphore_info, buf);
-
-		snprintf(buf, std::size(buf), "swapchain/sema/present@%u", i);
-		m_present_semaphores[i] = m_device.vkCreateSemaphore(semaphore_info, buf);
 	}
 }
 
@@ -400,20 +404,30 @@ void Swapchain::recreateSwapchain()
 
 	uint32_t new_num_images = updateSwapchainParameters();
 
-	// Old swapchain, if present, becomes retired regardless of
-	// the new one creation result, so queue it for destruction
-	// unconditionally. Images/RTVs can be queued immediately,
-	// swapchain handle is needed for the call, defer it.
+	// Old swapchain, if present, becomes retired regardless of the new one
+	// creation result. Images/RTVs are used only by rendering commands
+	// and can be queued for destruction immediately. Swapchain handle
+	// and present semaphores might still be used by pending presents.
+	VkSwapchainKHR old_swapchain = std::exchange(m_swapchain, VK_NULL_HANDLE);
+
+	if (old_swapchain != VK_NULL_HANDLE) {
+		RetiredSwapchain &retired = m_retired_swapchains.emplace_back();
+		retired.swapchain = old_swapchain;
+
+		for (uint32_t i = 0; i < m_num_images; i++) {
+			retired.present_semaphores[i] = std::exchange(m_present_semaphores[i], VK_NULL_HANDLE);
+		}
+	}
+
 	for (uint32_t i = 0; i < m_num_images; i++) {
 		m_device.enqueueDestroy(m_image_rtvs[i]);
 		m_image_rtvs[i] = VK_NULL_HANDLE;
 		// Image was not created by us
 		m_images[i] = VK_NULL_HANDLE;
 	}
-	m_num_images = 0;
 
-	VkSwapchainKHR old_swapchain = std::exchange(m_swapchain, VK_NULL_HANDLE);
-	defer { m_device.enqueueDestroy(old_swapchain); };
+	m_num_images = 0;
+	m_presented_images_mask = 0;
 
 	Log::info("Creating swapchain with {} images, resolution {}x{}", new_num_images, m_image_extent.width,
 		m_image_extent.height);
@@ -441,7 +455,7 @@ void Swapchain::recreateSwapchain()
 
 	m_swapchain = m_device.vkCreateSwapchain(create_info);
 	// Destroy the newly created swapchain immediately if we can't get images/RTVs
-	defer_fail { destroySwapchain(); };
+	defer_fail { destroyCurrentSwapchain(); };
 
 	uint32_t num_images = MAX_IMAGES;
 	VkResult res = m_device.dt().vkGetSwapchainImagesKHR(m_device.handle(), m_swapchain, &num_images, m_images);
@@ -481,6 +495,15 @@ void Swapchain::recreateSwapchain()
 
 		snprintf(buf, std::size(buf), "swapchain/img/%u/rtv", i);
 		m_image_rtvs[i] = m_device.vkCreateImageView(rtv_info, buf);
+
+		VkSemaphoreCreateInfo semaphore_info {
+			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+		};
+
+		snprintf(buf, std::size(buf), "swapchain/img/%u/sema/present", i);
+		m_present_semaphores[i] = m_device.vkCreateSemaphore(semaphore_info, buf);
 	}
 }
 
@@ -489,9 +512,6 @@ void Swapchain::destroyPerFrame() noexcept
 	for (uint32_t i = 0; i < gfx::Consts::MAX_PENDING_FRAMES; i++) {
 		m_device.vkDestroySemaphore(m_acquire_semaphores[i]);
 		m_acquire_semaphores[i] = VK_NULL_HANDLE;
-
-		m_device.vkDestroySemaphore(m_present_semaphores[i]);
-		m_present_semaphores[i] = VK_NULL_HANDLE;
 	}
 }
 
@@ -507,7 +527,7 @@ void Swapchain::destroySurface() noexcept
 	m_present_mode = VK_PRESENT_MODE_FIFO_KHR;
 }
 
-void Swapchain::destroySwapchain() noexcept
+void Swapchain::destroyCurrentSwapchain() noexcept
 {
 	for (uint32_t i = 0; i < m_num_images; i++) {
 		m_device.vkDestroyImageView(m_image_rtvs[i]);
@@ -519,6 +539,44 @@ void Swapchain::destroySwapchain() noexcept
 
 	m_device.vkDestroySwapchain(m_swapchain);
 	m_swapchain = VK_NULL_HANDLE;
+
+	// Destroy after the swapchain, its pending presents might reference them
+	for (VkSemaphore &semaphore : m_present_semaphores) {
+		m_device.vkDestroySemaphore(semaphore);
+		semaphore = VK_NULL_HANDLE;
+	}
+
+	m_presented_images_mask = 0;
+}
+
+void Swapchain::destroySwapchain() noexcept
+{
+	destroyCurrentSwapchain();
+
+	for (RetiredSwapchain &retired : m_retired_swapchains) {
+		m_device.vkDestroySwapchain(retired.swapchain);
+
+		for (VkSemaphore semaphore : retired.present_semaphores) {
+			m_device.vkDestroySemaphore(semaphore);
+		}
+	}
+
+	m_retired_swapchains.clear();
+}
+
+void Swapchain::releaseRetiredSwapchains() noexcept
+{
+	for (RetiredSwapchain &retired : m_retired_swapchains) {
+		m_device.enqueueDestroy(retired.swapchain);
+
+		for (VkSemaphore semaphore : retired.present_semaphores) {
+			if (semaphore != VK_NULL_HANDLE) {
+				m_device.enqueueDestroy(semaphore);
+			}
+		}
+	}
+
+	m_retired_swapchains.clear();
 }
 
 } // namespace voxen::gfx::vk
