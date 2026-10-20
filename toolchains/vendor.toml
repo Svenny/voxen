@@ -9,3 +9,37 @@
 # Bumping a version: edit `version` and every `sha256` (the script prints the new ones),
 # run `vendor.py update <name>`, fix whatever `keep` stopped matching, check that the
 # set is still self-sufficient (see the notes on each entry).
+
+[slang]
+# Shader compiler. Only SPIR-V output is used, which needs `slangc`, the compiler library,
+# `slang-glslang` (SPIRV-Tools inside: `-O1` and above fail without its spirv-opt, and
+# `SLANG_RUN_SPIRV_VALIDATION=1` runs its spirv-val) and `slang-glsl-module` (the precompiled
+# GLSL module, loaded for SPIR-V targets; without it every `slangc` run recompiles it, 5x
+# slower, and writes a cache file `slang-glsl-module.bin` next to the library, i.e. into
+# the source tree). Not needed: `slang-llvm` (CPU targets), `slang-rt` (host runtime),
+# the optional standard modules (the core module is embedded in the compiler library).
+version = "2026.20"
+license = "Apache-2.0 WITH LLVM-exception"
+
+[slang.platforms.linux-x86_64]
+# The glibc 2.28 build: portable to older distros and has no slang-llvm in the archive.
+# `slangc` finds the library through its RUNPATH `$ORIGIN/../lib`, which loads
+# the other libraries from its own directory. Needs only glibc, libstdc++ and libgcc_s.
+url = "https://github.com/shader-slang/slang/releases/download/v{version}/slang-{version}-linux-x86_64-glibc-2.28.tar.gz"
+sha256 = "84ebd777968caceea26b21bfd014341078be6047be6c5a963a69f984f896cebd"
+strip = 0
+keep = [
+	"bin/slangc", "lib/libslang-compiler.so.0.*", "lib/libslang-glslang-*.so", "lib/libslang-glsl-module-*.so",
+	"LICENSE", "third-party-notices/*",
+]
+
+[slang.platforms.windows-x86_64]
+# DLLs are loaded from the executable's directory. They link the C/C++ runtime
+# statically and import only system DLLs (KERNEL32, ADVAPI32, SHELL32, ole32).
+url = "https://github.com/shader-slang/slang/releases/download/v{version}/slang-{version}-windows-x86_64.zip"
+sha256 = "e6dd32bbddf1720ebb4e679d55e9635ce792865a5bd84f3d2cd9af28647c0174"
+strip = 0
+keep = [
+	"bin/slangc.exe", "bin/slang-compiler.dll", "bin/slang-glslang.dll", "bin/slang-glsl-module.dll",
+	"LICENSE", "third-party-notices/*",
+]
