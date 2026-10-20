@@ -451,6 +451,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats12.shaderOutputLayer) {
 		missing.emplace_back("shaderOutputLayer");
 	}
+	if (!info.feats13.shaderDemoteToHelperInvocation) {
+		missing.emplace_back("shaderDemoteToHelperInvocation");
+	}
 	if (!info.feats13.synchronization2) {
 		missing.emplace_back("synchronization2");
 	}
@@ -492,6 +495,7 @@ void Device::createDevice()
 	VkPhysicalDeviceVulkan13Features features13 = {};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	features13.pNext = &features_maintenance5;
+	features13.shaderDemoteToHelperInvocation = VK_TRUE;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
 	features13.maintenance4 = VK_TRUE;
