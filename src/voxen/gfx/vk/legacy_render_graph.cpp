@@ -15,6 +15,8 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
+#include "shader_interop.hpp"
+
 #include <m/m.hpp>
 
 #include <cstring>
@@ -25,13 +27,7 @@ namespace voxen::gfx::vk
 namespace
 {
 
-struct MainSceneUbo {
-	m::float4x4 translated_world_to_clip;
-	m::float3 world_position;
-	float _pad0;
-};
-
-static_assert(sizeof(MainSceneUbo) == 80, "MainSceneUbo layout mismatch with shaders");
+using shader::MainSceneUbo;
 
 constexpr VkClearColorValue CLEAR_COLOR = { { 0.53f, 0.77f, 0.9f, 1.0f } };
 constexpr VkClearDepthStencilValue CLEAR_DEPTH = { 0.0f, 0 };

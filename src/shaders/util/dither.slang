@@ -1,17 +1,16 @@
-#ifndef VX_UTIL_DITHER_GLSL
-#define VX_UTIL_DITHER_GLSL
+module dither;
 
 // Size of dither matrix
-#define DITHER_SIZE 8u
+static const uint DITHER_SIZE = 8;
 // Mean value of dither matrix (2^N - 1)/(2^(N+1))
-#define DITHER_OFFSET float((1u << DITHER_SIZE) - 1u) / float(1u << (DITHER_SIZE + 1u))
+static const float DITHER_OFFSET = float((1u << DITHER_SIZE) - 1) / float(1u << (DITHER_SIZE + 1));
 
 #define DITHER_ELEM(a) float(a) / float(DITHER_SIZE * DITHER_SIZE) - DITHER_OFFSET
 #define DITHER_ROW(a1, a2, a3, a4, a5, a6, a7, a8) \
 { DITHER_ELEM(a1), DITHER_ELEM(a2), DITHER_ELEM(a3), DITHER_ELEM(a4), \
   DITHER_ELEM(a5), DITHER_ELEM(a6), DITHER_ELEM(a7), DITHER_ELEM(a8) },
 
-const float DITHER_MATRIX[DITHER_SIZE][DITHER_SIZE] = {
+static const float DITHER_MATRIX[DITHER_SIZE][DITHER_SIZE] = {
 	DITHER_ROW( 0, 32,  8, 40,  2, 34, 10, 42)
 	DITHER_ROW(48, 16, 56, 24, 50, 18, 58, 26)
 	DITHER_ROW(12, 44,  4, 36, 14, 46,  6, 38)
@@ -24,16 +23,11 @@ const float DITHER_MATRIX[DITHER_SIZE][DITHER_SIZE] = {
 
 #undef DITHER_ROW
 #undef DITHER_ELEM
-#undef DITHER_OFFSET
 
 // Apply "ordered dithering" algorithm to color value
 // assuming it is to be stored into 256-valued image
-vec3 dither256(in vec3 color, in uvec2 point)
+public float3 dither256(float3 color, uint2 pixel)
 {
-	uvec2 p = point % DITHER_SIZE;
+	uint2 p = pixel % DITHER_SIZE;
 	return color + DITHER_MATRIX[p.x][p.y] / 255.0;
 }
-
-#undef DITHER_SIZE
-
-#endif // VX_UTIL_DITHER_GLSL

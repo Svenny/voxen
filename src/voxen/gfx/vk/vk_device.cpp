@@ -430,6 +430,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats12.storageBuffer8BitAccess) {
 		missing.emplace_back("storageBuffer8BitAccess");
 	}
+	if (!info.feats12.uniformAndStorageBuffer8BitAccess) {
+		missing.emplace_back("uniformAndStorageBuffer8BitAccess");
+	}
 	if (!info.feats12.shaderInt8) {
 		missing.emplace_back("shaderInt8");
 	}
@@ -505,6 +508,9 @@ void Device::createDevice()
 	features12.pNext = &features13;
 	features12.drawIndirectCount = VK_TRUE;
 	features12.storageBuffer8BitAccess = VK_TRUE;
+	// slangc declares `UniformAndStorageBuffer8BitAccess` capability
+	// for any 8-bit type in a buffer block, even a storage-only one
+	features12.uniformAndStorageBuffer8BitAccess = VK_TRUE;
 	features12.shaderInt8 = VK_TRUE;
 	features12.descriptorIndexing = VK_TRUE;
 	features12.scalarBlockLayout = VK_TRUE;
