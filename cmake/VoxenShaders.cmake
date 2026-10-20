@@ -38,7 +38,7 @@ function(voxen_add_shaders target)
 			COMMENT "Building SPIR-V for shader ${shader}"
 			COMMAND ${GLSL_COMPILER} ${compiler_options}
 				# Enable debug information generation for debuggable builds
-				$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:-g>
+				$<$<CONFIG:Debug>:-g>
 				${shader_source} -o ${CMAKE_BINARY_DIR}/$<CONFIG>/${shader_bin}
 				-MD -MF ${CMAKE_BINARY_DIR}/$<CONFIG>/${shader_depfile} -MT $<CONFIG>/${shader_bin}
 		)
