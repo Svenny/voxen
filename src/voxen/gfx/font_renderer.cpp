@@ -15,11 +15,11 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 
-#include <tk/png.hpp>
-
 #include <m/packing.hpp>
 
 #include <vk_mem_alloc.h>
+
+import tk.png;
 
 namespace voxen::gfx
 {

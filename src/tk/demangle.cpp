@@ -1,9 +1,12 @@
-#include <tk/demangle.hpp>
+module;
 
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <new>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -12,9 +15,12 @@
 #define _LIBCPP_VERBOSE_ABORT(...) std::abort()
 #include <demangle/ItaniumDemangle.h>
 
+module tk.demangle;
+
 // The only out-of-line part of the demangler core, upstream defines it in libc++abi's `cxa_demangle.cpp`
 // next to `__cxa_demangle`. Skips a discriminator (`_<digit>`, `__<digits>_` or trailing `<digits>`).
-const char *itanium_demangle::parse_discriminator(const char *first, const char *last)
+// EXPERIMENT: `extern "C++"` attaches it to the global module like its declaration in the GMF.
+extern "C++" const char *itanium_demangle::parse_discriminator(const char *first, const char *last)
 {
 	if (first == last) {
 		return first;

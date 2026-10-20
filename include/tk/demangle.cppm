@@ -1,10 +1,12 @@
-#pragma once
+module;
 
 #include <optional>
 #include <string>
 #include <string_view>
 
-namespace tk
+export module tk.demangle;
+
+export namespace tk
 {
 
 // Demangle a symbol name mangled per the Itanium C++ ABI (`_Z...`), used by Clang and GCC

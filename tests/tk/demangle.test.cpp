@@ -1,6 +1,6 @@
-#include <tk/demangle.hpp>
-
 #include "../test_common.hpp"
+
+import tk.demangle;
 
 namespace tk
 {

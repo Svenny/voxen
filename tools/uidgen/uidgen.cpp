@@ -1,8 +1,8 @@
-#include <tk/cli.hpp>
-#include <tk/rng.hpp>
-
 #include <cinttypes>
 #include <cstdio>
+
+import tk.cli;
+import tk.rng;
 
 int main(int argc, char *argv[])
 {

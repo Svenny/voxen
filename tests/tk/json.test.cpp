@@ -1,9 +1,9 @@
-#include <tk/json.hpp>
-
 #include "../test_common.hpp"
 
 #include <cmath>
 #include <limits>
+
+import tk.json;
 
 namespace tk::json
 {

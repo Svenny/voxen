@@ -1,13 +1,21 @@
-#include <tk/png.hpp>
+module;
 
 #define ZLIB_CONST
 #include <zlib.h>
 
 #include <bit>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <expected>
 #include <limits>
 #include <memory>
+#include <span>
+#include <string>
+#include <vector>
+
+module tk.png;
 
 namespace tk::png
 {

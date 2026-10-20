@@ -18,12 +18,12 @@
 
 #include "async_counter_tracker.hpp"
 
-#include <tk/cli.hpp>
-
 #include <fmt/chrono.h>
 #include <fmt/ranges.h>
 
 #include <atomic>
+
+import tk.cli;
 
 namespace voxen::svc
 {

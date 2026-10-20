@@ -8,11 +8,11 @@
 
 #include "land_geometry_utils_private.hpp"
 
-#include <tk/rng.hpp>
-
 #include <m/packing.hpp>
 
 #include <array>
+
+import tk.rng;
 
 namespace voxen::land
 {

@@ -1,8 +1,8 @@
 #include <voxen/common/config.hpp>
 
-#include <tk/toml.hpp>
-
 #include "../../test_common.hpp"
+
+import tk.toml;
 
 namespace voxen
 {

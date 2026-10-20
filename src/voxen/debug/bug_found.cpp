@@ -2,8 +2,6 @@
 
 #include <voxen/util/log.hpp>
 
-#include <tk/demangle.hpp>
-
 #include <algorithm>
 #include <bit>
 #include <cassert>
@@ -36,6 +34,8 @@ extern "C"
 #else
 	#include <Windows.h>
 #endif
+
+import tk.demangle;
 
 namespace voxen::debug
 {

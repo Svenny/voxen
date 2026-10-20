@@ -1,8 +1,9 @@
-#include <tk/png.hpp>
-
 #include "../test_common.hpp"
 
 #include <cstring>
+#include <span>
+
+import tk.png;
 
 namespace tk::png
 {

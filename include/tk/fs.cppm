@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <cstddef>
 #include <expected>
@@ -8,10 +8,12 @@
 #include <string_view>
 #include <vector>
 
+export module tk.fs;
+
 // Synchronous whole-file I/O helpers.
 // Errors are returned as messages including the path and the OS error description.
 
-namespace tk::fs
+export namespace tk::fs
 {
 
 // Read the whole file contents

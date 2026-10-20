@@ -1,6 +1,6 @@
 #include <voxen/client/gfx_runtime_config.hpp>
 
-#include <tk/cli.hpp>
+import tk.cli;
 
 namespace voxen::client
 {

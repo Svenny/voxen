@@ -3,14 +3,18 @@ set(TK_SOURCES
 	src/tk/demangle.cpp
 	src/tk/fs.cpp
 	src/tk/json.cpp
+	src/tk/parse_error.cpp
 	src/tk/png.cpp
 	src/tk/rng.cpp
 	src/tk/text_utils.cpp
-	src/tk/text_utils.hpp
 	src/tk/toml.cpp
 )
 
 target_sources(tk PRIVATE ${TK_SOURCES})
+# EXPERIMENT: internal module, only imported by tk implementation units
+target_sources(tk PRIVATE FILE_SET tk_private_modules TYPE CXX_MODULES BASE_DIRS src/tk FILES
+	src/tk/text_utils.cppm
+)
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${TK_SOURCES})
 
 set(VOXEN_SOURCES

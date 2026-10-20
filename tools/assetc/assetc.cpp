@@ -1,9 +1,9 @@
 #include "font_atlas.hpp"
 
-#include <tk/cli.hpp>
-
 #include <cstdio>
 #include <string_view>
+
+import tk.cli;
 
 namespace
 {

@@ -1,17 +1,13 @@
-#include "text_utils.hpp"
+module;
 
 #include <algorithm>
 #include <charconv>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <string_view>
 
-namespace tk
-{
-
-std::string ParseError::toString() const
-{
-	return std::to_string(line) + ":" + std::to_string(column) + ": " + message;
-}
-
-} // namespace tk
+module tk.text_utils;
 
 namespace tk::detail
 {

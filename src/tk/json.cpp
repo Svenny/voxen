@@ -1,11 +1,23 @@
-#include <tk/json.hpp>
-
-#include "text_utils.hpp"
+module;
 
 #include <charconv>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <expected>
+#include <initializer_list>
 #include <limits>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <unordered_set>
+#include <utility>
+#include <variant>
+#include <vector>
+
+module tk.json;
+
+import tk.text_utils;
 
 namespace tk::json
 {

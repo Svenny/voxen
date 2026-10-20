@@ -1,8 +1,9 @@
-#include <tk/fs.hpp>
-
 #include "../test_common.hpp"
 
 #include <array>
+#include <filesystem>
+
+import tk.fs;
 
 namespace tk::fs
 {

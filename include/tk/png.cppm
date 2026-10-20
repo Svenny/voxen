@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <cstddef>
 #include <cstdint>
@@ -7,12 +7,14 @@
 #include <string>
 #include <vector>
 
+export module tk.png;
+
 // Minimal PNG encoder and decoder, for images without palettes or interlacing.
 //
 // NOTE: this is extremely bare-bone and is not suitable for general use.
 // The decoder rejects most of valid PNG streams not similar to those produced by `pack()`.
 
-namespace tk::png
+export namespace tk::png
 {
 
 struct Info {

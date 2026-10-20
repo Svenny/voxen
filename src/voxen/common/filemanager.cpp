@@ -2,7 +2,7 @@
 
 #include <voxen/util/log.hpp>
 
-#include <tk/fs.hpp>
+import tk.fs;
 
 using std::filesystem::path;
 

@@ -1,14 +1,18 @@
-#pragma once
 
-#include <tk/parse_error.hpp>
+module;
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
+export module tk.text_utils;
+
+export import tk.parse_error;
+
 // Private helpers shared by text format parsers
 
-namespace tk::detail
+export namespace tk::detail
 {
 
 // Returns the offset of the first byte of invalid UTF-8 sequence

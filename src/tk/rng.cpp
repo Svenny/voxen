@@ -1,6 +1,17 @@
-#include <tk/rng.hpp>
+module;
 
+#include <bit>
+#include <cassert>
+#include <cmath>
+#include <concepts>
+#include <cstdint>
+#include <limits>
 #include <random>
+#include <span>
+#include <type_traits>
+#include <vector>
+
+module tk.rng;
 
 namespace tk::rng
 {

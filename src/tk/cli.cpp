@@ -1,11 +1,20 @@
-#include <tk/cli.hpp>
-
-#include "text_utils.hpp"
+module;
 
 #include <algorithm>
 #include <cassert>
 #include <charconv>
 #include <cmath>
+#include <cstdint>
+#include <expected>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
+
+module tk.cli;
+
+import tk.text_utils;
 
 namespace tk::cli
 {

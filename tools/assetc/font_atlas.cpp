@@ -1,8 +1,5 @@
 #include "font_atlas.hpp"
 
-#include <tk/fs.hpp>
-#include <tk/png.hpp>
-
 #include <extras/defer.hpp>
 
 #include <ft2build.h>
@@ -15,6 +12,9 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+
+import tk.fs;
+import tk.png;
 
 namespace assetc
 {

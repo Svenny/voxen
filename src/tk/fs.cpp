@@ -1,16 +1,25 @@
-#include <tk/fs.hpp>
+module;
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <expected>
+#include <filesystem>
 #include <memory>
+#include <span>
+#include <string>
+#include <string_view>
 #include <system_error>
+#include <vector>
 
 #ifndef _WIN32
 	#include <sys/stat.h>
 #else
 	#include <io.h>
 #endif
+
+module tk.fs;
 
 namespace tk::fs
 {

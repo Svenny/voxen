@@ -49,9 +49,12 @@ target_link_libraries(voxen PUBLIC
 	m
 	3rdparty::fmt
 	Threads::Threads
+	# EXPERIMENT: public headers import `tk.cli` so consumers need its BMI. It would be
+	# nice to link `tk` code into libvoxen only, but CMake does not look for BMIs of
+	# `$<COMPILE_ONLY:tk>`: module dependencies must be real link dependencies.
+	tk
 )
 target_link_libraries(voxen PRIVATE
-	tk
 	3rdparty::glfw
 	3rdparty::vma
 	3rdparty::vulkan-headers
