@@ -40,6 +40,25 @@ if(CMAKE_LINKER_TYPE)
 	message(STATUS "Using linker type: ${CMAKE_LINKER_TYPE}")
 endif()
 
+# Release builds carry full debug info, there is no separate config for profiling and
+# debugging them: the binaries we ship should be exactly the ones we've looked into.
+# Don't expect stepping through optimized code to work, use Debug or mark
+# the code of interest with `#pragma clang optimize off` locally.
+# NOTE: these shadow the cache variables, edit them here rather than in the cache.
+if(WIN32)
+	# Compile flags come from this (policy CMP0141), CMake default skips Release
+	set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT ProgramDatabase)
+	# `/debug` makes the linker default to `/OPT:NOREF,NOICF` and `/INCREMENTAL`,
+	# restore Release linker optimizations. lld-link can't link incrementally anyway.
+	foreach(type IN ITEMS EXE SHARED MODULE)
+		set(CMAKE_${type}_LINKER_FLAGS_RELEASE "/debug /INCREMENTAL:NO /OPT:REF /OPT:ICF")
+	endforeach()
+else()
+	foreach(lang IN ITEMS C CXX)
+		string(APPEND CMAKE_${lang}_FLAGS_RELEASE " -g")
+	endforeach()
+endif()
+
 set(CLANG_OPTION_PREFIX "")
 if(WIN32)
 	# clang-cl needs this prefix for non-cl (native clang) options
@@ -204,11 +223,10 @@ function(voxen_setup_target target)
 		# we should not lose any measurable perf from making executables PIE too.
 		POSITION_INDEPENDENT_CODE ON
 
-		# Use LTO for release builds (this is ThinLTO on Clang)
+		# Use LTO for optimized builds (this is ThinLTO on Clang)
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF
 		INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON
 		INTERPROCEDURAL_OPTIMIZATION_RELEASE ON
-		INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO OFF
 
 		# Define `TARGET_EXPORTS` instead of `target_EXPORTS` when compiling.
 		# Should be only needed on windows to switch between dllexport/dllimport.
@@ -249,3 +267,4 @@ function(voxen_add_library name type)
 		target_link_options(${name} PRIVATE -Wl,--exclude-libs,ALL)
 	endif()
 endfunction()
+

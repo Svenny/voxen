@@ -49,12 +49,9 @@
 			}
 		},
 		{
-			"name": "windows-vs2026",
-			"displayName": "Visual Studio 2026 (ClangCL)",
+			"name": "windows",
+			"hidden": true,
 			"inherits": "base",
-			"generator": "Visual Studio 18 2026",
-			"architecture": "x64",
-			"toolset": "ClangCL",
 			"condition": {
 				"type": "equals",
 				"lhs": "${hostSystemName}",
@@ -63,6 +60,14 @@
 			"cacheVariables": {
 				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
 			}
+		},
+		{
+			"name": "windows-vs2026",
+			"displayName": "Visual Studio 2026 (ClangCL)",
+			"inherits": "windows",
+			"generator": "Visual Studio 18 2026",
+			"architecture": "x64",
+			"toolset": "ClangCL"
 		}
 	],
 
