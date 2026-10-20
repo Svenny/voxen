@@ -4,6 +4,8 @@
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/os_fwd.hpp>
 
+#include <vector>
+
 namespace voxen::gfx::vk
 {
 
@@ -134,9 +136,29 @@ private:
 	VkImage m_images[MAX_IMAGES] = {};
 	VkImageView m_image_rtvs[MAX_IMAGES] = {};
 
-	uint32_t m_frame_index = 0;
+	// Signaled by `vkAcquireNextImageKHR` and waited by the rendering submission. Indexed by
+	// frame index: it can be reused once that submission is complete (timeline is reached).
 	VkSemaphore m_acquire_semaphores[gfx::Consts::MAX_PENDING_FRAMES] = {};
-	VkSemaphore m_present_semaphores[gfx::Consts::MAX_PENDING_FRAMES] = {};
+	// Signaled by the rendering submission and waited by `vkQueuePresentKHR`. Indexed by
+	// image index: GPU timeline does not cover present operations, the only signal that
+	// a present waiting on this semaphore has completed is re-acquiring the same image.
+	// See https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html
+	VkSemaphore m_present_semaphores[MAX_IMAGES] = {};
+	// Bit N is set if image N of the current swapchain has been presented at least once
+	uint32_t m_presented_images_mask = 0;
+
+	// Swapchain replaced by recreation, with present semaphores of its images.
+	// Its images might never be acquired again, so we can't know when its presents
+	// complete (without VK_KHR_swapchain_maintenance1). Presents are processed in order,
+	// so destroy it once any present of a newer swapchain is known to be complete.
+	struct RetiredSwapchain {
+		VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+		VkSemaphore present_semaphores[MAX_IMAGES] = {};
+	};
+
+	std::vector<RetiredSwapchain> m_retired_swapchains;
+
+	uint32_t m_frame_index = 0;
 	uint64_t m_prev_usage_timelines[gfx::Consts::MAX_PENDING_FRAMES] = {};
 
 	void createPerFrame();
@@ -145,7 +167,12 @@ private:
 	void recreateSwapchain();
 	void destroyPerFrame() noexcept;
 	void destroySurface() noexcept;
+	// Destroys the current swapchain only
+	void destroyCurrentSwapchain() noexcept;
+	// Destroys the current and all retired swapchains, GPU must be idle
 	void destroySwapchain() noexcept;
+	// Enqueue destruction of all retired swapchains (when it's known to be safe)
+	void releaseRetiredSwapchains() noexcept;
 };
 
 } // namespace voxen::gfx::vk

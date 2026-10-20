@@ -767,4 +767,9 @@ void Device::destroy(VkSampler sampler) noexcept
 	m_dt.vkDestroySampler(m_handle, sampler, nullptr);
 }
 
+void Device::destroy(VkSemaphore semaphore) noexcept
+{
+	m_dt.vkDestroySemaphore(m_handle, semaphore, nullptr);
+}
+
 } // namespace voxen::gfx::vk
