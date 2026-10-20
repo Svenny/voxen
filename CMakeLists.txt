@@ -80,3 +80,8 @@ if(VOXEN_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(tests)
 endif()
+
+option(VOXEN_BUILD_SANDBOX "Build research demos from sandbox/" OFF)
+if(VOXEN_BUILD_SANDBOX)
+	add_subdirectory(sandbox)
+endif()
