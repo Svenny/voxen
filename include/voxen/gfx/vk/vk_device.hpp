@@ -170,6 +170,7 @@ public:
 	void enqueueDestroy(VkDescriptorPool pool) { enqueueJunkItem(pool); }
 	void enqueueDestroy(VkSwapchainKHR swapchain) { enqueueJunkItem(swapchain); }
 	void enqueueDestroy(VkSampler sampler) { enqueueJunkItem(sampler); }
+	void enqueueDestroy(VkSemaphore semaphore) { enqueueJunkItem(semaphore); }
 
 	// Shorthand to `.instance().debug().setObjectName()`
 	void setObjectName(uint64_t handle, VkObjectType type, const char *name) noexcept;
@@ -226,7 +227,7 @@ public:
 
 private:
 	using JunkItem = std::variant<std::pair<VkBuffer, VmaAllocation>, std::pair<VkImage, VmaAllocation>, VkImageView,
-		VkCommandPool, VkDescriptorPool, VkSwapchainKHR, VkSampler>;
+		VkCommandPool, VkDescriptorPool, VkSwapchainKHR, VkSampler, VkSemaphore>;
 	using JunkEnqueue = std::pair<JunkItem, FrameTickId>;
 
 	Instance &m_instance;
@@ -263,6 +264,7 @@ private:
 	void destroy(VkDescriptorPool pool) noexcept;
 	void destroy(VkSwapchainKHR swapchain) noexcept;
 	void destroy(VkSampler sampler) noexcept;
+	void destroy(VkSemaphore semaphore) noexcept;
 };
 
 } // namespace voxen::gfx::vk
