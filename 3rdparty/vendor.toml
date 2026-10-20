@@ -70,7 +70,6 @@ license = "MIT"
 keep = ["include/vk_mem_alloc.h", "LICENSE.txt"]
 
 [vulkan-headers]
-# Keep in sync with `VULKAN_SDK_VERSION` in `.github/workflows/ci.yml`
 version = "1.4.363.0"
 url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-{version}.tar.gz"
 sha256 = "4a078be12bef21cfebc09d878b77a63cff9d68f899254a0b00d0e37ef73e7f7e"
