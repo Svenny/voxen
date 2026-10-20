@@ -20,6 +20,7 @@
 #include <m/vector.hpp>
 
 #include <array>
+#include <atomic>
 #include <unordered_map>
 #include <vector>
 
@@ -363,6 +364,8 @@ public:
 
 	const LandState &landState() const noexcept { return m_land_state; }
 
+	void cancelGenerationJobs() noexcept { m_generation_cancelled.store(true, std::memory_order_relaxed); }
+
 private:
 	svc::TaskService &m_task_service;
 
@@ -385,6 +388,11 @@ private:
 	LandState m_land_state;
 
 	Generator m_generator;
+
+	// Checked by generation jobs at their start, skip all work when set.
+	// Dependent jobs can start only after their dependencies complete, so once a job
+	// observes this flag, all its dependents are guaranteed to observe it too.
+	std::atomic_bool m_generation_cancelled = false;
 
 	// Dummy chunk above the world height limit; filled with empty block IDs (zeros)
 	ChunkPtr m_dummy_above_limit_chunk;
@@ -486,8 +494,11 @@ private:
 			}
 
 			bld.addWait(wait_counters);
-			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
-				generatePseudoChunkSurface(ck, std::move(deps), snd);
+			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender, cancel = &m_generation_cancelled](
+									 svc::TaskContext &) {
+				if (!cancel->load(std::memory_order_relaxed)) {
+					generatePseudoChunkSurface(ck, std::move(deps), snd);
+				}
 			});
 		} else {
 			// Pseudo-chunk - generate from it + 18 adjacent.
@@ -551,8 +562,11 @@ private:
 			}
 
 			bld.addWait(wait_counters);
-			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender](svc::TaskContext &) {
-				generatePseudoChunkSurface(ck, std::move(deps), snd);
+			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender, cancel = &m_generation_cancelled](
+									 svc::TaskContext &) {
+				if (!cancel->load(std::memory_order_relaxed)) {
+					generatePseudoChunkSurface(ck, std::move(deps), snd);
+				}
 			});
 		}
 
@@ -649,10 +663,12 @@ private:
 			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate(ck);
 
 			bld.addWait(wait_counters);
-			bld.enqueueTask(
-				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr,
+									 cancel = &m_generation_cancelled](svc::TaskContext &) {
+				if (!cancel->load(std::memory_order_relaxed)) {
 					aggregatePseudoChunkData(ck, std::move(deps), snd, std::move(ptr));
-				});
+				}
+			});
 		} else if (ck.scale_log2 <= Consts::MAX_GENERATABLE_LOD && m.is_virgin) {
 			if (m.latest_pseudo_data_ptr) {
 				// Virgin pseudo-chunks can't be outdated
@@ -663,7 +679,12 @@ private:
 
 			// Direct gen of "virgin" chunk - enqueue an independent task
 			bld.addWait(m_generator.prepareKeyGeneration(ck, bld));
-			bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+			bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_pseudo_data_ptr,
+									 cancel = &m_generation_cancelled](svc::TaskContext &) {
+				if (cancel->load(std::memory_order_relaxed)) {
+					return;
+				}
+
 				gen->generatePseudoChunk(ck, *ptr);
 				snd->send<detail::PseudoChunkDataGenCompletionMessage>(LandService::SERVICE_UID, ck);
 			});
@@ -714,10 +735,12 @@ private:
 			m.latest_pseudo_data_ptr = m_pseudo_chunk_data_pool.allocate(ck);
 
 			bld.addWait(wait_counters);
-			bld.enqueueTask(
-				[ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr](svc::TaskContext &) {
+			bld.enqueueTask([ck, deps = std::move(dependencies), snd = &m_sender, ptr = m.latest_pseudo_data_ptr,
+									 cancel = &m_generation_cancelled](svc::TaskContext &) {
+				if (!cancel->load(std::memory_order_relaxed)) {
 					aggregatePseudoChunkData(ck, std::move(deps), snd, std::move(ptr));
-				});
+				}
+			});
 		}
 
 		m.pending_task_count++;
@@ -745,7 +768,12 @@ private:
 		// This will ensure successive chunk gen tasks complete in order
 		bld.addWait(m.chunk_gen_task_counter);
 		bld.addWait(m_generator.prepareKeyGeneration(ck, bld));
-		bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_chunk_ptr](svc::TaskContext &) {
+		bld.enqueueTask([ck, gen = &m_generator, snd = &m_sender, ptr = m.latest_chunk_ptr,
+								 cancel = &m_generation_cancelled](svc::TaskContext &) {
+			if (cancel->load(std::memory_order_relaxed)) {
+				return;
+			}
+
 			gen->generateChunk(ck, *ptr);
 			snd->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, ck, std::move(ptr));
 		});
@@ -972,6 +1000,11 @@ void LandService::doTick(world::TickId tick_id)
 const LandState &LandService::stateForCopy() const noexcept
 {
 	return m_impl->landState();
+}
+
+void LandService::cancelGenerationJobs() noexcept
+{
+	m_impl->cancelGenerationJobs();
 }
 
 } // namespace voxen::land

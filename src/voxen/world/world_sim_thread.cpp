@@ -75,6 +75,11 @@ void SimThread::requestSave(ControlService::SaveRequest req)
 
 void SimThread::requestStop(ControlService::SaveRequest req)
 {
+	// Don't make the stop (and its save task) wait for land generation backlog.
+	// Do it right away, not when processing the command: the sim thread itself
+	// might be stalled pushing generation jobs into overflown task queues.
+	m_land_service->cancelGenerationJobs();
+
 	std::lock_guard lock(m_cmd_queue_lock);
 	m_cmd_queue.push(StopCommand { std::move(req) });
 }
