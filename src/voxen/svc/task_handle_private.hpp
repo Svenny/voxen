@@ -42,8 +42,10 @@ struct TaskHeader {
 	// Bits [16:16] - futex completion waiting flag (0 - no waiting, 1 - needs waking)
 	// Bits [17:17] - completion status (0 - pending, 1 - finished)
 	// Bits [19:18] - unused, must be zero
-	// Bits [31:20] - continuation count (number of pending tasks for which this is a parent)
-	std::atomic_uint32_t atomic_word = 1;
+	// Bits [31:20] - continuation count (number of pending tasks for which this is a parent,
+	//                plus one held by the task's own execution until it returns, see
+	//                `PrivateTaskHandle::finishExecutionAndReset()`; initially 1 from that)
+	std::atomic_uint32_t atomic_word = (1u << 20) | 1u;
 	// Number of valid counter values in `waitCountersArray()`.
 	// When it reaches zero, the task becomes ready to execute.
 	uint32_t num_wait_counters : 31 = 0;
@@ -95,17 +97,18 @@ public:
 	PrivateTaskHandle &operator=(const PrivateTaskHandle &) = default;
 	~PrivateTaskHandle() = default;
 
-	bool hasContinuations() const noexcept;
-
-	// Mark this task as finished and wake all threads possibly waiting on it.
-	// If task execution was started (its functor was called), this function
-	// MUST be called, otherwise task continuation system will blow up.
+	// Call when the task has finished executing (its functor returned or coroutine finished).
+	// Drops the continuation held by the execution itself: if no other continuations remain,
+	// marks this task as finished and wakes all threads possibly waiting on it, otherwise
+	// the last continuation to finish will do it. Releases this handle's reference either way.
+	// If task execution was started, this function MUST be called eventually,
+	// otherwise task continuation system will blow up.
 	//
 	// Task ownership is released before signaling completion. This is needed when this handle
 	// holds the only live reference, then resources associated with the task will be freed
 	// before its completion is acknowledged. Needed e.g. for subsystem destructors waiting
 	// for all enqueued tasks completion.
-	void completeAndReset(AsyncCounterTracker &tracker);
+	void finishExecutionAndReset(AsyncCounterTracker &tracker);
 
 	// Get raw pointer without affecting ownership
 	TaskHeader *get() noexcept { return m_header; }
