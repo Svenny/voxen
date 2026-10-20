@@ -134,55 +134,24 @@ target_sources(game PRIVATE
 target_sources(voxen PRIVATE ${VOXEN_SOURCES})
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${VOXEN_SOURCES})
 
-find_program(GLSL_COMPILER glslc)
-if(${GLSL_COMPILER} STREQUAL "GLSL_COMPILER-NOTFOUND")
-	message(FATAL_ERROR "GLSL compiler not found!")
-endif()
+include(VoxenShaders)
 
-set(VOXEN_SHADERS
-	land/chunk_mesh.vert
-	land/chunk_mesh.frag
-	land/debug_chunk_bounds.vert
-	land/debug_chunk_bounds.frag
-	land/frustum_cull.comp
-	land/selector.vert
-	land/selector.frag
-	ui/font.vert
-	ui/font.frag
-	ui/ui_basic.vert
-	ui/ui_basic.frag
+voxen_add_shaders(voxen-shaders
+	SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/shaders
+	INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/shaders/include
+	SHADERS
+		land/chunk_mesh.vert
+		land/chunk_mesh.frag
+		land/debug_chunk_bounds.vert
+		land/debug_chunk_bounds.frag
+		land/frustum_cull.comp
+		land/selector.vert
+		land/selector.frag
+		ui/font.vert
+		ui/font.frag
+		ui/ui_basic.vert
+		ui/ui_basic.frag
 )
-
-set(VOXEN_SHADER_COMPILER_OPTIONS
-	-O --target-env=vulkan1.3 -Werror
-	-I${CMAKE_SOURCE_DIR}/src/shaders/include
-)
-
-add_custom_target(voxen-shaders)
-set_target_properties(voxen-shaders PROPERTIES FOLDER codegen)
-
-foreach(SHADER ${VOXEN_SHADERS})
-	# Input GLSL file
-	set(SHADER_SOURCE ${CMAKE_SOURCE_DIR}/src/shaders/${SHADER})
-	# Output SPIR-V file
-	set(SHADER_BIN data/assets/shaders/${SHADER}.spv)
-	# Output .d file to account for changed `#include`s
-	set(SHADER_DEPFILE shader_depfiles/${SHADER}.d)
-
-	add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
-			${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
-		MAIN_DEPENDENCY ${SHADER_SOURCE}
-		DEPFILE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE}
-		COMMENT "Building SPIR-V for shader ${SHADER}"
-		COMMAND ${GLSL_COMPILER} ${VOXEN_SHADER_COMPILER_OPTIONS}
-			# Enable debug information generation for debuggable builds
-			$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:-g>
-			${SHADER_SOURCE} -o ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN}
-			-MD -MF ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_DEPFILE} -MT $<CONFIG>/${SHADER_BIN}
-	)
-
-	target_sources(voxen-shaders PRIVATE ${CMAKE_BINARY_DIR}/$<CONFIG>/${SHADER_BIN})
-endforeach()
 
 add_dependencies(voxen voxen-shaders)
 
