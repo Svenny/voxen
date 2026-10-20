@@ -22,3 +22,16 @@ target_link_libraries(test-modules PRIVATE
 )
 
 add_test(NAME modules COMMAND test-modules "[modules]")
+
+if(VOXEN_IMPORT_STD)
+	voxen_add_library(modstd STATIC)
+	target_sources(modstd PUBLIC FILE_SET CXX_MODULES FILES modstd.cppm)
+	target_link_libraries(modstd PRIVATE tk)
+
+	voxen_add_executable(test-import-std "")
+	target_sources(test-import-std PRIVATE import_std.test.cpp)
+	target_link_libraries(test-import-std PRIVATE test-common modstd tk)
+	set_target_properties(modstd test-import-std PROPERTIES CXX_MODULE_STD ON)
+
+	add_test(NAME modules-import-std COMMAND test-import-std "[modules::import_std]")
+endif()
