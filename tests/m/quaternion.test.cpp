@@ -1,5 +1,4 @@
 #include <m/format.hpp>
-#include <m/m.hpp>
 
 #include "../test_common.hpp"
 #include "m_test_common.hpp"
@@ -8,6 +7,8 @@
 
 #include <numbers>
 #include <type_traits>
+
+import m;
 
 namespace m
 {

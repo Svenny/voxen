@@ -34,7 +34,8 @@ add_subdirectory(3rdparty)
 
 # CMake target setup
 voxen_add_library(extras INTERFACE)
-voxen_add_library(m INTERFACE)
+# EXPERIMENT: `m` has a module interface unit, someone has to compile it
+voxen_add_library(m STATIC)
 voxen_add_library(tk STATIC)
 voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")

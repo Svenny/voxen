@@ -1,6 +1,6 @@
 #pragma once
 
-#include <m/m.hpp>
+import m;
 
 // Helpers shared by the `m` tests
 

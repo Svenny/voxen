@@ -41,8 +41,9 @@ set(M_HEADERS
 	include/m/m.natvis
 )
 
-target_include_directories(m INTERFACE include)
+target_include_directories(m PUBLIC include)
 target_sources(m PRIVATE ${M_HEADERS})
+target_sources(m PUBLIC FILE_SET CXX_MODULES BASE_DIRS include FILES include/m/m.cppm)
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/m PREFIX Headers FILES ${M_HEADERS})
 voxen_target_natvis(m include/m/m.natvis)
 

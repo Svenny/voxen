@@ -1,4 +1,3 @@
-#include <m/m.hpp>
 
 #include "../test_common.hpp"
 #include "m_test_common.hpp"
@@ -6,6 +5,8 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <numbers>
+
+import m;
 
 namespace m
 {

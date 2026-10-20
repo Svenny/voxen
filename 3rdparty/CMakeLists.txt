@@ -15,6 +15,8 @@ function(voxen_add_3rdparty_library name)
 	voxen_add_library(${name} STATIC)
 	add_library(3rdparty::${name} ALIAS ${name})
 	target_compile_options(${name} PRIVATE -w)
+	# No modules in 3rdparty code, skip scanning
+	set_target_properties(${name} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 endfunction()
 
 include(catch2.cmake)

@@ -11,9 +11,9 @@
 #include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
-#include <m/m.hpp>
-
 #include <cmath>
+
+import m;
 
 namespace voxen
 {
