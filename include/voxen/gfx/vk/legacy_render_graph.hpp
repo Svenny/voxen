@@ -57,9 +57,6 @@ private:
 
 	// Resource handles
 	struct {
-		// TODO: we use dynamic buffer count for chunk draw commands,
-		// this buffer serves only as a synchronization point
-		RenderGraphBuffer dummy_sync_buffer;
 		RenderGraphImage depth_buffer;
 	} m_res;
 };
