@@ -2,6 +2,18 @@ include_guard(GLOBAL)
 
 # Slang to SPIR-V shader compilation rules
 
+# Shader debug information, in all configurations: development builds are profiled and debugged
+# in Release too. Shipped builds must have none, but SPIR-V can't move it to a separate file
+# like C++ debug info, so shipping will need a stripping step or a dedicated build option.
+# - `lines` (`-g1`): `OpLine` only, enough for line-level shader debugging and profilers
+# - `full` (`-g2`): NonSemantic.Shader.DebugInfo.100, source-level debugging in RenderDoc.
+#   AMD's Windows driver (amdvlk64.dll 32.0.21045, 2026-10) crashes in `vkCreate*Pipelines`
+#   on `OpName` of a debug instruction, slangc emits them for named locals and parameters,
+#   so it's opt-in
+# - `none`: no debug information
+set(VOXEN_SHADER_DEBUG_INFO "lines" CACHE STRING "Shader debug information level: lines, full or none")
+set_property(CACHE VOXEN_SHADER_DEBUG_INFO PROPERTY STRINGS lines full none)
+
 # Prebuilt `slangc` is vendored for supported hosts, see `toolchains/vendor.toml`.
 # Set `VOXEN_SLANGC` to use another one (e.g. from Vulkan SDK) for local experiments.
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
@@ -58,6 +70,16 @@ function(voxen_add_shaders target)
 		-warnings-as-errors all
 	)
 
+	if(VOXEN_SHADER_DEBUG_INFO STREQUAL "full")
+		set(debug_info_option -g2)
+	elseif(VOXEN_SHADER_DEBUG_INFO STREQUAL "lines")
+		set(debug_info_option -g1)
+	elseif(VOXEN_SHADER_DEBUG_INFO STREQUAL "none")
+		set(debug_info_option "")
+	else()
+		message(FATAL_ERROR "VOXEN_SHADER_DEBUG_INFO must be one of `lines`, `full`, `none`")
+	endif()
+
 	add_custom_target(${target})
 	set_target_properties(${target} PROPERTIES FOLDER codegen)
 
@@ -86,12 +108,9 @@ function(voxen_add_shaders target)
 			# Validate the output with SPIRV-Tools bundled into slangc
 			COMMAND ${CMAKE_COMMAND} -E env SLANG_RUN_SPIRV_VALIDATION=1
 				${VOXEN_SLANGC} ${shader_source} -entry ${entry} ${compiler_options}
-				# Enable debug information generation for debuggable builds
-				$<$<CONFIG:Debug>:-g>
+				${debug_info_option}
 				-o ${shader_bin} -depfile ${shader_depfile}
 			VERBATIM
-			# Drops `-g` genex evaluating to empty instead of passing ""
-			COMMAND_EXPAND_LISTS
 		)
 
 		target_sources(${target} PRIVATE ${shader_bin})
