@@ -20,8 +20,13 @@ void AsyncCounterTracker::completeCounter(uint64_t counter)
 	const uint64_t desired = counter / NUM_COMPLETION_LISTS;
 	uint64_t expected = desired - 1;
 
+	// Completion publishes everything the task wrote (results, `CoroFuture` objects) to whoever
+	// observes it: release here pairs with acquire loads in `isCounterComplete()` and
+	// `trimCompleteCounters()`. Out-of-order completions are published by the CAS collapsing
+	// their segment, ordered after them by `list.lock`.
 	std::atomic_uint64_t &fully_completed = list.fully_completed_value;
-	if (fully_completed.compare_exchange_strong(expected, desired, std::memory_order_relaxed)) [[likely]] {
+	if (fully_completed.compare_exchange_strong(expected, desired, std::memory_order_release, std::memory_order_relaxed))
+		[[likely]] {
 		// In-order completion, we're good to go.
 		// XXX: we are not. If the first out-of-order segment starts from `desired + 1` we should collapse it.
 		// It's still correct if we don't, then it will collapse later as any further completion is out-of-order.
@@ -92,7 +97,8 @@ void AsyncCounterTracker::completeCounter(uint64_t counter)
 			break;
 		}
 
-		if (fully_completed.compare_exchange_strong(expected, last, std::memory_order_relaxed)) [[likely]] {
+		if (fully_completed.compare_exchange_strong(expected, last, std::memory_order_release, std::memory_order_relaxed))
+			[[likely]] {
 			expected = last;
 			segments.pop_back();
 		}
@@ -104,7 +110,7 @@ bool AsyncCounterTracker::isCounterComplete(uint64_t counter) noexcept
 	CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
 	const uint64_t expected = counter / NUM_COMPLETION_LISTS;
 
-	if (list.fully_completed_value.load(std::memory_order_relaxed) >= expected) [[likely]] {
+	if (list.fully_completed_value.load(std::memory_order_acquire) >= expected) [[likely]] {
 		return true;
 	}
 
@@ -140,7 +146,7 @@ size_t AsyncCounterTracker::trimCompleteCounters(std::span<uint64_t> counters) n
 		CompletionList &list = m_completion_lists[counter % NUM_COMPLETION_LISTS];
 		const uint64_t expected = counter / NUM_COMPLETION_LISTS;
 
-		if (list.fully_completed_value.load(std::memory_order_relaxed) >= expected) [[likely]] {
+		if (list.fully_completed_value.load(std::memory_order_acquire) >= expected) [[likely]] {
 			std::swap(counters[i], counters[remaining - 1]);
 			remaining--;
 			continue;
