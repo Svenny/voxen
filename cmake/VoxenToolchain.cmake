@@ -13,17 +13,21 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_VERSION VERSION_
 endif()
 
 option(VOXEN_WERROR "Treat compiler warnings as errors" ON)
+
+# x86-64-v2 gives us CMPXCHG16B, POPCNT, all of SSE; supported by all relevant hw.
+# x86-64-v3 adds AVX2, FMA, BMI2, F16C; non-qualifying hw is almost extinct by now.
+# There is little reason to build, let alone optimize, for anything below this level.
 set(VOXEN_ARCH_FLAGS "-march=x86-64-v3" CACHE STRING "Target CPU flags, space-separated")
+
 set(VOXEN_SANITIZERS "" CACHE STRING
 	"Sanitizers to enable, semicolon-separated (e.g. `address;undefined`). Linux only")
-
 if(VOXEN_SANITIZERS AND NOT LINUX)
 	message(FATAL_ERROR "VOXEN_SANITIZERS is only supported on Linux")
 endif()
 
 if(LINUX AND NOT CMAKE_LINKER_TYPE)
 	# The fastest linker we have on Linux, non-LTO builds are just instant.
-	# Not cached, so the default follows mold being (un)installed.
+	# Find is not cached, so the default follows mold being (un)installed.
 	find_program(VOXEN_MOLD_EXECUTABLE mold NO_CACHE)
 	if(VOXEN_MOLD_EXECUTABLE)
 		set(CMAKE_LINKER_TYPE MOLD)
@@ -54,7 +58,7 @@ if(LINUX)
 		# This prevents lazy binding which we don't need anyway.
 		-fno-plt
 		# This allows interprocedural optimization for exported functions
-		# when calling them from the same library (a frequent case for us).
+		# when calling them from within the same library (a frequent case).
 		# Might be enabled in Clang by default but let's be sure.
 		-fno-semantic-interposition
 	)
