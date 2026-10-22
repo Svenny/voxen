@@ -1,5 +1,4 @@
-voxen_add_executable(assetc "")
-target_sources(assetc PRIVATE
+voxen_add_executable(assetc
 	assetc.cpp
 	font_atlas.cpp
 	font_atlas.hpp
