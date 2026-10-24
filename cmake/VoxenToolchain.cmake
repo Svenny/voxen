@@ -47,6 +47,7 @@ endif()
 
 # Release builds carry full debug info, there is no separate config for profiling and
 # debugging them: the binaries we ship should be exactly the ones we've looked into.
+# It goes to PDBs on Windows, on Linux it's split off after linking (`voxen_setup_target`).
 # Don't expect stepping through optimized code to work, use Debug or mark
 # the code of interest with `#pragma clang optimize off` locally.
 # NOTE: these shadow the cache variables, edit them here rather than in the cache.
@@ -258,6 +259,21 @@ function(voxen_setup_target target)
 		PCH_INSTANTIATE_TEMPLATES ON
 		PCH_WARN_INVALID ON
 	)
+
+	get_target_property(type ${target} TYPE)
+	if(LINUX AND type MATCHES "^(EXECUTABLE|SHARED_LIBRARY|MODULE_LIBRARY)$")
+		# Split Release debug info off into `<binary>.debug`, ship binaries without it. The symbol
+		# table stays, so stack traces captured without debug info still have function names.
+		# Debuggers, `perf` and libbacktrace (`std::stacktrace`) find it by `.gnu_debuglink`.
+		# zlib-compressed: libbacktrace can't read zstd. Not mold's `--separate-debug-file`,
+		# it moves the symbol table out too.
+		set(file "$<TARGET_FILE:${target}>")
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND "$<$<CONFIG:Release>:${CMAKE_OBJCOPY};--only-keep-debug;--compress-debug-sections=zlib;${file};${file}.debug>"
+			COMMAND "$<$<CONFIG:Release>:${CMAKE_OBJCOPY};--strip-debug;--add-gnu-debuglink=${file}.debug;${file}>"
+			COMMAND_EXPAND_LISTS VERBATIM
+		)
+	endif()
 
 	# Use predefined binary output directories
 	# XXX: shouldn't we do this at install stage?
