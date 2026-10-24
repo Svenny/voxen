@@ -75,6 +75,12 @@ separate_arguments(VOXEN_CODEGEN_FLAGS NATIVE_COMMAND "${VOXEN_ARCH_FLAGS}")
 list(TRANSFORM VOXEN_CODEGEN_FLAGS PREPEND "${CLANG_OPTION_PREFIX}")
 set(VOXEN_LINKER_FLAGS "")
 
+if(WIN32)
+	# Content hashes instead of timestamps in objects and binaries
+	list(APPEND VOXEN_CODEGEN_FLAGS /Brepro)
+	list(APPEND VOXEN_LINKER_FLAGS /Brepro)
+endif()
+
 if(LINUX)
 	list(APPEND VOXEN_CODEGEN_FLAGS
 		# We need more potentially-obscure-bugs-inducing optimizations...
