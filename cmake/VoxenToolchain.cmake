@@ -85,6 +85,11 @@ if(LINUX)
 		# when calling them from within the same library (a frequent case).
 		# Might be enabled in Clang by default but let's be sure.
 		-fno-semantic-interposition
+		# Frame pointers make stacks walkable without DWARF unwinding, so `perf record -g`
+		# works on any build, Release included, at a small perf cost. The leaf one is
+		# a no-op on x86-64 Clang. Not needed on Windows: x64 unwinding always uses `.pdata`.
+		-fno-omit-frame-pointer
+		-mno-omit-leaf-frame-pointer
 	)
 
 	list(APPEND VOXEN_LINKER_FLAGS
@@ -121,7 +126,7 @@ function(voxen_setup_target target)
 
 	if(VOXEN_SANITIZERS)
 		list(JOIN VOXEN_SANITIZERS "," sanitizers)
-		target_compile_options(${target} PRIVATE -fsanitize=${sanitizers} -fno-omit-frame-pointer)
+		target_compile_options(${target} PRIVATE -fsanitize=${sanitizers})
 		target_link_options(${target} PRIVATE -fsanitize=${sanitizers})
 	endif()
 
