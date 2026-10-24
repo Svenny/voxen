@@ -145,13 +145,6 @@ function(voxen_setup_target target)
 		# Does not recognize some member functions are needed to satisfy concepts
 		-Wno-unneeded-member-function
 
-		# Prefix maps ensure more reproducible and environment-independent builds
-		# Remap /path/to/voxen/src/file.cpp -> src/file.cpp in __FILE__ and co.
-		"${CLANG_OPTION_PREFIX}-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/="
-		# Same for debug info. To access sources during debugging
-		# set source prefix map to `/ => ${CMAKE_SOURCE_DIR}/`.
-		"${CLANG_OPTION_PREFIX}-fdebug-prefix-map=${CMAKE_SOURCE_DIR}/=/"
-
 		# Speed up math at the cost of strict standard compliance
 		${CLANG_OPTION_PREFIX}-fno-math-errno # Stdlib math functions do not change errno
 		${CLANG_OPTION_PREFIX}-fno-signed-zeros # Assume +0.0 and -0.0 are the same
@@ -160,6 +153,18 @@ function(voxen_setup_target target)
 		# with `#pragma clang fp contract(off)` where bit-exact results are needed.
 		${CLANG_OPTION_PREFIX}-ffp-contract=fast-honor-pragmas
 	)
+
+	# Prefix maps ensure more reproducible and environment-independent builds.
+	# Remap /path/to/voxen/src/file.cpp -> src/file.cpp in __FILE__ and co.
+	target_compile_options(${target} PRIVATE "${CLANG_OPTION_PREFIX}-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=")
+	if(LINUX)
+		# Same for debug info, with `.` as the compilation directory: debuggers started from
+		# the source root find sources as is. Elsewhere, add the source root to search paths
+		# (gdb: `directory <root>`, lldb: `settings set target.source-map . <root>`).
+		# Not on Windows: CodeView turns these paths into `\src\...`, which lld-link resolves
+		# against the current drive. PDBs keep absolute paths, VS finds sources by them.
+		target_compile_options(${target} PRIVATE -fdebug-prefix-map=${CMAKE_SOURCE_DIR}/= -fdebug-compilation-dir=.)
+	endif()
 
 	if(WIN32)
 		target_compile_definitions(${target} PRIVATE
