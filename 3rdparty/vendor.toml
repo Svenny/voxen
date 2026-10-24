@@ -53,6 +53,15 @@ license = "MIT-old-style"
 keep = ["src/*.cc", "src/*.hh", "src/*.h", "src/OT/**", "src/graph/**", "COPYING"]
 exclude = ["src/harfbuzz-subset.cc", "src/harfbuzz-world.cc", "src/hb-subset*.cc", "src/main.cc", "src/test*.cc"]
 
+[llvm-demangle]
+# The Itanium C++ ABI demangler from libc++abi, LLVM's own copy in `llvm/Demangle` is
+# synced from it. Header-only core, the parser driver lives in `tk::demangle`.
+version = "21.1.8"
+url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{version}/libcxxabi-{version}.src.tar.xz"
+sha256 = "709c9a63bde1e36a80d8675becc38073b85f0fa1b4111e34542b885c9e1239da"
+license = "Apache-2.0 WITH LLVM-exception"
+keep = ["src/demangle/*.h", "src/demangle/*.def", "LICENSE.TXT"]
+
 [vma]
 version = "3.4.0"
 url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v{version}.tar.gz"
