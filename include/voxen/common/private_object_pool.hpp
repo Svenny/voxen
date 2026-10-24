@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <cstdint>
 #include <memory>
 #include <type_traits>
 
