@@ -51,6 +51,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/render_graph_private.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
+	src/voxen/gfx/vk/shader_interop.hpp
 	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
 	src/voxen/gfx/vk/vk_device.cpp
@@ -139,7 +140,6 @@ include(VoxenShaders)
 
 voxen_add_shaders(voxen-shaders
 	SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/shaders
-	INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/shaders/include
 	SHADERS
 		land/chunk_mesh.vert
 		land/chunk_mesh.frag

@@ -430,6 +430,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats12.storageBuffer8BitAccess) {
 		missing.emplace_back("storageBuffer8BitAccess");
 	}
+	if (!info.feats12.uniformAndStorageBuffer8BitAccess) {
+		missing.emplace_back("uniformAndStorageBuffer8BitAccess");
+	}
 	if (!info.feats12.shaderInt8) {
 		missing.emplace_back("shaderInt8");
 	}
@@ -451,6 +454,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	if (!info.feats12.shaderOutputLayer) {
 		missing.emplace_back("shaderOutputLayer");
 	}
+	if (!info.feats13.shaderDemoteToHelperInvocation) {
+		missing.emplace_back("shaderDemoteToHelperInvocation");
+	}
 	if (!info.feats13.synchronization2) {
 		missing.emplace_back("synchronization2");
 	}
@@ -459,6 +465,9 @@ bool Device::isSupported(PhysicalDevice &pd)
 	}
 	if (!info.feats13.maintenance4) {
 		missing.emplace_back("maintenance4");
+	}
+	if (!ext_info.feats_maximal_reconvergence.shaderMaximalReconvergence) {
+		missing.emplace_back("shaderMaximalReconvergence");
 	}
 
 	if (!missing.empty()) {
@@ -477,13 +486,19 @@ bool Device::isSupported(PhysicalDevice &pd)
 void Device::createDevice()
 {
 	// Fill VkPhysicalDevice*Features chain
+	VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR features_maximal_reconvergence = {};
+	features_maximal_reconvergence.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR;
+	features_maximal_reconvergence.shaderMaximalReconvergence = VK_TRUE;
+
 	VkPhysicalDeviceMaintenance5FeaturesKHR features_maintenance5 = {};
 	features_maintenance5.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR;
+	features_maintenance5.pNext = &features_maximal_reconvergence;
 	features_maintenance5.maintenance5 = VK_TRUE;
 
 	VkPhysicalDeviceVulkan13Features features13 = {};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	features13.pNext = &features_maintenance5;
+	features13.shaderDemoteToHelperInvocation = VK_TRUE;
 	features13.synchronization2 = VK_TRUE;
 	features13.dynamicRendering = VK_TRUE;
 	features13.maintenance4 = VK_TRUE;
@@ -493,6 +508,9 @@ void Device::createDevice()
 	features12.pNext = &features13;
 	features12.drawIndirectCount = VK_TRUE;
 	features12.storageBuffer8BitAccess = VK_TRUE;
+	// slangc declares `UniformAndStorageBuffer8BitAccess` capability
+	// for any 8-bit type in a buffer block, even a storage-only one
+	features12.uniformAndStorageBuffer8BitAccess = VK_TRUE;
 	features12.shaderInt8 = VK_TRUE;
 	features12.descriptorIndexing = VK_TRUE;
 	features12.scalarBlockLayout = VK_TRUE;
