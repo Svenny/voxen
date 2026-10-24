@@ -67,6 +67,7 @@ void computeMain(uint3 global_id: SV_DispatchThreadID)
 		// Otherwise optimized SPIR-V can merge its buffer device address members with
 		// `OpPhi` taking `OpUndef` on the out-of-range path, and AMD Windows driver
 		// (26.10.1, proprietary compiler) crashes in `vkCreateComputePipelines` on such a phi.
+		// TODO: go back to a single load once (if ever) AMD fixes the driver
 		PreCullingDrawCommand pre_culling_cmd = g_pre_culling_cmds[cmd_index];
 
 		DrawCommand draw_cmd;
