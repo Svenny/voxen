@@ -2,6 +2,8 @@
 
 #include <voxen/util/log.hpp>
 
+#include <tk/demangle.hpp>
+
 #include <algorithm>
 #include <bit>
 #include <cassert>
@@ -16,7 +18,6 @@
 #ifndef _WIN32
 	#include <climits>
 	#include <cstdlib>
-	#include <cxxabi.h>
 	#include <link.h>
 
 // libbacktrace, which implements `std::stacktrace` in libstdc++, comes with it under a `__glibcxx_` prefix
@@ -194,12 +195,6 @@ std::vector<SourceFrame> resolveSourceFrames(uintptr_t pc)
 
 			SourceFrame frame { .function = function ? function : "", .file = file ? file : "", .line = line };
 
-			int status = -1;
-			if (char *demangled = function ? abi::__cxa_demangle(function, nullptr, nullptr, &status) : nullptr) {
-				frame.function = demangled;
-				free(demangled);
-			}
-
 			// Debug info records sources relative to the compilation directory `.`
 			if (frame.file.starts_with("./")) {
 				frame.file.erase(0, 2);
@@ -312,6 +307,12 @@ void bugFound(std::string_view message, extras::source_location where)
 		}
 
 		auto log_frame = [&](std::string_view prefix, std::string_view function, std::string_view file, uint32_t line) {
+			// Names come mangled from libbacktrace, and libstdc++ can't demangle everything Clang emits
+			std::optional<std::string> demangled = tk::demangle(function);
+			if (demangled) {
+				function = *demangled;
+			}
+
 			if (file.empty()) {
 				Log::fatal("{} {}", prefix, function, where);
 			} else {
