@@ -99,6 +99,8 @@ if(LINUX)
 		# addresses across binary boundaries (who cares?).
 		# NOTE: needs `-Wl,`, clang driver takes bare `-B...` as a search path.
 		-Wl,-Bsymbolic-functions
+		# Match stripped binaries with their debug info. Explicit to not depend on toolchain defaults.
+		-Wl,--build-id=sha1
 	)
 
 	if(NOT VOXEN_SANITIZERS)
