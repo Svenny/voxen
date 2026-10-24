@@ -93,8 +93,8 @@ if(LINUX)
 		# Might be enabled in Clang by default but let's be sure.
 		-fno-semantic-interposition
 		# Frame pointers make stacks walkable without DWARF unwinding, so `perf record -g`
-		# works on any build, Release included, at a small perf cost. The leaf one is
-		# a no-op on x86-64 Clang. Not needed on Windows: x64 unwinding always uses `.pdata`.
+		# works on any build, Release included, at a small perf cost. The leaf one is a
+		# no-op on x86-64. Not needed on Windows, its x64 unwinding always uses `.pdata`.
 		-fno-omit-frame-pointer
 		-mno-omit-leaf-frame-pointer
 	)
@@ -249,7 +249,6 @@ function(voxen_setup_target target)
 
 		# Use LTO for optimized builds (this is ThinLTO on Clang)
 		INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF
-		INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL ON
 		INTERPROCEDURAL_OPTIMIZATION_RELEASE ON
 
 		# Define `TARGET_EXPORTS` instead of `target_EXPORTS` when compiling.
@@ -262,11 +261,10 @@ function(voxen_setup_target target)
 
 	get_target_property(type ${target} TYPE)
 	if(LINUX AND type MATCHES "^(EXECUTABLE|SHARED_LIBRARY|MODULE_LIBRARY)$")
-		# Split Release debug info off into `<binary>.debug`, ship binaries without it. The symbol
-		# table stays, so stack traces captured without debug info still have function names.
+		# Split Release debug info off into `<binary>.debug` to ship binaries without it.
+		# The symbol table stays, so stack traces captured without it still have function names.
 		# Debuggers, `perf` and libbacktrace (`std::stacktrace`) find it by `.gnu_debuglink`.
-		# zlib-compressed: libbacktrace can't read zstd. Not mold's `--separate-debug-file`,
-		# it moves the symbol table out too.
+		# zlib-compressed: libbacktrace can't read zstd.
 		set(file "$<TARGET_FILE:${target}>")
 		add_custom_command(TARGET ${target} POST_BUILD
 			COMMAND "$<$<CONFIG:Release>:${CMAKE_OBJCOPY};--only-keep-debug;--compress-debug-sections=zlib;${file};${file}.debug>"
