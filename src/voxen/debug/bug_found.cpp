@@ -16,7 +16,22 @@
 #ifndef _WIN32
 	#include <climits>
 	#include <cstdlib>
+	#include <cxxabi.h>
 	#include <link.h>
+
+// libbacktrace, which implements `std::stacktrace` in libstdc++, comes with it under a `__glibcxx_` prefix
+extern "C"
+{
+	struct backtrace_state;
+	using backtrace_error_callback = void (*)(void *data, const char *msg, int errnum);
+	using backtrace_full_callback = int (*)(void *data, uintptr_t pc, const char *filename, int lineno,
+		const char *function);
+
+	backtrace_state *__glibcxx_backtrace_create_state(const char *filename, int threaded, backtrace_error_callback,
+		void *data);
+	int __glibcxx_backtrace_pcinfo(backtrace_state *state, uintptr_t pc, backtrace_full_callback,
+		backtrace_error_callback, void *data);
+}
 #else
 	#include <Windows.h>
 #endif
@@ -139,6 +154,64 @@ std::optional<Module> findModule(uintptr_t pc)
 
 	return search.result;
 }
+
+struct SourceFrame {
+	std::string function;
+	std::string file;
+	int line = 0;
+};
+
+// Returns source frames at `pc`, the innermost one first and then those it was inlined into.
+// Uses libbacktrace directly instead of `std::stacktrace_entry` methods because of two things:
+// - libstdc++ gives libbacktrace `/proc/self/exe` as the executable path and builds it without
+//   symlink resolution. It then looks for `.gnu_debuglink` files of executables in `/proc/self/`
+//   and never finds them (shared libraries come with real paths and are fine). We pass the real path.
+// - `std::stacktrace_entry` reports only the innermost inlined frame.
+std::vector<SourceFrame> resolveSourceFrames(uintptr_t pc)
+{
+	// libbacktrace keeps the pointer and opens the file lazily, the string must outlive it
+	static const std::string s_exe_path = [] {
+		char buf[PATH_MAX];
+		return std::string(realpath("/proc/self/exe", buf) ? buf : "/proc/self/exe");
+	}();
+
+	// Lookup errors (like missing debug info) are not interesting, frames just stay unresolved
+	constexpr backtrace_error_callback IGNORE_ERROR = [](void *, const char *, int) {};
+	static backtrace_state *const s_state = __glibcxx_backtrace_create_state(s_exe_path.c_str(), 1, IGNORE_ERROR,
+		nullptr);
+
+	std::vector<SourceFrame> frames;
+	if (!s_state) {
+		return frames;
+	}
+
+	__glibcxx_backtrace_pcinfo(
+		s_state, pc,
+		[](void *data, uintptr_t, const char *file, int line, const char *function) {
+			if (!function && !file) {
+				return 0;
+			}
+
+			SourceFrame frame { .function = function ? function : "", .file = file ? file : "", .line = line };
+
+			int status = -1;
+			if (char *demangled = function ? abi::__cxa_demangle(function, nullptr, nullptr, &status) : nullptr) {
+				frame.function = demangled;
+				free(demangled);
+			}
+
+			// Debug info records sources relative to the compilation directory `.`
+			if (frame.file.starts_with("./")) {
+				frame.file.erase(0, 2);
+			}
+
+			static_cast<std::vector<SourceFrame> *>(data)->emplace_back(std::move(frame));
+			return 0;
+		},
+		IGNORE_ERROR, &frames);
+
+	return frames;
+}
 #else
 std::string findPdbSignature(uintptr_t base)
 {
@@ -190,7 +263,8 @@ std::optional<Module> findModule(uintptr_t pc)
 	wchar_t wpath[MAX_PATH];
 	DWORD wlen = GetModuleFileNameW(module, wpath, MAX_PATH);
 	char path[MAX_PATH * 3];
-	int len = WideCharToMultiByte(CP_UTF8, 0, wpath, static_cast<int>(wlen), path, sizeof(path), nullptr, nullptr);
+	int len = WideCharToMultiByte(CP_UTF8, 0, wpath, static_cast<int>(wlen), path, static_cast<int>(sizeof(path)),
+		nullptr, nullptr);
 
 	auto base = reinterpret_cast<uintptr_t>(module);
 	return Module { .path = std::string(path, static_cast<size_t>(std::max(len, 0))),
@@ -237,14 +311,30 @@ void bugFound(std::string_view message, extras::source_location where)
 			}
 		}
 
-		if (entry.source_file().empty()) {
-			Log::fatal("#{} {} {}", i, location, entry.description(), where);
-		} else {
-			Log::fatal("#{} {} {} at {}:{}", i, location, entry.description(), entry.source_file(), entry.source_line(),
-				where);
-		}
+		auto log_frame = [&](std::string_view prefix, std::string_view function, std::string_view file, uint32_t line) {
+			if (file.empty()) {
+				Log::fatal("{} {}", prefix, function, where);
+			} else {
+				Log::fatal("{} {} at {}:{}", prefix, function, file, line, where);
+			}
+		};
 
+		std::string prefix = fmt::format("#{} {}", i, location);
 		i++;
+
+#ifndef _WIN32
+		if (std::vector<SourceFrame> frames = resolveSourceFrames(pc); !frames.empty()) {
+			for (const SourceFrame &frame : frames) {
+				// Function name can be missing with line tables only, take it from the symbol table then
+				log_frame(prefix, frame.function.empty() ? entry.description() : frame.function, frame.file,
+					static_cast<uint32_t>(frame.line));
+				prefix = "    inlined into";
+			}
+			continue;
+		}
+#endif
+
+		log_frame(prefix, entry.description(), entry.source_file(), entry.source_line());
 	}
 
 	Log::fatal("Modules:", where);
