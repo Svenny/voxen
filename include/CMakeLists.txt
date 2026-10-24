@@ -40,6 +40,7 @@ voxen_target_natvis(m include/m/m.natvis)
 
 set(TK_HEADERS
 	include/tk/cli.hpp
+	include/tk/demangle.hpp
 	include/tk/fs.hpp
 	include/tk/json.hpp
 	include/tk/parse_error.hpp

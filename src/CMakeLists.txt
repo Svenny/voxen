@@ -1,5 +1,6 @@
 set(TK_SOURCES
 	src/tk/cli.cpp
+	src/tk/demangle.cpp
 	src/tk/fs.cpp
 	src/tk/json.cpp
 	src/tk/png.cpp
