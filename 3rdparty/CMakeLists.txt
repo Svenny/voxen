@@ -23,6 +23,7 @@ include(freetype.cmake)
 include(glfw.cmake)
 # Depends on `freetype`, include after it
 include(harfbuzz.cmake)
+include(llvm-demangle.cmake)
 include(vulkan-headers.cmake)
 # Depends on `vulkan-headers`, include after them
 include(vma.cmake)
