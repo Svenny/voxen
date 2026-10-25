@@ -1,8 +1,6 @@
 include(VoxenAssets)
 
 add_custom_target(voxen-assets ALL)
-# XXX: it's not really a codegen target...
-set_target_properties(voxen-assets PROPERTIES FOLDER codegen)
 
 voxen_add_font_atlas(voxen-assets
 	SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/core-assets/fonts/SourceCodePro-Regular.otf

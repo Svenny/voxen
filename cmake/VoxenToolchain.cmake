@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
-if(NOT CMAKE_GENERATOR MATCHES "^Ninja.*" AND NOT CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-	message(FATAL_ERROR "Only Ninja and Visual Studio generators are supported!")
+if(NOT CMAKE_GENERATOR MATCHES "^Ninja.*")
+	message(FATAL_ERROR "Only Ninja generators are supported!")
 endif()
 
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 21.0)
@@ -38,11 +38,6 @@ endif()
 
 if(CMAKE_LINKER_TYPE)
 	message(STATUS "Using linker type: ${CMAKE_LINKER_TYPE}")
-endif()
-
-set(VOXEN_IS_VS_GENERATOR OFF)
-if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-	set(VOXEN_IS_VS_GENERATOR ON)
 endif()
 
 # Release builds carry full debug info, there is no separate config for profiling and
@@ -185,35 +180,12 @@ function(voxen_setup_target target)
 		target_compile_options(${target} PRIVATE
 			# CMake maps C++23 to `-std:c++latest`, which is C++26 in clang-cl.
 			# Pin the standard explicitly, `/clang:` options win as they go last.
-			# NOTE: VS generator evaluates this for all sources of a target with
-			# any C++ sources, but at least it keeps C-only targets intact.
 			$<$<COMPILE_LANGUAGE:CXX>:/clang:-std=c++23>
 		)
 
 		target_link_libraries(${target} PRIVATE
 			# Futex ops like WaitOnAddress/WakeByAddress...
 			synchronization
-		)
-	endif()
-
-	if(VOXEN_IS_VS_GENERATOR)
-		target_compile_options(${target} PRIVATE
-			# Display names of files being compiled (makes VS output window informative)
-			/showFilenames
-			# Compile multiple source files in parallel (why it's not the default?!)
-			/MP
-		)
-
-		# Built-in clang-tidy does not properly receive clang flags
-		# so we have to disable all that useless junk here as well
-		set_target_properties(${target} PROPERTIES VS_GLOBAL_ClangTidyChecks "\
--clang-diagnostic-c++98-compat,-clang-diagnostic-c++98-compat-pedantic,\
--clang-diagnostic-pre-c++17-compat,-clang-diagnostic-pre-c++20-compat-pedantic,\
--clang-diagnostic-pre-c++14-compat,-clang-diagnostic-c++20-compat,-clang-diagnostic-pre-c++20-compat,\
--clang-diagnostic-pragma-once-outside-header,-clang-diagnostic-unsafe-buffer-usage,\
--clang-diagnostic-shadow-field-in-constructor,-clang-diagnostic-extra-semi-stmt,\
--clang-diagnostic-switch-default,-clang-diagnostic-global-constructors,-clang-diagnostic-exit-time-destructors,\
--clang-diagnostic-c++98-compat-local-type-template-args"
 		)
 	endif()
 
@@ -317,18 +289,6 @@ function(voxen_target_natvis target file)
 	set(linkable OFF)
 	if(type STREQUAL "EXECUTABLE" OR type STREQUAL "SHARED_LIBRARY" OR type STREQUAL "MODULE_LIBRARY")
 		set(linkable ON)
-	endif()
-
-	if(VOXEN_IS_VS_GENERATOR)
-		# MSBuild passes `Natvis` project items to the linker. CMake turns `.natvis` sources into
-		# them, but `/NATVIS:` link options into a `<Link><Natvis>` setting ignored by ClangCL
-		# toolset. Interface sources become items in consumer projects, use them instead.
-		if(linkable)
-			target_sources(${target} PRIVATE ${file})
-		else()
-			target_sources(${target} INTERFACE ${file})
-		endif()
-		return()
 	endif()
 
 	if(linkable)

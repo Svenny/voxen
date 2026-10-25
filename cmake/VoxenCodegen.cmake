@@ -23,7 +23,6 @@ function(voxen_add_version_header target header)
 		COMMENT "Generating ${header} file"
 		VERBATIM
 	)
-	set_target_properties(${target}-version-file PROPERTIES FOLDER codegen)
 	add_dependencies(${target} ${target}-version-file)
 
 	# Include directory with generated headers
