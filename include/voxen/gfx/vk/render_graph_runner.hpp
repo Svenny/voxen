@@ -42,6 +42,8 @@ private:
 	std::shared_ptr<RenderGraphPrivate> m_private;
 	std::shared_ptr<IRenderGraph> m_graph;
 
+	// Records commands of the attached graph to the swapchain image acquired by `executeGraph()`
+	void recordGraph();
 	void finalizeRebuild();
 	void publishResourceHandles();
 
