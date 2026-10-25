@@ -53,7 +53,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build mold
-          sudo apt-get install -y libwayland-dev libxkbcommon-dev xorg-dev
+          # Windowing system headers, the libraries are loaded at runtime
+          sudo apt-get install -y libwayland-dev libxkbcommon-dev xorg-dev libdecor-0-dev libdbus-1-dev libudev-dev
           clang --version
           cmake --version
 
