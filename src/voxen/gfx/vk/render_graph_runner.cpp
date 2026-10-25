@@ -252,6 +252,25 @@ void RenderGraphRunner::executeGraph()
 		return;
 	}
 
+	// Nothing waits on the acquire semaphore if the frame throws before its submission.
+	// If `submitAndAdvance()` throws, the device is lost or out of memory, don't bother.
+	try {
+		recordGraph();
+	}
+	catch (...) {
+		swapchain.abandonImage();
+		throw;
+	}
+
+	uint64_t timeline = m_private->fctx_ring.submitAndAdvance(swapchain.currentAcquireSemaphore(),
+		swapchain.currentPresentSemaphore());
+	swapchain.presentImage(timeline);
+}
+
+void RenderGraphRunner::recordGraph()
+{
+	auto &swapchain = m_private->swapchain;
+
 	// Check for swapchain image changes (strictly after `acquireImage()`)
 	VkFormat cur_format = swapchain.imageFormat();
 	VkFormat last_format = m_private->last_known_swapchain_format;
@@ -276,10 +295,6 @@ void RenderGraphRunner::executeGraph()
 	}
 
 	m_graph->endExecution(exec);
-
-	uint64_t timeline = m_private->fctx_ring.submitAndAdvance(swapchain.currentAcquireSemaphore(),
-		swapchain.currentPresentSemaphore());
-	swapchain.presentImage(timeline);
 }
 
 void RenderGraphRunner::finalizeRebuild()

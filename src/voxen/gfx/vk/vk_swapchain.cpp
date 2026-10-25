@@ -39,8 +39,10 @@ Swapchain::Swapchain(Device &device, os::Window &window) : m_device(device), m_w
 
 Swapchain::~Swapchain() noexcept
 {
-	if (imageAcquired()) {
-		Log::warn("Destroying swapchain with acquired image, use-after-free might happen");
+	if (imageAcquired() && !m_image_abandoned) {
+		// A frame submission failed (device loss etc.) or the caller didn't abandon the image.
+		// The GPU work is drained below, but the acquire semaphore might have a pending signal.
+		Log::warn("Destroying swapchain with an acquired image that was neither presented nor abandoned");
 	}
 
 	m_device.forceCompletion();
@@ -53,7 +55,10 @@ Swapchain::~Swapchain() noexcept
 void Swapchain::acquireImage()
 {
 	if (imageAcquired()) [[unlikely]] {
-		Log::warn("Swapchain image already acquired! Only one can be acquired at a time");
+		if (!m_image_abandoned) {
+			Log::warn("Swapchain image already acquired! Only one can be acquired at a time");
+		}
+		// Otherwise reuse the abandoned image, its acquire semaphore is already waited
 		return;
 	}
 
@@ -198,6 +203,7 @@ void Swapchain::presentImage(uint64_t timeline)
 	// With other return codes the image is released and semaphore wait operation is enqueued.
 	// Therefore we can forget about image acquisition and advance the frame index right away.
 	uint32_t image_index = std::exchange(m_image_index, NO_IMAGE_MARKER);
+	m_image_abandoned = false;
 	m_frame_index = (m_frame_index + 1) % gfx::Consts::MAX_PENDING_FRAMES;
 
 	VkPresentInfoKHR present_info {
@@ -253,6 +259,26 @@ void Swapchain::presentImage(uint64_t timeline)
 	throw VulkanException(res, "vkQueuePresentKHR");
 }
 
+void Swapchain::abandonImage() noexcept
+{
+	if (!imageAcquired() || m_image_abandoned) {
+		return;
+	}
+
+	// Wait-only submission. Its wait also orders later main queue submissions
+	// after the acquire, so the reacquired image can be rendered to without waiting.
+	try {
+		m_prev_usage_timelines[m_frame_index] = m_device.submitCommands({
+			.queue = Device::QueueMain,
+			.wait_binary_semaphore = m_acquire_semaphores[m_frame_index],
+		});
+		m_image_abandoned = true;
+	}
+	catch (const std::exception &e) {
+		Log::error("Can't abandon swapchain image: {}", e.what());
+	}
+}
+
 VkImage Swapchain::currentImage()
 {
 	assert(imageAcquired());
@@ -268,7 +294,7 @@ VkImageView Swapchain::currentImageRtv()
 VkSemaphore Swapchain::currentAcquireSemaphore()
 {
 	assert(imageAcquired());
-	return m_acquire_semaphores[m_frame_index];
+	return m_image_abandoned ? VK_NULL_HANDLE : m_acquire_semaphores[m_frame_index];
 }
 
 VkSemaphore Swapchain::currentPresentSemaphore()

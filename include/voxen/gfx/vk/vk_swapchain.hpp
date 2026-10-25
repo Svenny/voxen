@@ -45,7 +45,8 @@ public:
 	//
 	// There can be only one frame acquired at a time, calling `acquireImage()`
 	// twice before `presentImage()` will log warning and do nothing more,
-	// the already acquired image will remain unchanged.
+	// the already acquired image will remain unchanged. After `abandonImage()`
+	// this returns the abandoned image again, without any warning.
 	//
 	// Usually this function will recover from the underlying WSI problems
 	// (like window resize with the swapchain going out of date) transparently.
@@ -79,6 +80,16 @@ public:
 	// as with `acquireImage()`. If this function throws, the object is broken
 	// and can only be destroyed, all operations will have undefined behavior.
 	void presentImage(uint64_t timeline);
+	// Give up rendering to the acquired image, e.g. when an exception interrupts the frame
+	// before its submission. Call it only if no wait on `currentAcquireSemaphore()` was submitted.
+	//
+	// Submits a wait on the acquire semaphore to the main device queue (Vulkan doesn't allow
+	// destroying or reusing a binary semaphore with a pending signal) and keeps the image
+	// acquired: Vulkan can't release it without presenting. The next `acquireImage()` returns
+	// the same image, then `currentAcquireSemaphore()` is null, as the wait is already done.
+	// Destroying the swapchain is also safe after this call. Does nothing if no image is
+	// acquired. Doesn't throw: if the submission fails, the image stays as it was.
+	void abandonImage() noexcept;
 
 	// Currently acquired image handle.
 	// This is a 2D image with one MIP level and one array layer, the only
@@ -95,6 +106,8 @@ public:
 	// when `currentImage()` is safe to render to. You MUST submit exactly
 	// one wait operation on this semaphore to the main device queue
 	// before calling `presentImage()`, or an evil sync UB will happen.
+	// Null if the image was abandoned and reacquired: then it's already waited
+	// by an earlier main queue submission, there is nothing to wait for.
 	// Undefined when no image is acquired.
 	VkSemaphore currentAcquireSemaphore();
 	// Binary semaphore in unsignaled state that must be signaled when
@@ -137,6 +150,8 @@ private:
 
 	uint32_t m_num_images = 0;
 	uint32_t m_image_index = NO_IMAGE_MARKER;
+	// Set by `abandonImage()`: the acquire semaphore of the current image is already waited
+	bool m_image_abandoned = false;
 	VkImage m_images[MAX_IMAGES] = {};
 	VkImageView m_image_rtvs[MAX_IMAGES] = {};
 
