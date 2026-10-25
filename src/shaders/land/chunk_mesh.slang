@@ -79,10 +79,13 @@ Varyings vertexMain(uint vertex_index: SV_VulkanVertexID, uint draw_index: SV_Dr
 {
 	DrawCommand dcmd = g_cmd_list.Load<DrawCommand>(drawCmdListItemOffset(draw_index));
 	PseudoChunkSurfacePosition *pos_data = (PseudoChunkSurfacePosition *) dcmd.pos_data_address;
-	PseudoChunkSurfaceAttributes *attrib_data = (PseudoChunkSurfaceAttributes *) dcmd.attrib_data_address;
+	// Load attributes as a whole 16-byte record and unpack them. Loading the 16-bit vector members directly
+	// crashes Intel Windows driver (101.7084) in `vkCreateGraphicsPipelines`.
+	// TODO: load `PseudoChunkSurfaceAttributes` directly once (if ever) Intel fixes the driver
+	uint4 *attrib_data = (uint4 *) dcmd.attrib_data_address;
 
 	uint16_t3 packed_vertex_position = pos_data[vertex_index].position_unorm;
-	PseudoChunkSurfaceAttributes attribs = attrib_data[vertex_index];
+	PseudoChunkSurfaceAttributes attribs = bit_cast<PseudoChunkSurfaceAttributes>(attrib_data[vertex_index]);
 
 	float3 pos_chunk_local = unpackVertexPosition(packed_vertex_position);
 	float3 pos_camworld = calcVertexCamWorldPosition(pos_chunk_local, dcmd.chunk_base_camworld, dcmd.chunk_size_metres);
