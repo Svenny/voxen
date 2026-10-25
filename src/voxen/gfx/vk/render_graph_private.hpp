@@ -73,7 +73,7 @@ struct VOXEN_LOCAL RenderGraphImage::Private {
 
 // Collection of render graph resources and commands
 struct VOXEN_LOCAL RenderGraphPrivate {
-	explicit RenderGraphPrivate(GfxSystem &gfx, os::GlfwWindow &window)
+	explicit RenderGraphPrivate(GfxSystem &gfx, os::Window &window)
 		: gfx_system(gfx)
 		, device(*gfx.device())
 		, fctx_ring(device, gfx::Consts::MAX_PENDING_FRAMES)

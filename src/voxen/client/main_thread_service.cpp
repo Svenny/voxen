@@ -7,7 +7,7 @@
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/gfx/ui/ui_system.hpp>
-#include <voxen/os/glfw_window.hpp>
+#include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
@@ -29,9 +29,9 @@ namespace voxen::client
 namespace
 {
 
-struct GlfwRaii {
-	GlfwRaii() { os::GlfwWindow::initGlfw(); }
-	~GlfwRaii() { os::GlfwWindow::terminateGlfw(); }
+struct WindowLibraryRaii {
+	WindowLibraryRaii() { os::Window::initLibrary(); }
+	~WindowLibraryRaii() { os::Window::terminateLibrary(); }
 };
 
 } // namespace
@@ -49,10 +49,10 @@ struct MainThreadService::Impl {
 
 	gfx::ui::UiSystem ui_system;
 
-	// Placed before GLFW-dependent stuff to construct before it and destroy after it
-	[[EXTRAS_NO_UNIQUE_ADDRESS]] GlfwRaii glfw_raii;
+	// Placed before window-dependent stuff to construct before it and destroy after it
+	[[EXTRAS_NO_UNIQUE_ADDRESS]] WindowLibraryRaii window_library_raii;
 
-	os::GlfwWindow window;
+	os::Window window;
 	// Placed after `window` to destroy before it
 	std::unique_ptr<gfx::GfxSystem> gfx_system;
 	// Placed after `window` to destroy before it
@@ -69,7 +69,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 
 	impl.log_fps = main_config->getBool("dev", "fps_logging");
 
-	m_impl->window = os::GlfwWindow({
+	m_impl->window = os::Window({
 		.width = main_config->getInt32("window", "width"),
 		.height = main_config->getInt32("window", "height"),
 		.title = "Voxen",
@@ -108,6 +108,9 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 
 		// Receive input events
 		impl.window.pollEvents();
+		for (const os::WindowEvent &event : impl.window.events()) {
+			impl.gui->handleEvent(event);
+		}
 
 		// Receive the latest world state
 		last_state_ptr = world_control.getLastState();
@@ -144,7 +147,7 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 			{
 				.window_resolution = impl.window.framebufferSize(),
 				.cursor_position = impl.window.cursorPos(),
-				.left_button_pressed = impl.window.mouseLeftButtonPressed(),
+				.left_button_pressed = impl.window.mouseButtonPressed(os::MouseButton::Left),
 			});
 
 		FrameCallbackData fcd {

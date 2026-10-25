@@ -15,7 +15,7 @@
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
-#include <voxen/os/glfw_window.hpp>
+#include <voxen/os/window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -114,7 +114,7 @@ struct GfxSystem::ComponentStorage {
 	alignas(FrameTickSource) std::byte frame_tick_source[sizeof(FrameTickSource)];
 };
 
-GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::GlfwWindow &main_window)
+GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 	: m_component_storage(std::make_unique<ComponentStorage>())
 {
 	Log::info("Starting gfx system");

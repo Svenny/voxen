@@ -141,10 +141,11 @@ set(VOXEN_HEADERS
 	include/voxen/land/typed_storage_tree.hpp
 	include/voxen/os/file.hpp
 	include/voxen/os/futex.hpp
-	include/voxen/os/glfw_window.hpp
 	include/voxen/os/os_fwd.hpp
 	include/voxen/os/process.hpp
 	include/voxen/os/time.hpp
+	include/voxen/os/window.hpp
+	include/voxen/os/window_events.hpp
 	include/voxen/svc/async_file_io_service.hpp
 	include/voxen/svc/engine.hpp
 	include/voxen/svc/message_handling.hpp

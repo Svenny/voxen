@@ -3,8 +3,9 @@
 #include <voxen/client/player_action_events.hpp>
 #include <voxen/common/player.hpp>
 #include <voxen/land/land_chunk.hpp>
-#include <voxen/os/glfw_window.hpp>
+#include <voxen/os/os_fwd.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/util/resolution.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
 #include <m/m.hpp>
@@ -14,13 +15,15 @@ namespace voxen
 
 class GameView {
 public:
-	GameView(os::GlfwWindow& window);
+	GameView(os::Window& window);
 
 	void init(const Player& player) noexcept;
 	void update(const Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
-	bool handleCursor(double xpos, double ypos) noexcept;
+	// Relative mouse motion in framebuffer pixels
+	void handleMouseMotion(m::double2 delta) noexcept;
+	void handleResize(Resolution framebuffer_size) noexcept;
 
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
@@ -56,10 +59,8 @@ private:
 	double m_strafe_speed;
 	double m_roll_speed;
 
-	// Mouse position at the time of the latest call to `handleCursor`
-	m::double2 m_newest_cursor_pos;
-	// Mouse position at the time of the latest call to `update`
-	m::double2 m_prev_cursor_pos;
+	// Mouse motion accumulated since the latest call to `update`
+	m::double2 m_mouse_delta;
 	// Gamer view data and parameters
 	double m_fov_x, m_fov_y;
 	double m_z_near = 0.1;
@@ -74,7 +75,7 @@ private:
 
 	// Previous tick id
 	world::TickId m_previous_tick_id;
-	os::GlfwWindow& m_window;
+	os::Window& m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_pause = true;
@@ -86,6 +87,7 @@ private:
 	bool m_state[Direction::Count];
 
 private:
+	void setWindowSize(Resolution size) noexcept;
 	void updateMatrices() noexcept;
 	void resetKeyState() noexcept;
 };

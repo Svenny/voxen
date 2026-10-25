@@ -5,6 +5,6 @@ namespace voxen::os
 
 class FutexLock;
 class FutexRWLock;
-class GlfwWindow;
+class Window;
 
 } // namespace voxen::os

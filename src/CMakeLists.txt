@@ -90,9 +90,9 @@ set(VOXEN_SOURCES
 	src/voxen/land/storage_tree_utils_private.hpp
 	src/voxen/os/file.cpp
 	src/voxen/os/futex.cpp
-	src/voxen/os/glfw_window.cpp
 	src/voxen/os/process.cpp
 	src/voxen/os/time.cpp
+	src/voxen/os/window.cpp
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
 	src/voxen/svc/async_file_io_service.cpp

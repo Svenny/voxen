@@ -7,6 +7,7 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
+#include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/world/world_control_service.hpp>
 
@@ -17,17 +18,10 @@
 namespace voxen
 {
 
-GameView::GameView(os::GlfwWindow& window) : m_window(window)
+GameView::GameView(os::Window& window) : m_window(window)
 {
-	auto window_size = window.windowSize();
-	m_window_size = m::double2(window_size.width, window_size.height);
-
-	m_prev_cursor_pos = window.cursorPos();
-
 	m_fov_y = m::radians(70.0);
-	double tan_half_fovy = std::tan(m_fov_y / 2.0);
-	double aspect = m_window_size.x / m_window_size.y;
-	m_fov_x = 2.0 * std::atan(aspect * tan_half_fovy);
+	setWindowSize(window.framebufferSize());
 
 	Config* main_config = Config::mainConfig();
 	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");
@@ -141,10 +135,26 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 	}
 }
 
-bool voxen::GameView::handleCursor(double xpos, double ypos) noexcept
+void GameView::handleMouseMotion(m::double2 delta) noexcept
 {
-	m_newest_cursor_pos = m::double2(xpos, ypos);
-	return true;
+	m_mouse_delta += delta;
+}
+
+void GameView::handleResize(Resolution framebuffer_size) noexcept
+{
+	if (framebuffer_size.valid()) {
+		setWindowSize(framebuffer_size);
+		updateMatrices();
+	}
+}
+
+void GameView::setWindowSize(Resolution size) noexcept
+{
+	m_window_size = m::double2(size.width, size.height);
+
+	double tan_half_fovy = std::tan(m_fov_y / 2.0);
+	double aspect = m_window_size.x / m_window_size.y;
+	m_fov_x = 2.0 * std::atan(aspect * tan_half_fovy);
 }
 
 void GameView::updateMatrices() noexcept
@@ -168,12 +178,15 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {
 			m_window.useRegularCursor();
+			m_window.startTextInput();
 			m_is_used_orientation_cursor = true;
 		}
 
-		m_prev_cursor_pos = m_window.cursorPos();
+		m_mouse_delta = m::double2();
 	} else {
 		if (m_is_used_orientation_cursor) {
+			// Don't let IME eat the controls
+			m_window.stopTextInput();
 			m_window.useGrabbedCursor();
 			m_is_used_orientation_cursor = false;
 		}
@@ -215,15 +228,15 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 		}
 		move_forward_direction += dl * m_local_player.lookVector();
 
-		dx = (m_prev_cursor_pos.x - m_newest_cursor_pos.x) * m_mouse_sensitivity;
+		dx = -m_mouse_delta.x * m_mouse_sensitivity;
 		double tan_half_fovx = std::tan(m_fov_x * 0.5);
 		double yawAngle = atan(2 * dx * tan_half_fovx / m_window_size.x);
 
-		dy = (m_prev_cursor_pos.y - m_newest_cursor_pos.y) * m_mouse_sensitivity;
+		dy = -m_mouse_delta.y * m_mouse_sensitivity;
 		double tan_half_fovy = std::tan(m_fov_y * 0.5);
 		double pitchAngle = atan(2 * dy * tan_half_fovy / m_window_size.y);
 
-		m_prev_cursor_pos = m_newest_cursor_pos;
+		m_mouse_delta = m::double2();
 
 		double rollAngle = 0;
 		if (m_state[Direction::RollLeft]) {

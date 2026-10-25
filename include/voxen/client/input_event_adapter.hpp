@@ -8,6 +8,7 @@
 #include <utility>
 
 #include <voxen/common/config.hpp>
+#include <voxen/os/window_events.hpp>
 
 #include "player_action_events.hpp"
 
@@ -16,11 +17,11 @@ namespace voxen::client
 
 class InputEventAdapter {
 public:
-	static std::pair<PlayerActionEvent, bool> glfwKeyboardToPlayerEvent(int key, int scancode, int action, int mods);
+	static std::pair<PlayerActionEvent, bool> keyToPlayerEvent(const os::KeyEvent& event);
 
-	static std::pair<PlayerActionEvent, bool> glfwMouseKeyToPlayerEvent(int button, int action, int mods);
+	static std::pair<PlayerActionEvent, bool> mouseButtonToPlayerEvent(const os::MouseButtonEvent& event);
 
-	static std::pair<PlayerActionEvent, bool> glfwMouseScrollToPlayerEvent(double xoffset, double yoffset);
+	static std::pair<PlayerActionEvent, bool> mouseWheelToPlayerEvent(const os::MouseWheelEvent& event);
 
 	static void init();
 
@@ -33,8 +34,8 @@ private:
 		bool* scroll_ptr); // 0 - unknown type, 1 - keyboard, 2 - mouse button, 3 - scroll
 	static std::string_view actionToString(PlayerActionEvent event);
 	static PlayerActionEvent stringToAction(std::string_view s);
-	static std::string keyboardKeyToString(int key, int mods);
-	static std::string mouseButtonToString(int button, int mods);
+	static std::string keyboardKeyToString(os::Key key, int mods);
+	static std::string mouseButtonToString(os::MouseButton button, int mods);
 	static std::string scrollToString(double yoffset);
 
 private:
@@ -45,9 +46,9 @@ private:
 	static Config* actionSettingsConfig;
 	static Config::Scheme actionSettingConfigScheme;
 
-	static const std::array<std::pair<int, std::string>, 94> KEYCODE_2_STRING;
-	static const std::array<std::pair<int, std::string>, 8> MOUSEKEY_2_STRING;
-	static const std::array<std::pair<int, std::string>, 6> MODS_2_STRING;
+	static const std::array<std::pair<os::Key, std::string>, 94> KEYCODE_2_STRING;
+	static const std::array<std::pair<os::MouseButton, std::string>, 5> MOUSEKEY_2_STRING;
+	static const std::array<std::pair<os::KeyModBit, std::string>, 6> MODS_2_STRING;
 	static const std::array<std::pair<PlayerActionEvent, std::string>, 13> PLAYERACTIONS_2_STRINGS;
 
 	static void parseToken(std::string_view string, PlayerActionEvent event, std::string_view parameter_name,

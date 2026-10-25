@@ -45,7 +45,7 @@ public:
 	// Window and service locator must remain valid during the whole object lifetime.
 	//
 	// TODO: support headless mode (creating without a window).
-	explicit GfxSystem(svc::ServiceLocator& svc, os::GlfwWindow& main_window);
+	explicit GfxSystem(svc::ServiceLocator& svc, os::Window& main_window);
 	GfxSystem(GfxSystem&&) = delete;
 	GfxSystem(const GfxSystem&) = delete;
 	GfxSystem& operator=(GfxSystem&&) = delete;

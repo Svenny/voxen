@@ -17,7 +17,7 @@ class VOXEN_API RenderGraphRunner {
 public:
 	// Creates a swapchain attached to the window.
 	// This window must not be in use by any other swapchain.
-	RenderGraphRunner(GfxSystem &gfx, os::GlfwWindow &window);
+	RenderGraphRunner(GfxSystem &gfx, os::Window &window);
 	RenderGraphRunner(RenderGraphRunner &&) = delete;
 	RenderGraphRunner(const RenderGraphRunner &) = delete;
 	RenderGraphRunner &operator=(RenderGraphRunner &&) = delete;
@@ -37,7 +37,7 @@ public:
 private:
 	GfxSystem &m_gfx;
 	Device &m_device;
-	os::GlfwWindow &m_window;
+	os::Window &m_window;
 
 	std::shared_ptr<RenderGraphPrivate> m_private;
 	std::shared_ptr<IRenderGraph> m_graph;
