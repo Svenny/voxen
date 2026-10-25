@@ -37,14 +37,6 @@ exclude = ["src/*/*.mk", "src/autofit/*.cin", "src/autofit/*.hin", "src/autofit/
 # Project build configuration: no compressed fonts, no SVG, trimmed module list
 patches = ["config.patch"]
 
-[glfw]
-version = "3.4"
-url = "https://github.com/glfw/glfw/releases/download/{version}/glfw-{version}.zip"
-sha256 = "b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9"
-license = "Zlib"
-keep = ["include/GLFW/*.h", "src/*.c", "src/*.h", "deps/wayland/*.xml", "LICENSE.md"]
-exclude = ["src/cocoa_*"]
-
 [harfbuzz]
 version = "14.6.0"
 url = "https://github.com/harfbuzz/harfbuzz/releases/download/{version}/harfbuzz-{version}.tar.xz"
