@@ -1,6 +1,3 @@
-# Make all test-related targets appear in a folder in VS
-set(CMAKE_FOLDER tests)
-
 voxen_add_library(test-common STATIC)
 
 target_sources(test-common PRIVATE

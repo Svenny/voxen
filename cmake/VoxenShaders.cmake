@@ -81,7 +81,6 @@ function(voxen_add_shaders target)
 	endif()
 
 	add_custom_target(${target})
-	set_target_properties(${target} PROPERTIES FOLDER codegen)
 
 	foreach(shader IN LISTS arg_SHADERS)
 		if(NOT shader MATCHES "^(.+)\\.(vert|frag|comp)$")

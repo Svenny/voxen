@@ -4,9 +4,6 @@
 # Only the parts we actually use are built, these files do not try to mirror
 # the upstream build systems.
 
-# Make all targets created here appear in a folder in VS
-set(CMAKE_FOLDER 3rdparty)
-
 # Compiled dependencies get the full engine toolchain setup (flags, configurations,
 # sanitizers, LTO...) but none of our warnings, it's not our code to fix. `-w` works
 # in clang-cl too, and also silences warnings libraries escalate to errors with

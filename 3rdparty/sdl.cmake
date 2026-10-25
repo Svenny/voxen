@@ -172,8 +172,6 @@ if(WIN32)
 		sdl/src/video/windows/SDL_windowsvulkan.c
 		sdl/src/video/windows/SDL_windowswindow.c
 	)
-	# Keep the target C-only, VS generator applies the C++ standard flag to C files of mixed targets
-	set_source_files_properties(sdl/src/video/windows/SDL_windowsgameinput.cpp PROPERTIES LANGUAGE C)
 	target_compile_definitions(sdl PRIVATE UNICODE _UNICODE)
 	target_link_libraries(sdl PRIVATE
 		kernel32 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32
