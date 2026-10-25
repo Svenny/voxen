@@ -86,9 +86,6 @@ private:
 
 	static std::string_view stateToString(State state) noexcept;
 
-	bool loadPreInstanceApi() noexcept;
-	bool loadInstanceLevelApi(VkInstance instance) noexcept;
-	void unloadInstanceLevelApi() noexcept;
 	bool loadDeviceLevelApi(VkDevice device) noexcept;
 	void unloadDeviceLevelApi() noexcept;
 

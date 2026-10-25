@@ -2,6 +2,7 @@
 
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
+#include <voxen/os/dynamic_library.hpp>
 
 #include <extras/dyn_array.hpp>
 #include <extras/source_location.hpp>
@@ -28,9 +29,9 @@ public:
 	// - Using an extension is allowed only if it's not deprecated/obsolete in this version
 	constexpr static uint32_t MIN_VULKAN_VERSION = VK_API_VERSION_1_3;
 
-	// Constructor will automatically attempt to create `VkInstance`,
-	// throwing `VoxenErrc::GfxCapabilityMissing` if it's not supported.
-	// GLFW library must be initialized during the whole object lifetime.
+	// Constructor will load the Vulkan loader library and attempt to create
+	// `VkInstance`, throwing `VoxenErrc::GfxCapabilityMissing` if it's not supported.
+	// Windowing library must be initialized during the whole object lifetime.
 	Instance();
 	Instance(Instance &&) = delete;
 	Instance(const Instance &) = delete;
@@ -68,6 +69,9 @@ public:
 #pragma endregion
 
 private:
+	// Must outlive everything else
+	os::DynamicLibrary m_loader;
+
 	VkInstance m_handle = VK_NULL_HANDLE;
 
 	DebugUtils m_debug;

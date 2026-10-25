@@ -13,8 +13,6 @@
 
 #include <extras/defer.hpp>
 
-#include <GLFW/glfw3.h>
-
 #include <cstring>
 #include <span>
 #include <vector>
@@ -25,25 +23,16 @@ namespace voxen::gfx::vk
 namespace
 {
 
-bool checkVulkanSupport()
+#ifdef _WIN32
+constexpr const char *VULKAN_LOADER_NAME = "vulkan-1.dll";
+#else
+constexpr const char *VULKAN_LOADER_NAME = "libvulkan.so.1";
+#endif
+
+bool checkVulkanSupport(const InstanceDispatchTable &dt)
 {
-	if (glfwVulkanSupported() != GLFW_TRUE) {
-		Log::error("No supported Vulkan ICD found");
-		return false;
-	}
-
-	auto enumerate_fn = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
-		glfwGetInstanceProcAddress(VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
-
-	if (!enumerate_fn) {
-		const char *description = nullptr;
-		int error = glfwGetError(&description);
-		Log::error("Can't find vkEnumerateInstanceVersion, GLFW error {}:\n{}", error, description);
-		return false;
-	}
-
 	uint32_t version = 0;
-	VkResult result = enumerate_fn(&version);
+	VkResult result = dt.vkEnumerateInstanceVersion(&version);
 	if (result != VK_SUCCESS) {
 		Log::error("vkEnumerateInstanceVersion failed: {}", VulkanUtils::getVkResultString(result));
 		return false;
@@ -64,24 +53,35 @@ bool checkVulkanSupport()
 	return true;
 }
 
-void fillDispatchTable(InstanceDispatchTable &dt)
+PFN_vkVoidFunction loadEntry(PFN_vkGetInstanceProcAddr gipa, VkInstance instance, const char *name)
 {
-	auto load_entry = [](const char *name) {
-		// All these functions must be exported from Vulkan loader, no instance handle is needed
-		GLFWvkproc proc = glfwGetInstanceProcAddress(VK_NULL_HANDLE, name);
+	PFN_vkVoidFunction proc = gipa(instance, name);
+	if (!proc) {
+		Log::error("Can't find Vulkan entry point '{}'", name);
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing Vulkan entry point");
+	}
 
-		if (!proc) {
-			const char *description = nullptr;
-			int error = glfwGetError(&description);
-			Log::error("Can't find '{}', GLFW error {}:\n{}", name, error, description);
+	return proc;
+}
 
-			throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "missing Vulkan loader entry point");
-		};
+// Commands callable without an instance
+void fillGlobalEntries(InstanceDispatchTable &dt, PFN_vkGetInstanceProcAddr gipa)
+{
+	dt.vkGetInstanceProcAddr = gipa;
+	dt.vkEnumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+		loadEntry(gipa, VK_NULL_HANDLE, "vkEnumerateInstanceVersion"));
+	dt.vkEnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(
+		loadEntry(gipa, VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties"));
+	dt.vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(loadEntry(gipa, VK_NULL_HANDLE, "vkCreateInstance"));
+}
 
-		return proc;
-	};
-
-#define VK_API_ENTRY(x) dt.x = reinterpret_cast<PFN_##x>(load_entry(#x));
+// All the other (instance-level) commands
+void fillInstanceEntries(InstanceDispatchTable &dt, VkInstance instance)
+{
+#define VK_API_ENTRY(x) \
+	if (!dt.x) { \
+		dt.x = reinterpret_cast<PFN_##x>(loadEntry(dt.vkGetInstanceProcAddr, instance, #x)); \
+	}
 #include <voxen/gfx/vk/api_instance.in>
 #undef VK_API_ENTRY
 }
@@ -171,13 +171,27 @@ Instance::Instance()
 {
 	Log::debug("Creating VkInstance");
 
-	if (!checkVulkanSupport()) {
+	m_loader = os::DynamicLibrary::open(VULKAN_LOADER_NAME);
+	if (!m_loader.valid()) {
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "Vulkan loader library not found");
+	}
+
+	auto gipa = reinterpret_cast<PFN_vkGetInstanceProcAddr>(m_loader.symbol("vkGetInstanceProcAddr"));
+	if (!gipa) {
+		Log::error("Vulkan loader library doesn't export vkGetInstanceProcAddr");
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "broken Vulkan loader library");
+	}
+
+	fillGlobalEntries(m_dt, gipa);
+	if (!checkVulkanSupport(m_dt)) {
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "unsupported or missing Vulkan driver");
 	}
 
-	fillDispatchTable(m_dt);
 	createInstance();
+	m_dt.vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadEntry(gipa, m_handle, "vkDestroyInstance"));
 	defer_fail { m_dt.vkDestroyInstance(m_handle, nullptr); };
+
+	fillInstanceEntries(m_dt, m_handle);
 
 	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
 		m_debug = DebugUtils(m_handle, m_dt.vkGetInstanceProcAddr);

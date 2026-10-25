@@ -14,8 +14,6 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
-#include <GLFW/glfw3.h>
-
 #include <cassert>
 #include <cstddef>
 #include <exception>
@@ -75,12 +73,6 @@ bool Backend::start(gfx::GfxSystem &gfx) noexcept
 	m_state = State::Started;
 	Log::info("Starting Vulkan backend");
 
-	if (!loadPreInstanceApi()) {
-		Log::error("Loading pre-instance Vulkan API failed");
-		stop();
-		return false;
-	}
-
 	if (!doStart(gfx)) {
 		stop();
 		return false;
@@ -108,10 +100,6 @@ bool Backend::doStart(gfx::GfxSystem &gfx) noexcept
 		m_gfx_system = &gfx;
 		m_instance = m_gfx_system->instance();
 		m_device = m_gfx_system->device();
-
-		if (!loadInstanceLevelApi(m_instance->handle())) {
-			return false;
-		}
 
 		if (!loadDeviceLevelApi(m_device->handle())) {
 			return false;
@@ -162,7 +150,6 @@ void Backend::doStop() noexcept
 	m_impl.destructModule(m_shader_module_collection);
 
 	unloadDeviceLevelApi();
-	unloadInstanceLevelApi();
 
 	m_device = nullptr;
 	m_instance = nullptr;
@@ -184,69 +171,19 @@ std::string_view Backend::stateToString(State state) noexcept
 
 // API lodaing/unloading methods
 
-bool Backend::loadPreInstanceApi() noexcept
-{
-#define TRY_LOAD(name) \
-	name = reinterpret_cast<PFN_##name>(glfwGetInstanceProcAddress(VK_NULL_HANDLE, #name)); \
-	if (!name) { \
-		Log::warn("Can't load pre-instance Vulkan API {}", #name); \
-		is_ok = false; \
-	}
-
-	bool is_ok = true;
-	TRY_LOAD(vkEnumerateInstanceVersion)
-	TRY_LOAD(vkEnumerateInstanceExtensionProperties)
-	TRY_LOAD(vkEnumerateInstanceLayerProperties)
-	TRY_LOAD(vkCreateInstance)
-
-	return is_ok;
-#undef TRY_LOAD
-}
-
-bool Backend::loadInstanceLevelApi(VkInstance instance) noexcept
-{
-#define TRY_LOAD(name) \
-	name = reinterpret_cast<PFN_##name>(glfwGetInstanceProcAddress(instance, #name)); \
-	if (!name) { \
-		Log::warn("Can't load instance-level Vulkan API {}", #name); \
-		is_ok = false; \
-	}
-
-	bool is_ok = true;
-#define VK_INSTANCE_API_ENTRY(name) TRY_LOAD(name)
-#define VK_DEVICE_API_ENTRY(name)
-#include <voxen/client/vulkan/api_table.in>
-#undef VK_DEVICE_API_ENTRY
-#undef VK_INSTANCE_API_ENTRY
-
-	return is_ok;
-#undef TRY_LOAD
-}
-
-void Backend::unloadInstanceLevelApi() noexcept
-{
-#define VK_INSTANCE_API_ENTRY(name) name = nullptr;
-#define VK_DEVICE_API_ENTRY(name)
-#include <voxen/client/vulkan/api_table.in>
-#undef VK_DEVICE_API_ENTRY
-#undef VK_INSTANCE_API_ENTRY
-}
-
 bool Backend::loadDeviceLevelApi(VkDevice device) noexcept
 {
 #define TRY_LOAD(name) \
-	name = reinterpret_cast<PFN_##name>(vkGetDeviceProcAddr(device, #name)); \
+	name = reinterpret_cast<PFN_##name>(m_instance->dt().vkGetDeviceProcAddr(device, #name)); \
 	if (!name) { \
 		Log::warn("Can't load device-level Vulkan API {}", #name); \
 		is_ok = false; \
 	}
 
 	bool is_ok = true;
-#define VK_INSTANCE_API_ENTRY(name)
 #define VK_DEVICE_API_ENTRY(name) TRY_LOAD(name)
 #include <voxen/client/vulkan/api_table.in>
 #undef VK_DEVICE_API_ENTRY
-#undef VK_INSTANCE_API_ENTRY
 
 	return is_ok;
 #undef TRY_LOAD
@@ -254,11 +191,9 @@ bool Backend::loadDeviceLevelApi(VkDevice device) noexcept
 
 void Backend::unloadDeviceLevelApi() noexcept
 {
-#define VK_INSTANCE_API_ENTRY(name)
 #define VK_DEVICE_API_ENTRY(name) name = nullptr;
 #include <voxen/client/vulkan/api_table.in>
 #undef VK_DEVICE_API_ENTRY
-#undef VK_INSTANCE_API_ENTRY
 }
 
 } // namespace voxen::client::vulkan
