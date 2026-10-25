@@ -34,7 +34,7 @@ public:
 	// This is not directly related to the presentation latency.
 	constexpr static uint32_t MAX_IMAGES = 4;
 
-	Swapchain(Device &device, os::GlfwWindow &window);
+	Swapchain(Device &device, os::Window &window);
 	Swapchain(Swapchain &&) = delete;
 	Swapchain(const Swapchain &) = delete;
 	Swapchain &operator=(Swapchain &&) = delete;
@@ -122,7 +122,7 @@ private:
 	constexpr static uint32_t NO_IMAGE_MARKER = UINT32_MAX;
 
 	Device &m_device;
-	os::GlfwWindow &m_window;
+	os::Window &m_window;
 
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;

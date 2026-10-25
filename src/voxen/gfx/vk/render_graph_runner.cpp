@@ -196,7 +196,7 @@ void RenderGraphRunner::visitCommand(RenderGraphExecution &exec, RenderGraphPriv
 	cmd.callback(*m_graph, exec);
 }
 
-RenderGraphRunner::RenderGraphRunner(GfxSystem &gfx, os::GlfwWindow &window)
+RenderGraphRunner::RenderGraphRunner(GfxSystem &gfx, os::Window &window)
 	: m_gfx(gfx), m_device(*gfx.device()), m_window(window)
 {
 	m_private = std::make_shared<RenderGraphPrivate>(m_gfx, m_window);

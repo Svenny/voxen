@@ -5,7 +5,6 @@
 #include <cassert>
 #include <voxen/util/log.hpp>
 
-#include <GLFW/glfw3.h>
 #include <extras/string_utils.hpp>
 
 using std::make_pair;
@@ -13,134 +12,138 @@ using std::string;
 using std::string_view;
 using std::tuple;
 
+using voxen::os::Key;
+using voxen::os::KeyModBit;
+using voxen::os::MouseButton;
+
 namespace voxen::client
 {
 
 // clang-format off: turns this array into a mess
-const std::array<std::pair<int, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
-	make_pair(GLFW_KEY_SPACE, "SPACE"),
-	make_pair(GLFW_KEY_APOSTROPHE, "APOSTROPHE"), /* ' */
-	make_pair(GLFW_KEY_COMMA, "COMMA"), /* , */
-	make_pair(GLFW_KEY_MINUS, "MINUS"), /* - */
-	make_pair(GLFW_KEY_PERIOD, "PERIOD"), /* . */
-	make_pair(GLFW_KEY_SLASH, "SLASH"), /* / */
-	make_pair(GLFW_KEY_0, "0"),
-	make_pair(GLFW_KEY_1, "1"),
-	make_pair(GLFW_KEY_2, "2"),
-	make_pair(GLFW_KEY_3, "3"),
-	make_pair(GLFW_KEY_4, "4"),
-	make_pair(GLFW_KEY_5, "5"),
-	make_pair(GLFW_KEY_6, "6"),
-	make_pair(GLFW_KEY_7, "7"),
-	make_pair(GLFW_KEY_8, "8"),
-	make_pair(GLFW_KEY_9, "9"),
-	make_pair(GLFW_KEY_SEMICOLON, "SEMICOLON"), /* ; */
-	make_pair(GLFW_KEY_EQUAL, "EQUAL"), /* = */
-	make_pair(GLFW_KEY_A, "A"),
-	make_pair(GLFW_KEY_B, "B"),
-	make_pair(GLFW_KEY_C, "C"),
-	make_pair(GLFW_KEY_D, "D"),
-	make_pair(GLFW_KEY_E, "E"),
-	make_pair(GLFW_KEY_F, "F"),
-	make_pair(GLFW_KEY_G, "G"),
-	make_pair(GLFW_KEY_H, "H"),
-	make_pair(GLFW_KEY_I, "I"),
-	make_pair(GLFW_KEY_J, "J"),
-	make_pair(GLFW_KEY_K, "K"),
-	make_pair(GLFW_KEY_L, "L"),
-	make_pair(GLFW_KEY_M, "M"),
-	make_pair(GLFW_KEY_N, "N"),
-	make_pair(GLFW_KEY_O, "O"),
-	make_pair(GLFW_KEY_P, "P"),
-	make_pair(GLFW_KEY_Q, "Q"),
-	make_pair(GLFW_KEY_R, "R"),
-	make_pair(GLFW_KEY_S, "S"),
-	make_pair(GLFW_KEY_T, "T"),
-	make_pair(GLFW_KEY_U, "U"),
-	make_pair(GLFW_KEY_V, "V"),
-	make_pair(GLFW_KEY_W, "W"),
-	make_pair(GLFW_KEY_X, "X"),
-	make_pair(GLFW_KEY_Y, "Y"),
-	make_pair(GLFW_KEY_Z, "Z"),
-	make_pair(GLFW_KEY_LEFT_BRACKET, "["), /* [ */
-	make_pair(GLFW_KEY_BACKSLASH, "\\"), /* \ */
-	make_pair(GLFW_KEY_RIGHT_BRACKET, "]"), /* ] */
-	make_pair(GLFW_KEY_GRAVE_ACCENT, "`"), /* ` */
-	make_pair(GLFW_KEY_ESCAPE, "ESCAPE"),
-	make_pair(GLFW_KEY_ENTER, "ENTER"),
-	make_pair(GLFW_KEY_TAB, "TAB"),
-	make_pair(GLFW_KEY_BACKSPACE, "BACKSPACE"),
-	make_pair(GLFW_KEY_INSERT, "INSERT"),
-	make_pair(GLFW_KEY_DELETE, "DELETE"),
-	make_pair(GLFW_KEY_RIGHT, "RIGHT"),
-	make_pair(GLFW_KEY_LEFT, "LEFT"),
-	make_pair(GLFW_KEY_DOWN, "DOWN"),
-	make_pair(GLFW_KEY_UP, "UP"),
-	make_pair(GLFW_KEY_PAGE_UP, "PAGE_UP"),
-	make_pair(GLFW_KEY_PAGE_DOWN, "PAGE_DOWN"),
-	make_pair(GLFW_KEY_HOME, "HOME"),
-	make_pair(GLFW_KEY_END, "END"),
-	make_pair(GLFW_KEY_PRINT_SCREEN, "PRINTSCREEN"),
-	make_pair(GLFW_KEY_PAUSE, "PAUSE"),
-	make_pair(GLFW_KEY_F1, "F1"),
-	make_pair(GLFW_KEY_F2, "F2"),
-	make_pair(GLFW_KEY_F3, "F3"),
-	make_pair(GLFW_KEY_F4, "F4"),
-	make_pair(GLFW_KEY_F5, "F5"),
-	make_pair(GLFW_KEY_F6, "F6"),
-	make_pair(GLFW_KEY_F7, "F7"),
-	make_pair(GLFW_KEY_F8, "F8"),
-	make_pair(GLFW_KEY_F9, "F9"),
-	make_pair(GLFW_KEY_F10, "F10"),
-	make_pair(GLFW_KEY_F11, "F11"),
-	make_pair(GLFW_KEY_F12, "F12"),
-	make_pair(GLFW_KEY_KP_0, "NUMPAD_0"),
-	make_pair(GLFW_KEY_KP_1, "NUMPAD_1"),
-	make_pair(GLFW_KEY_KP_2, "NUMPAD_2"),
-	make_pair(GLFW_KEY_KP_3, "NUMPAD_3"),
-	make_pair(GLFW_KEY_KP_4, "NUMPAD_4"),
-	make_pair(GLFW_KEY_KP_5, "NUMPAD_5"),
-	make_pair(GLFW_KEY_KP_6, "NUMPAD_6"),
-	make_pair(GLFW_KEY_KP_7, "NUMPAD_7"),
-	make_pair(GLFW_KEY_KP_8, "NUMPAD_8"),
-	make_pair(GLFW_KEY_KP_9, "NUMPAD_9"),
-	make_pair(GLFW_KEY_KP_DECIMAL, "NUMPAD_DECIMAL"),
-	make_pair(GLFW_KEY_KP_DIVIDE, "NUMPAD_DIVIDE"),
-	make_pair(GLFW_KEY_KP_MULTIPLY, "NUMPAD_MULTIPLY"),
-	make_pair(GLFW_KEY_KP_SUBTRACT, "NUMPAD_SUBTRACT"),
-	make_pair(GLFW_KEY_KP_ADD, "NUMPAD_ADD"),
-	make_pair(GLFW_KEY_KP_ENTER, "NUMPAD_ENTER"),
-	make_pair(GLFW_KEY_KP_EQUAL, "NUMPAD_EQUAL"),
-	make_pair(GLFW_KEY_MENU, "MENU")
+const std::array<std::pair<Key, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
+	make_pair(Key::Space, "SPACE"),
+	make_pair(Key::Apostrophe, "APOSTROPHE"), /* ' */
+	make_pair(Key::Comma, "COMMA"), /* , */
+	make_pair(Key::Minus, "MINUS"), /* - */
+	make_pair(Key::Period, "PERIOD"), /* . */
+	make_pair(Key::Slash, "SLASH"), /* / */
+	make_pair(Key::Digit0, "0"),
+	make_pair(Key::Digit1, "1"),
+	make_pair(Key::Digit2, "2"),
+	make_pair(Key::Digit3, "3"),
+	make_pair(Key::Digit4, "4"),
+	make_pair(Key::Digit5, "5"),
+	make_pair(Key::Digit6, "6"),
+	make_pair(Key::Digit7, "7"),
+	make_pair(Key::Digit8, "8"),
+	make_pair(Key::Digit9, "9"),
+	make_pair(Key::Semicolon, "SEMICOLON"), /* ; */
+	make_pair(Key::Equal, "EQUAL"), /* = */
+	make_pair(Key::A, "A"),
+	make_pair(Key::B, "B"),
+	make_pair(Key::C, "C"),
+	make_pair(Key::D, "D"),
+	make_pair(Key::E, "E"),
+	make_pair(Key::F, "F"),
+	make_pair(Key::G, "G"),
+	make_pair(Key::H, "H"),
+	make_pair(Key::I, "I"),
+	make_pair(Key::J, "J"),
+	make_pair(Key::K, "K"),
+	make_pair(Key::L, "L"),
+	make_pair(Key::M, "M"),
+	make_pair(Key::N, "N"),
+	make_pair(Key::O, "O"),
+	make_pair(Key::P, "P"),
+	make_pair(Key::Q, "Q"),
+	make_pair(Key::R, "R"),
+	make_pair(Key::S, "S"),
+	make_pair(Key::T, "T"),
+	make_pair(Key::U, "U"),
+	make_pair(Key::V, "V"),
+	make_pair(Key::W, "W"),
+	make_pair(Key::X, "X"),
+	make_pair(Key::Y, "Y"),
+	make_pair(Key::Z, "Z"),
+	make_pair(Key::LeftBracket, "["), /* [ */
+	make_pair(Key::Backslash, "\\"), /* \ */
+	make_pair(Key::RightBracket, "]"), /* ] */
+	make_pair(Key::Grave, "`"), /* ` */
+	make_pair(Key::Escape, "ESCAPE"),
+	make_pair(Key::Enter, "ENTER"),
+	make_pair(Key::Tab, "TAB"),
+	make_pair(Key::Backspace, "BACKSPACE"),
+	make_pair(Key::Insert, "INSERT"),
+	make_pair(Key::Delete, "DELETE"),
+	make_pair(Key::Right, "RIGHT"),
+	make_pair(Key::Left, "LEFT"),
+	make_pair(Key::Down, "DOWN"),
+	make_pair(Key::Up, "UP"),
+	make_pair(Key::PageUp, "PAGE_UP"),
+	make_pair(Key::PageDown, "PAGE_DOWN"),
+	make_pair(Key::Home, "HOME"),
+	make_pair(Key::End, "END"),
+	make_pair(Key::PrintScreen, "PRINTSCREEN"),
+	make_pair(Key::Pause, "PAUSE"),
+	make_pair(Key::F1, "F1"),
+	make_pair(Key::F2, "F2"),
+	make_pair(Key::F3, "F3"),
+	make_pair(Key::F4, "F4"),
+	make_pair(Key::F5, "F5"),
+	make_pair(Key::F6, "F6"),
+	make_pair(Key::F7, "F7"),
+	make_pair(Key::F8, "F8"),
+	make_pair(Key::F9, "F9"),
+	make_pair(Key::F10, "F10"),
+	make_pair(Key::F11, "F11"),
+	make_pair(Key::F12, "F12"),
+	make_pair(Key::Kp0, "NUMPAD_0"),
+	make_pair(Key::Kp1, "NUMPAD_1"),
+	make_pair(Key::Kp2, "NUMPAD_2"),
+	make_pair(Key::Kp3, "NUMPAD_3"),
+	make_pair(Key::Kp4, "NUMPAD_4"),
+	make_pair(Key::Kp5, "NUMPAD_5"),
+	make_pair(Key::Kp6, "NUMPAD_6"),
+	make_pair(Key::Kp7, "NUMPAD_7"),
+	make_pair(Key::Kp8, "NUMPAD_8"),
+	make_pair(Key::Kp9, "NUMPAD_9"),
+	make_pair(Key::KpDecimal, "NUMPAD_DECIMAL"),
+	make_pair(Key::KpDivide, "NUMPAD_DIVIDE"),
+	make_pair(Key::KpMultiply, "NUMPAD_MULTIPLY"),
+	make_pair(Key::KpSubtract, "NUMPAD_SUBTRACT"),
+	make_pair(Key::KpAdd, "NUMPAD_ADD"),
+	make_pair(Key::KpEnter, "NUMPAD_ENTER"),
+	make_pair(Key::KpEqual, "NUMPAD_EQUAL"),
+	make_pair(Key::Menu, "MENU")
 
-	// NOTE(sirgienko) Disable due strange logic press/release logic from GLFW
+	// NOTE(sirgienko) Disabled because modifier keys change modifier state themselves.
 	// For example, you press LCONTROL
 	// Press event: LCONTROL
 	// Release event: LCONTROL+CONTROL
 	// So, mods setted only on release, which broke logic for some actions
 	/*
-	make_pair(GLFW_KEY_CAPS_LOCK, "CAPS_LOCK"),
-	make_pair(GLFW_KEY_SCROLL_LOCK, "SCROLL_LOCK"),
-	make_pair(GLFW_KEY_NUM_LOCK, "NUM_LOCK"),
-	make_pair(GLFW_KEY_LEFT_SHIFT, "LSHIFT"),
-	make_pair(GLFW_KEY_LEFT_CONTROL, "LCONTROL"),
-	make_pair(GLFW_KEY_LEFT_ALT, "LALT"),
-	make_pair(GLFW_KEY_LEFT_SUPER, "LSUPER"),
-	make_pair(GLFW_KEY_RIGHT_SHIFT, "RSHIFT"),
-	make_pair(GLFW_KEY_RIGHT_CONTROL, "RCONTROL"),
-	make_pair(GLFW_KEY_RIGHT_ALT, "RALT"),
-	make_pair(GLFW_KEY_RIGHT_SUPER, "RSUPER"),
+	make_pair(Key::CapsLock, "CAPS_LOCK"),
+	make_pair(Key::ScrollLock, "SCROLL_LOCK"),
+	make_pair(Key::NumLock, "NUM_LOCK"),
+	make_pair(Key::LeftShift, "LSHIFT"),
+	make_pair(Key::LeftControl, "LCONTROL"),
+	make_pair(Key::LeftAlt, "LALT"),
+	make_pair(Key::LeftSuper, "LSUPER"),
+	make_pair(Key::RightShift, "RSHIFT"),
+	make_pair(Key::RightControl, "RCONTROL"),
+	make_pair(Key::RightAlt, "RALT"),
+	make_pair(Key::RightSuper, "RSUPER"),
 	*/
 };
 // clang-format on
 
-const std::array<std::pair<int, string>, 6> InputEventAdapter::MODS_2_STRING = {
-	make_pair(GLFW_MOD_SHIFT, "Shift"),
-	make_pair(GLFW_MOD_CONTROL, "Control"),
-	make_pair(GLFW_MOD_ALT, "Alt"),
-	make_pair(GLFW_MOD_SUPER, "Super"),
-	make_pair(GLFW_MOD_CAPS_LOCK, "CapsLock"),
-	make_pair(GLFW_MOD_NUM_LOCK, "Numlock"),
+const std::array<std::pair<KeyModBit, string>, 6> InputEventAdapter::MODS_2_STRING = {
+	make_pair(KeyModBit::Shift, "Shift"),
+	make_pair(KeyModBit::Control, "Control"),
+	make_pair(KeyModBit::Alt, "Alt"),
+	make_pair(KeyModBit::Super, "Super"),
+	make_pair(KeyModBit::CapsLock, "CapsLock"),
+	make_pair(KeyModBit::NumLock, "Numlock"),
 };
 
 const std::array<std::pair<PlayerActionEvent, string>, 13> InputEventAdapter::PLAYERACTIONS_2_STRINGS = {
@@ -159,15 +162,12 @@ const std::array<std::pair<PlayerActionEvent, string>, 13> InputEventAdapter::PL
 	make_pair(PlayerActionEvent::ModifyBlock, "modify block"),
 };
 
-const std::array<std::pair<int, string>, 8> InputEventAdapter::MOUSEKEY_2_STRING = {
-	make_pair(GLFW_MOUSE_BUTTON_LEFT, "MOUSE_LEFT"),
-	make_pair(GLFW_MOUSE_BUTTON_RIGHT, "MOUSE_RIGHT"),
-	make_pair(GLFW_MOUSE_BUTTON_MIDDLE, "MOUSE_MIDDLE"),
-	make_pair(GLFW_MOUSE_BUTTON_4, "MOUSE_4"),
-	make_pair(GLFW_MOUSE_BUTTON_5, "MOUSE_5"),
-	make_pair(GLFW_MOUSE_BUTTON_6, "MOUSE_6"),
-	make_pair(GLFW_MOUSE_BUTTON_7, "MOUSE_7"),
-	make_pair(GLFW_MOUSE_BUTTON_8, "MOUSE_8"),
+const std::array<std::pair<MouseButton, string>, 5> InputEventAdapter::MOUSEKEY_2_STRING = {
+	make_pair(MouseButton::Left, "MOUSE_LEFT"),
+	make_pair(MouseButton::Right, "MOUSE_RIGHT"),
+	make_pair(MouseButton::Middle, "MOUSE_MIDDLE"),
+	make_pair(MouseButton::X1, "MOUSE_4"),
+	make_pair(MouseButton::X2, "MOUSE_5"),
 };
 
 std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToActionMap;
@@ -177,45 +177,54 @@ string InputEventAdapter::actionSettingsPath = "configs/action_settings.toml";
 Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
 Config *InputEventAdapter::actionSettingsConfig = nullptr;
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwKeyboardToPlayerEvent(int key, int scancode, int action,
-	int mods)
+namespace
 {
-	// `action` have three state: press, release, repeat. We support for actions
-	// only press/release logic at this moment so pass only values with two state:
-	// press/repreate - true and release - false More info:
-	// https://www.glfw.org/docs/3.3.2/group__input.html#ga2485743d0b59df3791c45951c4195265
-	(void) scancode;
+
+// Lock key states are not a part of bindings
+int bindingMods(os::KeyMods mods) noexcept
+{
+	mods.unset(KeyModBit::CapsLock);
+	mods.unset(KeyModBit::NumLock);
+	return mods.to_underlying();
+}
+
+} // namespace
+
+std::pair<PlayerActionEvent, bool> InputEventAdapter::keyToPlayerEvent(const os::KeyEvent &event)
+{
+	// We support only press/release logic for actions at this moment,
+	// so key repeats are treated as presses (activations).
+	int mods = bindingMods(event.mods);
 
 	// TODO: this is even shittier than the rest of input mapping logic
 	// but I don't want to add 10 whole new mappings just for this.
-	if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9 && mods == 0) {
+	if (event.key >= Key::Digit1 && event.key <= Key::Digit0 && mods == 0) {
 		int base = int(PlayerActionEvent::ChooseItem0);
-		return make_pair(PlayerActionEvent(base + key - GLFW_KEY_0), action != GLFW_RELEASE);
+		int digit = (event.key == Key::Digit0) ? 0 : int(event.key) - int(Key::Digit1) + 1;
+		return make_pair(PlayerActionEvent(base + digit), event.pressed);
 	}
 
-	auto search = keyboardKeyToActionMap.find(tuple<int, int>(key, mods));
+	auto search = keyboardKeyToActionMap.find(tuple<int, int>(int(event.key), mods));
 	if (search != keyboardKeyToActionMap.end()) {
-		return make_pair(search->second, action != GLFW_RELEASE);
+		return make_pair(search->second, event.pressed);
 	} else {
 		return make_pair(PlayerActionEvent::None, true);
 	}
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseKeyToPlayerEvent(int button, int action, int mods)
+std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseButtonToPlayerEvent(const os::MouseButtonEvent &event)
 {
-	auto search = mouseKeyToActionMap.find(tuple<int, int>(button, mods));
+	auto search = mouseKeyToActionMap.find(tuple<int, int>(int(event.button), bindingMods(event.mods)));
 	if (search != mouseKeyToActionMap.end()) {
-		return make_pair(search->second, action != GLFW_RELEASE);
+		return make_pair(search->second, event.pressed);
 	} else {
 		return make_pair(PlayerActionEvent::None, true);
 	}
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::glfwMouseScrollToPlayerEvent(double xoffset, double yoffset)
+std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseWheelToPlayerEvent(const os::MouseWheelEvent &event)
 {
-	(void) xoffset;
-
-	auto search = scrollToActionMap.find(yoffset >= 0);
+	auto search = scrollToActionMap.find(event.delta.y >= 0);
 	if (search != scrollToActionMap.end()) {
 		return make_pair(search->second, true);
 	} else {
@@ -269,56 +278,55 @@ Config::Scheme InputEventAdapter::actionSettingsScheme()
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveForward)),
 		"Fly forward",
-		keyboardKeyToString(GLFW_KEY_W, 0),
+		keyboardKeyToString(Key::W, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveRight)),
 		"Fly right",
-		keyboardKeyToString(GLFW_KEY_D, 0),
+		keyboardKeyToString(Key::D, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveLeft)),
 		"Fly left",
-		keyboardKeyToString(GLFW_KEY_A, 0),
+		keyboardKeyToString(Key::A, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveBackward)),
 		"Fly backward",
-		keyboardKeyToString(GLFW_KEY_S, 0),
+		keyboardKeyToString(Key::S, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveDown)),
 		"Fly down",
-		keyboardKeyToString(GLFW_KEY_C, 0),
+		keyboardKeyToString(Key::C, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::MoveUp)),
 		"Fly up",
-		keyboardKeyToString(GLFW_KEY_SPACE, 0),
+		keyboardKeyToString(Key::Space, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::RollLeft)),
 		"Roll counterclockwise",
-		keyboardKeyToString(GLFW_KEY_Q, 0),
+		keyboardKeyToString(Key::Q, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::RollRight)),
 		"Rool clockwise",
-		keyboardKeyToString(GLFW_KEY_E, 0),
+		keyboardKeyToString(Key::E, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::PauseGame)),
 		"Pause movement and release cursor",
-		mouseButtonToString(GLFW_MOUSE_BUTTON_LEFT, 0) + string(KEYS_SEQUENCE_DELIMITER)
-			+ keyboardKeyToString(GLFW_KEY_ESCAPE, 0),
+		mouseButtonToString(MouseButton::Left, 0) + string(KEYS_SEQUENCE_DELIMITER) + keyboardKeyToString(Key::Escape, 0),
 	});
 
 	s.push_back({
@@ -337,13 +345,13 @@ Config::Scheme InputEventAdapter::actionSettingsScheme()
 		player_section,
 		string(actionToString(PlayerActionEvent::LockChunkLoadingPoint)),
 		"Lock chunk-loading position",
-		keyboardKeyToString(GLFW_KEY_F, 0),
+		keyboardKeyToString(Key::F, 0),
 	});
 	s.push_back({
 		player_section,
 		string(actionToString(PlayerActionEvent::ModifyBlock)),
 		"Modify the block in front of you",
-		mouseButtonToString(GLFW_MOUSE_BUTTON_RIGHT, 0),
+		mouseButtonToString(MouseButton::Right, 0),
 	});
 
 	return s;
@@ -369,7 +377,7 @@ PlayerActionEvent InputEventAdapter::stringToAction(string_view s)
 	return PlayerActionEvent::None;
 }
 
-string InputEventAdapter::keyboardKeyToString(int key, int mods)
+string InputEventAdapter::keyboardKeyToString(Key key, int mods)
 {
 	string result;
 
@@ -380,7 +388,7 @@ string InputEventAdapter::keyboardKeyToString(int key, int mods)
 	}
 
 	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
-		if (mods & it->first) {
+		if (mods & int(it->first)) {
 			result += string(KEYS_DELIMITER) + it->second;
 		}
 	}
@@ -397,7 +405,7 @@ std::string InputEventAdapter::scrollToString(double yoffset)
 	}
 }
 
-string InputEventAdapter::mouseButtonToString(int button, int mods)
+string InputEventAdapter::mouseButtonToString(MouseButton button, int mods)
 {
 	string result;
 
@@ -408,7 +416,7 @@ string InputEventAdapter::mouseButtonToString(int button, int mods)
 	}
 
 	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
-		if (mods & it->first) {
+		if (mods & int(it->first)) {
 			result += string(KEYS_DELIMITER) + it->second;
 		}
 	}
@@ -420,15 +428,15 @@ int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int> *tuple_ptr,
 {
 	if (s.find(KEYS_DELIMITER) == string::npos) {
 		// Simple form, just only key without any modifiers
-		for (const std::pair<int, string> &pair : KEYCODE_2_STRING) {
+		for (const auto &pair : KEYCODE_2_STRING) {
 			if (pair.second == s) {
-				*tuple_ptr = tuple<int, int>(pair.first, 0);
+				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
 				return 1;
 			}
 		}
-		for (const std::pair<int, string> &pair : MOUSEKEY_2_STRING) {
+		for (const auto &pair : MOUSEKEY_2_STRING) {
 			if (pair.second == s) {
-				*tuple_ptr = tuple<int, int>(pair.first, 0);
+				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
 				return 2;
 			}
 		}
@@ -511,9 +519,9 @@ void InputEventAdapter::parseComplexToken(string_view s, int &key, int &mods, in
 	}
 
 	bool found = false;
-	for (const std::pair<int, string> &pair : KEYCODE_2_STRING) {
+	for (const auto &pair : KEYCODE_2_STRING) {
 		if (pair.second == s) {
-			key = pair.first;
+			key = int(pair.first);
 			found = true;
 			key_type = 1;
 			break;
@@ -521,9 +529,9 @@ void InputEventAdapter::parseComplexToken(string_view s, int &key, int &mods, in
 	}
 
 	if (!found) {
-		for (const std::pair<int, string> &pair : MOUSEKEY_2_STRING) {
+		for (const auto &pair : MOUSEKEY_2_STRING) {
 			if (pair.second == s) {
-				key = pair.first;
+				key = int(pair.first);
 				found = true;
 				key_type = 2;
 				break;
@@ -532,9 +540,9 @@ void InputEventAdapter::parseComplexToken(string_view s, int &key, int &mods, in
 	}
 
 	if (!found) {
-		for (const std::pair<int, string> &pair : MODS_2_STRING) {
+		for (const auto &pair : MODS_2_STRING) {
 			if (pair.second == s) {
-				mods |= pair.first;
+				mods |= int(pair.first);
 				found = true;
 				break;
 			}

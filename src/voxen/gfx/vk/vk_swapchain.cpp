@@ -4,15 +4,13 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
-#include <voxen/os/glfw_window.hpp>
+#include <voxen/os/window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
 #include <extras/dyn_array.hpp>
-
-#include <GLFW/glfw3.h>
 
 #include <algorithm>
 #include <cassert>
@@ -22,7 +20,7 @@
 namespace voxen::gfx::vk
 {
 
-Swapchain::Swapchain(Device &device, os::GlfwWindow &window) : m_device(device), m_window(window)
+Swapchain::Swapchain(Device &device, os::Window &window) : m_device(device), m_window(window)
 {
 	if (!isCompatible(device)) {
 		Log::error("Tried to create swapchain from device that can't present!");
@@ -276,7 +274,7 @@ bool Swapchain::isCompatible(Device &device)
 	VkInstance instance = device.instance().handle();
 	VkPhysicalDevice phys_dev = device.physicalDevice().handle();
 
-	return glfwGetPhysicalDevicePresentationSupport(instance, phys_dev, device.info().main_queue_family) == GLFW_TRUE;
+	return os::Window::vulkanPresentationSupport(instance, phys_dev, device.info().main_queue_family);
 }
 
 void Swapchain::createPerFrame()
@@ -299,10 +297,9 @@ void Swapchain::createSurface()
 {
 	assert(m_surface == VK_NULL_HANDLE);
 
-	VkResult res = glfwCreateWindowSurface(m_device.instance().handle(), m_window.glfwHandle(), nullptr, &m_surface);
-	if (res != VK_SUCCESS) {
-		Log::error("Window surface creation failed - {}", VulkanUtils::getVkResultString(res));
-		throw VulkanException(res, "glfwCreateWindowSurface");
+	if (!m_window.createVulkanSurface(m_device.instance().handle(), &m_surface)) {
+		Log::error("Window surface creation failed");
+		throw VulkanException(VK_ERROR_INITIALIZATION_FAILED, "os::Window::createVulkanSurface");
 	}
 	// Destroy the newly created surface immediately if a next step fails
 	defer_fail { destroySurface(); };

@@ -2,56 +2,46 @@
 
 #include <voxen/client/input_event_adapter.hpp>
 #include <voxen/client/player_action_events.hpp>
+#include <voxen/util/log.hpp>
 #include <voxen/world/world_state.hpp>
 
 #include <utility>
+#include <variant>
 
 namespace voxen::client
 {
 
-Gui::Gui(os::GlfwWindow& window) : m_gameview(window)
-{
-	window.attachGUI(*this);
-}
+Gui::Gui(os::Window& window) : m_gameview(window) {}
 
 Gui::~Gui() noexcept
 {
 	InputEventAdapter::release();
 }
 
-void Gui::handleKey(int key, int scancode, int action, int mods)
+void Gui::handleEvent(const os::WindowEvent& event)
 {
-	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwKeyboardToPlayerEvent(key, scancode, action, mods);
-	if (input.first == PlayerActionEvent::None) {
-		return;
+	std::pair<PlayerActionEvent, bool> input(PlayerActionEvent::None, false);
+
+	if (auto* key = std::get_if<os::KeyEvent>(&event)) {
+		input = InputEventAdapter::keyToPlayerEvent(*key);
+	} else if (auto* button = std::get_if<os::MouseButtonEvent>(&event)) {
+		input = InputEventAdapter::mouseButtonToPlayerEvent(*button);
+	} else if (auto* wheel = std::get_if<os::MouseWheelEvent>(&event)) {
+		input = InputEventAdapter::mouseWheelToPlayerEvent(*wheel);
+	} else if (auto* motion = std::get_if<os::MouseMotionEvent>(&event)) {
+		m_gameview.handleMouseMotion(motion->delta);
+	} else if (auto* resize = std::get_if<os::WindowResizeEvent>(&event)) {
+		m_gameview.handleResize(resize->framebuffer_size);
+	} else if (auto* text = std::get_if<os::TextInputEvent>(&event)) {
+		// Nothing consumes text input yet
+		Log::debug("Text input: '{}'", text->text);
+	} else if (auto* edit = std::get_if<os::TextEditingEvent>(&event)) {
+		Log::debug("Text composition: '{}', selected [{}, +{})", edit->text, edit->start, edit->length);
 	}
 
-	m_gameview.handleEvent(input.first, input.second);
-}
-
-void Gui::handleCursor(double xpos, double ypos)
-{
-	m_gameview.handleCursor(xpos, ypos);
-}
-
-void Gui::handleMouseKey(int button, int action, int mods)
-{
-	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseKeyToPlayerEvent(button, action, mods);
-	if (input.first == PlayerActionEvent::None) {
-		return;
+	if (input.first != PlayerActionEvent::None) {
+		m_gameview.handleEvent(input.first, input.second);
 	}
-
-	m_gameview.handleEvent(input.first, input.second);
-}
-
-void Gui::handleMouseScroll(double xoffset, double yoffset)
-{
-	std::pair<PlayerActionEvent, bool> input = InputEventAdapter::glfwMouseScrollToPlayerEvent(xoffset, yoffset);
-	if (input.first == PlayerActionEvent::None) {
-		return;
-	}
-
-	m_gameview.handleEvent(input.first, input.second);
 }
 
 GameView& Gui::view()

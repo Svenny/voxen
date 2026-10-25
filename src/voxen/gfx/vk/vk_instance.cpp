@@ -5,6 +5,7 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
+#include <voxen/os/window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
@@ -15,6 +16,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cstring>
+#include <span>
 #include <vector>
 
 namespace voxen::gfx::vk
@@ -86,21 +88,14 @@ void fillDispatchTable(InstanceDispatchTable &dt)
 
 std::vector<const char *> getRequiredInstanceExtensions()
 {
-	uint32_t glfw_ext_count = 0;
-	// GLFW guarantees that on success there will be `VK_KHR_surface` at least
-	const char **glfw_ext_list = glfwGetRequiredInstanceExtensions(&glfw_ext_count);
-
-	std::vector<const char *> ext_list;
-	ext_list.resize(glfw_ext_count);
-	for (uint32_t i = 0; i < glfw_ext_count; i++) {
-		ext_list[i] = glfw_ext_list[i];
-	}
+	std::span<const char *const> window_exts = os::Window::requiredVulkanInstanceExtensions();
+	std::vector<const char *> ext_list(window_exts.begin(), window_exts.end());
 
 	// It is an error to request one extension more than once, so we have to check
-	// that it's not already in GLFW-provided list before adding it ourselves
+	// that it's not already in the window-provided list before adding it ourselves
 	auto addToList = [&](const char *name) {
-		for (uint32_t i = 0; i < glfw_ext_count; i++) {
-			if (!strcmp(glfw_ext_list[i], name)) {
+		for (const char *ext : window_exts) {
+			if (!strcmp(ext, name)) {
 				return;
 			}
 		}
