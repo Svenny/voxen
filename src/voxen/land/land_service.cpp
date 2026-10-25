@@ -2,12 +2,21 @@
 
 #include <voxen/common/shared_object_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
+#include <voxen/land/chunk_key.hpp>
+#include <voxen/land/chunk_ticket.hpp>
+#include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_generator.hpp>
 #include <voxen/land/land_messages.hpp>
+#include <voxen/land/land_state.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
+#include <voxen/land/pseudo_chunk_data.hpp>
+#include <voxen/svc/message_handling.hpp>
+#include <voxen/svc/message_queue.hpp>
+#include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/concentric_octahedra_walker.hpp>
@@ -19,9 +28,17 @@
 
 #include <m/vector.hpp>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <span>
 #include <unordered_map>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace voxen::land

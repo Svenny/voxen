@@ -2,6 +2,7 @@
 
 #include <extras/function_ref.hpp>
 
+#include <type_traits>
 #include <utility>
 
 namespace extras

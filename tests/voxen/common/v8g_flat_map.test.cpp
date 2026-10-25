@@ -1,9 +1,16 @@
 #include <voxen/common/v8g_flat_map.hpp>
 #include <voxen/common/v8g_flat_map_impl.hpp>
+#include <voxen/common/v8g_helpers.hpp>
 
 #include "../../test_common.hpp"
 
+#include <cstdint>
+#include <iterator>
+#include <memory>
 #include <numeric>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace voxen
 {

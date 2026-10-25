@@ -2,6 +2,8 @@
 
 #include "../test_common.hpp"
 
+#include <cstdint>
+
 TEST_CASE("'bitset' free-list features work properly", "[extras::bitset]")
 {
 	extras::bitset<512> set;

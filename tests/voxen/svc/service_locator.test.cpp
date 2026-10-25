@@ -1,9 +1,17 @@
 #include <voxen/svc/service_locator.hpp>
 
+#include <voxen/common/uid.hpp>
+#include <voxen/svc/service_base.hpp>
+#include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
+
 #include "../../voxen_test_common.hpp"
 
 #include <fmt/format.h>
 
+#include <functional>
+#include <memory>
+#include <stdexcept>
 #include <thread>
 
 namespace voxen::svc

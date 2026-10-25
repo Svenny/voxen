@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/common/shared_object_pool.hpp>
+#include <voxen/common/uid.hpp>
 #include <voxen/os/file.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/svc/svc_fwd.hpp>
@@ -8,6 +9,8 @@
 
 #include <extras/pimpl.hpp>
 
+#include <cstddef>
+#include <cstdint>
 #include <expected>
 
 #include <span>

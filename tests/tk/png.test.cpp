@@ -2,7 +2,11 @@
 
 #include "../test_common.hpp"
 
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <span>
+#include <vector>
 
 namespace tk::png
 {

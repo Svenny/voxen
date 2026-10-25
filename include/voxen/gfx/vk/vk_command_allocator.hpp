@@ -6,6 +6,7 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 
+#include <cstdint>
 #include <vector>
 
 namespace voxen::gfx::vk

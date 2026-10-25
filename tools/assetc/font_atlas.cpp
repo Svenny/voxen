@@ -10,10 +10,15 @@
 #include FT_MODULE_H
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ostream>
 #include <sstream>
+#include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace assetc

@@ -7,6 +7,8 @@
 #include <extras/enum_utils.hpp>
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 
 namespace voxen::gfx
 {

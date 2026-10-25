@@ -1,17 +1,29 @@
 #include <voxen/svc/task_service.hpp>
 
+#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/os/time.hpp>
 #include <voxen/svc/engine.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
+#include <voxen/svc/task_handle.hpp>
 
 #include "../../voxen_test_common.hpp"
 
+#include <fmt/format.h>
+
 #include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <ctime>
+#include <memory>
 #include <random>
+#include <span>
+#include <stdexcept>
 #include <thread>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 namespace voxen::svc
 {

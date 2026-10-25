@@ -2,6 +2,11 @@
 
 #include "../../test_common.hpp"
 
+#include <m/vector.hpp>
+
+#include <bit>
+#include <cstdint>
+
 namespace voxen
 {
 

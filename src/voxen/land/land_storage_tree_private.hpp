@@ -1,11 +1,14 @@
 #pragma once
 
 #include <voxen/land/chunk_key.hpp>
+#include <voxen/land/land_fwd.hpp>
 #include <voxen/land/land_storage_tree_node_ptr.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 #include <m/vector.hpp>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 
 namespace voxen::land::detail

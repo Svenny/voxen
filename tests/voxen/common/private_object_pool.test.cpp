@@ -2,7 +2,12 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <random>
+#include <utility>
+#include <vector>
 
 namespace voxen
 {

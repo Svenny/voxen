@@ -5,6 +5,7 @@
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -20,6 +21,10 @@
 #include <m/packing.hpp>
 
 #include <vk_mem_alloc.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 
 namespace voxen::gfx
 {

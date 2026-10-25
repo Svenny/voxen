@@ -5,6 +5,11 @@
 #include <voxen/gfx/ui/ui_render_data.hpp>
 #include <voxen/util/packed_color.hpp>
 
+#include <m/fwd.hpp>
+
+#include <cstddef>
+#include <cstdint>
+
 namespace voxen::gfx::ui::detail
 {
 

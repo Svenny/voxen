@@ -3,6 +3,7 @@
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/visibility.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 

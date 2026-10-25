@@ -3,6 +3,8 @@
 #include <voxen/common/uid.hpp>
 #include <voxen/visibility.hpp>
 
+#include <concepts>
+
 namespace voxen::svc
 {
 

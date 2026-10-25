@@ -8,6 +8,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <utility>
 
 namespace tk::png
 {

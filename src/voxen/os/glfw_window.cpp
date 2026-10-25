@@ -6,7 +6,12 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
+#include <m/vector.hpp>
+
 #include <GLFW/glfw3.h>
+
+#include <stdexcept>
+#include <utility>
 
 namespace voxen::os
 {

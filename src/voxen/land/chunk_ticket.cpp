@@ -6,6 +6,7 @@
 #include "land_private_messages.hpp"
 
 #include <cassert>
+#include <utility>
 
 namespace voxen::land
 {

@@ -3,6 +3,8 @@
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/util/packed_color.hpp>
 
+#include <cstdint>
+
 namespace voxen::land
 {
 

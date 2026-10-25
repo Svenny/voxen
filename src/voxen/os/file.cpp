@@ -16,8 +16,10 @@
 #include <fmt/std.h>
 
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <cinttypes>
+#include <cstdio>
 #include <utility>
 
 namespace voxen::os

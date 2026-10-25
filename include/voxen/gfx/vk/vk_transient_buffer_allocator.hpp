@@ -4,6 +4,7 @@
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 
+#include <cstdint>
 #include <list>
 
 namespace voxen::gfx::vk

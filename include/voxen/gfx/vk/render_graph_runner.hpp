@@ -4,6 +4,7 @@
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/os/os_fwd.hpp>
+#include <voxen/visibility.hpp>
 
 #include <memory>
 

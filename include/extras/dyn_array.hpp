@@ -5,9 +5,12 @@
 #include <extras/attributes.hpp>
 
 #include <algorithm>
+#include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <span>
+#include <type_traits>
 
 namespace extras
 {

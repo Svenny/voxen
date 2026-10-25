@@ -5,6 +5,7 @@
 #include "land_storage_tree_private.hpp"
 
 #include <cassert>
+#include <cstddef>
 #include <utility>
 
 namespace voxen::land

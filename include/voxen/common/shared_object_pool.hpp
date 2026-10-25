@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <atomic>
 #include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
 #include <utility>
 
 namespace voxen

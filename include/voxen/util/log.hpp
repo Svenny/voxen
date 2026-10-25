@@ -7,6 +7,8 @@
 
 #include <fmt/base.h>
 
+#include <string_view>
+
 namespace voxen
 {
 

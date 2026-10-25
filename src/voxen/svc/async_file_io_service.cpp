@@ -13,8 +13,13 @@
 
 #include <extras/defer.hpp>
 
+#include <functional>
+#include <memory>
+#include <mutex>
 #include <queue>
 #include <thread>
+#include <tuple>
+#include <utility>
 #include <variant>
 
 namespace voxen::svc

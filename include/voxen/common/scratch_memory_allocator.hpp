@@ -5,6 +5,7 @@
 
 #include <extras/pimpl.hpp>
 
+#include <cstddef>
 #include <cstdint>
 
 namespace voxen

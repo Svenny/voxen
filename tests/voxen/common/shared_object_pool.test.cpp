@@ -2,8 +2,14 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <algorithm>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
 namespace voxen
 {

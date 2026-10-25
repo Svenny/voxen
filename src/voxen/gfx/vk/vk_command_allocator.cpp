@@ -6,6 +6,8 @@
 #include <extras/defer.hpp>
 
 #include <cassert>
+#include <cstdio>
+#include <utility>
 
 namespace voxen::gfx::vk
 {

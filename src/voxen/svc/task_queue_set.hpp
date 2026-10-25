@@ -5,6 +5,8 @@
 #include <extras/hardware_params.hpp>
 
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace voxen::svc::detail

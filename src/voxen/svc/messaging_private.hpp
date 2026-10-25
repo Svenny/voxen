@@ -7,9 +7,13 @@
 
 #include <extras/hardware_params.hpp>
 
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <exception>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace voxen::svc::detail

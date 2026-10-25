@@ -1,4 +1,5 @@
 #include <voxen/svc/engine.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>
@@ -7,6 +8,12 @@
 #include <tk/rng.hpp>
 
 #include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <ratio>
+#include <vector>
 
 using namespace voxen::svc;
 

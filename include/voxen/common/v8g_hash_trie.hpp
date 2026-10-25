@@ -5,7 +5,10 @@
 
 #include <extras/function_ref.hpp>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <utility>
 
 namespace voxen
 {

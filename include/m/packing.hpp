@@ -2,7 +2,10 @@
 
 #include <m/vector.hpp>
 
+#include <concepts>
+#include <cstddef>
 #include <limits>
+#include <type_traits>
 
 // Conversions between floating-point values and normalized integers, as in GPU
 // vertex and texture formats: unorm maps [0, 1] to [0, max] and snorm maps [-1, 1]

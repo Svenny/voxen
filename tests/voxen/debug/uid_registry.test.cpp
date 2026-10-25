@@ -1,8 +1,12 @@
 #include <voxen/debug/uid_registry.hpp>
 
+#include <voxen/common/uid.hpp>
+
 #include "../../voxen_test_common.hpp"
 
 #include <extras/defer.hpp>
+
+#include <string>
 
 namespace voxen::debug
 {

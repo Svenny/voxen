@@ -7,6 +7,8 @@
 
 #include <cassert>
 #include <limits>
+#include <mutex>
+#include <new>
 
 namespace voxen::detail
 {

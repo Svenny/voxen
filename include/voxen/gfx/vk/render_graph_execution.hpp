@@ -1,6 +1,8 @@
 #pragma once
 
 #include <voxen/gfx/vk/render_graph_resource.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
+#include <voxen/visibility.hpp>
 
 namespace voxen::gfx::vk
 {

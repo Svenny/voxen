@@ -4,6 +4,11 @@
 
 #include "../../test_common.hpp"
 
+#include <cstdint>
+#include <string>
+#include <variant>
+#include <vector>
+
 namespace voxen
 {
 

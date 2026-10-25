@@ -16,6 +16,9 @@
 
 #include <extras/defer.hpp>
 
+#include <cassert>
+#include <memory>
+
 namespace voxen::client::vulkan
 {
 

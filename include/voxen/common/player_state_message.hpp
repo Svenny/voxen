@@ -1,8 +1,10 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/svc/message_types.hpp>
 
 #include <m/quaternion.hpp>
+#include <m/vector.hpp>
 
 namespace voxen
 {

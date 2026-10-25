@@ -1,5 +1,6 @@
 #include <voxen/gfx/vk/render_graph_execution.hpp>
 
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/log.hpp>
 

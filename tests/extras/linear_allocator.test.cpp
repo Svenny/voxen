@@ -2,6 +2,9 @@
 
 #include "../test_common.hpp"
 
+#include <cstdint>
+#include <limits>
+
 namespace
 {
 

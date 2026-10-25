@@ -1,5 +1,7 @@
 #include <voxen/util/error_condition.hpp>
 
+#include <string>
+
 namespace voxen
 {
 

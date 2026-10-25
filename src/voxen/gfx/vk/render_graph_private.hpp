@@ -6,11 +6,16 @@
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
+#include <voxen/gfx/vk/vma_fwd.hpp>
+#include <voxen/os/os_fwd.hpp>
+#include <voxen/visibility.hpp>
 
 #include "vk_private_consts.hpp"
 
 #include <deque>
+#include <string>
 #include <variant>
 #include <vector>
 

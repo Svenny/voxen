@@ -2,7 +2,10 @@
 
 #include <tk/cli.hpp>
 
+#include <cstdint>
 #include <cstdio>
+#include <optional>
+#include <string>
 #include <string_view>
 
 namespace

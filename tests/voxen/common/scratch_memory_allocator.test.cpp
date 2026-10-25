@@ -2,7 +2,14 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <cstdint>
+#include <cstring>
+#include <functional>
 #include <scoped_allocator>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace voxen
 {

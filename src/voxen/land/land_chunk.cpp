@@ -1,5 +1,7 @@
 #include <voxen/land/land_chunk.hpp>
 
+#include <m/vector.hpp>
+
 namespace voxen::land
 {
 

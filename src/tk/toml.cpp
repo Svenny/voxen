@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <limits>
 #include <optional>
+#include <system_error>
 
 namespace tk::toml
 {

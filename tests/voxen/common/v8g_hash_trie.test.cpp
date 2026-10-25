@@ -5,9 +5,15 @@
 
 #include "../../test_common.hpp"
 
+#include <m/vector.hpp>
+
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <random>
+#include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace voxen
 {

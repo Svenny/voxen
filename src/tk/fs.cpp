@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <memory>
 #include <system_error>
+#include <utility>
 
 #ifndef _WIN32
 	#include <sys/stat.h>

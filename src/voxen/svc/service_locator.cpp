@@ -9,9 +9,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <iterator>
 #include <mutex>
 #include <shared_mutex>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace voxen::svc

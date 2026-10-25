@@ -3,6 +3,7 @@
 #include <voxen/land/pseudo_chunk_data.hpp>
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace voxen::land::detail

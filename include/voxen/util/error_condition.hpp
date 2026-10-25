@@ -3,6 +3,7 @@
 #include <voxen/visibility.hpp>
 
 #include <system_error>
+#include <type_traits>
 
 namespace voxen
 {

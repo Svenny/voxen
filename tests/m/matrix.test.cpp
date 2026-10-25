@@ -4,6 +4,9 @@
 #include "../test_common.hpp"
 #include "m_test_common.hpp"
 
+#include <fmt/format.h>
+
+#include <cstdint>
 #include <cstring>
 #include <type_traits>
 

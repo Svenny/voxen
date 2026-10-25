@@ -4,6 +4,7 @@
 #include <voxen/gfx/vk/vk_include.hpp>
 
 #include <array>
+#include <cstdint>
 #include <string_view>
 
 // Some stateless utility functions

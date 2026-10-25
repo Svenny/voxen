@@ -2,6 +2,8 @@
 
 #include <tk/cli.hpp>
 
+#include <optional>
+
 namespace voxen::client
 {
 

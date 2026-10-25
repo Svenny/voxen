@@ -13,8 +13,11 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <new>
 #include <thread>
+#include <utility>
+#include <vector>
 
 namespace voxen
 {

@@ -5,6 +5,8 @@
 
 #include <m/vector.hpp>
 
+#include <cstdint>
+#include <span>
 #include <vector>
 
 namespace voxen::land

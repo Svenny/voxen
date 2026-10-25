@@ -11,7 +11,10 @@
 #include "task_queue_set.hpp"
 #include "task_service_slave.hpp"
 
+#include <functional>
+#include <memory>
 #include <thread>
+#include <utility>
 
 namespace voxen::svc
 {

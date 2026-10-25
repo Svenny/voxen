@@ -6,8 +6,14 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <cstdint>
 #include <cstdio>
+#include <iterator>
+#include <new>
+#include <system_error>
 
 namespace voxen
 {

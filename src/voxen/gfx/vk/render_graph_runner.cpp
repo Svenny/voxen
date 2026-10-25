@@ -1,15 +1,26 @@
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 
+#include <voxen/gfx/gfx_system.hpp>
+#include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include "render_graph_private.hpp"
+#include "vk_private_consts.hpp"
 
 #include <vk_mem_alloc.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <variant>
+#include <vector>
 
 namespace voxen::gfx::vk
 {

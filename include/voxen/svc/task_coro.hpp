@@ -5,6 +5,8 @@
 
 #include <concepts>
 #include <coroutine>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <memory>
 #include <new>

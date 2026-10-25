@@ -3,6 +3,7 @@
 #include <tk/parse_error.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 

@@ -1,6 +1,10 @@
 #include <voxen/gfx/ui/ui_system.hpp>
 
+#include <voxen/common/scratch_memory_allocator.hpp>
+#include <voxen/common/scratch_memory_containers.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
+#include <voxen/gfx/ui/ui_render_data.hpp>
+#include <voxen/gfx/ui/ui_setup_types.hpp>
 #include <voxen/util/hash.hpp>
 
 #include "ui_render_list_builder.hpp"
@@ -8,6 +12,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace voxen::gfx::ui
 {

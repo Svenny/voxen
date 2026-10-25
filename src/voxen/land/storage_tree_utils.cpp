@@ -1,7 +1,11 @@
 #include <voxen/land/storage_tree_utils.hpp>
 
+#include <voxen/land/land_public_consts.hpp>
+
 #include "land_storage_tree_private.hpp"
 #include "storage_tree_utils_private.hpp"
+
+#include <m/vector.hpp>
 
 // BMI PDEP, BEXTR etc. intrinsics
 #include <immintrin.h>

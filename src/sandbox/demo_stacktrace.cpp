@@ -5,6 +5,7 @@
 
 #include <voxen/debug/bug_found.hpp>
 #include <voxen/svc/engine.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_service.hpp>
 

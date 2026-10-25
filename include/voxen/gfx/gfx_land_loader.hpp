@@ -9,6 +9,7 @@
 
 #include <m/vector.hpp>
 
+#include <cstdint>
 #include <vector>
 
 typedef struct VkBuffer_T *VkBuffer;

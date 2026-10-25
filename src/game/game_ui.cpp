@@ -1,11 +1,16 @@
 #include "game_ui.hpp"
 
+#include <voxen/gfx/ui/ui_setup_types.hpp>
+#include <voxen/util/packed_color.hpp>
 #include <voxen/version.hpp>
 
 #include <extras/string_utils.hpp>
 
 #include <fmt/format.h>
 #include <fmt/xchar.h>
+
+#include <cstdint>
+#include <string_view>
 
 namespace vxgame
 {

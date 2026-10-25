@@ -3,10 +3,15 @@
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_resource.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
+#include <voxen/visibility.hpp>
 
+#include <cstdint>
 #include <functional>
 #include <span>
 #include <string>
+#include <string_view>
+#include <utility>
 
 namespace voxen::gfx::vk
 {

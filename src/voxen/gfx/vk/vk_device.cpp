@@ -5,13 +5,19 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
 
 #include <vk_mem_alloc.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdio>
+#include <memory>
+#include <string_view>
 
 namespace voxen::gfx::vk
 {

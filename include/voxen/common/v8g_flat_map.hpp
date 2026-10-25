@@ -6,7 +6,11 @@
 #include <extras/dyn_array.hpp>
 #include <extras/function_ref.hpp>
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 namespace voxen

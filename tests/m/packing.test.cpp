@@ -2,6 +2,9 @@
 
 #include "../test_common.hpp"
 
+#include <cstddef>
+#include <cstdint>
+
 namespace m
 {
 

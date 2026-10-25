@@ -6,6 +6,7 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/error_condition.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 
@@ -13,6 +14,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cstring>
 #include <vector>
 
 namespace voxen::gfx::vk

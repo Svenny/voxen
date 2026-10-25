@@ -1,5 +1,6 @@
 #include <voxen/debug/thread_name.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>

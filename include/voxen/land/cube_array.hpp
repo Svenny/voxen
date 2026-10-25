@@ -3,6 +3,9 @@
 #include <m/vector.hpp>
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 namespace voxen::land
 {
