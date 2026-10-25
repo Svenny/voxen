@@ -4,6 +4,8 @@
 
 #include <tk/demangle.hpp>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <bit>
 #include <cassert>
@@ -13,6 +15,7 @@
 #include <span>
 #include <stacktrace>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifndef _WIN32

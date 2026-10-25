@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <exception>
 #include <utility>
 
 namespace voxen::svc

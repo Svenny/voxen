@@ -1,6 +1,7 @@
 #pragma once
 
 #include <m/quaternion.hpp>
+#include <m/vector.hpp>
 
 namespace voxen
 {

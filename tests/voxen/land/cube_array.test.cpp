@@ -2,6 +2,10 @@
 
 #include "../../voxen_test_common.hpp"
 
+#include <m/vector.hpp>
+
+#include <cstdint>
+
 namespace voxen::land
 {
 

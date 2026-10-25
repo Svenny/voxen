@@ -8,6 +8,9 @@
 #include <voxen/util/lru_visit_ordering.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
+#include <cstdint>
+#include <memory>
+
 namespace voxen::land
 {
 

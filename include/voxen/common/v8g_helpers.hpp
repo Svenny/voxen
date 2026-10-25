@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace voxen

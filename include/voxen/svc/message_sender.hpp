@@ -1,8 +1,12 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_types.hpp>
 #include <voxen/visibility.hpp>
+
+#include <cstddef>
+#include <utility>
 
 namespace voxen::svc
 {

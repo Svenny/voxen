@@ -2,6 +2,7 @@
 #include <tk/rng.hpp>
 
 #include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 
 int main(int argc, char *argv[])

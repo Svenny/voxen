@@ -13,13 +13,19 @@
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/land/land_chunk.hpp>
+#include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
 #include "shader_interop.hpp"
 
 #include <m/m.hpp>
 
+#include <algorithm>
+#include <cassert>
 #include <cstring>
+#include <iterator>
+#include <type_traits>
 
 namespace voxen::gfx::vk
 {

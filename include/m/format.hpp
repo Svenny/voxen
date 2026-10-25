@@ -2,8 +2,11 @@
 
 #include <m/matrix.hpp>
 #include <m/quaternion.hpp>
+#include <m/vector.hpp>
 
 #include <fmt/format.h>
+
+#include <cstddef>
 
 // fmt formatters for `m` types, opt-in to keep fmt out of the core headers.
 // The format spec applies to every component: `{:.1f}` on `float3(1, 2, 3)`

@@ -1,6 +1,10 @@
 #pragma once
 
 #include <voxen/land/compressed_chunk_storage.hpp>
+#include <voxen/land/cube_array.hpp>
+#include <voxen/land/land_public_consts.hpp>
+
+#include <cstdint>
 
 namespace voxen::land
 {

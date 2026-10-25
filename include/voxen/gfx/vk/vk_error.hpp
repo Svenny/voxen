@@ -2,8 +2,12 @@
 
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/util/exception.hpp>
+#include <voxen/visibility.hpp>
+
+#include <extras/source_location.hpp>
 
 #include <system_error>
+#include <type_traits>
 
 namespace std
 {

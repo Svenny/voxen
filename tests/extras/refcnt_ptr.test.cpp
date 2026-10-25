@@ -2,6 +2,10 @@
 
 #include "../test_common.hpp"
 
+#include <extras/function_ref.hpp>
+
+#include <utility>
+
 static void managerFunction(int *value, extras::refcnt_ptr_action action) noexcept
 {
 	if (action == extras::refcnt_ptr_action::acquire_ref) {

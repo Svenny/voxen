@@ -2,6 +2,7 @@
 
 #include <m/matrix.hpp>
 #include <m/quaternion.hpp>
+#include <m/vector.hpp>
 
 // Transform builders and the spatial conventions of the engine.
 //

@@ -4,7 +4,9 @@
 
 #include <extras/enum_utils.hpp>
 
+#include <cstddef>
 #include <expected>
+#include <system_error>
 
 #include <cstdint>
 #include <filesystem>

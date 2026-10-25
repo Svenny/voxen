@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/land/land_storage_tree.hpp>
+#include <voxen/world/world_tick_id.hpp>
 
 #include <extras/attributes.hpp>
 
@@ -47,7 +48,7 @@ public:
 		using TTCopier = std::remove_cvref_t<TCopier>;
 
 		StorageTree::UserDataCopyFn user_data_copy_fn =
-			[](void *ctx, ChunkKey key, WorldTickId old_version, WorldTickId new_version, void *copy_to,
+			[](void *ctx, ChunkKey key, world::TickId old_version, world::TickId new_version, void *copy_to,
 				const void *copy_from) {
 				TTCopier &t_copier = *reinterpret_cast<TTCopier *>(ctx);
 

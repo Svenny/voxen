@@ -3,6 +3,8 @@
 #include <voxen/common/uid.hpp>
 #include <voxen/land/land_public_consts.hpp>
 
+#include <cstdint>
+
 namespace voxen::land::Consts
 {
 

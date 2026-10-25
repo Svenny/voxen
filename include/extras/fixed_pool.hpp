@@ -1,12 +1,15 @@
 #pragma once
 
 #include <extras/bitset.hpp>
+#include <extras/function_ref.hpp>
 #include <extras/refcnt_ptr.hpp>
 
 #include <array>
 #include <atomic>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <mutex>
 #include <new>
 #include <type_traits>

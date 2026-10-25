@@ -11,6 +11,8 @@
 #include <vk_mem_alloc.h>
 
 #include <cassert>
+#include <cstddef>
+#include <cstdio>
 #include <utility>
 
 namespace voxen::gfx::vk

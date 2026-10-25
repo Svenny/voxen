@@ -2,8 +2,15 @@
 
 #include "../test_common.hpp"
 
+#include <tk/parse_error.hpp>
+
 #include <cmath>
+#include <cstdint>
 #include <limits>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
 
 namespace tk::toml
 {

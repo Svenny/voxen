@@ -2,8 +2,10 @@
 
 #include <voxen/debug/bug_found.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace voxen

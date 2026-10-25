@@ -7,7 +7,12 @@
 #include <voxen/version.hpp>
 #include <voxen/world/world_control_service.hpp>
 
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
 #include <latch>
+#include <system_error>
+#include <utility>
 
 int main(int argc, char *argv[])
 {

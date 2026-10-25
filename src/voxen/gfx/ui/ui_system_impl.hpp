@@ -6,6 +6,10 @@
 #include <voxen/gfx/ui/ui_setup_types.hpp>
 #include <voxen/gfx/ui/ui_system.hpp>
 
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
 namespace voxen::gfx::ui::detail
 {
 

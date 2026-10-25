@@ -1,6 +1,9 @@
 #include <voxen/land/compressed_chunk_storage.hpp>
 
+#include <algorithm>
+#include <bit>
 #include <cstring>
+#include <iterator>
 #include <utility>
 
 namespace voxen::land

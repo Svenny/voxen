@@ -3,6 +3,7 @@
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/visibility.hpp>
 
+#include <cstdint>
 #include <optional>
 
 // Common helper functions to use `StorageTree`

@@ -10,16 +10,23 @@
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_dma_system.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
+#include <voxen/os/glfw_window.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 // TODO: legacy parts, move them here
 #include <voxen/client/vulkan/backend.hpp>
+
+#include <cstddef>
+#include <span>
+#include <string>
+#include <string_view>
 
 namespace voxen::gfx
 {

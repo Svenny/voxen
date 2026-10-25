@@ -2,6 +2,8 @@
 
 #include <m/m.hpp>
 
+#include <cstddef>
+
 // Helpers shared by the `m` tests
 
 namespace m

@@ -3,12 +3,15 @@
 #include <voxen/common/player_state_message.hpp>
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>
+
+#include <m/vector.hpp>
 
 #include <atomic>
 #include <memory>

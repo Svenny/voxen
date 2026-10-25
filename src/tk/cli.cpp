@@ -6,6 +6,9 @@
 #include <cassert>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
+#include <system_error>
+#include <utility>
 
 namespace tk::cli
 {

@@ -2,6 +2,8 @@
 
 #include "../../test_common.hpp"
 
+#include <m/vector.hpp>
+
 namespace voxen::land
 {
 

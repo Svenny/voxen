@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 
 namespace tk::rng
 {

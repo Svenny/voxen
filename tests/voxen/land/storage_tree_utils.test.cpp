@@ -1,7 +1,11 @@
 #include <voxen/land/storage_tree_utils.hpp>
 
+#include <voxen/land/chunk_key.hpp>
+#include <voxen/land/land_public_consts.hpp>
+
 #include "../../voxen_test_common.hpp"
 
+#include <cstdint>
 #include <random>
 
 namespace voxen::land

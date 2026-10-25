@@ -2,6 +2,11 @@
 
 #include "../test_common.hpp"
 
+#include <cstddef>
+#include <initializer_list>
+#include <type_traits>
+#include <utility>
+
 // Test cases for `extras::move_only_function` are copied from GCC's libstdc++ test suite.
 // I am not the author of this code.
 namespace

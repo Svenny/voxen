@@ -14,13 +14,16 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
+#include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <GLFW/glfw3.h>
 
 #include <cassert>
 #include <cstddef>
+#include <exception>
 #include <tuple>
+#include <type_traits>
 
 namespace voxen::client::vulkan
 {

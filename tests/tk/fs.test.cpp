@@ -2,7 +2,13 @@
 
 #include "../test_common.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
+#include <filesystem>
+#include <iterator>
+#include <string>
+#include <system_error>
 
 namespace tk::fs
 {

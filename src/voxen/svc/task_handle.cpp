@@ -6,6 +6,7 @@
 #include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <utility>
 

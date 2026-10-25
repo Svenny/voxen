@@ -7,6 +7,7 @@
 #include <fmt/format.h>
 
 #include <cassert>
+#include <string>
 
 namespace
 {

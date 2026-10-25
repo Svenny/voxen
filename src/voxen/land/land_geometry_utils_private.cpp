@@ -3,6 +3,7 @@
 #include <m/packing.hpp>
 
 #include <algorithm>
+#include <cstddef>
 
 namespace voxen::land::detail
 {

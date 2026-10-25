@@ -1,9 +1,15 @@
 #pragma once
 
+#include <voxen/land/chunk_key.hpp>
+#include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/storage_tree_utils.hpp>
+
+#include <m/vector.hpp>
 
 // BMI bit hacking intrinsics
 #include <immintrin.h>
+
+#include <cstdint>
 
 namespace voxen::land::StorageTreeUtils
 {

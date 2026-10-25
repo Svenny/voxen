@@ -4,6 +4,8 @@
 
 #include <tk/fs.hpp>
 
+#include <expected>
+
 using std::filesystem::path;
 
 namespace voxen

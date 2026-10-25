@@ -2,11 +2,17 @@
 
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/svc/task_context.hpp>
+#include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>
 
 #include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 #include "task_queue_set.hpp"
+
+#include <cstdint>
+#include <span>
+#include <utility>
+#include <vector>
 
 namespace voxen::svc::detail
 {

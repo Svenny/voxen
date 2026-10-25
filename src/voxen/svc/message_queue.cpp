@@ -8,6 +8,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
+#include <exception>
+#include <vector>
 
 namespace voxen::svc
 {

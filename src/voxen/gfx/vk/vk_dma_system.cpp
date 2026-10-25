@@ -2,10 +2,12 @@
 
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
+#include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 
 #include <cstring>
+#include <span>
 
 namespace voxen::gfx::vk
 {

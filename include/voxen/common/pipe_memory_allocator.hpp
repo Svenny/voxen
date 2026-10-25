@@ -1,9 +1,11 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 namespace voxen

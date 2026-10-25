@@ -2,6 +2,7 @@
 
 #include <voxen/gfx/vk/vk_include.hpp>
 
+#include <cstdint>
 #include <utility>
 
 namespace voxen::gfx::vk

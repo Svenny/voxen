@@ -2,9 +2,13 @@
 
 #include <voxen/util/tagged_tick_id.hpp>
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <queue>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace voxen
 {

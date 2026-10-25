@@ -10,10 +10,14 @@
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
+#include <extras/dyn_array.hpp>
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cstdio>
+#include <utility>
 
 namespace voxen::gfx::vk
 {

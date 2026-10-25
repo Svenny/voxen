@@ -4,6 +4,7 @@
 
 #include <fmt/base.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <span>

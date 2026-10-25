@@ -11,8 +11,15 @@
 #include <tk/rng.hpp>
 
 #include <m/packing.hpp>
+#include <m/vector.hpp>
 
+#include <algorithm>
 #include <array>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <utility>
+#include <vector>
 
 namespace voxen::land
 {

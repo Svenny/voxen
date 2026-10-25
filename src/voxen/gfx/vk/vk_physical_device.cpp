@@ -3,6 +3,8 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 
+#include <extras/dyn_array.hpp>
+
 #include <cstring>
 
 namespace voxen::gfx::vk

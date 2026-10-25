@@ -4,9 +4,14 @@
 #include "../test_common.hpp"
 
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <fmt/format.h>
 
 #include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <numbers>
 #include <type_traits>
 
 namespace m

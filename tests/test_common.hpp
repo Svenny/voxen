@@ -2,10 +2,14 @@
 
 #include <m/format.hpp>
 
+// IWYU pragma: begin_exports
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_tostring.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+// IWYU pragma: end_exports
 
+#include <cstddef>
+#include <string>
 #include <system_error>
 
 namespace Catch

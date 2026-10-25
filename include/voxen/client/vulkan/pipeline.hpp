@@ -3,6 +3,7 @@
 #include <voxen/gfx/vk/vk_include.hpp>
 
 #include <array>
+#include <cstdint>
 
 namespace voxen::client::vulkan
 {

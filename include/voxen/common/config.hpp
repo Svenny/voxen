@@ -4,8 +4,12 @@
 
 #include <extras/source_location.hpp>
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>

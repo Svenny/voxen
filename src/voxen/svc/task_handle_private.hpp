@@ -1,11 +1,13 @@
 #pragma once
 
 #include <voxen/svc/pipe_memory_function.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_handle.hpp>
 
 #include <atomic>
 #include <cstdint>
+#include <utility>
 
 namespace voxen::svc::detail
 {

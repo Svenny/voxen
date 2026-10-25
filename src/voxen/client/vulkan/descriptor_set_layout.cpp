@@ -5,6 +5,8 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/log.hpp>
 
+#include <utility>
+
 namespace voxen::client::vulkan
 {
 

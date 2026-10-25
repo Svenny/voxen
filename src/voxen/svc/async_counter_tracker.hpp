@@ -1,11 +1,16 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/service_base.hpp>
 
 #include <extras/hardware_params.hpp>
 
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace voxen::svc::detail

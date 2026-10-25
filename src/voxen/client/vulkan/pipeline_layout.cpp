@@ -6,6 +6,10 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/util/log.hpp>
 
+#include <m/vector.hpp>
+
+#include <iterator>
+
 namespace voxen::client::vulkan
 {
 

@@ -21,9 +21,17 @@
 #include <tk/cli.hpp>
 
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <atomic>
+#include <cstddef>
+#include <ctime>
+#include <optional>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <variant>
 
 namespace voxen::svc
 {

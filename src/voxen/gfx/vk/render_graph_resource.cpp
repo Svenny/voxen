@@ -3,6 +3,7 @@
 #include "render_graph_private.hpp"
 
 #include <cassert>
+#include <utility>
 
 namespace voxen::gfx::vk
 {

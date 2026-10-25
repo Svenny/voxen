@@ -1,5 +1,6 @@
 #include <voxen/land/pseudo_chunk_data.hpp>
 
+#include <voxen/land/cube_array.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
@@ -8,6 +9,11 @@
 #include "land_geometry_utils_private.hpp"
 
 #include <m/packing.hpp>
+
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <memory>
 
 namespace voxen::land
 {

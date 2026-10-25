@@ -3,6 +3,14 @@
 #include "../test_common.hpp"
 
 #include <array>
+#include <cstddef>
+#include <expected>
+#include <initializer_list>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace tk::cli
 {

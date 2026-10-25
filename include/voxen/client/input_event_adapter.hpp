@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <utility>
 
 #include <voxen/common/config.hpp>
 

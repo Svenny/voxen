@@ -9,7 +9,9 @@
 
 #include <extras/defer.hpp>
 
+#include <cstddef>
 #include <cstdlib>
+#include <span>
 
 namespace voxen::client::vulkan
 {

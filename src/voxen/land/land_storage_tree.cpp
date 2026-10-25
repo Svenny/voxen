@@ -4,6 +4,9 @@
 #include "storage_tree_utils_private.hpp"
 
 #include <cassert>
+#include <cstddef>
+#include <iterator>
+#include <utility>
 
 namespace voxen::land
 {

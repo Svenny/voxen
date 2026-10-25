@@ -2,6 +2,10 @@
 
 #include <fmt/format.h>
 
+#include <string>
+#include <system_error>
+#include <utility>
+
 namespace voxen
 {
 

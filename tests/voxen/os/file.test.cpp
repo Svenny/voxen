@@ -1,8 +1,16 @@
 #include <voxen/os/file.hpp>
 
+#include <voxen/util/exception.hpp>
+
 #include <extras/defer.hpp>
 
 #include "../../voxen_test_common.hpp"
+
+#include <cstddef>
+#include <filesystem>
+#include <span>
+#include <string_view>
+#include <system_error>
 
 namespace voxen::os
 {

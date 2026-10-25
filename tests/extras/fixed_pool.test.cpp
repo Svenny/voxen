@@ -2,6 +2,10 @@
 
 #include "../test_common.hpp"
 
+#include <extras/refcnt_ptr.hpp>
+
+#include <utility>
+
 namespace
 {
 

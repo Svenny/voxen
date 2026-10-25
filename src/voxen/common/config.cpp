@@ -11,8 +11,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <charconv>
 #include <stdexcept>
+#include <system_error>
+#include <type_traits>
+#include <utility>
 
 using namespace std::filesystem;
 using std::string_view;

@@ -1,9 +1,12 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/chunk_ticket.hpp>
 #include <voxen/land/land_state.hpp>
 #include <voxen/svc/message_types.hpp>
+
+#include <cstdint>
 
 namespace voxen::land::detail
 {

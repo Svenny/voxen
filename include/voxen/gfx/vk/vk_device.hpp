@@ -2,13 +2,16 @@
 
 #include <voxen/gfx/frame_tick_id.hpp>
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
 
 #include <extras/source_location.hpp>
 
 #include <array>
+#include <cstdint>
 #include <span>
+#include <utility>
 #include <variant>
 #include <vector>
 

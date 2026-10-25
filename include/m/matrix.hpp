@@ -2,6 +2,9 @@
 
 #include <m/vector.hpp>
 
+#include <cassert>
+#include <cstddef>
+
 // Row-major matrices used with column vectors.
 //
 // `matrix<T, R, C>` has `R` rows of `C` components. `a[i]` is row `i` and `a[i][j]`

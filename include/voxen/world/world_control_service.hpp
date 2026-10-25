@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
+
 #include <extras/move_only_function.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
@@ -8,6 +10,7 @@
 #include <extras/pimpl.hpp>
 
 #include <filesystem>
+#include <memory>
 #include <system_error>
 
 namespace voxen::world

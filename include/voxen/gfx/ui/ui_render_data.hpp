@@ -4,6 +4,7 @@
 
 #include <m/vector.hpp>
 
+#include <cstdint>
 #include <span>
 
 namespace voxen::gfx::ui

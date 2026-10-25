@@ -3,6 +3,10 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
+#include <extras/source_location.hpp>
+
+#include <utility>
+
 namespace voxen::gfx::vk
 {
 

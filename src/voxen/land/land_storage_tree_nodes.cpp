@@ -1,8 +1,20 @@
+#include <voxen/land/land_fwd.hpp>
+#include <voxen/world/world_tick_id.hpp>
+
 #include "land_storage_tree_private.hpp"
 
 #include "storage_tree_utils_private.hpp"
 
+#include <m/vector.hpp>
+
+#include <algorithm>
 #include <bit>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <type_traits>
+#include <utility>
 
 namespace voxen::land::detail
 {

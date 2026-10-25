@@ -2,6 +2,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
+#include <cstdint>
+
 namespace voxen::gfx::vk::Consts
 {
 

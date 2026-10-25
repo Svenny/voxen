@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/common/uid.hpp>
+#include <voxen/visibility.hpp>
 
 #include <string>
 #include <string_view>

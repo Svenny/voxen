@@ -4,6 +4,7 @@
 
 #include <voxen/visibility.hpp>
 
+#include <cstdint>
 #include <span>
 
 namespace voxen::gfx::vk

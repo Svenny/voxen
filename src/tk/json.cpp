@@ -5,6 +5,7 @@
 #include <charconv>
 #include <limits>
 #include <optional>
+#include <system_error>
 #include <unordered_set>
 
 namespace tk::json

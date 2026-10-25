@@ -1,12 +1,15 @@
 #pragma once
 
-#include "test_common.hpp"
+#include "test_common.hpp" // IWYU pragma: export
 
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 
 #include <catch2/matchers/catch_matchers_predicate.hpp>
+
+#include <string>
+#include <system_error>
 
 namespace voxen::test
 {

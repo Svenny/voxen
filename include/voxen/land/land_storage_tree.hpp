@@ -1,11 +1,14 @@
 #pragma once
 
+#include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_storage_tree_node_ptr.hpp>
 #include <voxen/land/storage_tree_common.hpp>
 #include <voxen/visibility.hpp>
 #include <voxen/world/world_tick_id.hpp>
+
+#include <cstdint>
 
 namespace voxen::land
 {

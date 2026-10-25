@@ -1,5 +1,7 @@
 #include "ui_render_list_builder.hpp"
 
+#include <m/vector.hpp>
+
 #include <limits>
 
 namespace voxen::gfx::ui::detail

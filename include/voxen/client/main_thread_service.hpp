@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>

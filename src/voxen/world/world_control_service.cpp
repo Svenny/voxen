@@ -4,8 +4,11 @@
 #include <voxen/land/land_service.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/world/world_state.hpp>
 
 #include "world_sim_thread.hpp"
+
+#include <utility>
 
 namespace voxen::world
 {

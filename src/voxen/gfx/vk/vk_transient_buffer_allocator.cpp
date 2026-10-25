@@ -11,6 +11,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdio>
+#include <utility>
 
 namespace voxen::gfx::vk
 {

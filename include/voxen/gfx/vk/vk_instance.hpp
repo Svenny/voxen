@@ -1,9 +1,12 @@
 #pragma once
 
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 #include <extras/dyn_array.hpp>
 #include <extras/source_location.hpp>
+
+#include <cstdint>
 
 namespace voxen::gfx::vk
 {

@@ -7,11 +7,15 @@
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
+#include <extras/enum_utils.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <ratio>
 #include <shared_mutex>
+#include <type_traits>
 #include <utility>
 
 namespace voxen::svc::detail

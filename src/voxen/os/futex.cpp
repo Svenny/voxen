@@ -1,6 +1,7 @@
 #include <voxen/os/futex.hpp>
 
 #include <cassert>
+#include <cerrno>
 #include <ctime>
 
 // TODO: x86-specific include... but what, are we going to support arm?

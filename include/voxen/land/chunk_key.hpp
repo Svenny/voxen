@@ -6,6 +6,8 @@
 #include <m/vector.hpp>
 
 #include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 
 namespace voxen::land

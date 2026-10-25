@@ -2,6 +2,8 @@
 
 #include "../test_common.hpp"
 
+#include <cstdint>
+
 namespace
 {
 

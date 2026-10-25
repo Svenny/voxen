@@ -1,5 +1,6 @@
 #include <voxen/svc/async_file_io_service.hpp>
 
+#include <voxen/os/file.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
@@ -12,6 +13,12 @@
 
 #include <fmt/format.h>
 
+#include <atomic>
+#include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <span>
+#include <utility>
 #include <vector>
 
 namespace voxen::svc

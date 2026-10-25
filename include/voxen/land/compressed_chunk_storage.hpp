@@ -4,6 +4,9 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/visibility.hpp>
 
+#include <m/vector.hpp>
+
+#include <cstdint>
 #include <memory>
 
 namespace voxen::land

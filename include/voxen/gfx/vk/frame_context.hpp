@@ -4,6 +4,8 @@
 
 #include <extras/dyn_array.hpp>
 
+#include <cstddef>
+#include <cstdint>
 #include <span>
 #include <vector>
 

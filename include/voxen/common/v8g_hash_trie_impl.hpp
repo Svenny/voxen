@@ -1,10 +1,16 @@
 #pragma once
 
+#include <voxen/common/v8g_concepts.hpp>
 #include <voxen/common/v8g_hash_trie.hpp>
+
+#include <extras/function_ref.hpp>
 
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 
 namespace voxen
 {

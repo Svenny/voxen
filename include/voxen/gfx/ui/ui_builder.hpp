@@ -2,6 +2,7 @@
 
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/gfx/ui/ui_setup_types.hpp>
+#include <voxen/util/packed_color.hpp>
 #include <voxen/visibility.hpp>
 
 namespace voxen::gfx::ui

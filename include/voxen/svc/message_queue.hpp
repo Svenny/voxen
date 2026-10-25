@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/common/uid.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/message_types.hpp>
@@ -7,6 +8,9 @@
 
 #include <extras/move_only_function.hpp>
 #include <extras/pimpl.hpp>
+
+#include <cstdint>
+#include <utility>
 
 namespace voxen::svc
 {

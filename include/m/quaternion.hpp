@@ -1,6 +1,7 @@
 #pragma once
 
 #include <m/matrix.hpp>
+#include <m/vector.hpp>
 
 // Unit quaternions representing rotations.
 //

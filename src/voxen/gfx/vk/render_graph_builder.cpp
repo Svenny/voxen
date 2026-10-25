@@ -1,10 +1,15 @@
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 
+#include <voxen/gfx/gfx_system.hpp>
+
 #include "render_graph_private.hpp"
+#include "vk_private_consts.hpp"
 
 #include <fmt/format.h>
 
 #include <cassert>
+#include <cstddef>
+#include <variant>
 
 namespace voxen::gfx::vk
 {
