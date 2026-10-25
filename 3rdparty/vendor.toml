@@ -62,6 +62,26 @@ sha256 = "709c9a63bde1e36a80d8675becc38073b85f0fa1b4111e34542b885c9e1239da"
 license = "Apache-2.0 WITH LLVM-exception"
 keep = ["src/demangle/*.h", "src/demangle/*.def", "LICENSE.TXT"]
 
+[sdl]
+version = "3.4.18"
+url = "https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL3-{version}.tar.gz"
+sha256 = "9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3"
+license = "Zlib"
+# Common code of every subsystem and the Linux (X11, Wayland) and Windows backends,
+# `sdl.cmake` picks what is built (see `sdl-config/SDL_build_config.h`).
+keep = [
+	"include/SDL3/*.h", "src/*.[ch]", "src/*/*.[ch]",
+	"src/*/dlopen/*.[ch]", "src/*/dummy/*.[ch]", "src/*/generic/*.[ch]", "src/*/hidapi/*.[ch]",
+	"src/*/linux/*.[ch]", "src/*/posix/*.[ch]", "src/*/pthread/*.[ch]", "src/*/unix/*.[ch]",
+	"src/*/windows/*.[ch]", "src/video/windows/*.cpp",
+	"src/joystick/hidapi/steam/*.h", "src/render/software/*.[ch]",
+	"src/video/khronos/EGL/*.h", "src/video/khronos/KHR/*.h",
+	"src/video/wayland/*.[ch]", "src/video/x11/*.[ch]", "src/video/yuv2rgb/*.[ch]",
+	"wayland-protocols/*.xml", "LICENSE.txt",
+]
+exclude = ["include/SDL3/SDL_opengl*.h", "include/SDL3/SDL_test*.h", "src/test/*"]
+patches = ["vulkan-headers.patch", "ibus-no-glib.patch", "no-dynapi.patch"]
+
 [vma]
 version = "3.4.0"
 url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v{version}.tar.gz"

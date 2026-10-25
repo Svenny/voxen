@@ -25,6 +25,7 @@ include(glfw.cmake)
 include(harfbuzz.cmake)
 include(llvm-demangle.cmake)
 include(vulkan-headers.cmake)
-# Depends on `vulkan-headers`, include after them
+# Depend on `vulkan-headers`, include after them
+include(sdl.cmake)
 include(vma.cmake)
 include(zlib.cmake)

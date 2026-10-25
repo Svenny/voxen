@@ -1,0 +1,25 @@
+--- a/src/core/linux/SDL_ibus.h
++++ b/src/core/linux/SDL_ibus.h
+@@ -26,7 +26,21 @@
+ 
+ #ifdef HAVE_IBUS_IBUS_H
+ #define SDL_USE_IBUS 1
+-#include <ibus.h>
++// Only these few constants are needed from <ibus.h>, which pulls in GLib.
++// `SDL_ibus.c` also relies on it to get `PATH_MAX`.
++#include <limits.h>
++// Values of `IBusModifierType` and `IBusCapabilite` from `ibustypes.h`.
++#define IBUS_SHIFT_MASK (1 << 0)
++#define IBUS_LOCK_MASK (1 << 1)
++#define IBUS_CONTROL_MASK (1 << 2)
++#define IBUS_MOD1_MASK (1 << 3)
++#define IBUS_MOD2_MASK (1 << 4)
++#define IBUS_MOD5_MASK (1 << 7)
++#define IBUS_SUPER_MASK (1 << 26)
++#define IBUS_META_MASK (1 << 28)
++#define IBUS_RELEASE_MASK (1 << 30)
++#define IBUS_CAP_PREEDIT_TEXT (1 << 0)
++#define IBUS_CAP_FOCUS (1 << 3)
+ 
+ extern bool SDL_IBus_Init(void);
+ extern void SDL_IBus_Quit(void);
