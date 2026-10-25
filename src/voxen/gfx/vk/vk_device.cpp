@@ -228,19 +228,9 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 		return;
 	}
 
-	// First try to check it without waiting
-	uint64_t observed_value = 0;
-	VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[queue], &observed_value);
-	if (res != VK_SUCCESS) [[unlikely]] {
-		throw VulkanException(res, "vkGetSemaphoreCounterValue");
-	}
-
-	// Update without `max()`, it can only increase
-	m_last_completed_timelines[queue] = observed_value;
-
-	// Is it signaled now?
-	// In CPU-bound scenarios we will probably always exit here.
-	if (value <= m_last_completed_timelines[queue]) {
+	// First try to check it without waiting.
+	// Is it signaled now? In CPU-bound scenarios we will probably always exit here.
+	if (value <= getCompletedTimeline(queue)) {
 		return;
 	}
 
@@ -254,7 +244,7 @@ void Device::waitForTimeline(Queue queue, uint64_t value)
 		.pValues = &value,
 	};
 
-	res = m_dt.vkWaitSemaphores(m_handle, &wait_info, UINT64_MAX);
+	VkResult res = m_dt.vkWaitSemaphores(m_handle, &wait_info, UINT64_MAX);
 	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkWaitSemaphores");
 	}
@@ -295,6 +285,13 @@ uint64_t Device::getCompletedTimeline(Queue queue)
 	VkResult res = m_dt.vkGetSemaphoreCounterValue(m_handle, m_timeline_semaphores[queue], &value);
 	if (res != VK_SUCCESS) [[unlikely]] {
 		throw VulkanException(res, "vkGetSemaphoreCounterValue");
+	}
+
+	if (value > m_last_submitted_timelines[queue]) [[unlikely]] {
+		// Nothing can signal a value that was never submitted. Some drivers set
+		// timeline semaphores to UINT64_MAX on device loss and keep returning
+		// VK_SUCCESS here, report the loss now instead of failing later and obscurely.
+		throw VulkanException(VK_ERROR_DEVICE_LOST, "vkGetSemaphoreCounterValue");
 	}
 
 	// Update without `max()`, it can only increase
