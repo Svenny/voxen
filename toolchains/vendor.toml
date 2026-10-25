@@ -18,6 +18,8 @@
 # slower, and writes a cache file `slang-glsl-module.bin` next to the library, i.e. into
 # the source tree). Not needed: `slang-llvm` (CPU targets), `slang-rt` (host runtime),
 # the optional standard modules (the core module is embedded in the compiler library).
+# `THIRD_PARTY_NOTICES.md` lists it without license texts: it's not distributed with the binaries,
+# and the core module code it compiles into SPIR-V is covered by the LLVM exception.
 version = "2026.20"
 license = "Apache-2.0 WITH LLVM-exception"
 

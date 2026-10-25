@@ -2,7 +2,8 @@ name: Vendored sources
 
 # Checks that `3rdparty/` and `toolchains/` are exactly what their `vendor.toml`
 # manifests describe, i.e. no local edits were made outside of the manifests and
-# patches, and the LFS-tracked prebuilt binaries are the upstream release files
+# patches, and the LFS-tracked prebuilt binaries are the upstream release files.
+# Also checks that `THIRD_PARTY_NOTICES.md` is up to date with them and `data/third-party.toml`.
 
 on:
   push:
@@ -10,12 +11,16 @@ on:
     paths:
       - '3rdparty/**'
       - 'toolchains/**'
+      - 'data/third-party.toml'
+      - 'THIRD_PARTY_NOTICES.md'
       - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   pull_request:
     paths:
       - '3rdparty/**'
       - 'toolchains/**'
+      - 'data/third-party.toml'
+      - 'THIRD_PARTY_NOTICES.md'
       - 'tools/scripts/vendor.py'
       - '.github/workflows/vendor.yml'
   workflow_dispatch:
