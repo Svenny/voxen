@@ -2,7 +2,7 @@
 
 #include <voxen/visibility.hpp>
 
-#include <vulkan/vulkan.h>
+#include <voxen/gfx/vk/vk_include.hpp>
 
 namespace voxen::gfx::vk
 {
