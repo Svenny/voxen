@@ -7,8 +7,9 @@ import util.vk_structs;
 #include "shared/main_scene.h"
 
 struct PreCullingDrawCommand {
-	PseudoChunkSurfacePosition *pos_data;
-	PseudoChunkSurfaceAttributes *attrib_data;
+	// Copied to `DrawCommand` as is, see there why these are not pointers
+	uint64_t pos_data_address;
+	uint64_t attrib_data_address;
 
 	float3 chunk_base_camworld;
 	float chunk_size_metres;
@@ -33,12 +34,14 @@ void computeMain(uint3 global_id: SV_DispatchThreadID)
 {
 	const uint cmd_index = global_id.x;
 	bool in_frustum = false;
+	PreCullingDrawCommand pre_culling_cmd = {};
 
-	// Read only the bounds here, the whole command is loaded again below, see the comment there
 	if (cmd_index < g_pre_culling_cmds.getCount()) {
+		pre_culling_cmd = g_pre_culling_cmds[cmd_index];
+
 		Aabb aabb;
-		aabb.min = g_pre_culling_cmds[cmd_index].chunk_base_camworld;
-		aabb.max = aabb.min + g_pre_culling_cmds[cmd_index].chunk_size_metres;
+		aabb.min = pre_culling_cmd.chunk_base_camworld;
+		aabb.max = aabb.min + pre_culling_cmd.chunk_size_metres;
 
 		in_frustum = isAabbInFrustum(aabb, g_main_scene.translated_world_to_clip);
 	}
@@ -63,16 +66,9 @@ void computeMain(uint3 global_id: SV_DispatchThreadID)
 	uint out_draw_index = WaveReadLaneFirst(first_out_draw_index) + WavePrefixCountBits(in_frustum);
 
 	if (in_frustum) {
-		// Load the command here instead of keeping it from the culling branch above.
-		// Otherwise optimized SPIR-V can merge its buffer device address members with
-		// `OpPhi` taking `OpUndef` on the out-of-range path, and AMD Windows driver
-		// (26.10.1, proprietary compiler) crashes in `vkCreateComputePipelines` on such a phi.
-		// TODO: go back to a single load once (if ever) AMD fixes the driver
-		PreCullingDrawCommand pre_culling_cmd = g_pre_culling_cmds[cmd_index];
-
 		DrawCommand draw_cmd;
-		draw_cmd.pos_data = pre_culling_cmd.pos_data;
-		draw_cmd.attrib_data = pre_culling_cmd.attrib_data;
+		draw_cmd.pos_data_address = pre_culling_cmd.pos_data_address;
+		draw_cmd.attrib_data_address = pre_culling_cmd.attrib_data_address;
 		draw_cmd.chunk_base_camworld = pre_culling_cmd.chunk_base_camworld;
 		draw_cmd.chunk_size_metres = pre_culling_cmd.chunk_size_metres;
 		g_draw_cmds.Store<DrawCommand>(drawCmdListItemOffset(out_draw_index), draw_cmd);

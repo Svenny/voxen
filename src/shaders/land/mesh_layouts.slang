@@ -16,8 +16,12 @@ public struct PseudoChunkSurfaceAttributes {
 
 // TODO: unify with declaration of `PseudoSurfaceDrawCommand` in C++
 public struct DrawCommand {
-	PseudoChunkSurfacePosition *pos_data;
-	PseudoChunkSurfaceAttributes *attrib_data;
+	// Buffer device addresses of `PseudoChunkSurfacePosition` and `PseudoChunkSurfaceAttributes` arrays.
+	// Integers, not pointers: AMD Windows driver (26.10.1, proprietary compiler) writes zero instead
+	// of the value when a pointer is stored to a buffer. Loading a pointer from a buffer works.
+	// TODO: switch to pointer types once (if ever) AMD fixes the driver
+	uint64_t pos_data_address;
+	uint64_t attrib_data_address;
 
 	float3 chunk_base_camworld;
 	float chunk_size_metres;

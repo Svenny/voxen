@@ -78,9 +78,11 @@ Varyings vertexMain(uint vertex_index: SV_VulkanVertexID, uint draw_index: SV_Dr
 	out float4 position: SV_Position)
 {
 	DrawCommand dcmd = g_cmd_list.Load<DrawCommand>(drawCmdListItemOffset(draw_index));
+	PseudoChunkSurfacePosition *pos_data = (PseudoChunkSurfacePosition *) dcmd.pos_data_address;
+	PseudoChunkSurfaceAttributes *attrib_data = (PseudoChunkSurfaceAttributes *) dcmd.attrib_data_address;
 
-	uint16_t3 packed_vertex_position = dcmd.pos_data[vertex_index].position_unorm;
-	PseudoChunkSurfaceAttributes attribs = dcmd.attrib_data[vertex_index];
+	uint16_t3 packed_vertex_position = pos_data[vertex_index].position_unorm;
+	PseudoChunkSurfaceAttributes attribs = attrib_data[vertex_index];
 
 	float3 pos_chunk_local = unpackVertexPosition(packed_vertex_position);
 	float3 pos_camworld = calcVertexCamWorldPosition(pos_chunk_local, dcmd.chunk_base_camworld, dcmd.chunk_size_metres);
