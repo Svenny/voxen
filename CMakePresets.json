@@ -67,7 +67,8 @@
 			"$comment": [
 				"Needs LLVM in its default location and VS with the C++ workload, but no VS developer environment:",
 				"clang-cl and lld-link find MSVC headers/libraries and the Windows SDK on their own.",
-				"Resource and manifest tools come from LLVM too, the SDK ones are only on PATH in that environment."
+				"Resource and manifest tools come from LLVM too, the SDK ones are only on PATH in that environment.",
+				"`cmake` and `ninja` must be on PATH."
 			],
 			"inherits": "windows",
 			"generator": "Ninja Multi-Config",
