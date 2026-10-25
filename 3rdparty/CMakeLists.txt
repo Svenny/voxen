@@ -20,7 +20,6 @@ endfunction()
 include(catch2.cmake)
 include(fmt.cmake)
 include(freetype.cmake)
-include(glfw.cmake)
 # Depends on `freetype`, include after it
 include(harfbuzz.cmake)
 include(llvm-demangle.cmake)
