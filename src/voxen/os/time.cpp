@@ -10,17 +10,46 @@
 #include <cassert>
 #include <cerrno>
 #include <cstdint>
+#include <cstdio>
+#include <iterator>
 
 namespace voxen::os
 {
 
-std::tm Time::localTime(std::time_t time) noexcept
+Time::LocalTime Time::localTime(std::time_t time) noexcept
 {
-	std::tm result {};
+	LocalTime result {};
 #ifndef _WIN32
-	localtime_r(&time, &result);
+	if (!localtime_r(&time, &result.tm)) {
+		return {};
+	}
+
+	result.utc_offset_minutes = static_cast<int32_t>(result.tm.tm_gmtoff / 60);
+	if (result.tm.tm_zone) {
+		snprintf(result.zone_name, std::size(result.zone_name), "%s", result.tm.tm_zone);
+	}
 #else
-	localtime_s(&result, &time);
+	if (localtime_s(&result.tm, &time) != 0) {
+		return {};
+	}
+
+	// UCRT `std::tm` has no offset or zone fields. Reinterpreting the local
+	// calendar time as UTC gives the offset, DST included.
+	std::tm tm_copy = result.tm;
+	const std::time_t local_as_utc = _mkgmtime(&tm_copy);
+	if (local_as_utc != -1) {
+		result.utc_offset_minutes = static_cast<int32_t>((local_as_utc - time) / 60);
+	}
+
+	// Not `_get_tzname()`, it returns the name (localized) in the ANSI code page, not UTF-8
+	DYNAMIC_TIME_ZONE_INFORMATION tz_info {};
+	if (GetDynamicTimeZoneInformation(&tz_info) != TIME_ZONE_ID_INVALID) {
+		const WCHAR *name = result.tm.tm_isdst > 0 ? tz_info.DaylightName : tz_info.StandardName;
+		const int buf_size = static_cast<int>(std::size(result.zone_name));
+		if (WideCharToMultiByte(CP_UTF8, 0, name, -1, result.zone_name, buf_size, nullptr, nullptr) == 0) {
+			result.zone_name[0] = '\0';
+		}
+	}
 #endif
 	return result;
 }

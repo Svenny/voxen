@@ -26,6 +26,8 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <ctime>
 #include <optional>
 #include <string_view>
@@ -227,7 +229,10 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 {
 	const AppInfo app_info = m_start_args.appInfo();
 
-	Log::info("Started at: {:%c UTC%z (%Z)}", os::Time::localTime(std::time(nullptr)));
+	const os::Time::LocalTime start_time = os::Time::localTime(std::time(nullptr));
+	const int32_t utc_offset_abs = std::abs(start_time.utc_offset_minutes);
+	Log::info("Started at: {:%c} UTC{}{:02}{:02} ({})", start_time.tm, start_time.utc_offset_minutes < 0 ? '-' : '+',
+		utc_offset_abs / 60, utc_offset_abs % 60, start_time.zone_name);
 	Log::info("Engine: Voxen {}",
 		makeVersionString(Version::MAJOR, Version::MINOR, Version::PATCH, Version::SUFFIX, Version::GIT_HASH));
 	Log::info("Application: {} {}", app_info.name,
