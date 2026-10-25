@@ -18,8 +18,6 @@
 
 #include <tk/png.hpp>
 
-#include <m/packing.hpp>
-
 #include <vk_mem_alloc.h>
 
 #include <cstddef>

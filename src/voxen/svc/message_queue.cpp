@@ -1,7 +1,5 @@
 #include <voxen/svc/message_queue.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
-
 #include "messaging_private.hpp"
 
 #include <extras/defer.hpp>

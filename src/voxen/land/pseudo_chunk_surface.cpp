@@ -6,8 +6,6 @@
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
 #include <voxen/util/packed_color.hpp>
 
 #include "land_geometry_utils_private.hpp"

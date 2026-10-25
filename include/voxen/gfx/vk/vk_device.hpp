@@ -8,7 +8,6 @@
 
 #include <extras/source_location.hpp>
 
-#include <array>
 #include <cstdint>
 #include <span>
 #include <utility>

@@ -9,7 +9,6 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_state.hpp>
-#include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_surface.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_sender.hpp>

@@ -2,7 +2,6 @@
 
 #include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/svc/task_handle.hpp>
 #include <voxen/util/hash.hpp>
 #include <voxen/util/log.hpp>
 

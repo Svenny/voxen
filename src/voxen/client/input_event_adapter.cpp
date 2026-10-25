@@ -1,7 +1,6 @@
 #include <voxen/client/input_event_adapter.hpp>
 
 #include <voxen/client/player_action_events.hpp>
-#include <voxen/common/filemanager.hpp>
 
 #include <cassert>
 #include <voxen/util/log.hpp>

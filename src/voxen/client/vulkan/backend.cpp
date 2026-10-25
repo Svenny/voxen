@@ -6,10 +6,7 @@
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/gfx/gfx_system.hpp>
-#include <voxen/gfx/vk/legacy_render_graph.hpp>
-#include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
-#include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>

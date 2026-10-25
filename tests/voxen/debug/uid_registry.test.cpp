@@ -4,8 +4,6 @@
 
 #include "../../voxen_test_common.hpp"
 
-#include <extras/defer.hpp>
-
 #include <string>
 
 namespace voxen::debug

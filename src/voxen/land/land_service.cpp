@@ -9,7 +9,6 @@
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_state.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
-#include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_queue.hpp>

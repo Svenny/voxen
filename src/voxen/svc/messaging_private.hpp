@@ -3,7 +3,6 @@
 #include <voxen/common/uid.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/message_handling.hpp>
-#include <voxen/svc/message_types.hpp>
 
 #include <extras/hardware_params.hpp>
 

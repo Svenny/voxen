@@ -6,7 +6,6 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
-#include <extras/defer.hpp>
 #include <extras/enum_utils.hpp>
 
 #include <algorithm>
