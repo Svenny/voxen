@@ -11,6 +11,8 @@
 #include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
+#include <m/vector.hpp>
+
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -134,10 +136,6 @@ void SimThread::handlePlayerInputMessage(PlayerStateMessage &msg, svc::MessageIn
 	assert(m_next_state != nullptr);
 
 	m_next_state->player().updateState(msg.player_position, msg.player_orientation);
-
-	if (!msg.lock_chunk_loading_position) {
-		m_chunk_loading_position = msg.player_position;
-	}
 }
 
 void SimThread::worldThreadProc(std::shared_ptr<SimThread> me, ControlService::StartRequest start_request)

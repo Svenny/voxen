@@ -16,8 +16,6 @@ struct PlayerStateMessage {
 
 	m::double3 player_position;
 	m::dquat player_orientation;
-
-	bool lock_chunk_loading_position = false;
 };
 
 } // namespace voxen

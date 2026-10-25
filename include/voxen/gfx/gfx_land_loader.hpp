@@ -56,6 +56,7 @@ public:
 	void onNewState(const world::State &state);
 
 	// Collects chunk surfaces within render area centered around `viewpoint`
+	// (the chunk loading point, not necessarily the camera position)
 	// according to LODs. Requests streaming of surfaces of those chunks
 	// to VRAM and fills the list of draw commands for available surfaces.
 	//

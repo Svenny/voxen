@@ -10,8 +10,6 @@
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>
 
-#include <m/vector.hpp>
-
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -61,7 +59,6 @@ private:
 	// threads simultaneously. Therefore this pointer is atomic.
 	std::atomic<std::shared_ptr<State>> m_last_state_ptr;
 
-	m::double3 m_chunk_loading_position = {};
 	State *m_next_state = nullptr;
 
 	svc::MessageQueue m_message_queue;
