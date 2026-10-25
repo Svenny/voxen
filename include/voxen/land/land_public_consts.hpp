@@ -25,7 +25,7 @@ constexpr uint32_t CHUNK_KEY_SCALE_BITS = 4;
 
 // Number of available chunk aggregation (LOD) levels and their world size
 // scale multipliers (powers of two - 1, 2, 4, 8, ..., 2^(NUM_LOD_SCALES-1)).
-// This is hardcoded in `StorageTree` internal data structure.
+// World height and X/Z tile size below are derived from it.
 constexpr uint32_t NUM_LOD_SCALES = 9;
 
 // The maximal chunk scale (LOD) that can be directly generated. Several highest levels
@@ -34,32 +34,30 @@ constexpr uint32_t NUM_LOD_SCALES = 9;
 // this limit can be raised - actually I wouldn't expect major quality degragation.
 constexpr uint32_t MAX_GENERATABLE_LOD = NUM_LOD_SCALES - 3;
 
-// Size, in chunks, of a single `StorageTree` root item.
-// This is hardcoded in `StorageTree` internal data structure.
-constexpr uint32_t STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS = 1u << (NUM_LOD_SCALES - 1 + 3 + 3);
-// Number of `StorageTree` root items in X axis. Must be even.
-// As root item size is hardcoded, this knob effectively controls planet size in longitude.
-constexpr uint32_t STORAGE_TREE_ROOT_ITEMS_X = 24;
-// Number of `StorageTree` root items in Z axis. Must be even.
-// As root item size is hardcoded, this knob effectively controls planet size in latitude.
-constexpr uint32_t STORAGE_TREE_ROOT_ITEMS_Z = 4;
+// Size, in chunks, of a single world tile in X/Z axes. World X/Z extent
+// is a whole number of tiles, each spanning 64 chunks of the largest LOD.
+constexpr uint32_t WORLD_TILE_SIZE_CHUNKS = 1u << (NUM_LOD_SCALES - 1 + 3 + 3);
+// Number of world tiles in X axis. Must be even.
+// As tile size is fixed, this knob effectively controls planet size in longitude.
+constexpr uint32_t WORLD_SIZE_X_TILES = 24;
+// Number of world tiles in Z axis. Must be even.
+// As tile size is fixed, this knob effectively controls planet size in latitude.
+constexpr uint32_t WORLD_SIZE_Z_TILES = 4;
 
-// The lowest chunk Y (altitude) coordinate that can exist in `StorageTree`.
-// Lower coordinates don't have valid tree paths and can't be accessed.
+// The lowest chunk Y (altitude) coordinate that can exist in the world.
+// Chunks below it are never generated or loaded.
 constexpr int32_t MIN_WORLD_Y_CHUNK = -int32_t(1u << (NUM_LOD_SCALES - 1));
-// The highest chunk Y (altitude) coordinate that can exist in `StorageTree`.
-// Higher coordinates don't have valid tree paths and can't be accessed.
+// The highest chunk Y (altitude) coordinate that can exist in the world.
+// Chunks above it are never generated or loaded.
 constexpr int32_t MAX_WORLD_Y_CHUNK = -MIN_WORLD_Y_CHUNK - 1;
 
 // Minimal chunk X (longitude) coordinate before wraparound begins
-constexpr int32_t MIN_UNIQUE_WORLD_X_CHUNK = -int32_t(
-	STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS * STORAGE_TREE_ROOT_ITEMS_X / 2);
+constexpr int32_t MIN_UNIQUE_WORLD_X_CHUNK = -int32_t(WORLD_TILE_SIZE_CHUNKS * WORLD_SIZE_X_TILES / 2);
 // Maximal chunk X (longitude) coordinate before wraparound begins
 constexpr int32_t MAX_UNIQUE_WORLD_X_CHUNK = -MIN_UNIQUE_WORLD_X_CHUNK - 1;
 
 // Minimal chunk Z (latitude) coordinate before wraparound begins
-constexpr int32_t MIN_UNIQUE_WORLD_Z_CHUNK = -int32_t(
-	STORAGE_TREE_ROOT_ITEM_SIZE_CHUNKS * STORAGE_TREE_ROOT_ITEMS_Z / 2);
+constexpr int32_t MIN_UNIQUE_WORLD_Z_CHUNK = -int32_t(WORLD_TILE_SIZE_CHUNKS * WORLD_SIZE_Z_TILES / 2);
 // Maximal chunk Z (latitude) coordinate before wraparound begins
 constexpr int32_t MAX_UNIQUE_WORLD_Z_CHUNK = -MIN_UNIQUE_WORLD_Z_CHUNK - 1;
 
