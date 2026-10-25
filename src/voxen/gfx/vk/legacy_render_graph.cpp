@@ -146,7 +146,7 @@ void LegacyRenderGraph::beginExecution(RenderGraphExecution &exec)
 	using DrawList = LandLoader::DrawList;
 
 	DrawList dlist;
-	land_loader->makeDrawList(viewpoint, dlist);
+	land_loader->makeDrawList(m_game_view->chunkLoadingPosition(), dlist);
 
 	m_land_per_index_buffer_data.clear();
 

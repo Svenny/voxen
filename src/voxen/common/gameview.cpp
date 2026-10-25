@@ -9,6 +9,7 @@
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
+#include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
 #include <m/m.hpp>
@@ -37,6 +38,7 @@ GameView::GameView(os::Window& window) : m_window(window)
 void voxen::GameView::init(const voxen::Player& player) noexcept
 {
 	m_local_player = player;
+	m_chunk_loading_position = player.position();
 
 	updateMatrices();
 
@@ -101,6 +103,14 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 	case client::PlayerActionEvent::LockChunkLoadingPoint:
 		if (is_activate) {
 			m_is_chunk_loading_point_locked = !m_is_chunk_loading_point_locked;
+			m_chunk_loading_position = m_local_player.position();
+
+			const m::double3& pos = m_chunk_loading_position;
+			if (m_is_chunk_loading_point_locked) {
+				Log::info("Chunk loading point locked at ({:.1f}, {:.1f}, {:.1f})", pos.x, pos.y, pos.z);
+			} else {
+				Log::info("Chunk loading point unlocked");
+			}
 		}
 		return true;
 
@@ -274,10 +284,13 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 		msend.send<land::BlockEditMessage>(land::LandService::SERVICE_UID, position, new_block);
 	}
 
+	if (!m_is_chunk_loading_point_locked) {
+		m_chunk_loading_position = m_local_player.position();
+	}
+
 	PlayerStateMessage message;
 	message.player_position = m_local_player.position();
 	message.player_orientation = m_local_player.orientation();
-	message.lock_chunk_loading_position = m_is_chunk_loading_point_locked;
 
 	msend.send<PlayerStateMessage>(world::ControlService::SERVICE_UID, message);
 }

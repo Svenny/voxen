@@ -32,6 +32,8 @@ public:
 	const m::float4x4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
 	const m::float4x4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
 	const m::double3& cameraPosition() const noexcept { return m_local_player.position(); }
+	// Center of the land loading area: follows the camera unless locked by `LockChunkLoadingPoint`
+	const m::double3& chunkLoadingPosition() const noexcept { return m_chunk_loading_position; }
 
 	// Block ID currently selected for insertion
 	auto selectedBlockId() const noexcept { return m_current_block_id; }
@@ -68,6 +70,7 @@ private:
 	// Local copy of player state - updated directly here instead of
 	// requesting it from world, eliminates lag from messaging latency.
 	Player m_local_player;
+	m::double3 m_chunk_loading_position;
 
 	m::float4x4 m_view_to_clip;
 	m::float4x4 m_tr_world_to_view;
