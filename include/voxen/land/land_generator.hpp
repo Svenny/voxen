@@ -5,7 +5,6 @@
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/svc/svc_fwd.hpp>
-#include <voxen/util/lru_visit_ordering.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
 #include <cstdint>

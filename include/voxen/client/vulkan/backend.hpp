@@ -1,13 +1,7 @@
 #pragma once
 
-#include <voxen/common/gameview.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
-#include <voxen/os/glfw_window.hpp>
-#include <voxen/svc/svc_fwd.hpp>
-#include <voxen/world/world_fwd.hpp>
-
-#include <extras/dyn_array.hpp>
 
 #include <string_view>
 

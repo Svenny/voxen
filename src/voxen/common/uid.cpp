@@ -1,7 +1,5 @@
 #include <voxen/common/uid.hpp>
 
-#include <fmt/format.h>
-
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>

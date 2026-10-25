@@ -8,7 +8,6 @@
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/svc/message_sender.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 
 #include <m/m.hpp>

@@ -11,8 +11,6 @@
 
 #include "async_counter_tracker.hpp"
 
-#include <extras/defer.hpp>
-
 #include <functional>
 #include <memory>
 #include <mutex>

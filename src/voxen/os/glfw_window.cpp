@@ -1,7 +1,6 @@
 #include <voxen/os/glfw_window.hpp>
 
 #include <voxen/client/gui.hpp>
-#include <voxen/os/futex.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>

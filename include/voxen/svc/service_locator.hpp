@@ -7,7 +7,6 @@
 #include <extras/move_only_function.hpp>
 #include <extras/pimpl.hpp>
 
-#include <functional>
 #include <memory>
 
 namespace voxen::svc

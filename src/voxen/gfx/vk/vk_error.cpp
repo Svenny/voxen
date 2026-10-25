@@ -2,7 +2,6 @@
 
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/error_condition.hpp>
-#include <voxen/util/log.hpp>
 
 #include <fmt/format.h>
 

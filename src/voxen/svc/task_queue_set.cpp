@@ -1,7 +1,6 @@
 #include "task_queue_set.hpp"
 
 #include <voxen/os/futex.hpp>
-#include <voxen/svc/task_handle.hpp>
 #include <voxen/util/log.hpp>
 
 #include "task_handle_private.hpp"
