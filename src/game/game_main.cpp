@@ -7,6 +7,8 @@
 #include <voxen/version.hpp>
 #include <voxen/world/world_control_service.hpp>
 
+#include <extras/defer.hpp>
+
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
@@ -66,16 +68,10 @@ int main(int argc, char *argv[])
 			latch.wait();
 		}
 
-		vxgame::Ui ui;
-
-		auto &main_thread = engine->serviceLocator().requestService<voxen::client::MainThreadService>();
-		// Will stay inside this function until the game is ordered to exit
-		main_thread.doMainLoop([&](voxen::client::MainThreadService::FrameCallbackData fcd) {
-			ui.draw(fcd.ui_builder);
-			return true;
-		});
-
-		{
+		// Stop the world on any exit from this scope, including an exception from the main loop.
+		// Services it runs on (land, tasks etc.) are destroyed before `ControlService` itself,
+		// so it must stop before the engine is destroyed.
+		defer {
 			std::latch latch(1);
 
 			world_control.asyncStopWorld({
@@ -95,10 +91,19 @@ int main(int argc, char *argv[])
 
 			// Block until the world stops
 			latch.wait();
-		}
+		};
+
+		vxgame::Ui ui;
+
+		auto &main_thread = engine->serviceLocator().requestService<voxen::client::MainThreadService>();
+		// Will stay inside this function until the game is ordered to exit
+		main_thread.doMainLoop([&](voxen::client::MainThreadService::FrameCallbackData fcd) {
+			ui.draw(fcd.ui_builder);
+			return true;
+		});
 	}
 	catch (const voxen::Exception &e) {
-		Log::fatal("Unchaught voxen::Exception instance");
+		Log::fatal("Uncaught voxen::Exception instance");
 		Log::fatal("what(): {}", e.what());
 		auto loc = e.where();
 		Log::fatal("where(): {}:{}", loc.file_name(), loc.line());
