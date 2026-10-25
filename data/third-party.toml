@@ -1,0 +1,10 @@
+# Third-party assets under `data/`, one table per upstream package. Not derived from archives,
+# `tools/scripts/vendor.py` only puts them into `THIRD_PARTY_NOTICES.md` and checks that `files`
+# and `license_files` exist (see its docstring for the keys). Paths are relative to `data/`.
+
+[source-code-pro]
+version = "2.042"
+license = "OFL-1.1"
+url = "https://github.com/adobe-fonts/source-code-pro"
+files = ["core-assets/fonts/SourceCodePro-Regular.otf"]
+license_files = ["core-assets/fonts/LICENSE-SourceCodePro.txt"]

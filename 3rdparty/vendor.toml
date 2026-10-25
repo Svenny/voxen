@@ -1,6 +1,8 @@
 # Third-party sources vendored into this directory, one table per `3rdparty/<name>`.
 # `tools/scripts/vendor.py` derives the directories from these entries
 # (see its docstring for the keys), CI checks that the tree matches.
+# `license_files` go into `THIRD_PARTY_NOTICES.md`, keep every license text and
+# notice the compiled code is under (including bundled code with its own license).
 #
 # Bumping a version: edit `version` (and `sha256`, the script prints the new one),
 # run `vendor.py update <name>`, fix whatever `keep`/`patches` stopped matching,
@@ -13,6 +15,7 @@ sha256 = "d16bd1b8b2364918bd472cb216394acb93bde6784890df0d91bccfb3f28d777d"
 license = "BSL-1.0"
 keep = ["src/catch2/**", "LICENSE.txt"]
 exclude = ["src/catch2/meson.build"]
+license_files = ["LICENSE.txt"]
 
 [fmt]
 version = "12.2.0"
@@ -20,6 +23,7 @@ url = "https://github.com/fmtlib/fmt/releases/download/{version}/fmt-{version}.z
 sha256 = "a2f4a8d51178f954e4c339007f77edd76ba0cb2e36f87a48e5a5403d9be5878f"
 license = "MIT"
 keep = ["include/fmt/*.h", "src/format.cc", "LICENSE"]
+license_files = ["LICENSE"]
 
 [freetype]
 version = "2.15.0"
@@ -36,6 +40,9 @@ keep = [
 exclude = ["src/*/*.mk", "src/autofit/*.cin", "src/autofit/*.hin", "src/autofit/*.dat", "src/base/ftver.rc"]
 # Project build configuration: no compressed fonts, no SVG, trimmed module list
 patches = ["config.patch"]
+# Used under the FTL, which asks for this credit in the documentation (the year is the release's)
+license_files = ["LICENSE.TXT", "docs/FTL.TXT"]
+credit = "Portions of this software are copyright © 2026 The FreeType Project (https://freetype.org). All rights reserved."
 
 [harfbuzz]
 version = "14.6.0"
@@ -44,6 +51,7 @@ sha256 = "d07a007327277708a2a73ae437887cdbaf282937f6d03ca5467723e9099af586"
 license = "MIT-old-style"
 keep = ["src/*.cc", "src/*.hh", "src/*.h", "src/OT/**", "src/graph/**", "COPYING"]
 exclude = ["src/harfbuzz-subset.cc", "src/harfbuzz-world.cc", "src/hb-subset*.cc", "src/main.cc", "src/test*.cc"]
+license_files = ["COPYING"]
 
 [llvm-demangle]
 # The Itanium C++ ABI demangler from libc++abi, LLVM's own copy in `llvm/Demangle` is
@@ -53,6 +61,7 @@ url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{version}/
 sha256 = "709c9a63bde1e36a80d8675becc38073b85f0fa1b4111e34542b885c9e1239da"
 license = "Apache-2.0 WITH LLVM-exception"
 keep = ["src/demangle/*.h", "src/demangle/*.def", "LICENSE.TXT"]
+license_files = ["LICENSE.TXT"]
 
 [sdl]
 version = "3.4.18"
@@ -70,9 +79,12 @@ keep = [
 	"src/video/khronos/EGL/*.h", "src/video/khronos/KHR/*.h",
 	"src/video/wayland/*.[ch]", "src/video/x11/*.[ch]", "src/video/yuv2rgb/*.[ch]",
 	"wayland-protocols/*.xml", "LICENSE.txt",
+	"src/hidapi/LICENSE.txt", "src/hidapi/LICENSE-bsd.txt", "src/video/yuv2rgb/LICENSE",
 ]
 exclude = ["include/SDL3/SDL_opengl*.h", "include/SDL3/SDL_test*.h", "src/test/*"]
 patches = ["vulkan-headers.patch", "ibus-no-glib.patch", "no-dynapi.patch"]
+# Plus the bundled HIDAPI (used under its BSD-style option) and yuv2rgb, both compiled in
+license_files = ["LICENSE.txt", "src/hidapi/LICENSE.txt", "src/hidapi/LICENSE-bsd.txt", "src/video/yuv2rgb/LICENSE"]
 
 [vma]
 version = "3.4.0"
@@ -80,6 +92,7 @@ url = "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive
 sha256 = "822aa850c6ce77346ae96a8a1d351d52e77e85929f35363849a0a4e638e0a2a1"
 license = "MIT"
 keep = ["include/vk_mem_alloc.h", "LICENSE.txt"]
+license_files = ["LICENSE.txt"]
 
 [vulkan-headers]
 version = "1.4.363.0"
@@ -90,8 +103,10 @@ keep = [
 	"include/vulkan/vk_platform.h", "include/vulkan/vulkan.h", "include/vulkan/vulkan_core.h",
 	"include/vulkan/vulkan_wayland.h", "include/vulkan/vulkan_win32.h", "include/vulkan/vulkan_xcb.h",
 	"include/vulkan/vulkan_xlib.h", "include/vulkan/vulkan_xlib_xrandr.h",
-	"include/vk_video/*.h", "LICENSE.md",
+	"include/vk_video/*.h", "LICENSE.md", "LICENSES/MIT.txt",
 ]
+# Used under the MIT option
+license_files = ["LICENSE.md", "LICENSES/MIT.txt"]
 # Tiny size/codegen optimization, trim exception handler sections around Vulkan API calls.
 # Declares `VKAPI_NOEXCEPT`, the substitution below appends it to every function prototype.
 patches = ["vkapi-noexcept-macro.patch"]
@@ -109,3 +124,4 @@ license = "Zlib"
 # Only deflate/inflate/crc32, no gzip file API
 keep = ["*.c", "*.h", "LICENSE"]
 exclude = ["compress.c", "uncompr.c", "gz*.c", "infback.c"]
+license_files = ["LICENSE"]
