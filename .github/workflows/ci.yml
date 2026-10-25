@@ -86,12 +86,6 @@ jobs:
           choco install llvm --version=${{ env.LLVM_VERSION }} --allow-downgrade --force -y
           & "C:\Program Files\LLVM\bin\clang-cl.exe" --version
 
-      # Ninja needs `INCLUDE`/`LIB`/`PATH` for Windows SDK and MSVC CRT
-      - name: Enter MSVC developer environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       - name: Configure
         run: |
           cmake --version

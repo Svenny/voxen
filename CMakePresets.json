@@ -65,13 +65,18 @@
 			"name": "windows-ninja",
 			"displayName": "Windows Ninja Multi-Config (clang-cl)",
 			"$comment": [
-				"Needs to run in the VS x64 developer environment (for the linker to find Windows SDK and CRT)."
+				"Needs LLVM in its default location and VS with the C++ workload, but no VS developer environment:",
+				"clang-cl and lld-link find MSVC headers/libraries and the Windows SDK on their own.",
+				"Resource and manifest tools come from LLVM too, the SDK ones are only on PATH in that environment."
 			],
 			"inherits": "windows",
 			"generator": "Ninja Multi-Config",
 			"cacheVariables": {
 				"CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
-				"CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe"
+				"CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
+				"CMAKE_LINKER": "C:/Program Files/LLVM/bin/lld-link.exe",
+				"CMAKE_RC_COMPILER": "C:/Program Files/LLVM/bin/llvm-rc.exe",
+				"CMAKE_MT": "C:/Program Files/LLVM/bin/llvm-mt.exe"
 			}
 		}
 	],
