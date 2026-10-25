@@ -50,6 +50,9 @@ public:
 	// Usually this function will recover from the underlying WSI problems
 	// (like window resize with the swapchain going out of date) transparently.
 	//
+	// While the window is minimized and the surface has zero size (Win32), this function blocks
+	// until the window is restored. If the window is closed meanwhile, no image is acquired.
+	//
 	// NOTE: this may lead to changes in image format/resolution/etc.
 	// Values returned by `imageFormat()`, `imageColorSpace()`,
 	// `imageExtent()` and `presentMode()` can change after this call, make

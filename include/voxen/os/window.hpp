@@ -10,7 +10,8 @@
 #include <span>
 #include <vector>
 
-struct GLFWwindow;
+struct SDL_Window;
+union SDL_Event;
 
 // Vulkan handles exactly as `vulkan_core.h` declares them on 64-bit platforms, avoid including it here
 using VkInstance = struct VkInstance_T *;
@@ -21,6 +22,7 @@ namespace voxen::os
 {
 
 // OS window, the source of input events. Its methods can be called only from the main thread.
+// Only one window is supported, `pollEvents()` drops events of other windows.
 class VOXEN_API Window {
 public:
 	struct Config {
@@ -46,18 +48,15 @@ public:
 	// Events collected by the latest `pollEvents()`, valid until the next call to it
 	std::span<const WindowEvent> events() const noexcept { return m_events; }
 
-	// Block until the window is expanded from the minimized state
-	// then return the new value of `framebufferSize()`. Call
-	// this when creating a surface/swapchain and the size is zero.
-	// Events received while waiting are returned by the next `pollEvents()`.
-	Resolution waitUntilUnMinimized();
+	// Block until OS events arrive and process them, the next `pollEvents()` returns them
+	void waitEvents();
 
 	// Window size in logical units. May differ from `framebufferSize()`
 	// when the OS scales windows (e.g. Wayland with fractional scaling).
-	// NOTE: can return empty (zeros) if the window is minimized.
+	// Minimized windows keep their last size.
 	Resolution windowSize() const;
 	// Window framebuffer size in pixels. Usually you need this function.
-	// NOTE: can return empty (zeros) if the window is minimized.
+	// Minimized windows keep their last size.
 	Resolution framebufferSize() const;
 
 	// Current cursor position in framebuffer pixels
@@ -92,17 +91,17 @@ public:
 	static void terminateLibrary() noexcept;
 
 private:
-	GLFWwindow *m_window = nullptr;
+	SDL_Window *m_window = nullptr;
+	uint32_t m_window_id = 0;
+	bool m_should_close = false;
 
-	// Filled by OS event callbacks, moved to `m_events` by `pollEvents()`
+	// Filled when processing OS events, moved to `m_events` by `pollEvents()`
 	std::vector<WindowEvent> m_pending_events;
 	std::vector<WindowEvent> m_events;
-	// To compute relative motion
-	m::double2 m_last_cursor_pos;
 
 	VOXEN_LOCAL void swap(Window &other) noexcept;
-	VOXEN_LOCAL void pushEvent(WindowEvent event);
-	VOXEN_LOCAL m::double2 toFramebufferCoords(double x, double y) const;
+	VOXEN_LOCAL void handleSdlEvent(const SDL_Event &event);
+	VOXEN_LOCAL m::double2 toFramebufferCoords(float x, float y) const;
 };
 
 } // namespace voxen::os
