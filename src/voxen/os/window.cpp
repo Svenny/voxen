@@ -1,16 +1,27 @@
 #include <voxen/os/window.hpp>
 
-// GLFW declares its Vulkan functions only when Vulkan headers are included before it
-#include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
 #include <m/vector.hpp>
 
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_version.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_vulkan.h>
 
-#include <cstddef>
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -22,184 +33,90 @@ namespace voxen::os
 namespace
 {
 
-void logGlfwVersion()
+void logSdlVersion()
 {
-	Log::debug("Voxen is compiled against GLFW {}.{}.{}", GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION);
+	Log::debug("Voxen is compiled against SDL {}.{}.{}", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
 
-	int major, minor, revision;
-	glfwGetVersion(&major, &minor, &revision);
-	Log::debug("Voxen is running against GLFW {}.{}.{} ({})", major, minor, revision, glfwGetVersionString());
+	int version = SDL_GetVersion();
+	Log::debug("Voxen is running against SDL {}.{}.{} ({})", SDL_VERSIONNUM_MAJOR(version),
+		SDL_VERSIONNUM_MINOR(version), SDL_VERSIONNUM_MICRO(version), SDL_GetRevision());
 }
 
-void glfwErrorCallback(int code, const char *message) noexcept
+void sdlLogCallback(void * /*userdata*/, int category, SDL_LogPriority priority, const char *message) noexcept
 {
-	Log::error("GLFW error {}:\n{}", code, message);
-}
-
-Key translateKey(int key) noexcept
-{
-	if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
-		return Key(int(Key::A) + key - GLFW_KEY_A);
-	}
-	if (key >= GLFW_KEY_1 && key <= GLFW_KEY_9) {
-		return Key(int(Key::Digit1) + key - GLFW_KEY_1);
-	}
-	if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F12) {
-		return Key(int(Key::F1) + key - GLFW_KEY_F1);
-	}
-	if (key >= GLFW_KEY_F13 && key <= GLFW_KEY_F24) {
-		return Key(int(Key::F13) + key - GLFW_KEY_F13);
-	}
-	if (key >= GLFW_KEY_KP_1 && key <= GLFW_KEY_KP_9) {
-		return Key(int(Key::Kp1) + key - GLFW_KEY_KP_1);
-	}
-
-	switch (key) {
-	case GLFW_KEY_0:
-		return Key::Digit0;
-	case GLFW_KEY_ENTER:
-		return Key::Enter;
-	case GLFW_KEY_ESCAPE:
-		return Key::Escape;
-	case GLFW_KEY_BACKSPACE:
-		return Key::Backspace;
-	case GLFW_KEY_TAB:
-		return Key::Tab;
-	case GLFW_KEY_SPACE:
-		return Key::Space;
-	case GLFW_KEY_MINUS:
-		return Key::Minus;
-	case GLFW_KEY_EQUAL:
-		return Key::Equal;
-	case GLFW_KEY_LEFT_BRACKET:
-		return Key::LeftBracket;
-	case GLFW_KEY_RIGHT_BRACKET:
-		return Key::RightBracket;
-	case GLFW_KEY_BACKSLASH:
-		return Key::Backslash;
-	case GLFW_KEY_SEMICOLON:
-		return Key::Semicolon;
-	case GLFW_KEY_APOSTROPHE:
-		return Key::Apostrophe;
-	case GLFW_KEY_GRAVE_ACCENT:
-		return Key::Grave;
-	case GLFW_KEY_COMMA:
-		return Key::Comma;
-	case GLFW_KEY_PERIOD:
-		return Key::Period;
-	case GLFW_KEY_SLASH:
-		return Key::Slash;
-	case GLFW_KEY_CAPS_LOCK:
-		return Key::CapsLock;
-	case GLFW_KEY_PRINT_SCREEN:
-		return Key::PrintScreen;
-	case GLFW_KEY_SCROLL_LOCK:
-		return Key::ScrollLock;
-	case GLFW_KEY_PAUSE:
-		return Key::Pause;
-	case GLFW_KEY_INSERT:
-		return Key::Insert;
-	case GLFW_KEY_HOME:
-		return Key::Home;
-	case GLFW_KEY_PAGE_UP:
-		return Key::PageUp;
-	case GLFW_KEY_DELETE:
-		return Key::Delete;
-	case GLFW_KEY_END:
-		return Key::End;
-	case GLFW_KEY_PAGE_DOWN:
-		return Key::PageDown;
-	case GLFW_KEY_RIGHT:
-		return Key::Right;
-	case GLFW_KEY_LEFT:
-		return Key::Left;
-	case GLFW_KEY_DOWN:
-		return Key::Down;
-	case GLFW_KEY_UP:
-		return Key::Up;
-	case GLFW_KEY_NUM_LOCK:
-		return Key::NumLock;
-	case GLFW_KEY_KP_DIVIDE:
-		return Key::KpDivide;
-	case GLFW_KEY_KP_MULTIPLY:
-		return Key::KpMultiply;
-	case GLFW_KEY_KP_SUBTRACT:
-		return Key::KpSubtract;
-	case GLFW_KEY_KP_ADD:
-		return Key::KpAdd;
-	case GLFW_KEY_KP_ENTER:
-		return Key::KpEnter;
-	case GLFW_KEY_KP_0:
-		return Key::Kp0;
-	case GLFW_KEY_KP_DECIMAL:
-		return Key::KpDecimal;
-	case GLFW_KEY_KP_EQUAL:
-		return Key::KpEqual;
-	case GLFW_KEY_WORLD_2:
-		return Key::NonUsBackslash;
-	case GLFW_KEY_MENU:
-		return Key::Menu;
-	case GLFW_KEY_LEFT_CONTROL:
-		return Key::LeftControl;
-	case GLFW_KEY_LEFT_SHIFT:
-		return Key::LeftShift;
-	case GLFW_KEY_LEFT_ALT:
-		return Key::LeftAlt;
-	case GLFW_KEY_LEFT_SUPER:
-		return Key::LeftSuper;
-	case GLFW_KEY_RIGHT_CONTROL:
-		return Key::RightControl;
-	case GLFW_KEY_RIGHT_SHIFT:
-		return Key::RightShift;
-	case GLFW_KEY_RIGHT_ALT:
-		return Key::RightAlt;
-	case GLFW_KEY_RIGHT_SUPER:
-		return Key::RightSuper;
+	switch (priority) {
+	case SDL_LOG_PRIORITY_TRACE:
+	case SDL_LOG_PRIORITY_VERBOSE:
+		Log::trace("SDL [{}]: {}", category, message);
+		break;
+	case SDL_LOG_PRIORITY_DEBUG:
+		Log::debug("SDL [{}]: {}", category, message);
+		break;
+	case SDL_LOG_PRIORITY_INFO:
+		Log::info("SDL [{}]: {}", category, message);
+		break;
+	case SDL_LOG_PRIORITY_WARN:
+		Log::warn("SDL [{}]: {}", category, message);
+		break;
 	default:
-		return Key::Unknown;
+		Log::error("SDL [{}]: {}", category, message);
+		break;
 	}
 }
 
-KeyMods translateMods(int mods) noexcept
+Key translateKey(SDL_Scancode scancode) noexcept
+{
+	// `SDL_Scancode` values are USB HID usage IDs, like ours
+	auto code = static_cast<uint32_t>(scancode);
+	if ((code >= uint32_t(Key::A) && code <= uint32_t(Key::Menu))
+		|| (code >= uint32_t(Key::KpEqual) && code <= uint32_t(Key::F24))
+		|| (code >= uint32_t(Key::LeftControl) && code <= uint32_t(Key::RightSuper))) {
+		return Key(code);
+	}
+
+	return Key::Unknown;
+}
+
+KeyMods translateMods(SDL_Keymod mod) noexcept
 {
 	KeyMods result;
-	if (mods & GLFW_MOD_SHIFT) {
+	if (mod & SDL_KMOD_SHIFT) {
 		result |= KeyModBit::Shift;
 	}
-	if (mods & GLFW_MOD_CONTROL) {
+	if (mod & SDL_KMOD_CTRL) {
 		result |= KeyModBit::Control;
 	}
-	if (mods & GLFW_MOD_ALT) {
+	if (mod & SDL_KMOD_ALT) {
 		result |= KeyModBit::Alt;
 	}
-	if (mods & GLFW_MOD_SUPER) {
+	if (mod & SDL_KMOD_GUI) {
 		result |= KeyModBit::Super;
 	}
-	if (mods & GLFW_MOD_CAPS_LOCK) {
+	if (mod & SDL_KMOD_CAPS) {
 		result |= KeyModBit::CapsLock;
 	}
-	if (mods & GLFW_MOD_NUM_LOCK) {
+	if (mod & SDL_KMOD_NUM) {
 		result |= KeyModBit::NumLock;
 	}
 	return result;
 }
 
-bool translateMouseButton(int button, MouseButton &result) noexcept
+bool translateMouseButton(uint8_t button, MouseButton &result) noexcept
 {
 	switch (button) {
-	case GLFW_MOUSE_BUTTON_LEFT:
+	case SDL_BUTTON_LEFT:
 		result = MouseButton::Left;
 		return true;
-	case GLFW_MOUSE_BUTTON_RIGHT:
+	case SDL_BUTTON_RIGHT:
 		result = MouseButton::Right;
 		return true;
-	case GLFW_MOUSE_BUTTON_MIDDLE:
+	case SDL_BUTTON_MIDDLE:
 		result = MouseButton::Middle;
 		return true;
-	case GLFW_MOUSE_BUTTON_4:
+	case SDL_BUTTON_X1:
 		result = MouseButton::X1;
 		return true;
-	case GLFW_MOUSE_BUTTON_5:
+	case SDL_BUTTON_X2:
 		result = MouseButton::X2;
 		return true;
 	default:
@@ -207,119 +124,71 @@ bool translateMouseButton(int button, MouseButton &result) noexcept
 	}
 }
 
-void appendUtf8(std::string &str, uint32_t cp)
+int toSdlMouseButton(MouseButton button) noexcept
 {
-	if (cp < 0x80) {
-		str += char(cp);
-	} else if (cp < 0x800) {
-		str += char(0xC0 | (cp >> 6));
-		str += char(0x80 | (cp & 0x3F));
-	} else if (cp < 0x10000) {
-		str += char(0xE0 | (cp >> 12));
-		str += char(0x80 | ((cp >> 6) & 0x3F));
-		str += char(0x80 | (cp & 0x3F));
-	} else {
-		str += char(0xF0 | (cp >> 18));
-		str += char(0x80 | ((cp >> 12) & 0x3F));
-		str += char(0x80 | ((cp >> 6) & 0x3F));
-		str += char(0x80 | (cp & 0x3F));
+	switch (button) {
+	case MouseButton::Left:
+		return SDL_BUTTON_LEFT;
+	case MouseButton::Right:
+		return SDL_BUTTON_RIGHT;
+	case MouseButton::Middle:
+		return SDL_BUTTON_MIDDLE;
+	case MouseButton::X1:
+		return SDL_BUTTON_X1;
+	case MouseButton::X2:
+		return SDL_BUTTON_X2;
+	case MouseButton::EnumSize:
+		break;
 	}
-}
 
-Window *getWindow(GLFWwindow *window) noexcept
-{
-	return static_cast<Window *>(glfwGetWindowUserPointer(window));
+	return 0;
 }
 
 } // namespace
 
 Window::Window(Config cfg)
 {
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);       // Only for windowed
-	glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);          // Only for windowed
-	glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);     // Only for full-screen
-	glfwWindowHint(GLFW_CENTER_CURSOR, GLFW_TRUE);    // Only for full-screen
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);     // Vulkan!
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE); // Kinda unify X11 and Wayland behaviors
-
-	GLFWmonitor *monitor = nullptr;
+	// Hidden until sized properly. Borderless fullscreen when no display mode is set. Resizable,
+	// otherwise SDL on Win32 pins the window size, even against programmatic resizes.
+	SDL_WindowFlags flags = SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE;
 	if (cfg.fullscreen) {
-		// TODO: add possibility to select non-primary monitor?
-		monitor = glfwGetPrimaryMonitor();
-
-		const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
-		// Match video mode dimensions to get "borderless fullscreen" mode
-		cfg.width = vidmode->width;
-		cfg.height = vidmode->height;
-		glfwWindowHint(GLFW_RED_BITS, vidmode->redBits);
-		glfwWindowHint(GLFW_GREEN_BITS, vidmode->greenBits);
-		glfwWindowHint(GLFW_BLUE_BITS, vidmode->blueBits);
-		glfwWindowHint(GLFW_REFRESH_RATE, vidmode->refreshRate);
+		flags |= SDL_WINDOW_FULLSCREEN;
 	}
 
-	m_window = glfwCreateWindow(cfg.width, cfg.height, cfg.title, monitor, nullptr);
-
+	m_window = SDL_CreateWindow(cfg.title, cfg.width, cfg.height, flags);
 	if (!m_window) {
-		Log::fatal("Can't create GLFW window!");
-		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "glfwCreateWindow failed");
+		Log::fatal("Can't create window: {}", SDL_GetError());
+		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "SDL_CreateWindow failed");
 	}
 
-	glfwSetWindowUserPointer(m_window, this);
-	m_last_cursor_pos = cursorPos();
+	m_window_id = SDL_GetWindowID(m_window);
 
-	glfwSetKeyCallback(m_window, [](GLFWwindow *window, int key, int /*scancode*/, int action, int mods) noexcept {
-		getWindow(window)->pushEvent(KeyEvent {
-			.key = translateKey(key),
-			.mods = translateMods(mods),
-			.pressed = action != GLFW_RELEASE,
-			.repeat = action == GLFW_REPEAT,
-		});
-	});
+	if (!cfg.fullscreen) {
+		// Where window sizes are in pixels (Windows, X11), scale them by the display content scale.
+		// Where they are in logical units (Wayland), the OS does it, and this ratio is 1.
+		float scale = SDL_GetWindowDisplayScale(m_window) / SDL_GetWindowPixelDensity(m_window);
+		if (scale > 0.0f && std::abs(scale - 1.0f) > 0.01f) {
+			int width = int(std::lround(float(cfg.width) * scale));
+			int height = int(std::lround(float(cfg.height) * scale));
 
-	glfwSetCharCallback(m_window, [](GLFWwindow *window, unsigned int codepoint) noexcept {
-		TextInputEvent event;
-		appendUtf8(event.text, codepoint);
-		getWindow(window)->pushEvent(std::move(event));
-	});
+			// Don't outgrow the display (sizes in the same units here)
+			SDL_Rect bounds;
+			if (SDL_GetDisplayUsableBounds(SDL_GetDisplayForWindow(m_window), &bounds)) {
+				width = std::min(width, bounds.w);
+				height = std::min(height, bounds.h);
+			}
 
-	glfwSetMouseButtonCallback(m_window, [](GLFWwindow *window, int button, int action, int mods) noexcept {
-		MouseButton btn;
-		if (!translateMouseButton(button, btn)) {
-			return;
+			SDL_SetWindowSize(m_window, width, height);
+			SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 		}
+	}
 
-		Window *self = getWindow(window);
-		self->pushEvent(MouseButtonEvent {
-			.button = btn,
-			.mods = translateMods(mods),
-			.pressed = action != GLFW_RELEASE,
-			.clicks = action != GLFW_RELEASE ? 1 : 0,
-			.position = self->cursorPos(),
-		});
-	});
-
-	glfwSetCursorPosCallback(m_window, [](GLFWwindow *window, double xpos, double ypos) noexcept {
-		Window *self = getWindow(window);
-		m::double2 pos = self->toFramebufferCoords(xpos, ypos);
-		self->pushEvent(MouseMotionEvent {
-			.position = pos,
-			.delta = pos - self->m_last_cursor_pos,
-		});
-		self->m_last_cursor_pos = pos;
-	});
-
-	glfwSetScrollCallback(m_window, [](GLFWwindow *window, double xoffset, double yoffset) noexcept {
-		getWindow(window)->pushEvent(MouseWheelEvent { .delta = m::double2(xoffset, yoffset) });
-	});
-
-	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, int width, int height) noexcept {
-		getWindow(window)->pushEvent(WindowResizeEvent { .framebuffer_size = { width, height } });
-	});
-
-	glfwSetWindowCloseCallback(m_window,
-		[](GLFWwindow *window) noexcept { getWindow(window)->pushEvent(WindowCloseEvent {}); });
-
+	SDL_ShowWindow(m_window);
+	stopTextInput();
 	useRegularCursor();
+
+	Log::info("Created window {}x{} ({}x{} pixels), display scale {}", windowSize().width, windowSize().height,
+		framebufferSize().width, framebufferSize().height, SDL_GetWindowDisplayScale(m_window));
 }
 
 Window::Window(Window &&other) noexcept
@@ -335,93 +204,93 @@ Window &Window::operator=(Window &&other) noexcept
 
 Window::~Window() noexcept
 {
-	glfwDestroyWindow(m_window);
+	if (m_window) {
+		SDL_DestroyWindow(m_window);
+	}
 }
 
 bool Window::shouldClose() const
 {
-	return glfwWindowShouldClose(m_window) != 0;
+	return m_should_close;
 }
 
 void Window::pollEvents()
 {
-	glfwPollEvents();
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		handleSdlEvent(event);
+	}
+
 	m_events.clear();
 	std::swap(m_events, m_pending_events);
 }
 
-Resolution Window::waitUntilUnMinimized()
+void Window::waitEvents()
 {
-	auto size = framebufferSize();
-	while ((size.width == 0 || size.height == 0) && !shouldClose()) {
-		glfwWaitEvents();
-		size = framebufferSize();
+	SDL_Event event;
+	if (SDL_WaitEvent(&event)) {
+		do {
+			handleSdlEvent(event);
+		} while (SDL_PollEvent(&event));
 	}
-
-	return size;
 }
 
 Resolution Window::windowSize() const
 {
-	int width, height;
-	glfwGetWindowSize(m_window, &width, &height);
+	int width = 0, height = 0;
+	SDL_GetWindowSize(m_window, &width, &height);
 	return { width, height };
 }
 
 Resolution Window::framebufferSize() const
 {
-	int width, height;
-	glfwGetFramebufferSize(m_window, &width, &height);
+	int width = 0, height = 0;
+	SDL_GetWindowSizeInPixels(m_window, &width, &height);
 	return { width, height };
 }
 
 m::double2 Window::cursorPos() const
 {
-	double xpos, ypos;
-	glfwGetCursorPos(m_window, &xpos, &ypos);
-	return toFramebufferCoords(xpos, ypos);
+	float x = 0, y = 0;
+	SDL_GetMouseState(&x, &y);
+	return toFramebufferCoords(x, y);
 }
 
 bool Window::mouseButtonPressed(MouseButton button) const
 {
-	static constexpr int BUTTONS[] = {
-		GLFW_MOUSE_BUTTON_LEFT,
-		GLFW_MOUSE_BUTTON_RIGHT,
-		GLFW_MOUSE_BUTTON_MIDDLE,
-		GLFW_MOUSE_BUTTON_4,
-		GLFW_MOUSE_BUTTON_5,
-	};
-	return glfwGetMouseButton(m_window, BUTTONS[size_t(button)]) == GLFW_PRESS;
+	return (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_MASK(toSdlMouseButton(button))) != 0;
 }
 
 void Window::useRegularCursor()
 {
-	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	if (glfwRawMouseMotionSupported()) {
-		glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+	if (!SDL_SetWindowRelativeMouseMode(m_window, false)) {
+		Log::warn("Can't disable relative mouse mode: {}", SDL_GetError());
 	}
 }
 
 void Window::useGrabbedCursor()
 {
-	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	if (glfwRawMouseMotionSupported()) {
-		glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	if (!SDL_SetWindowRelativeMouseMode(m_window, true)) {
+		Log::warn("Can't enable relative mouse mode: {}", SDL_GetError());
 	}
 }
 
 void Window::startTextInput()
 {
-	// GLFW always delivers text input
+	if (!SDL_StartTextInput(m_window)) {
+		Log::warn("Can't start text input: {}", SDL_GetError());
+	}
 }
 
-void Window::stopTextInput() {}
+void Window::stopTextInput()
+{
+	SDL_StopTextInput(m_window);
+}
 
 bool Window::createVulkanSurface(VkInstance instance, VkSurfaceKHR *surface) const
 {
-	VkResult res = glfwCreateWindowSurface(instance, m_window, nullptr, surface);
-	if (res != VK_SUCCESS) {
-		Log::error("glfwCreateWindowSurface failed: {}", int(res));
+	if (!SDL_Vulkan_CreateSurface(m_window, instance, nullptr, surface)) {
+		Log::error("SDL_Vulkan_CreateSurface failed: {}", SDL_GetError());
 		return false;
 	}
 
@@ -430,77 +299,163 @@ bool Window::createVulkanSurface(VkInstance instance, VkSurfaceKHR *surface) con
 
 std::span<const char *const> Window::requiredVulkanInstanceExtensions()
 {
-	uint32_t count = 0;
-	const char **list = glfwGetRequiredInstanceExtensions(&count);
+	Uint32 count = 0;
+	const char *const *list = SDL_Vulkan_GetInstanceExtensions(&count);
+	if (!list) {
+		Log::error("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
+		return {};
+	}
+
 	return { list, count };
 }
 
 bool Window::vulkanPresentationSupport(VkInstance instance, VkPhysicalDevice physical_device, uint32_t queue_family)
 {
-	return glfwGetPhysicalDevicePresentationSupport(instance, physical_device, queue_family) == GLFW_TRUE;
+	return SDL_Vulkan_GetPresentationSupport(instance, physical_device, queue_family);
 }
 
 void Window::initLibrary()
 {
-	Log::info("Initializing GLFW library");
-	logGlfwVersion();
+	Log::info("Initializing SDL library");
+	logSdlVersion();
 
-	glfwSetErrorCallback(&glfwErrorCallback);
+	SDL_SetLogOutputFunction(&sdlLogCallback, nullptr);
 
-	if (glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)) {
-		// Use Wayland if available
-		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
-	} else if (glfwPlatformSupported(GLFW_PLATFORM_X11)) {
-		// Otherwise use X11 with XCB surface
-		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
-		glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, GLFW_TRUE);
+#ifdef __linux__
+	// SDL prefers X11 when the compositor lacks `wp_fifo_manager_v1`, we want Wayland anyway.
+	// Environment variable `SDL_VIDEO_DRIVER` still takes precedence.
+	SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland,x11");
+#endif
+	// Don't turn SIGINT/SIGTERM into quit events, we handle (or not) them ourselves
+	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+
+	if (!SDL_Init(SDL_INIT_VIDEO)) {
+		Log::fatal("Can't init SDL: {}", SDL_GetError());
+		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "SDL init failed");
 	}
 
-	if (glfwInit() != GLFW_TRUE) {
-		Log::fatal("Can't init GLFW!");
-		throw Exception::fromError(VoxenErrc::ExternalLibFailure, "GLFW init failed");
+	// Load Vulkan loader now, instance extensions are queried before window surfaces are created
+	if (!SDL_Vulkan_LoadLibrary(nullptr)) {
+		Log::fatal("Can't load Vulkan library: {}", SDL_GetError());
+		SDL_Quit();
+		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "Vulkan library not found");
 	}
 
-	Log::info("GLFW initialized successfully");
+	Log::info("SDL initialized successfully, video driver: {}", SDL_GetCurrentVideoDriver());
 }
 
 void Window::terminateLibrary() noexcept
 {
-	Log::info("Terminating GLFW library");
-	glfwTerminate();
+	Log::info("Terminating SDL library");
+	SDL_Vulkan_UnloadLibrary();
+	SDL_Quit();
+	SDL_SetLogOutputFunction(SDL_GetDefaultLogOutputFunction(), nullptr);
 }
 
 void Window::swap(Window &other) noexcept
 {
-	// User pointers point to the owning objects
-	if (m_window) {
-		glfwSetWindowUserPointer(m_window, &other);
-	}
-	if (other.m_window) {
-		glfwSetWindowUserPointer(other.m_window, this);
-	}
-
 	std::swap(m_window, other.m_window);
+	std::swap(m_window_id, other.m_window_id);
+	std::swap(m_should_close, other.m_should_close);
 	std::swap(m_pending_events, other.m_pending_events);
 	std::swap(m_events, other.m_events);
-	std::swap(m_last_cursor_pos, other.m_last_cursor_pos);
 }
 
-void Window::pushEvent(WindowEvent event)
+void Window::handleSdlEvent(const SDL_Event &event)
 {
-	m_pending_events.emplace_back(std::move(event));
-}
+	switch (event.type) {
+	case SDL_EVENT_QUIT:
+		if (!m_should_close) {
+			m_should_close = true;
+			m_pending_events.emplace_back(WindowCloseEvent {});
+		}
+		return;
 
-m::double2 Window::toFramebufferCoords(double x, double y) const
-{
-	// GLFW reports cursor positions in window (logical) coordinates
-	Resolution window_size = windowSize();
-	Resolution fb_size = framebufferSize();
-	if (window_size.width <= 0 || window_size.height <= 0) {
-		return m::double2(x, y);
+	case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+		if (event.window.windowID == m_window_id && !m_should_close) {
+			m_should_close = true;
+			m_pending_events.emplace_back(WindowCloseEvent {});
+		}
+		return;
+
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		if (event.window.windowID == m_window_id) {
+			m_pending_events.emplace_back(WindowResizeEvent {
+				.framebuffer_size = { event.window.data1, event.window.data2 },
+			});
+		}
+		return;
+
+	case SDL_EVENT_KEY_DOWN:
+	case SDL_EVENT_KEY_UP:
+		if (event.key.windowID == m_window_id) {
+			m_pending_events.emplace_back(KeyEvent {
+				.key = translateKey(event.key.scancode),
+				.mods = translateMods(event.key.mod),
+				.pressed = event.key.down,
+				.repeat = event.key.repeat,
+			});
+		}
+		return;
+
+	case SDL_EVENT_TEXT_INPUT:
+		if (event.text.windowID == m_window_id) {
+			m_pending_events.emplace_back(TextInputEvent { .text = event.text.text });
+		}
+		return;
+
+	case SDL_EVENT_TEXT_EDITING:
+		if (event.edit.windowID == m_window_id) {
+			m_pending_events.emplace_back(TextEditingEvent {
+				.text = event.edit.text ? event.edit.text : "",
+				.start = event.edit.start,
+				.length = event.edit.length,
+			});
+		}
+		return;
+
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+		if (MouseButton button;
+			event.button.windowID == m_window_id && translateMouseButton(event.button.button, button)) {
+			m_pending_events.emplace_back(MouseButtonEvent {
+				.button = button,
+				.mods = translateMods(SDL_GetModState()),
+				.pressed = event.button.down,
+				.clicks = event.button.down ? int32_t(event.button.clicks) : 0,
+				.position = toFramebufferCoords(event.button.x, event.button.y),
+			});
+		}
+		return;
+
+	case SDL_EVENT_MOUSE_MOTION:
+		if (event.motion.windowID == m_window_id) {
+			m_pending_events.emplace_back(MouseMotionEvent {
+				.position = toFramebufferCoords(event.motion.x, event.motion.y),
+				.delta = toFramebufferCoords(event.motion.xrel, event.motion.yrel),
+			});
+		}
+		return;
+
+	case SDL_EVENT_MOUSE_WHEEL:
+		if (event.wheel.windowID == m_window_id) {
+			double sign = event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1.0 : 1.0;
+			m_pending_events.emplace_back(MouseWheelEvent {
+				.delta = m::double2(event.wheel.x, event.wheel.y) * sign,
+			});
+		}
+		return;
+
+	default:
+		return;
 	}
+}
 
-	return m::double2(x * fb_size.width / window_size.width, y * fb_size.height / window_size.height);
+m::double2 Window::toFramebufferCoords(float x, float y) const
+{
+	// SDL reports mouse coordinates in window (logical) units
+	double density = SDL_GetWindowPixelDensity(m_window);
+	return m::double2(x, y) * density;
 }
 
 } // namespace voxen::os

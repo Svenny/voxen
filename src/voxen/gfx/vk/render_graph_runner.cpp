@@ -247,6 +247,10 @@ void RenderGraphRunner::executeGraph()
 	}
 
 	swapchain.acquireImage();
+	if (!swapchain.imageAcquired()) [[unlikely]] {
+		// The window was closed while minimized, nothing to present to
+		return;
+	}
 
 	// Check for swapchain image changes (strictly after `acquireImage()`)
 	VkFormat cur_format = swapchain.imageFormat();

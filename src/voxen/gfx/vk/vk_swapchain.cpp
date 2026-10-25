@@ -52,10 +52,13 @@ Swapchain::~Swapchain() noexcept
 
 void Swapchain::acquireImage()
 {
-	assert(m_num_images > 0);
-
 	if (imageAcquired()) [[unlikely]] {
 		Log::warn("Swapchain image already acquired! Only one can be acquired at a time");
+		return;
+	}
+
+	if (m_swapchain == VK_NULL_HANDLE) [[unlikely]] {
+		// The window was closed while minimized, see `recreateSwapchain()`
 		return;
 	}
 
@@ -121,6 +124,11 @@ void Swapchain::acquireImage()
 		} else {
 			// We can't handle other error codes, fail and enter the bad state
 			throw VulkanException(res, "vkAcquireNextImageKHR");
+		}
+
+		if (m_swapchain == VK_NULL_HANDLE) [[unlikely]] {
+			// The window was closed while minimized, see `recreateSwapchain()`
+			return;
 		}
 
 		res = m_device.dt().vkAcquireNextImageKHR(m_device.handle(), m_swapchain, UINT64_MAX,
@@ -312,9 +320,19 @@ uint32_t Swapchain::updateSwapchainParameters()
 	VkPhysicalDevice phys_dev = m_device.physicalDevice().handle();
 	auto &instance = m_device.instance();
 
-	// Ensure the surface has the required capabilities. Should pass on any driver.
 	VkSurfaceCapabilitiesKHR caps = instance.vkGetPhysicalDeviceSurfaceCapabilities(phys_dev, m_surface);
 
+	// Win32 surfaces have the extent of the window, zero while it is minimized,
+	// and no swapchain can be created until it is restored
+	if (caps.currentExtent.width == 0 || caps.currentExtent.height == 0) {
+		Log::info("Window surface size is (0, 0) - minimized? Waiting for it to be restored");
+		while ((caps.currentExtent.width == 0 || caps.currentExtent.height == 0) && !m_window.shouldClose()) {
+			m_window.waitEvents();
+			caps = instance.vkGetPhysicalDeviceSurfaceCapabilities(phys_dev, m_surface);
+		}
+	}
+
+	// Ensure the surface has the required capabilities. Should pass on any driver.
 	if (!(caps.supportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
 		Log::error("Window surface doesn't support render target usage (what?!)");
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "surface doesn't support render target usage");
@@ -341,24 +359,11 @@ uint32_t Swapchain::updateSwapchainParameters()
 
 	uint32_t num_images = std::max(caps.minImageCount, gfx::Consts::MAX_PENDING_FRAMES);
 
-	// Select image extent
+	// Select image extent, Wayland surfaces leave it to us (0xFFFFFFFF)
 	if (caps.currentExtent.width != 0xFFFFFFFF && caps.currentExtent.height != 0xFFFFFFFF) {
 		m_image_extent = caps.currentExtent;
 	} else {
-		m_image_extent = {};
-	}
-
-	// `currentExtent` is zero or allows any size?
-	if (m_image_extent.width == 0 || m_image_extent.height == 0) {
 		auto [width, height] = m_window.framebufferSize();
-		m_image_extent.width = static_cast<uint32_t>(width);
-		m_image_extent.height = static_cast<uint32_t>(height);
-	}
-
-	// Still zero?
-	if (m_image_extent.width == 0 || m_image_extent.height == 0) {
-		Log::info("Window surface size is (0, 0) - minimized? Waiting for resize");
-		auto [width, height] = m_window.waitUntilUnMinimized();
 		m_image_extent.width = static_cast<uint32_t>(width);
 		m_image_extent.height = static_cast<uint32_t>(height);
 	}
@@ -429,6 +434,13 @@ void Swapchain::recreateSwapchain()
 
 	m_num_images = 0;
 	m_presented_images_mask = 0;
+
+	if (m_image_extent.width == 0 || m_image_extent.height == 0) {
+		// `updateSwapchainParameters()` stopped waiting for a minimized window because it was closed.
+		// Leave no swapchain, there will be no more frames to present.
+		Log::info("Window closed while minimized, not creating swapchain");
+		return;
+	}
 
 	Log::info("Creating swapchain with {} images, resolution {}x{}", new_num_images, m_image_extent.width,
 		m_image_extent.height);
