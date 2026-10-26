@@ -1,11 +1,11 @@
 #pragma once
 
 #include <voxen/client/player_action_events.hpp>
-#include <voxen/common/player.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/util/resolution.hpp>
+#include <voxen/world/player.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
 #include <m/m.hpp>
@@ -17,8 +17,8 @@ class GameView {
 public:
 	GameView(os::Window& window);
 
-	void init(const Player& player) noexcept;
-	void update(const Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept;
+	void init(const world::Player& player) noexcept;
+	void update(const world::Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	// Relative mouse motion in framebuffer pixels
@@ -69,7 +69,7 @@ private:
 
 	// Local copy of player state - updated directly here instead of
 	// requesting it from world, eliminates lag from messaging latency.
-	Player m_local_player;
+	world::Player m_local_player;
 	m::double3 m_chunk_loading_position;
 
 	m::float4x4 m_view_to_clip;

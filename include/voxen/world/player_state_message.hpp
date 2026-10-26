@@ -6,7 +6,7 @@
 #include <m/quaternion.hpp>
 #include <m/vector.hpp>
 
-namespace voxen
+namespace voxen::world
 {
 
 // Sent from client to world to update server-side player state
@@ -18,4 +18,4 @@ struct PlayerStateMessage {
 	m::dquat player_orientation;
 };
 
-} // namespace voxen
+} // namespace voxen::world

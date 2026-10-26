@@ -22,7 +22,6 @@ set(VOXEN_SOURCES
 	src/voxen/common/config.cpp
 	src/voxen/common/filemanager.cpp
 	src/voxen/common/gameview.cpp
-	src/voxen/common/player.cpp
 	src/voxen/common/private_object_pool.cpp
 	src/voxen/common/runtime_config.cpp
 	src/voxen/common/scratch_memory_allocator.cpp
@@ -118,6 +117,7 @@ set(VOXEN_SOURCES
 	src/voxen/util/hash.cpp
 	src/voxen/util/log.cpp
 	src/voxen/util/packed_color.cpp
+	src/voxen/world/player.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp
 	src/voxen/world/world_sim_thread.hpp
