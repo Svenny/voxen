@@ -1,0 +1,9 @@
+{
+	uid: "615182c6-050d3ee9-b2f63202-d7009dc4",
+
+	index_file: "voxen-core-assets",
+
+	subdirs: [
+		"fonts",
+	],
+}

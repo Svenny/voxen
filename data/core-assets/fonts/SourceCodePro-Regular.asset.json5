@@ -1,0 +1,13 @@
+{
+	// DRAFT: Unused, shows how it can look like.
+	uid: "d51fbef6-b3912380-ed4bb767-d4a1a57b",
+
+	asset_type: "font-atlas",
+	font_atlas_render: "sdf",
+	font_atlas_size: 32,
+	font_atlas_sdf_spread: 3,
+	font_atlas_glyphset: "ascii",
+
+	source: "SourceCodePro-Regular.otf",
+	output: "SourceCodePro-Regular-ascii.png",
+}
