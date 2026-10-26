@@ -1,13 +1,13 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
+#include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 
@@ -495,9 +495,8 @@ PipelineCollection::PipelineCollection()
 	Log::debug("Creating PipelineCollection");
 
 	auto &backend = Backend::backend();
-	assert(backend.pipelineCache() != nullptr);
 	VkDevice device = backend.device().handle();
-	VkPipelineCache cache = backend.pipelineCache();
+	VkPipelineCache cache = backend.gfxSystem().pipelineCache()->handle();
 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
 	fillPipelineParts(*graphics_parts, backend);

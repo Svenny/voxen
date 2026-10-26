@@ -19,7 +19,6 @@ set(VOXEN_SOURCES
 	src/voxen/client/vulkan/backend.cpp
 	src/voxen/client/vulkan/descriptor_set_layout.cpp
 	src/voxen/client/vulkan/pipeline.cpp
-	src/voxen/client/vulkan/pipeline_cache.cpp
 	src/voxen/client/vulkan/pipeline_layout.cpp
 	src/voxen/client/vulkan/shader_module.cpp
 	src/voxen/client/gui.cpp
@@ -64,6 +63,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_instance_wrappers.cpp
 	src/voxen/gfx/vk/vk_mesh_streamer.cpp
 	src/voxen/gfx/vk/vk_physical_device.cpp
+	src/voxen/gfx/vk/vk_pipeline_cache.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
 	src/voxen/gfx/vk/vk_transient_buffer_allocator.cpp

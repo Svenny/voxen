@@ -56,7 +56,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp
-	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp
 	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/gui.hpp
@@ -109,6 +108,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_mesh_streamer.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
+	include/voxen/gfx/vk/vk_pipeline_cache.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vk_transient_buffer_allocator.hpp
 	include/voxen/gfx/vk/vk_utils.hpp
