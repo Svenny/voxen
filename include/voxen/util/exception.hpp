@@ -2,9 +2,8 @@
 
 #include <voxen/visibility.hpp>
 
-#include <extras/source_location.hpp>
-
 #include <exception>
+#include <source_location>
 #include <string>
 #include <system_error>
 
@@ -30,7 +29,7 @@ namespace voxen
 // For example, that's how most of `std::filesystem` is implemented.
 class VOXEN_API Exception : public std::exception {
 public:
-	using Location = extras::source_location;
+	using Location = std::source_location;
 
 	Exception() = delete;
 	Exception(Exception &&) = default;

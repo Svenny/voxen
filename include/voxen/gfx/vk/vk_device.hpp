@@ -6,9 +6,8 @@
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
 
-#include <extras/source_location.hpp>
-
 #include <cstdint>
+#include <source_location>
 #include <span>
 #include <utility>
 #include <variant>
@@ -209,7 +208,7 @@ public:
 	// More convenient interfaces to certain Vulkan functions which
 	// convert error codes to exceptions and can assign debug names
 #pragma region Vulkan API wrappers
-	using SLoc = extras::source_location;
+	using SLoc = std::source_location;
 
 	VkImageView vkCreateImageView(const VkImageViewCreateInfo &create_info, const char *name = nullptr,
 		SLoc loc = SLoc::current());

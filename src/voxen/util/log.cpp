@@ -54,7 +54,7 @@ static fmt::text_style styleForLevel(Log::Level level) noexcept
 	return style;
 }
 
-void Log::doLog(Level level, extras::source_location where, std::string_view format_str,
+void Log::doLog(Level level, std::source_location where, std::string_view format_str,
 	fmt::format_args format_args) noexcept
 {
 	// Prepare formatted text (or failure message) to be logged

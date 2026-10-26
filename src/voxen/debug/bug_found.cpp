@@ -273,7 +273,7 @@ std::optional<Module> findModule(uintptr_t pc)
 
 } // namespace
 
-void bugFound(std::string_view message, extras::source_location where)
+void bugFound(std::string_view message, std::source_location where)
 {
 	Log::fatal("----[ BUG FOUND ]----", where);
 	Log::fatal("Please fill an issue on https://github.com/Svenny/voxen", where);

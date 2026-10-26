@@ -5,9 +5,9 @@
 #include <voxen/os/dynamic_library.hpp>
 
 #include <extras/dyn_array.hpp>
-#include <extras/source_location.hpp>
 
 #include <cstdint>
+#include <source_location>
 
 namespace voxen::gfx::vk
 {
@@ -56,7 +56,7 @@ public:
 	// More convenient interfaces to certain Vulkan functions which
 	// convert error codes to exceptions and infer some arguments
 #pragma region Vulkan API wrappers
-	using SLoc = extras::source_location;
+	using SLoc = std::source_location;
 
 	void vkDestroySurface(VkSurfaceKHR surface) noexcept;
 
