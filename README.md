@@ -56,6 +56,10 @@ The "game" target lands in `build/<configure preset>/<Debug|Release>/bin/`, e.g.
 `build/linux-debug/Debug/bin/game` or `build\windows-ninja\Release\bin\game.exe`,
 with the compiled assets next to it in `data/`.
 
+## Source layout
+
+Module rules and their dependency order are described in [docs/architecture.md](docs/architecture.md).
+
 ## Git LFS
 
 Built-in assets in `data/` and the prebuilt host tools in `toolchains/` are stored
