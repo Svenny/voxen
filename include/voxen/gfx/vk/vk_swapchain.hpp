@@ -146,6 +146,8 @@ private:
 	VkFormat m_image_format = VK_FORMAT_UNDEFINED;
 	VkColorSpaceKHR m_image_color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 	VkExtent2D m_image_extent = {};
+	// The surface leaves image extent to us (Wayland), we take it from the window
+	bool m_extent_from_window = false;
 	VkPresentModeKHR m_present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
 	uint32_t m_num_images = 0;

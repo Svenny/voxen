@@ -67,6 +67,29 @@ void Swapchain::acquireImage()
 		return;
 	}
 
+	if (m_extent_from_window) {
+		// The surface doesn't report its size (Wayland), and neither acquire nor present report the
+		// swapchain out of date when the window is resized, the compositor would just scale its images
+		auto [width, height] = m_window.framebufferSize();
+		if (width > 0 && height > 0
+			&& (static_cast<uint32_t>(width) != m_image_extent.width
+				|| static_cast<uint32_t>(height) != m_image_extent.height)) {
+			// Enter the bad state if this fails, like the recreations below
+			defer_fail {
+				m_device.forceCompletion();
+				destroySwapchain();
+				destroySurface();
+				destroyPerFrame();
+			};
+
+			recreateSwapchain();
+
+			if (m_swapchain == VK_NULL_HANDLE) [[unlikely]] {
+				return;
+			}
+		}
+	}
+
 	m_device.waitForTimeline(Device::QueueMain, m_prev_usage_timelines[m_frame_index]);
 
 	uint32_t acquired_index = NO_IMAGE_MARKER;
@@ -386,7 +409,8 @@ uint32_t Swapchain::updateSwapchainParameters()
 	uint32_t num_images = std::max(caps.minImageCount, gfx::Consts::MAX_PENDING_FRAMES);
 
 	// Select image extent, Wayland surfaces leave it to us (0xFFFFFFFF)
-	if (caps.currentExtent.width != 0xFFFFFFFF && caps.currentExtent.height != 0xFFFFFFFF) {
+	m_extent_from_window = caps.currentExtent.width == 0xFFFFFFFF && caps.currentExtent.height == 0xFFFFFFFF;
+	if (!m_extent_from_window) {
 		m_image_extent = caps.currentExtent;
 	} else {
 		auto [width, height] = m_window.framebufferSize();
