@@ -8,3 +8,14 @@ license = "OFL-1.1"
 url = "https://github.com/adobe-fonts/source-code-pro"
 files = ["core-assets/fonts/SourceCodePro-Regular.otf"]
 license_files = ["core-assets/fonts/LICENSE-SourceCodePro.txt"]
+
+[noto]
+# Noto Sans and Noto Serif variable fonts (width and weight axes), released separately
+version = "Sans 2.015, Serif 2.013"
+license = "OFL-1.1"
+url = "https://github.com/notofonts/latin-greek-cyrillic"
+files = [
+	"core-assets/fonts/NotoSans-wdth-wght.ttf", "core-assets/fonts/NotoSans-Italic-wdth-wght.ttf",
+	"core-assets/fonts/NotoSerif-wdth-wght.ttf", "core-assets/fonts/NotoSerif-Italic-wdth-wght.ttf",
+]
+license_files = ["core-assets/fonts/LICENSE-Noto.txt"]
