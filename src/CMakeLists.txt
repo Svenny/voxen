@@ -16,12 +16,12 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${TK_SOURCES})
 set(VOXEN_SOURCES
 	src/voxen/assets/asset_decoder.cpp
 	src/voxen/assets/asset_service.cpp
+	src/voxen/client/gameview.cpp
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
 	src/voxen/common/config.cpp
 	src/voxen/common/filemanager.cpp
-	src/voxen/common/gameview.cpp
 	src/voxen/common/private_object_pool.cpp
 	src/voxen/common/runtime_config.cpp
 	src/voxen/common/scratch_memory_allocator.cpp

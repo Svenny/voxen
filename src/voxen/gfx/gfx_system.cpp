@@ -178,7 +178,7 @@ GfxSystem::~GfxSystem()
 	m_vk_device->forceCompletion();
 }
 
-void GfxSystem::drawFrame(const world::State &state, const GameView &view, ui::UiSystem &ui)
+void GfxSystem::drawFrame(const world::State &state, const client::GameView &view, ui::UiSystem &ui)
 {
 	auto [completed_tick_id, this_tick_id] = m_frame_tick_source->startNextTick(*this);
 	notifyFrameTickBegin(completed_tick_id, this_tick_id);

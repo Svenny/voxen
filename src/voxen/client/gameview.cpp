@@ -1,4 +1,4 @@
-#include <voxen/common/gameview.hpp>
+#include <voxen/client/gameview.hpp>
 
 #include <voxen/common/config.hpp>
 #include <voxen/land/land_messages.hpp>
@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-namespace voxen
+namespace voxen::client
 {
 
 GameView::GameView(os::Window& window) : m_window(window)
@@ -35,7 +35,7 @@ GameView::GameView(os::Window& window) : m_window(window)
 	resetKeyState();
 }
 
-void voxen::GameView::init(const voxen::world::Player& player) noexcept
+void GameView::init(const world::Player& player) noexcept
 {
 	m_local_player = player;
 	m_chunk_loading_position = player.position();
@@ -301,4 +301,4 @@ m::int3 GameView::modifyTargetBlockCoord() const noexcept
 	return m::int3(m::floor(target / land::Consts::BLOCK_SIZE_METRES));
 }
 
-} // namespace voxen
+} // namespace voxen::client

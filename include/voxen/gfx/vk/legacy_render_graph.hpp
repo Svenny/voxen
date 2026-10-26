@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/gameview.hpp>
+#include <voxen/client/gameview.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/gfx/vk/render_graph.hpp>
@@ -25,7 +25,7 @@ public:
 	void beginExecution(RenderGraphExecution &exec) override;
 	void endExecution(RenderGraphExecution &exec) override;
 
-	void setGameState(const world::State &state, const GameView &view);
+	void setGameState(const world::State &state, const client::GameView &view);
 	void setUiSystem(ui::UiSystem &ui);
 
 	VkFormat currentOutputFormat() const noexcept { return m_output_format; }
@@ -50,7 +50,7 @@ private:
 
 	GfxSystem *m_gfx = nullptr;
 	const world::State *m_world_state = nullptr;
-	const GameView *m_game_view = nullptr;
+	const client::GameView *m_game_view = nullptr;
 	ui::UiSystem *m_ui_system = nullptr;
 
 	VkDescriptorSet m_main_scene_dset = VK_NULL_HANDLE;
