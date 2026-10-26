@@ -14,7 +14,7 @@ WrappedVkDescriptorSetLayout::WrappedVkDescriptorSetLayout(const VkDescriptorSet
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	VkResult result = backend.vkCreateDescriptorSetLayout(device, &info, nullptr, &m_handle);
+	VkResult result = backend.device().dt().vkCreateDescriptorSetLayout(device, &info, nullptr, &m_handle);
 	if (result != VK_SUCCESS) {
 		throw gfx::vk::VulkanException(result, "vkCreateDescriptorSetLayout");
 	}
@@ -35,7 +35,7 @@ WrappedVkDescriptorSetLayout::~WrappedVkDescriptorSetLayout() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	backend.vkDestroyDescriptorSetLayout(device, m_handle, nullptr);
+	backend.device().dt().vkDestroyDescriptorSetLayout(device, m_handle, nullptr);
 }
 
 DescriptorSetLayoutCollection::DescriptorSetLayoutCollection()

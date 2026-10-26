@@ -1,3 +1,0 @@
-#define VK_DEVICE_API_ENTRY(name) PFN_##name name = nullptr;
-#include "api_table.in"
-#undef VK_DEVICE_API_ENTRY

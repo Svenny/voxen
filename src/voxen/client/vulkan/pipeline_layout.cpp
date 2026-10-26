@@ -17,7 +17,7 @@ PipelineLayout::PipelineLayout(const VkPipelineLayoutCreateInfo &info)
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	VkResult result = backend.vkCreatePipelineLayout(device, &info, nullptr, &m_layout);
+	VkResult result = backend.device().dt().vkCreatePipelineLayout(device, &info, nullptr, &m_layout);
 	if (result != VK_SUCCESS) {
 		throw gfx::vk::VulkanException(result, "vkCreatePipelineLayout");
 	}
@@ -27,7 +27,7 @@ PipelineLayout::~PipelineLayout() noexcept
 {
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	backend.vkDestroyPipelineLayout(device, m_layout, nullptr);
+	backend.device().dt().vkDestroyPipelineLayout(device, m_layout, nullptr);
 }
 
 PipelineLayoutCollection::PipelineLayoutCollection()

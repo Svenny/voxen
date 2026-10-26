@@ -101,10 +101,6 @@ bool Backend::doStart(gfx::GfxSystem &gfx) noexcept
 		m_instance = m_gfx_system->instance();
 		m_device = m_gfx_system->device();
 
-		if (!loadDeviceLevelApi(m_device->handle())) {
-			return false;
-		}
-
 		m_impl.constructModule(m_shader_module_collection);
 		m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
 		m_impl.constructModule(m_descriptor_set_layout_collection);
@@ -149,8 +145,6 @@ void Backend::doStop() noexcept
 	m_impl.destructModule(m_pipeline_cache);
 	m_impl.destructModule(m_shader_module_collection);
 
-	unloadDeviceLevelApi();
-
 	m_device = nullptr;
 	m_instance = nullptr;
 	m_gfx_system = nullptr;
@@ -167,33 +161,6 @@ std::string_view Backend::stateToString(State state) noexcept
 	case State::Broken:
 		return "Broken"sv;
 	}
-}
-
-// API lodaing/unloading methods
-
-bool Backend::loadDeviceLevelApi(VkDevice device) noexcept
-{
-#define TRY_LOAD(name) \
-	name = reinterpret_cast<PFN_##name>(m_instance->dt().vkGetDeviceProcAddr(device, #name)); \
-	if (!name) { \
-		Log::warn("Can't load device-level Vulkan API {}", #name); \
-		is_ok = false; \
-	}
-
-	bool is_ok = true;
-#define VK_DEVICE_API_ENTRY(name) TRY_LOAD(name)
-#include <voxen/client/vulkan/api_table.in>
-#undef VK_DEVICE_API_ENTRY
-
-	return is_ok;
-#undef TRY_LOAD
-}
-
-void Backend::unloadDeviceLevelApi() noexcept
-{
-#define VK_DEVICE_API_ENTRY(name) name = nullptr;
-#include <voxen/client/vulkan/api_table.in>
-#undef VK_DEVICE_API_ENTRY
 }
 
 } // namespace voxen::client::vulkan

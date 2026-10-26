@@ -502,7 +502,7 @@ PipelineCollection::PipelineCollection()
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
 	fillPipelineParts(*graphics_parts, backend);
 
-	VkResult result = backend.vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
+	VkResult result = backend.device().dt().vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
 		graphics_parts->create_infos, nullptr, m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
 		throw gfx::vk::VulkanException(result, "vkCreateGraphicsPipelines");
@@ -511,8 +511,8 @@ PipelineCollection::PipelineCollection()
 	auto compute_parts = std::make_unique<ComputePipelineParts>();
 	fillPipelineParts(*compute_parts, backend);
 
-	result = backend.vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES, compute_parts->create_infos, nullptr,
-		m_compute_pipelines.data());
+	result = backend.device().dt().vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES,
+		compute_parts->create_infos, nullptr, m_compute_pipelines.data());
 	if (result != VK_SUCCESS) {
 		throw gfx::vk::VulkanException(result, "vkCreateComputePipelines");
 	}
@@ -544,12 +544,12 @@ void PipelineCollection::destroyPipelines() noexcept
 	VkDevice device = backend.device().handle();
 
 	for (VkPipeline &pipe : m_graphics_pipelines) {
-		backend.vkDestroyPipeline(device, pipe, nullptr);
+		backend.device().dt().vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 
 	for (VkPipeline &pipe : m_compute_pipelines) {
-		backend.vkDestroyPipeline(device, pipe, nullptr);
+		backend.device().dt().vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 }
