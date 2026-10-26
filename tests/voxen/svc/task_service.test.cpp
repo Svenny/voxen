@@ -30,7 +30,7 @@ namespace voxen::svc
 
 TEST_CASE("'TaskService' test case 1", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	TaskBuilder bld(ts);
@@ -54,7 +54,7 @@ TEST_CASE("'TaskService' test case 1", "[voxen::svc::task_service]")
 
 TEST_CASE("'TaskService' test case 2", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	TaskBuilder bld(ts);
@@ -97,7 +97,7 @@ TEST_CASE("'TaskService' test case 2", "[voxen::svc::task_service]")
 
 TEST_CASE("'TaskService' test case 3", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	constexpr size_t NUM_SPLITS = 64;
@@ -179,7 +179,7 @@ TEST_CASE("'TaskService' test case 3", "[voxen::svc::task_service]")
 
 TEST_CASE("'TaskService' test case 4", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	TaskBuilder bld(ts);
@@ -220,7 +220,7 @@ TEST_CASE("'TaskService' test case 4", "[voxen::svc::task_service]")
 
 TEST_CASE("'TaskService' test case 5", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	// Launch a lot of tasks with random dependency graph.
@@ -354,7 +354,7 @@ CoroTask recursiveCoroTask(TaskService &ts, size_t num_subtasks, int depth, std:
 
 TEST_CASE("'TaskService' test case 6", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 
 	std::atomic_size_t sum_counter = 0;
@@ -435,7 +435,7 @@ CoroTask coroTaskWithSubTasks(TaskService &ts, int depth, int value, std::atomic
 
 TEST_CASE("'TaskService' test case 7", "[voxen::svc::task_service]")
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	TaskService &ts = engine->serviceLocator().requestService<TaskService>();
 	TaskBuilder bld(ts);
 

@@ -3,6 +3,7 @@
 #include "test_common.hpp" // IWYU pragma: export
 
 #include <voxen/land/chunk_key.hpp>
+#include <voxen/svc/engine.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 
@@ -13,6 +14,10 @@
 
 namespace voxen::test
 {
+
+// Creates `Engine` with test suite app info and no command line. Only the core
+// services are registered, tests register any other services they need themselves.
+svc::Engine::Ptr createEngine();
 
 // Usage: `CHECK_THROWS_MATCHES(<expr>, Exception, errcExceptionMatcher(VoxenErrc::<code>))`
 inline auto errcExceptionMatcher(VoxenErrc ec)

@@ -33,7 +33,7 @@ TEST_CASE("'AsyncFileIoService' test case 1", "[voxen::svc::async_file_io_servic
 	// Clean up any mess after test sections
 	defer { std::filesystem::remove_all(tmp_path); };
 
-	auto engine = Engine::createForTestSuite();
+	auto engine = test::createEngine();
 	AsyncFileIoService &aio_svc = engine->serviceLocator().requestService<AsyncFileIoService>();
 	TaskService &task_svc = engine->serviceLocator().requestService<TaskService>();
 

@@ -28,7 +28,7 @@ namespace
 
 int main(int argc, char **)
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = Engine::create(EngineStartArgs(AppInfo { .name = "Voxen Stacktrace Demo" }));
 	TaskBuilder bld(engine->serviceLocator().requestService<TaskService>());
 	// Depth depends on `argc` so the compiler can't fold the recursion
 	bld.enqueueTask([argc](TaskContext &) {
