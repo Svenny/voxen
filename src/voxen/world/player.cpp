@@ -1,6 +1,6 @@
-#include <voxen/common/player.hpp>
+#include <voxen/world/player.hpp>
 
-namespace voxen
+namespace voxen::world
 {
 
 Player::Player() : m_position(-1500, 250, -1100)
@@ -23,4 +23,4 @@ void Player::updateSecondaryFactors() noexcept
 	m_look_vector = m::mul(m_orientation, m::double3(0, 0, -1));
 }
 
-} // namespace voxen
+} // namespace voxen::world

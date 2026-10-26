@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/player.hpp>
 #include <voxen/land/land_state.hpp>
+#include <voxen/world/player.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
 namespace voxen::world

@@ -61,8 +61,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
 	include/voxen/common/gameview.hpp
-	include/voxen/common/player.hpp
-	include/voxen/common/player_state_message.hpp
 	include/voxen/common/private_object_pool.hpp
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/scratch_memory_allocator.hpp
@@ -168,6 +166,8 @@ set(VOXEN_HEADERS
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
 	include/voxen/util/tagged_tick_id.hpp
+	include/voxen/world/player.hpp
+	include/voxen/world/player_state_message.hpp
 	include/voxen/world/world_control_service.hpp
 	include/voxen/world/world_fwd.hpp
 	include/voxen/world/world_state.hpp

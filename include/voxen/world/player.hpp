@@ -3,7 +3,7 @@
 #include <m/quaternion.hpp>
 #include <m/vector.hpp>
 
-namespace voxen
+namespace voxen::world
 {
 
 class Player {
@@ -30,4 +30,4 @@ private:
 	void updateSecondaryFactors() noexcept;
 };
 
-} // namespace voxen
+} // namespace voxen::world

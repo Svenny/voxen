@@ -1,8 +1,6 @@
 #include <voxen/common/gameview.hpp>
 
 #include <voxen/common/config.hpp>
-#include <voxen/common/player.hpp>
-#include <voxen/common/player_state_message.hpp>
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
@@ -10,6 +8,8 @@
 #include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/util/log.hpp>
+#include <voxen/world/player.hpp>
+#include <voxen/world/player_state_message.hpp>
 #include <voxen/world/world_control_service.hpp>
 
 #include <m/m.hpp>
@@ -35,7 +35,7 @@ GameView::GameView(os::Window& window) : m_window(window)
 	resetKeyState();
 }
 
-void voxen::GameView::init(const voxen::Player& player) noexcept
+void voxen::GameView::init(const voxen::world::Player& player) noexcept
 {
 	m_local_player = player;
 	m_chunk_loading_position = player.position();
@@ -183,7 +183,7 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept
+void GameView::update(const world::Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept
 {
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {
@@ -288,11 +288,11 @@ void GameView::update(const Player& player, world::TickId tick_id, double dt, sv
 		m_chunk_loading_position = m_local_player.position();
 	}
 
-	PlayerStateMessage message;
+	world::PlayerStateMessage message;
 	message.player_position = m_local_player.position();
 	message.player_orientation = m_local_player.orientation();
 
-	msend.send<PlayerStateMessage>(world::ControlService::SERVICE_UID, message);
+	msend.send<world::PlayerStateMessage>(world::ControlService::SERVICE_UID, message);
 }
 
 m::int3 GameView::modifyTargetBlockCoord() const noexcept
