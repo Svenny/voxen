@@ -2,6 +2,8 @@
 
 #include "../test_common.hpp"
 
+#include <type_traits>
+
 static int testFunction(int a, int b)
 {
 	return a + b;
@@ -52,3 +54,21 @@ TEST_CASE("'function_ref' handles noexcept properly", "[extras::function_ref]")
 	fn3();
 	fn5();
 }
+
+namespace
+{
+
+using Throwing = decltype([](int) { return 1; });
+using Nothrow = decltype([](int) noexcept { return 1; });
+
+// `noexcept` signatures reject callables that can throw
+static_assert(!std::is_constructible_v<extras::function_ref<int(int) noexcept>, Throwing &>);
+static_assert(!std::is_constructible_v<extras::function_ref<int(int) noexcept>, Throwing *>);
+static_assert(std::is_constructible_v<extras::function_ref<int(int) noexcept>, Nothrow &>);
+static_assert(std::is_constructible_v<extras::function_ref<int(int)>, Throwing &>);
+static_assert(std::is_constructible_v<extras::function_ref<int(int)>, Nothrow &>);
+// Arguments and the return type must match too
+static_assert(!std::is_constructible_v<extras::function_ref<int()>, Throwing &>);
+static_assert(!std::is_constructible_v<extras::function_ref<void *(int)>, Throwing &>);
+
+} // namespace

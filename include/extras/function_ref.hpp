@@ -24,6 +24,11 @@ inline R fnref_do_call(Args... args, void *object) noexcept(NX)
 	}
 }
 
+// What `fnref_do_call` invokes must match the signature, `noexcept` included:
+// a throwing callable behind a `noexcept` signature would terminate instead of failing to compile
+template<typename T, bool NX, typename R, typename... Args>
+concept fnref_invocable = (NX ? std::is_nothrow_invocable_r_v<R, T &, Args...> : std::is_invocable_r_v<R, T &, Args...>);
+
 // This tag is used to disallow creating `function_ref` managing
 // another `function_ref` which leads to unwanted recursion
 struct function_ref_tag {};
@@ -39,14 +44,15 @@ class function_ref<R(Args...) noexcept(NX)> final : public detail::function_ref_
 public:
 	template<typename T>
 	constexpr function_ref(T &&object) noexcept
-		requires(!std::is_base_of_v<detail::function_ref_tag, std::remove_reference_t<T>>)
+		requires(!std::is_base_of_v<detail::function_ref_tag, std::remove_reference_t<T>>
+					  && detail::fnref_invocable<std::remove_reference_t<T>, NX, R, Args...>)
 		: m_object(reinterpret_cast<void *>(std::addressof(object)))
 		, m_caller(detail::fnref_do_call<std::remove_reference_t<T>, R, NX, Args...>)
 	{}
 
 	template<typename T>
 	constexpr function_ref(T *object) noexcept
-		requires(!std::is_base_of_v<detail::function_ref_tag, T>)
+		requires(!std::is_base_of_v<detail::function_ref_tag, T> && detail::fnref_invocable<T, NX, R, Args...>)
 		: m_object(reinterpret_cast<void *>(object)), m_caller(detail::fnref_do_call<T, R, NX, Args...>)
 	{}
 
