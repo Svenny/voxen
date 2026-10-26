@@ -22,7 +22,6 @@ set(VOXEN_SOURCES
 	src/voxen/client/vulkan/pipeline_cache.cpp
 	src/voxen/client/vulkan/pipeline_layout.cpp
 	src/voxen/client/vulkan/shader_module.cpp
-	src/voxen/client/gfx_runtime_config.cpp
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
@@ -72,6 +71,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/font_renderer.cpp
 	src/voxen/gfx/frame_tick_source.cpp
 	src/voxen/gfx/gfx_land_loader.cpp
+	src/voxen/gfx/gfx_options.cpp
 	src/voxen/gfx/gfx_system.cpp
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp

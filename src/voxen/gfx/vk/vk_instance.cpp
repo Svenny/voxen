@@ -1,7 +1,6 @@
 #include <voxen/gfx/vk/vk_instance.hpp>
 
-#include <voxen/client/gfx_runtime_config.hpp>
-#include <voxen/common/runtime_config.hpp>
+#include <voxen/gfx/gfx_options.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
@@ -86,7 +85,7 @@ void fillInstanceEntries(InstanceDispatchTable &dt, VkInstance instance)
 #undef VK_API_ENTRY
 }
 
-std::vector<const char *> getRequiredInstanceExtensions()
+std::vector<const char *> getRequiredInstanceExtensions(const GfxOptions &opts)
 {
 	std::span<const char *const> window_exts = os::Window::requiredVulkanInstanceExtensions();
 	std::vector<const char *> ext_list(window_exts.begin(), window_exts.end());
@@ -102,7 +101,7 @@ std::vector<const char *> getRequiredInstanceExtensions()
 		ext_list.emplace_back(name);
 	};
 
-	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
+	if (opts.use_debugging) {
 		addToList(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
@@ -116,10 +115,10 @@ std::vector<const char *> getRequiredInstanceExtensions()
 	return ext_list;
 }
 
-std::vector<const char *> getRequiredLayers(const InstanceDispatchTable &dt)
+std::vector<const char *> getRequiredLayers(const GfxOptions &opts, const InstanceDispatchTable &dt)
 {
 	// Add nothing if validation is not enabled
-	if (!RuntimeConfig::instance().gfxConfig().useValidation()) {
+	if (!opts.use_validation) {
 		return {};
 	}
 
@@ -167,7 +166,7 @@ std::vector<const char *> getRequiredLayers(const InstanceDispatchTable &dt)
 
 } // namespace
 
-Instance::Instance()
+Instance::Instance(const GfxOptions &opts)
 {
 	Log::debug("Creating VkInstance");
 
@@ -187,13 +186,13 @@ Instance::Instance()
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "unsupported or missing Vulkan driver");
 	}
 
-	createInstance();
+	createInstance(opts);
 	m_dt.vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(loadEntry(gipa, m_handle, "vkDestroyInstance"));
 	defer_fail { m_dt.vkDestroyInstance(m_handle, nullptr); };
 
 	fillInstanceEntries(m_dt, m_handle);
 
-	if (RuntimeConfig::instance().gfxConfig().useDebugging()) {
+	if (opts.use_debugging) {
 		m_debug = DebugUtils(m_handle, m_dt.vkGetInstanceProcAddr);
 	}
 
@@ -238,7 +237,7 @@ extras::dyn_array<PhysicalDevice> Instance::enumeratePhysicalDevices() const
 	return devices;
 }
 
-void Instance::createInstance()
+void Instance::createInstance(const GfxOptions &opts)
 {
 	// Fill VkApplicationInfo
 	auto version = VK_MAKE_VERSION(Version::MAJOR, Version::MINOR, Version::PATCH);
@@ -253,8 +252,8 @@ void Instance::createInstance()
 	app_info.apiVersion = Instance::MIN_VULKAN_VERSION;
 
 	// Fill VkInstanceCreateInfo
-	auto ext_list = getRequiredInstanceExtensions();
-	auto layer_list = getRequiredLayers(m_dt);
+	auto ext_list = getRequiredInstanceExtensions(opts);
+	auto layer_list = getRequiredLayers(opts, m_dt);
 	VkInstanceCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;

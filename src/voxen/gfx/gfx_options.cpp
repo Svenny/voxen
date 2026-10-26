@@ -1,13 +1,13 @@
-#include <voxen/client/gfx_runtime_config.hpp>
+#include <voxen/gfx/gfx_options.hpp>
 
 #include <tk/cli.hpp>
 
 #include <optional>
 
-namespace voxen::client
+namespace voxen::gfx
 {
 
-void GfxRuntimeConfig::addOptions(tk::cli::Parser &parser)
+void GfxOptions::addCliOptions(tk::cli::Parser &parser)
 {
 	parser.addFlag("gfx-debugging", 0, "Enable graphics API debugging extensions", "Graphics");
 	parser.addFlag("gfx-validation", 0, "Enable graphics API validation layers", "Graphics");
@@ -21,14 +21,14 @@ void GfxRuntimeConfig::addOptions(tk::cli::Parser &parser)
 	});
 }
 
-void GfxRuntimeConfig::fill(const tk::cli::Args &args)
+void GfxOptions::fillFromCli(const tk::cli::Args &args)
 {
-	m_use_debugging = args.flag("gfx-debugging");
-	m_use_validation = args.flag("gfx-validation");
+	use_debugging = args.flag("gfx-debugging");
+	use_validation = args.flag("gfx-validation");
 
 	if (auto gpu_name = args.value("gfx-gpu-name"); gpu_name) {
-		m_preferred_gpu_name = *gpu_name;
+		preferred_gpu_name = *gpu_name;
 	}
 }
 
-} // namespace voxen::client
+} // namespace voxen::gfx
