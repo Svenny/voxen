@@ -6,6 +6,7 @@ namespace voxen::gfx
 class FontRenderer;
 class FrameTickSource;
 class GfxSystem;
+struct GfxOptions;
 class LandLoader;
 
 namespace detail

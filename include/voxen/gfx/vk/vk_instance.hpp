@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/dynamic_library.hpp>
@@ -32,7 +33,7 @@ public:
 	// Constructor will load the Vulkan loader library and attempt to create
 	// `VkInstance`, throwing `VoxenErrc::GfxCapabilityMissing` if it's not supported.
 	// Windowing library must be initialized during the whole object lifetime.
-	Instance();
+	explicit Instance(const GfxOptions &opts);
 	Instance(Instance &&) = delete;
 	Instance(const Instance &) = delete;
 	Instance &operator=(Instance &&) = delete;
@@ -78,7 +79,7 @@ private:
 
 	InstanceDispatchTable m_dt;
 
-	void createInstance();
+	void createInstance(const GfxOptions &opts);
 };
 
 } // namespace voxen::gfx::vk

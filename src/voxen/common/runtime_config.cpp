@@ -1,12 +1,12 @@
 #include <voxen/common/runtime_config.hpp>
 
-#include <voxen/client/gfx_runtime_config.hpp>
+#include <voxen/gfx/gfx_options.hpp>
 
 namespace voxen
 {
 
 struct RuntimeConfig::Impl {
-	client::GfxRuntimeConfig gfx_config;
+	gfx::GfxOptions gfx_options;
 };
 
 static RuntimeConfig g_instance;
@@ -14,20 +14,20 @@ static RuntimeConfig g_instance;
 RuntimeConfig::RuntimeConfig() = default;
 RuntimeConfig::~RuntimeConfig() noexcept = default;
 
-const client::GfxRuntimeConfig &RuntimeConfig::gfxConfig() const noexcept
+const gfx::GfxOptions &RuntimeConfig::gfxOptions() const noexcept
 {
-	return m_impl.object().gfx_config;
+	return m_impl.object().gfx_options;
 }
 
 void RuntimeConfig::addOptions(tk::cli::Parser &parser)
 {
-	client::GfxRuntimeConfig::addOptions(parser);
+	gfx::GfxOptions::addCliOptions(parser);
 }
 
 void RuntimeConfig::fill(const tk::cli::Args &args)
 {
 	Impl &me = m_impl.object();
-	me.gfx_config.fill(args);
+	me.gfx_options.fillFromCli(args);
 }
 
 RuntimeConfig &RuntimeConfig::instance() noexcept

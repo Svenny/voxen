@@ -18,5 +18,12 @@
 			type: "bool",
 			default: false
 		},
+		{
+			name: "preferred_gpu_name",
+			comment: "Name of the preferred GPU (as exposed by graphics API driver).\n\
+If the name is empty or is not available then GPU will be auto-selected.",
+			type: "string",
+			default: ""
+		},
 	],
 }

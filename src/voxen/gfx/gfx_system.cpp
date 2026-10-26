@@ -1,10 +1,10 @@
 #include <voxen/gfx/gfx_system.hpp>
 
-#include <voxen/client/gfx_runtime_config.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/frame_tick_source.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
+#include <voxen/gfx/gfx_options.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
@@ -25,7 +25,6 @@
 
 #include <cstddef>
 #include <span>
-#include <string>
 #include <string_view>
 
 namespace voxen::gfx
@@ -34,7 +33,7 @@ namespace voxen::gfx
 namespace
 {
 
-vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus)
+vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus, std::string_view preferred_name)
 {
 	if (gpus.empty()) {
 		Log::error("No Vulkan devices available");
@@ -53,8 +52,6 @@ vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus)
 	vk::PhysicalDevice *discrete = nullptr;
 	vk::PhysicalDevice *integrated = nullptr;
 	vk::PhysicalDevice *other = nullptr;
-
-	const std::string &preferred_name = RuntimeConfig::instance().gfxConfig().preferredGpuName();
 
 	Log::debug("Searching for Vulkan device");
 	for (auto &gpu : gpus) {
@@ -119,14 +116,14 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 {
 	Log::info("Starting gfx system");
 
-	// TODO: once options service is implemented, use it instead of `RuntimeConfig`
-	(void) svc;
+	// TODO: once options service is implemented, get options from `svc` instead of `RuntimeConfig`
+	const GfxOptions &opts = RuntimeConfig::instance().gfxOptions();
 
 	ComponentStorage &comp = *m_component_storage;
-	m_vk_instance.reset(new (comp.vk_instance) vk::Instance());
+	m_vk_instance.reset(new (comp.vk_instance) vk::Instance(opts));
 
 	auto gpus = m_vk_instance->enumeratePhysicalDevices();
-	vk::PhysicalDevice *selected_gpu = selectGpu(gpus);
+	vk::PhysicalDevice *selected_gpu = selectGpu(gpus, opts.preferred_gpu_name);
 	if (!selected_gpu) {
 		throw Exception::fromError(VoxenErrc::GfxCapabilityMissing, "no supported GPU found");
 	}

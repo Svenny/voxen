@@ -59,7 +59,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/vulkan/pipeline_cache.hpp
 	include/voxen/client/vulkan/pipeline_layout.hpp
 	include/voxen/client/vulkan/shader_module.hpp
-	include/voxen/client/gfx_runtime_config.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
@@ -118,6 +117,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/frame_tick_id.hpp
 	include/voxen/gfx/frame_tick_source.hpp
 	include/voxen/gfx/gfx_land_loader.hpp
+	include/voxen/gfx/gfx_options.hpp
 	include/voxen/gfx/gfx_public_consts.hpp
 	include/voxen/gfx/gfx_system.hpp
 	include/voxen/gfx/gfx_fwd.hpp

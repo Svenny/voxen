@@ -15,10 +15,10 @@ class Parser;
 namespace voxen
 {
 
-namespace client
+namespace gfx
 {
 
-class GfxRuntimeConfig;
+struct GfxOptions;
 
 }
 
@@ -31,8 +31,8 @@ public:
 	RuntimeConfig &operator=(const RuntimeConfig &) = delete;
 	~RuntimeConfig() noexcept;
 
-	// Sub-config for graphics subsystem
-	const client::GfxRuntimeConfig &gfxConfig() const noexcept;
+	// Options of the graphics subsystem
+	const gfx::GfxOptions &gfxOptions() const noexcept;
 
 	// Add commandline options related to each sub-config
 	static void addOptions(tk::cli::Parser &parser);
