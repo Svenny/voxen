@@ -109,9 +109,10 @@ private:
 // Despite its formidable name, this class does a relatively mundane job
 // of managing the startup/shutdown sequence and not much more than that.
 //
-// It provides service locator with registered factories for built-in
-// engine services (those declared in `include/voxen...` subdirectory).
-// Additional services can be registered after creation as well.
+// It provides service locator with registered factories for the core
+// engine services (those declared in `include/voxen/svc` subdirectory).
+// Higher-level services (client, world etc.) are registered by the application
+// after creation, along with any of its own services.
 // Engine does not start any services (except maybe debug ones) by itself.
 //
 // It is also responsible for receiving the set of initial settings
@@ -144,8 +145,9 @@ public:
 	static Ptr createForTestSuite();
 
 	// Service locator to use for this engine instance.
-	// Factories for built-in services (declared in `include/voxen/...` subdirectory)
+	// Factories for the core services (declared in `include/voxen/svc` subdirectory)
 	// are already registered, you can call `requestService` for any of them.
+	// Register factories for all other services you use before requesting them.
 	ServiceLocator &serviceLocator() noexcept { return m_service_locator; }
 
 private:
