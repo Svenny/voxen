@@ -63,3 +63,31 @@ TEST_CASE("'defer_fail' works properly", "[extras::defer]")
 		}
 	}
 }
+
+namespace
+{
+
+// Runs a scope with `defer_fail` from a destructor, which is called while an exception is in flight
+struct NormalExitDuringUnwinding {
+	bool &fired;
+
+	~NormalExitDuringUnwinding()
+	{
+		defer_fail { fired = true; };
+	}
+};
+
+} // namespace
+
+TEST_CASE("'defer_fail' ignores exceptions that were in flight before it", "[extras::defer]")
+{
+	bool fired = false;
+
+	try {
+		NormalExitDuringUnwinding guard { fired };
+		throw 0;
+	}
+	catch (int) {
+		REQUIRE(fired == false);
+	}
+}
