@@ -93,6 +93,8 @@ public:
 	EngineStartArgs &operator=(const EngineStartArgs &) = delete;
 	~EngineStartArgs();
 
+	// Parse command-line options. If not called, the engine starts with default
+	// options and does not use profile/config files (e.g. in tests), see `Engine`.
 	ArgvParseResult fillFromArgv(int argc, const char *const *argv);
 
 	AppInfo &appInfo() noexcept { return m_app_info; }
@@ -140,9 +142,6 @@ public:
 	// Factory function. Ensures no other instance is currently created,
 	// otherwise throws `Exception` with `VoxenErrc::AlreadyRegistered`.
 	static Ptr create(EngineStartArgs args);
-	// Same as `create()` but creates an instance tailored for test cases execution.
-	// You should not call it from regular applications.
-	static Ptr createForTestSuite();
 
 	// Service locator to use for this engine instance.
 	// Factories for the core services (declared in `include/voxen/svc` subdirectory)

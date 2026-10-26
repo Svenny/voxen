@@ -230,10 +230,8 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	const tk::cli::Args &cli_opts = m_start_args.parsedCliOpts();
 	RuntimeConfig::instance().fill(cli_opts);
 
-	// Don't do anything with configs/files when launched from test suite
-	// TODO: we should actually do it to support file operations in tests.
-	// The application (engine creator) should decide whether to use files or not.
-	// TODO: detect test suite launch in a more appropriate way
+	// Profile and config files are located relative to the binary, which is known only
+	// when started with a command line. Without it (e.g. in tests) don't touch any files.
 	if (!m_start_args.argv0().empty()) {
 		// TODO: convert `FileManager` to a service
 		voxen::FileManager::setProfileName(m_start_args.argv0(),
@@ -273,27 +271,6 @@ auto Engine::create(EngineStartArgs args) -> Ptr
 		g_instance_created.store(false);
 		throw;
 	}
-}
-
-auto Engine::createForTestSuite() -> Ptr
-{
-	// Test suite shares repository with the engine,
-	// hence it has the same versioning and commit hash
-	EngineStartArgs args(AppInfo {
-		.name = "Voxen Test Suite",
-		.version_major = Version::MAJOR,
-		.version_minor = Version::MINOR,
-		.version_patch = Version::PATCH,
-		.version_appendix = Version::SUFFIX,
-		.git_commit_hash = Version::GIT_HASH,
-	});
-
-	// Communicate that we're launched from test suite (see `Engine` ctor)
-	// TODO: this is sooo hacky
-	const char *argv0 = "";
-	args.fillFromArgv(1, &argv0);
-
-	return create(std::move(args));
 }
 
 } // namespace voxen::svc

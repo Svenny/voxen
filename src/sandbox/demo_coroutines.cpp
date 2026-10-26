@@ -39,7 +39,7 @@ CoroTask coroTask(float *output, int iters)
 
 int main()
 {
-	auto engine = Engine::createForTestSuite();
+	auto engine = Engine::create(EngineStartArgs(AppInfo { .name = "Voxen Coroutines Demo" }));
 	TaskBuilder bld(engine->serviceLocator().requestService<TaskService>());
 
 	constexpr size_t NUM_BATCHES = 1000;
