@@ -17,7 +17,7 @@ namespace voxen
 //
 // IMPORTANT NOTE: container assumes *NO* collisions occur in 64-bit key hashes.
 // That means key space can be at most 64-bit, and using bijective hash function
-// is strongly recommended, for example `Hash::xxh64Fixed()`.
+// is strongly recommended, for example `tk::hash::xxh64Fixed()`.
 // This restriction might be lifted with future enhancements.
 //
 // Trie automatically scales for any size. As long as the key hash distribution

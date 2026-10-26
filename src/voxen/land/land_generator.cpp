@@ -4,10 +4,10 @@
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/task_builder.hpp>
-#include <voxen/util/hash.hpp>
 
 #include "land_geometry_utils_private.hpp"
 
+#include <tk/hash.hpp>
 #include <tk/rng.hpp>
 
 #include <m/packing.hpp>
@@ -95,7 +95,7 @@ Chunk::BlockId assignMaterial(LocalPlaneSample &sample, float y_height, bool tru
 
 m::float2 grad(int32_t x, int32_t z) noexcept
 {
-	uint64_t kek = Hash::xxh64Fixed((uint64_t(x) << 32) | uint64_t(z));
+	uint64_t kek = tk::hash::xxh64Fixed((uint64_t(x) << 32) | uint64_t(z));
 
 	uint32_t k1 = uint32_t(kek >> 32);
 	uint32_t k2 = uint32_t(kek);
@@ -472,9 +472,9 @@ void Generator::setSeed(uint64_t seed)
 {
 	m_initial_seed = seed;
 
-	m_global_map_sub_seed = Hash::xxh64Fixed(seed ^ 10'25'1337'10001);
-	m_regional_map_sub_seed = Hash::xxh64Fixed(seed ^ 10'25'1337'10002);
-	m_local_noise_sub_seed = Hash::xxh64Fixed(seed ^ 10'25'1337'10003);
+	m_global_map_sub_seed = tk::hash::xxh64Fixed(seed ^ 10'25'1337'10001);
+	m_regional_map_sub_seed = tk::hash::xxh64Fixed(seed ^ 10'25'1337'10002);
+	m_local_noise_sub_seed = tk::hash::xxh64Fixed(seed ^ 10'25'1337'10003);
 
 	// TODO: force regeneration of global/regional maps
 }

@@ -14,8 +14,9 @@
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/util/hash.hpp>
 #include <voxen/world/world_state.hpp>
+
+#include <tk/hash.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -73,7 +74,7 @@ public:
 			return dcmd;
 		}
 
-		const UID key_uid = Hash::keyToUid(LAND_LOADER_DOMAIN_UID, key.packed());
+		const UID key_uid = deriveUid(LAND_LOADER_DOMAIN_UID, key.packed());
 
 		vk::MeshStreamer &streamer = *m_gfx.meshStreamer();
 		vk::MeshStreamer::MeshInfo mesh_info;

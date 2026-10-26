@@ -37,6 +37,7 @@ set(TK_HEADERS
 	include/tk/cli.hpp
 	include/tk/demangle.hpp
 	include/tk/fs.hpp
+	include/tk/hash.hpp
 	include/tk/json.hpp
 	include/tk/parse_error.hpp
 	include/tk/png.hpp
@@ -158,7 +159,6 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
 	include/voxen/util/futex_work_counter.hpp
-	include/voxen/util/hash.hpp
 	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp

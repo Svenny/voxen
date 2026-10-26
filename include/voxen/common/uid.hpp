@@ -2,6 +2,8 @@
 
 #include <voxen/visibility.hpp>
 
+#include <tk/hash.hpp>
+
 #include <fmt/base.h>
 
 #include <cstddef>
@@ -82,6 +84,16 @@ consteval UID::UID(std::span<const char, CHAR_REPR_LENGTH> in) noexcept
 
 	v0 = decode_u64(in.subspan<0, 17>());
 	v1 = decode_u64(in.subspan<18, 17>());
+}
+
+// "Extend" a small-dimension (64 bits or smaller) key with whatever meaning to UID.
+// `pivot` should be a (fixed) random UID, it defines a subsystem (domain) where
+// this key belongs to. The idea is that if the same key is used in different domains
+// it will be converted to different UIDs using this pivot, eliminating UID collisions.
+constexpr UID deriveUid(UID pivot, uint64_t key) noexcept
+{
+	pivot.v1 ^= tk::hash::xxh64Fixed(pivot.v0 ^ key);
+	return pivot;
 }
 
 } // namespace voxen

@@ -1,7 +1,8 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 
 #include <voxen/gfx/vk/vk_device.hpp>
-#include <voxen/util/hash.hpp>
+
+#include <tk/hash.hpp>
 
 namespace voxen::gfx::vk
 {
@@ -33,7 +34,7 @@ void VulkanUtils::fillBufferSharingInfo(Device &dev, VkBufferCreateInfo &info) n
 
 std::array<char, 4> VulkanUtils::makeHandleDisambiguationString(void *handle) noexcept
 {
-	uint64_t hash = Hash::xxh64Fixed(static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle)));
+	uint64_t hash = tk::hash::xxh64Fixed(static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle)));
 	std::array<char, 4> result;
 
 	result[0] = 'A' + hash % (1 + 'Z' - 'A');

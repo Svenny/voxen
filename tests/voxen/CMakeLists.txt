@@ -17,7 +17,6 @@ target_sources(test-voxen PRIVATE
 	svc/service_locator.test.cpp
 	svc/task_service.test.cpp
 	util/concentric_octahedra_walker.test.cpp
-	util/hash.test.cpp
 	util/packed_color.test.cpp
 	voxen_test_common.cpp
 )
@@ -44,5 +43,4 @@ add_test(NAME voxen-svc-message-queue COMMAND test-voxen "[voxen::svc::message_q
 add_test(NAME voxen-svc-service-locator COMMAND test-voxen "[voxen::svc::service_locator]")
 add_test(NAME voxen-svc-task-service COMMAND test-voxen "[voxen::svc::task_service]")
 add_test(NAME voxen-concentric-octahedra-walker COMMAND test-voxen "[voxen::concentric_octahedra_walker]")
-add_test(NAME voxen-hash COMMAND test-voxen "[voxen::hash]")
 add_test(NAME voxen-packed-color COMMAND test-voxen "[voxen::packed_color]")
