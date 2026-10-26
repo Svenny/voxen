@@ -32,7 +32,7 @@ bool ScopedContainer::releasedThisFrame() const noexcept
 	return m_impl.hovered && !m_impl.pressed && m_impl.pressed_changed_this_frame;
 }
 
-void ScopedContainer::setColor(PackedColorSrgb color) noexcept
+void ScopedContainer::setColor(m::rgba8_srgb color) noexcept
 {
 	m_impl.rectangle.color = color;
 }

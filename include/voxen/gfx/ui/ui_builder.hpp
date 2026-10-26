@@ -2,8 +2,9 @@
 
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/gfx/ui/ui_setup_types.hpp>
-#include <voxen/util/packed_color.hpp>
 #include <voxen/visibility.hpp>
+
+#include <m/color.hpp>
 
 namespace voxen::gfx::ui
 {
@@ -37,7 +38,7 @@ public:
 
 	// Override fill color of this item. Used to select colors depending
 	// on mouse state (hovered/clicked/etc.) for e.g. button elements.
-	void setColor(PackedColorSrgb color) noexcept;
+	void setColor(m::rgba8_srgb color) noexcept;
 
 private:
 	detail::UiSystemImpl &m_ui;

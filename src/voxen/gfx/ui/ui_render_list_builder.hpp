@@ -3,8 +3,8 @@
 #include <voxen/common/scratch_memory_allocator.hpp>
 #include <voxen/common/scratch_memory_containers.hpp>
 #include <voxen/gfx/ui/ui_render_data.hpp>
-#include <voxen/util/packed_color.hpp>
 
+#include <m/color.hpp>
 #include <m/fwd.hpp>
 
 #include <cstddef>
@@ -18,7 +18,7 @@ public:
 	RenderListBuilder(ScratchMemoryAllocatorScope &scratch, size_t items_estimate);
 
 	uint32_t addItem(m::float2 min, m::float2 max);
-	void addRectangle(m::float2 min, m::float2 max, PackedColorSrgb color, uint32_t item_id);
+	void addRectangle(m::float2 min, m::float2 max, m::rgba8_srgb color, uint32_t item_id);
 
 	RenderData produceRenderData();
 

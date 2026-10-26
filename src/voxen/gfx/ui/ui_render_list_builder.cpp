@@ -28,7 +28,7 @@ uint32_t RenderListBuilder::addItem(m::float2 min, m::float2 max)
 	return index;
 }
 
-void RenderListBuilder::addRectangle(m::float2 min, m::float2 max, PackedColorSrgb color, uint32_t item_id)
+void RenderListBuilder::addRectangle(m::float2 min, m::float2 max, m::rgba8_srgb color, uint32_t item_id)
 {
 	using IDT = RenderData::IndexType;
 

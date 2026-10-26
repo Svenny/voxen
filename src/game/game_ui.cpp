@@ -1,8 +1,9 @@
 #include "game_ui.hpp"
 
 #include <voxen/gfx/ui/ui_setup_types.hpp>
-#include <voxen/util/packed_color.hpp>
 #include <voxen/version.hpp>
+
+#include <m/color.hpp>
 
 #include <fmt/format.h>
 #include <fmt/xchar.h>
@@ -23,9 +24,9 @@ bool mainMenuButton(UiBuilder &ui, std::u8string_view text)
 	constexpr uint8_t INNER_PADDING = 6;
 	constexpr uint8_t FONT_SIZE = 44;
 
-	constexpr voxen::PackedColorSrgb COLOR_BASE = { 80, 80, 80 };
-	constexpr voxen::PackedColorSrgb COLOR_HOVERED = { 120, 120, 120 };
-	constexpr voxen::PackedColorSrgb COLOR_PRESSED = { 50, 50, 50 };
+	constexpr m::rgba8_srgb COLOR_BASE = { 80, 80, 80 };
+	constexpr m::rgba8_srgb COLOR_HOVERED = { 120, 120, 120 };
+	constexpr m::rgba8_srgb COLOR_PRESSED = { 50, 50, 50 };
 
 	// Draw button background
 	auto container = ui.div({
@@ -69,7 +70,7 @@ Ui::Ui()
 
 void Ui::draw(UiBuilder &ui)
 {
-	constexpr voxen::PackedColorSrgb COLOR_BACKGROUND = { 40, 40, 40 };
+	constexpr m::rgba8_srgb COLOR_BACKGROUND = { 40, 40, 40 };
 	constexpr uint8_t VERSION_FONT_SIZE = 18;
 
 	auto root = ui.div({
