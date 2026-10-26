@@ -31,6 +31,7 @@ namespace vk
 
 class CommandAllocator;
 class DebugUtils;
+class DescriptorSetLayoutCollection;
 class Device;
 class DmaSystem;
 class FrameContext;
@@ -39,6 +40,7 @@ class IRenderGraph;
 class MeshStreamer;
 class PhysicalDevice;
 class PipelineCache;
+class PipelineLayoutCollection;
 class RenderGraphBuilder;
 class RenderGraphExecution;
 class RenderGraphRunner;

@@ -1,13 +1,13 @@
 #include <voxen/client/vulkan/pipeline.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
+#include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 
@@ -283,7 +283,7 @@ void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipe
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().landChunkMeshLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landChunkMeshLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -319,7 +319,7 @@ void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelinePart
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().landChunkMeshLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landChunkMeshLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -359,7 +359,7 @@ void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts 
 	my_create_info.pDepthStencilState = &zs_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().landSelectorLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landSelectorLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -394,7 +394,7 @@ void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts
 	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().uiFontLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->uiFontLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -429,7 +429,7 @@ void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &part
 	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.pipelineLayoutCollection().uiBasicLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->uiBasicLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -465,7 +465,7 @@ void addParts<PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE>(ComputePipelinePar
 	my_create_info.stage.module = module_collection[ShaderModuleCollection::LAND_FRUSTUM_CULL_COMPUTE];
 	my_create_info.stage.pName = "main";
 
-	my_create_info.layout = backend.pipelineLayoutCollection().landFrustumCullLayout();
+	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landFrustumCullLayout();
 }
 
 template<uint32_t ID = 0>

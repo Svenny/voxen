@@ -1,9 +1,7 @@
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 
 #include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
-#include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
@@ -12,7 +10,9 @@
 #include <voxen/gfx/vk/frame_context.hpp>
 #include <voxen/gfx/vk/render_graph_builder.hpp>
 #include <voxen/gfx/vk/render_graph_execution.hpp>
+#include <voxen/gfx/vk/vk_descriptor_set_layout.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
@@ -242,7 +242,7 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 
 	auto &legacy_backend = client::vulkan::Backend::backend();
 	auto &legacy_pipeline_collection = legacy_backend.pipelineCollection();
-	auto &legacy_layout_collection = legacy_backend.pipelineLayoutCollection();
+	auto &legacy_layout_collection = *m_gfx->pipelineLayoutCollection();
 
 	VkPipelineLayout layout = legacy_layout_collection.landFrustumCullLayout();
 
@@ -325,7 +325,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 
 	auto &legacy_backend = client::vulkan::Backend::backend();
 	auto &legacy_pipeline_collection = legacy_backend.pipelineCollection();
-	auto &legacy_layout_collection = legacy_backend.pipelineLayoutCollection();
+	auto &legacy_layout_collection = *m_gfx->pipelineLayoutCollection();
 
 	// Draw land chunk meshes that have passed frustum culling
 	if (!m_land_per_index_buffer_data.empty()) {
@@ -575,7 +575,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 			},
 		};
 
-		auto &pipeline_layout = legacy_backend.pipelineLayoutCollection().uiBasicLayout();
+		VkPipelineLayout pipeline_layout = m_gfx->pipelineLayoutCollection()->uiBasicLayout();
 
 		const m::float2 inv_screen_size = m::float2(1.0f) / m::float2(viewport.width, viewport.height);
 
@@ -604,8 +604,7 @@ VkDescriptorSet LegacyRenderGraph::createMainSceneDset(FrameContext &fctx)
 	ubo_data->translated_world_to_clip = m_game_view->translatedWorldToClip();
 	ubo_data->world_position = m::float3(m_game_view->cameraPosition());
 
-	auto &dslc = client::vulkan::Backend::backend().descriptorSetLayoutCollection();
-	VkDescriptorSet dset = fctx.allocateDescriptorSet(dslc.mainSceneLayout());
+	VkDescriptorSet dset = fctx.allocateDescriptorSet(m_gfx->descriptorSetLayoutCollection()->mainSceneLayout());
 
 	const VkDescriptorBufferInfo buffer_info {
 		.buffer = upload.buffer,

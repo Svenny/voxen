@@ -8,9 +8,7 @@
 namespace voxen::client::vulkan
 {
 
-class DescriptorSetLayoutCollection;
 class PipelineCollection;
-class PipelineLayoutCollection;
 class ShaderModuleCollection;
 
 class Backend {
@@ -36,16 +34,6 @@ public:
 
 	ShaderModuleCollection &shaderModuleCollection() noexcept { return *m_shader_module_collection; }
 	const ShaderModuleCollection &shaderModuleCollection() const noexcept { return *m_shader_module_collection; }
-	DescriptorSetLayoutCollection &descriptorSetLayoutCollection() noexcept
-	{
-		return *m_descriptor_set_layout_collection;
-	}
-	const DescriptorSetLayoutCollection &descriptorSetLayoutCollection() const noexcept
-	{
-		return *m_descriptor_set_layout_collection;
-	}
-	PipelineLayoutCollection &pipelineLayoutCollection() noexcept { return *m_pipeline_layout_collection; }
-	const PipelineLayoutCollection &pipelineLayoutCollection() const noexcept { return *m_pipeline_layout_collection; }
 
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
@@ -69,8 +57,6 @@ private:
 	gfx::vk::Device *m_device = nullptr;
 
 	ShaderModuleCollection *m_shader_module_collection = nullptr;
-	DescriptorSetLayoutCollection *m_descriptor_set_layout_collection = nullptr;
-	PipelineLayoutCollection *m_pipeline_layout_collection = nullptr;
 
 	PipelineCollection *m_pipeline_collection = nullptr;
 

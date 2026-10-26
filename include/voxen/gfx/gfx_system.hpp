@@ -71,6 +71,13 @@ public:
 	vk::Device* device() noexcept { return m_vk_device.get(); }
 	vk::PipelineCache* pipelineCache() noexcept { return m_vk_pipeline_cache.get(); }
 
+	// TODO: legacy parts, remove them
+	vk::DescriptorSetLayoutCollection* descriptorSetLayoutCollection() noexcept
+	{
+		return m_vk_descriptor_set_layout_collection.get();
+	}
+	vk::PipelineLayoutCollection* pipelineLayoutCollection() noexcept { return m_vk_pipeline_layout_collection.get(); }
+
 	vk::CommandAllocator* commandAllocator() noexcept { return m_vk_command_allocator.get(); }
 	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
 	vk::DmaSystem* dmaSystem() noexcept { return m_vk_dma_system.get(); }
@@ -106,6 +113,9 @@ private:
 	ComponentPtr<vk::Instance> m_vk_instance;
 	ComponentPtr<vk::Device> m_vk_device;
 	ComponentPtr<vk::PipelineCache> m_vk_pipeline_cache;
+
+	ComponentPtr<vk::DescriptorSetLayoutCollection> m_vk_descriptor_set_layout_collection;
+	ComponentPtr<vk::PipelineLayoutCollection> m_vk_pipeline_layout_collection;
 
 	ComponentPtr<vk::CommandAllocator> m_vk_command_allocator;
 	ComponentPtr<vk::TransientBufferAllocator> m_vk_transient_buffer_allocator;

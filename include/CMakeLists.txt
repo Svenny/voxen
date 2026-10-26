@@ -54,9 +54,7 @@ set(VOXEN_HEADERS
 	include/voxen/assets/asset_service.hpp
 	include/voxen/assets/assets_fwd.hpp
 	include/voxen/client/vulkan/backend.hpp
-	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp
-	include/voxen/client/vulkan/pipeline_layout.hpp
 	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp
@@ -101,6 +99,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/standard_render_graph.hpp
 	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
+	include/voxen/gfx/vk/vk_descriptor_set_layout.hpp
 	include/voxen/gfx/vk/vk_device.hpp
 	include/voxen/gfx/vk/vk_dma_system.hpp
 	include/voxen/gfx/vk/vk_error.hpp
@@ -109,6 +108,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_mesh_streamer.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
 	include/voxen/gfx/vk/vk_pipeline_cache.hpp
+	include/voxen/gfx/vk/vk_pipeline_layout.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
 	include/voxen/gfx/vk/vk_transient_buffer_allocator.hpp
 	include/voxen/gfx/vk/vk_utils.hpp
