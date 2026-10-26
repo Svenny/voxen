@@ -162,13 +162,12 @@ set(VOXEN_HEADERS
 	include/voxen/util/concentric_octahedra_walker.hpp
 	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
-	include/voxen/util/tagged_tick_id.hpp
+	include/voxen/util/tick_id.hpp
 	include/voxen/world/player.hpp
 	include/voxen/world/player_state_message.hpp
 	include/voxen/world/world_control_service.hpp
 	include/voxen/world/world_fwd.hpp
 	include/voxen/world/world_state.hpp
-	include/voxen/world/world_tick_id.hpp
 	include/voxen/error_condition.hpp
 	include/voxen/exception.hpp
 	include/voxen/log.hpp

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <voxen/land/land_state.hpp>
+#include <voxen/util/tick_id.hpp>
 #include <voxen/world/player.hpp>
-#include <voxen/world/world_tick_id.hpp>
 
 namespace voxen::world
 {
@@ -22,13 +22,13 @@ public:
 	const land::LandState &landState() const noexcept { return m_land_state; }
 	void setLandState(const land::LandState &state) { m_land_state = state; }
 
-	TickId tickId() const noexcept { return m_tick_id; }
-	void setTickId(TickId value) noexcept { m_tick_id = value; }
+	WorldTickId tickId() const noexcept { return m_tick_id; }
+	void setTickId(WorldTickId value) noexcept { m_tick_id = value; }
 
 private:
 	Player m_player;
 	land::LandState m_land_state;
-	TickId m_tick_id { 0 };
+	WorldTickId m_tick_id { 0 };
 };
 
 } // namespace voxen::world

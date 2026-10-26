@@ -4,8 +4,8 @@
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/util/tick_id.hpp>
 #include <voxen/world/player.hpp>
-#include <voxen/world/world_tick_id.hpp>
 
 #include <m/m.hpp>
 
@@ -17,7 +17,7 @@ public:
 	GameView(os::Window& window);
 
 	void init(const world::Player& player) noexcept;
-	void update(const world::Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept;
+	void update(const world::Player& player, WorldTickId tick_id, double dt, svc::MessageSender& msend) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	// Relative mouse motion in framebuffer pixels
@@ -76,7 +76,7 @@ private:
 	m::float4x4 m_tr_world_to_clip;
 
 	// Previous tick id
-	world::TickId m_previous_tick_id;
+	WorldTickId m_previous_tick_id;
 	os::Window& m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack

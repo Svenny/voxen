@@ -3,8 +3,8 @@
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/uid.hpp>
+#include <voxen/util/tick_id.hpp>
 #include <voxen/visibility.hpp>
-#include <voxen/world/world_tick_id.hpp>
 
 #include <extras/pimpl.hpp>
 
@@ -26,7 +26,7 @@ public:
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
 
-	void doTick(world::TickId tick_id);
+	void doTick(WorldTickId tick_id);
 	const LandState &stateForCopy() const noexcept;
 
 	// Make all pending and future land generation jobs exit immediately without doing

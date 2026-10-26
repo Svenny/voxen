@@ -183,7 +183,7 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const world::Player& player, world::TickId tick_id, double dt, svc::MessageSender& msend) noexcept
+void GameView::update(const world::Player& player, WorldTickId tick_id, double dt, svc::MessageSender& msend) noexcept
 {
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {

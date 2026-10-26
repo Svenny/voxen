@@ -463,7 +463,7 @@ Generator::Generator()
 
 Generator::~Generator() = default;
 
-void Generator::onWorldTickBegin(world::TickId new_tick)
+void Generator::onWorldTickBegin(WorldTickId new_tick)
 {
 	m_current_world_tick = new_tick;
 }

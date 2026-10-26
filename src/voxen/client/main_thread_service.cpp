@@ -12,9 +12,9 @@
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/util/tick_id.hpp>
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>
-#include <voxen/world/world_tick_id.hpp>
 
 #include <extras/attributes.hpp>
 
@@ -94,7 +94,7 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 	impl.gui->init(*last_state_ptr);
 
 	int64_t fps_counter = 0;
-	world::TickId tick_id_counter = last_state_ptr->tickId();
+	WorldTickId tick_id_counter = last_state_ptr->tickId();
 
 	auto last_fps_log_time = std::chrono::steady_clock::now();
 	auto last_input_sample_time = last_fps_log_time;
@@ -120,7 +120,7 @@ void MainThreadService::doMainLoop(FrameCallback frame_callback)
 			std::chrono::duration<double> dur = (input_sample_time - last_fps_log_time);
 			double elapsed = dur.count();
 			if (elapsed > 2.0) {
-				world::TickId tick_id = last_state.tickId();
+				WorldTickId tick_id = last_state.tickId();
 				int64_t ups_counter = tick_id - tick_id_counter;
 
 				Log::info("FPS: {:.1f} UPS: {:.1f}", double(fps_counter) / elapsed, double(ups_counter) / elapsed);

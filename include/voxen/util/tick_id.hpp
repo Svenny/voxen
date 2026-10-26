@@ -62,4 +62,13 @@ struct TaggedTickId {
 	int64_t value = 0;
 };
 
+struct WorldTickTag {};
+
+// World is simulated in steps called ticks. This is the engine's simulation clock,
+// shared by all subsystems consuming the simulation, not only by the world itself.
+//
+// World state communicated to other subsystems is like a snapshot
+// of the world at a time point associated with a certain tick ID.
+using WorldTickId = TaggedTickId<WorldTickTag>;
+
 } // namespace voxen
