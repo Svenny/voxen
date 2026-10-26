@@ -54,6 +54,10 @@ target_sources(tk PRIVATE ${TK_HEADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/include/tk PREFIX Headers FILES ${TK_HEADERS})
 
 set(VOXEN_HEADERS
+	include/voxen/assets/asset_base.hpp
+	include/voxen/assets/asset_decoder.hpp
+	include/voxen/assets/asset_service.hpp
+	include/voxen/assets/assets_fwd.hpp
 	include/voxen/client/vulkan/backend.hpp
 	include/voxen/client/vulkan/descriptor_set_layout.hpp
 	include/voxen/client/vulkan/pipeline.hpp

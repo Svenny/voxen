@@ -14,6 +14,8 @@ target_sources(tk PRIVATE ${TK_SOURCES})
 source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${TK_SOURCES})
 
 set(VOXEN_SOURCES
+	src/voxen/assets/asset_decoder.cpp
+	src/voxen/assets/asset_service.cpp
 	src/voxen/client/vulkan/backend.cpp
 	src/voxen/client/vulkan/descriptor_set_layout.cpp
 	src/voxen/client/vulkan/pipeline.cpp
