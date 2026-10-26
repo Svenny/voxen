@@ -1,11 +1,10 @@
 #include <voxen/client/input_event_adapter.hpp>
 
 #include <voxen/client/player_action_events.hpp>
-
-#include <cassert>
 #include <voxen/util/log.hpp>
 
-#include <extras/string_utils.hpp>
+#include <cassert>
+#include <ranges>
 
 using std::make_pair;
 using std::string;
@@ -251,10 +250,9 @@ void InputEventAdapter::init()
 			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos) {
 				parseToken(value, event, parameter_name, default_value);
 			} else {
-				extras::string_split_apply(value, KEYS_SEQUENCE_DELIMITER,
-					[event, &default_value, parameter_name](string_view s) {
-						parseToken(s, event, parameter_name, default_value);
-					});
+				for (auto token : std::views::split(value, KEYS_SEQUENCE_DELIMITER)) {
+					parseToken(string_view(token.begin(), token.end()), event, parameter_name, default_value);
+				}
 			}
 		} else {
 			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value",
@@ -455,9 +453,9 @@ int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int> *tuple_ptr,
 		int key_type = 0; // 0 - unknown, 1 - key button, 2 - mouse button
 		bool fully_parsed = true;
 
-		extras::string_split_apply(s, KEYS_DELIMITER, [&key, &mods, &key_type, &fully_parsed](string_view subtoken) {
-			parseComplexToken(subtoken, key, mods, key_type, fully_parsed);
-		});
+		for (auto subtoken : std::views::split(s, KEYS_DELIMITER)) {
+			parseComplexToken(string_view(subtoken.begin(), subtoken.end()), key, mods, key_type, fully_parsed);
+		}
 
 		if (fully_parsed == false) {
 			return 0;

@@ -11,7 +11,6 @@
 #include <extras/linear_allocator.hpp>
 #include <extras/pimpl.hpp>
 #include <extras/refcnt_ptr.hpp>
-#include <extras/string_utils.hpp>
 
 // Math library is used nearly everywhere and is all templates
 #include <m/m.hpp>

@@ -4,8 +4,6 @@
 #include <voxen/util/packed_color.hpp>
 #include <voxen/version.hpp>
 
-#include <extras/string_utils.hpp>
-
 #include <fmt/format.h>
 #include <fmt/xchar.h>
 
@@ -63,7 +61,10 @@ bool mainMenuButton(UiBuilder &ui, std::u8string_view text)
 
 Ui::Ui()
 {
-	m_version_string = fmt::format(u8"Voxen Sample Game v{}", extras::ascii_as_utf8(voxen::Version::STRING));
+	// The version string is ASCII, copy it char by char instead of aliasing `char` as `char8_t`
+	std::string_view version(voxen::Version::STRING);
+	m_version_string = u8"Voxen Sample Game v";
+	m_version_string.append(version.begin(), version.end());
 }
 
 void Ui::draw(UiBuilder &ui)
