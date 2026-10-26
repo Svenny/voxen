@@ -15,6 +15,7 @@
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
+#include <voxen/gfx/vk/vk_pipeline.hpp>
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
@@ -22,9 +23,6 @@
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
-
-// TODO: legacy parts, move them here
-#include <voxen/client/vulkan/backend.hpp>
 
 #include <cstddef>
 #include <span>
@@ -115,6 +113,7 @@ struct GfxSystem::ComponentStorage {
 	alignas(LandLoader) std::byte land_loader[sizeof(LandLoader)];
 	alignas(FontRenderer) std::byte font_renderer[sizeof(FontRenderer)];
 	alignas(vk::RenderGraphRunner) std::byte vk_render_graph_runner[sizeof(vk::RenderGraphRunner)];
+	alignas(vk::PipelineCollection) std::byte vk_pipeline_collection[sizeof(vk::PipelineCollection)];
 	alignas(FrameTickSource) std::byte frame_tick_source[sizeof(FrameTickSource)];
 };
 
@@ -157,6 +156,10 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 	m_render_graph = std::make_shared<vk::LegacyRenderGraph>();
 	m_vk_render_graph_runner->attachGraph(m_render_graph);
 
+	// TODO: legacy part, remove it. Pipelines need the output format known only after the graph is attached.
+	m_vk_pipeline_collection.reset(new (comp.vk_pipeline_collection) vk::PipelineCollection(*m_vk_device,
+		*m_vk_pipeline_cache, *m_vk_pipeline_layout_collection, m_render_graph->currentOutputFormat()));
+
 	m_frame_tick_source.reset(new (comp.frame_tick_source) FrameTickSource());
 
 	// Do tick notification to correctly set the initial tick in every component
@@ -165,20 +168,14 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 	// Preload resources for subsystems that need it
 	m_font_renderer->loadResources();
 
-	// TODO: legacy part, remove it
-	if (!client::vulkan::Backend::backend().start(*this)) {
-		Log::error("Render subsystem couldn't launch");
-		throw Exception::fromError(VoxenErrc::GfxFailure, "failed to start render subsystem");
-	}
-
 	Log::info("Started gfx system");
 }
 
 GfxSystem::~GfxSystem()
 {
 	Log::info("Stopping gfx system");
-	// TODO: legacy part, remove it
-	client::vulkan::Backend::backend().stop();
+	// Components don't track GPU usage of every object they destroy
+	m_vk_device->forceCompletion();
 }
 
 void GfxSystem::drawFrame(const world::State &state, const GameView &view, ui::UiSystem &ui)

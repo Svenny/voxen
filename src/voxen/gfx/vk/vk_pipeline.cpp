@@ -1,28 +1,111 @@
-#include <voxen/client/vulkan/pipeline.hpp>
+#include <voxen/gfx/vk/vk_pipeline.hpp>
 
-#include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/shader_module.hpp>
-#include <voxen/gfx/gfx_system.hpp>
+#include <voxen/common/filemanager.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
-#include <voxen/gfx/vk/vk_swapchain.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
-
 #include <voxen/util/log.hpp>
 
 #include <extras/defer.hpp>
 
+#include <array>
 #include <cassert>
+#include <iterator>
 #include <memory>
+#include <string_view>
 
-namespace voxen::client::vulkan
+namespace voxen::gfx::vk
 {
 
 namespace
 {
+
+// Shader modules are needed only during pipeline creation, they are destroyed right after it
+class ShaderModuleCollection {
+public:
+	enum ShaderId : uint32_t {
+		LAND_DEBUG_CHUNK_BOUNDS_VERTEX,
+		LAND_DEBUG_CHUNK_BOUNDS_FRAGMENT,
+		LAND_FRUSTUM_CULL_COMPUTE,
+		LAND_CHUNK_MESH_VERTEX,
+		LAND_CHUNK_MESH_FRAGMENT,
+		LAND_SELECTOR_VERTEX,
+		LAND_SELECTOR_FRAGMENT,
+		UI_FONT_VERTEX,
+		UI_FONT_FRAGMENT,
+		UI_BASIC_VERTEX,
+		UI_BASIC_FRAGMENT,
+
+		NUM_SHADERS
+	};
+
+	explicit ShaderModuleCollection(Device &dev) : m_dev(dev)
+	{
+		defer_fail { destroyModules(); };
+
+		for (uint32_t i = 0; i < NUM_SHADERS; i++) {
+			m_shader_modules[i] = loadModule(SHADER_PATHS[i]);
+		}
+	}
+
+	ShaderModuleCollection(ShaderModuleCollection &&) = delete;
+	ShaderModuleCollection(const ShaderModuleCollection &) = delete;
+	ShaderModuleCollection &operator=(ShaderModuleCollection &&) = delete;
+	ShaderModuleCollection &operator=(const ShaderModuleCollection &) = delete;
+	~ShaderModuleCollection() noexcept { destroyModules(); }
+
+	VkShaderModule operator[](ShaderId idx) const noexcept { return m_shader_modules[idx]; }
+
+private:
+	// Indexed by `ShaderId`
+	constexpr static std::string_view SHADER_PATHS[] = {
+		"assets/shaders/land/debug_chunk_bounds.vert.spv",
+		"assets/shaders/land/debug_chunk_bounds.frag.spv",
+		"assets/shaders/land/frustum_cull.comp.spv",
+		"assets/shaders/land/chunk_mesh.vert.spv",
+		"assets/shaders/land/chunk_mesh.frag.spv",
+		"assets/shaders/land/selector.vert.spv",
+		"assets/shaders/land/selector.frag.spv",
+		"assets/shaders/ui/font.vert.spv",
+		"assets/shaders/ui/font.frag.spv",
+		"assets/shaders/ui/ui_basic.vert.spv",
+		"assets/shaders/ui/ui_basic.frag.spv",
+	};
+	static_assert(std::size(SHADER_PATHS) == NUM_SHADERS, "Add a path for every shader ID");
+
+	Device &m_dev;
+	std::array<VkShaderModule, NUM_SHADERS> m_shader_modules = {};
+
+	VkShaderModule loadModule(std::string_view relative_path)
+	{
+		Log::debug("Loading shader module `{}`", relative_path);
+		auto code = FileManager::readFile(relative_path);
+		auto &code_bytes = code.value();
+
+		VkShaderModuleCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		info.codeSize = code_bytes.size();
+		info.pCode = reinterpret_cast<const uint32_t *>(code_bytes.data());
+
+		VkShaderModule handle = VK_NULL_HANDLE;
+		VkResult result = m_dev.dt().vkCreateShaderModule(m_dev.handle(), &info, nullptr, &handle);
+		if (result != VK_SUCCESS) {
+			throw VulkanException(result, "vkCreateShaderModule");
+		}
+
+		return handle;
+	}
+
+	void destroyModules() noexcept
+	{
+		for (VkShaderModule module : m_shader_modules) {
+			m_dev.dt().vkDestroyShaderModule(m_dev.handle(), module, nullptr);
+		}
+	}
+};
 
 struct VertexFormatEmpty {
 	VertexFormatEmpty() noexcept
@@ -182,18 +265,14 @@ struct StandardBlendState {
 	VkPipelineColorBlendStateCreateInfo color_blend_info = {};
 };
 
-} // namespace
-
 struct GraphicsPipelineParts {
-	GraphicsPipelineParts() noexcept
+	explicit GraphicsPipelineParts(VkFormat color_format) noexcept : default_surface_format(color_format)
 	{
 		for (auto &info : create_infos) {
 			info = {};
 			info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 			info.basePipelineIndex = -1;
 		}
-
-		default_surface_format = Backend::backend().gfxSystem().renderGraph()->currentOutputFormat();
 	}
 
 	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
@@ -209,7 +288,7 @@ struct GraphicsPipelineParts {
 	const StandardBlendState standard_blend_state;
 
 	VkFormat default_surface_format = VK_FORMAT_UNDEFINED;
-	const VkFormat default_depth_format = gfx::vk::LegacyRenderGraph::DEPTH_BUFFER_FORMAT;
+	const VkFormat default_depth_format = LegacyRenderGraph::DEPTH_BUFFER_FORMAT;
 
 	const VkPipelineRenderingCreateInfo default_rendering_info {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
@@ -218,7 +297,7 @@ struct GraphicsPipelineParts {
 		.colorAttachmentCount = 1,
 		.pColorAttachmentFormats = &default_surface_format,
 		.depthAttachmentFormat = default_depth_format,
-		.stencilAttachmentFormat = gfx::vk::VulkanUtils::hasStencilComponent(default_depth_format)
+		.stencilAttachmentFormat = VulkanUtils::hasStencilComponent(default_depth_format)
 			? default_depth_format
 			: VK_FORMAT_UNDEFINED,
 	};
@@ -247,14 +326,15 @@ struct GraphicsPipelineParts {
 };
 
 template<uint32_t ID>
-void addParts(GraphicsPipelineParts &parts, Backend &backend);
+void addParts(GraphicsPipelineParts &parts, const ShaderModuleCollection &module_collection,
+	const PipelineLayoutCollection &layouts);
 
 template<>
-void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_debug_chunk_bounds_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -283,19 +363,19 @@ void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipe
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landChunkMeshLayout();
+	my_create_info.layout = layouts.landChunkMeshLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 template<>
-void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_chunk_mesh_parts;
 
 	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_CHUNK_MESH_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -319,19 +399,19 @@ void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelinePart
 	my_create_info.pDepthStencilState = &parts.default_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.disabled_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landChunkMeshLayout();
+	my_create_info.layout = layouts.landChunkMeshLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 template<>
-void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_selector_parts;
 
 	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_SELECTOR_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -359,18 +439,18 @@ void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts 
 	my_create_info.pDepthStencilState = &zs_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landSelectorLayout();
+	my_create_info.layout = layouts.landSelectorLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 template<>
-void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.ui_font_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::UI_FONT_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -394,18 +474,18 @@ void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts
 	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->uiFontLayout();
+	my_create_info.layout = layouts.uiFontLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
 }
 
 template<>
-void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.ui_basic_parts;
 	auto &my_create_info = parts.create_infos[PipelineCollection::UI_BASIC_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -429,7 +509,7 @@ void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &part
 	my_create_info.pDepthStencilState = &parts.disabled_depth_stencil_state.depth_stencil_info;
 	my_create_info.pColorBlendState = &parts.standard_blend_state.color_blend_info;
 	my_create_info.pDynamicState = &parts.default_viewport_state.dynamic_state_info;
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->uiBasicLayout();
+	my_create_info.layout = layouts.uiBasicLayout();
 	my_create_info.renderPass = VK_NULL_HANDLE;
 	my_create_info.subpass = 0;
 	my_create_info.pNext = &parts.default_rendering_info;
@@ -452,41 +532,48 @@ struct ComputePipelineParts {
 };
 
 template<uint32_t ID>
-void addParts(ComputePipelineParts &parts, Backend &backend);
+void addParts(ComputePipelineParts &parts, const ShaderModuleCollection &module_collection,
+	const PipelineLayoutCollection &layouts);
 
 template<>
-void addParts<PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE>(ComputePipelineParts &parts, Backend &backend)
+void addParts<PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE>(ComputePipelineParts &parts,
+	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE];
-	auto &module_collection = backend.shaderModuleCollection();
 
 	my_create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	my_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 	my_create_info.stage.module = module_collection[ShaderModuleCollection::LAND_FRUSTUM_CULL_COMPUTE];
 	my_create_info.stage.pName = "main";
 
-	my_create_info.layout = backend.gfxSystem().pipelineLayoutCollection()->landFrustumCullLayout();
+	my_create_info.layout = layouts.landFrustumCullLayout();
 }
 
 template<uint32_t ID = 0>
-static void fillPipelineParts(GraphicsPipelineParts &parts, Backend &backend)
+void fillPipelineParts(GraphicsPipelineParts &parts, const ShaderModuleCollection &module_collection,
+	const PipelineLayoutCollection &layouts)
 {
 	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
-		addParts<ID>(parts, backend);
-		fillPipelineParts<ID + 1>(parts, backend);
+		addParts<ID>(parts, module_collection, layouts);
+		fillPipelineParts<ID + 1>(parts, module_collection, layouts);
 	}
 }
 
 template<uint32_t ID = 0>
-static void fillPipelineParts(ComputePipelineParts &parts, Backend &backend)
+void fillPipelineParts(ComputePipelineParts &parts, const ShaderModuleCollection &module_collection,
+	const PipelineLayoutCollection &layouts)
 {
 	if constexpr (ID < PipelineCollection::NUM_COMPUTE_PIPELINES) {
-		addParts<ID>(parts, backend);
-		fillPipelineParts<ID + 1>(parts, backend);
+		addParts<ID>(parts, module_collection, layouts);
+		fillPipelineParts<ID + 1>(parts, module_collection, layouts);
 	}
 }
 
-PipelineCollection::PipelineCollection()
+} // namespace
+
+PipelineCollection::PipelineCollection(Device &dev, const PipelineCache &cache, const PipelineLayoutCollection &layouts,
+	VkFormat color_format)
+	: m_dev(dev)
 {
 	m_graphics_pipelines.fill(VK_NULL_HANDLE);
 	m_compute_pipelines.fill(VK_NULL_HANDLE);
@@ -494,26 +581,25 @@ PipelineCollection::PipelineCollection()
 
 	Log::debug("Creating PipelineCollection");
 
-	auto &backend = Backend::backend();
-	VkDevice device = backend.device().handle();
-	VkPipelineCache cache = backend.gfxSystem().pipelineCache()->handle();
+	VkDevice device = dev.handle();
+	const ShaderModuleCollection module_collection(dev);
 
-	auto graphics_parts = std::make_unique<GraphicsPipelineParts>();
-	fillPipelineParts(*graphics_parts, backend);
+	auto graphics_parts = std::make_unique<GraphicsPipelineParts>(color_format);
+	fillPipelineParts(*graphics_parts, module_collection, layouts);
 
-	VkResult result = backend.device().dt().vkCreateGraphicsPipelines(device, cache, NUM_GRAPHICS_PIPELINES,
+	VkResult result = dev.dt().vkCreateGraphicsPipelines(device, cache.handle(), NUM_GRAPHICS_PIPELINES,
 		graphics_parts->create_infos, nullptr, m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
-		throw gfx::vk::VulkanException(result, "vkCreateGraphicsPipelines");
+		throw VulkanException(result, "vkCreateGraphicsPipelines");
 	}
 
 	auto compute_parts = std::make_unique<ComputePipelineParts>();
-	fillPipelineParts(*compute_parts, backend);
+	fillPipelineParts(*compute_parts, module_collection, layouts);
 
-	result = backend.device().dt().vkCreateComputePipelines(device, cache, NUM_COMPUTE_PIPELINES,
+	result = dev.dt().vkCreateComputePipelines(device, cache.handle(), NUM_COMPUTE_PIPELINES,
 		compute_parts->create_infos, nullptr, m_compute_pipelines.data());
 	if (result != VK_SUCCESS) {
-		throw gfx::vk::VulkanException(result, "vkCreateComputePipelines");
+		throw VulkanException(result, "vkCreateComputePipelines");
 	}
 
 	Log::debug("PipelineCollection created successfully");
@@ -539,18 +625,17 @@ VkPipeline PipelineCollection::operator[](ComputePipelineId idx) const noexcept
 
 void PipelineCollection::destroyPipelines() noexcept
 {
-	auto &backend = Backend::backend();
-	VkDevice device = backend.device().handle();
+	VkDevice device = m_dev.handle();
 
 	for (VkPipeline &pipe : m_graphics_pipelines) {
-		backend.device().dt().vkDestroyPipeline(device, pipe, nullptr);
+		m_dev.dt().vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 
 	for (VkPipeline &pipe : m_compute_pipelines) {
-		backend.device().dt().vkDestroyPipeline(device, pipe, nullptr);
+		m_dev.dt().vkDestroyPipeline(device, pipe, nullptr);
 		pipe = VK_NULL_HANDLE;
 	}
 }
 
-} // namespace voxen::client::vulkan
+} // namespace voxen::gfx::vk

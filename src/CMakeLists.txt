@@ -16,9 +16,6 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/src PREFIX Sources FILES ${TK_SOURCES})
 set(VOXEN_SOURCES
 	src/voxen/assets/asset_decoder.cpp
 	src/voxen/assets/asset_service.cpp
-	src/voxen/client/vulkan/backend.cpp
-	src/voxen/client/vulkan/pipeline.cpp
-	src/voxen/client/vulkan/shader_module.cpp
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
@@ -62,6 +59,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_instance_wrappers.cpp
 	src/voxen/gfx/vk/vk_mesh_streamer.cpp
 	src/voxen/gfx/vk/vk_physical_device.cpp
+	src/voxen/gfx/vk/vk_pipeline.cpp
 	src/voxen/gfx/vk/vk_pipeline_cache.cpp
 	src/voxen/gfx/vk/vk_pipeline_layout.cpp
 	src/voxen/gfx/vk/vk_private_consts.hpp

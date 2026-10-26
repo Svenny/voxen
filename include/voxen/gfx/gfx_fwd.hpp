@@ -40,6 +40,7 @@ class IRenderGraph;
 class MeshStreamer;
 class PhysicalDevice;
 class PipelineCache;
+class PipelineCollection;
 class PipelineLayoutCollection;
 class RenderGraphBuilder;
 class RenderGraphExecution;

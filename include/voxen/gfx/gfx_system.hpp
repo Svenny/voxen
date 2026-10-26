@@ -77,6 +77,7 @@ public:
 		return m_vk_descriptor_set_layout_collection.get();
 	}
 	vk::PipelineLayoutCollection* pipelineLayoutCollection() noexcept { return m_vk_pipeline_layout_collection.get(); }
+	vk::PipelineCollection* pipelineCollection() noexcept { return m_vk_pipeline_collection.get(); }
 
 	vk::CommandAllocator* commandAllocator() noexcept { return m_vk_command_allocator.get(); }
 	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
@@ -127,6 +128,8 @@ private:
 
 	ComponentPtr<vk::RenderGraphRunner> m_vk_render_graph_runner;
 	std::shared_ptr<vk::LegacyRenderGraph> m_render_graph;
+	// TODO: legacy part, remove it
+	ComponentPtr<vk::PipelineCollection> m_vk_pipeline_collection;
 
 	ComponentPtr<FrameTickSource> m_frame_tick_source;
 

@@ -53,9 +53,6 @@ set(VOXEN_HEADERS
 	include/voxen/assets/asset_decoder.hpp
 	include/voxen/assets/asset_service.hpp
 	include/voxen/assets/assets_fwd.hpp
-	include/voxen/client/vulkan/backend.hpp
-	include/voxen/client/vulkan/pipeline.hpp
-	include/voxen/client/vulkan/shader_module.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
@@ -107,6 +104,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/vk_instance.hpp
 	include/voxen/gfx/vk/vk_mesh_streamer.hpp
 	include/voxen/gfx/vk/vk_physical_device.hpp
+	include/voxen/gfx/vk/vk_pipeline.hpp
 	include/voxen/gfx/vk/vk_pipeline_cache.hpp
 	include/voxen/gfx/vk/vk_pipeline_layout.hpp
 	include/voxen/gfx/vk/vk_swapchain.hpp
