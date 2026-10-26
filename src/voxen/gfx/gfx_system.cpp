@@ -8,6 +8,7 @@
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/render_graph_runner.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
+#include <voxen/gfx/vk/vk_descriptor_set_layout.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_dma_system.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
@@ -15,6 +16,7 @@
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
+#include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/os/window.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -103,6 +105,9 @@ struct GfxSystem::ComponentStorage {
 	alignas(vk::Instance) std::byte vk_instance[sizeof(vk::Instance)];
 	alignas(vk::Device) std::byte vk_device[sizeof(vk::Device)];
 	alignas(vk::PipelineCache) std::byte vk_pipeline_cache[sizeof(vk::PipelineCache)];
+	alignas(vk::DescriptorSetLayoutCollection) std::byte
+		vk_descriptor_set_layout_collection[sizeof(vk::DescriptorSetLayoutCollection)];
+	alignas(vk::PipelineLayoutCollection) std::byte vk_pipeline_layout_collection[sizeof(vk::PipelineLayoutCollection)];
 	alignas(vk::CommandAllocator) std::byte vk_command_allocator[sizeof(vk::CommandAllocator)];
 	alignas(vk::TransientBufferAllocator) std::byte vk_transient_buffer_allocator[sizeof(vk::TransientBufferAllocator)];
 	alignas(vk::DmaSystem) std::byte vk_dma_system[sizeof(vk::DmaSystem)];
@@ -132,6 +137,12 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 
 	m_vk_device.reset(new (comp.vk_device) vk::Device(*m_vk_instance, *selected_gpu));
 	m_vk_pipeline_cache.reset(new (comp.vk_pipeline_cache) vk::PipelineCache(*m_vk_device, "pipeline.cache"));
+
+	// TODO: legacy parts, remove them
+	m_vk_descriptor_set_layout_collection.reset(
+		new (comp.vk_descriptor_set_layout_collection) vk::DescriptorSetLayoutCollection(*m_vk_device));
+	m_vk_pipeline_layout_collection.reset(new (comp.vk_pipeline_layout_collection)
+			vk::PipelineLayoutCollection(*m_vk_device, *m_vk_descriptor_set_layout_collection));
 
 	m_vk_command_allocator.reset(new (comp.vk_command_allocator) vk::CommandAllocator(*this));
 	m_vk_transient_buffer_allocator.reset(
