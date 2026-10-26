@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <cstdint>
 
 namespace voxen::os
@@ -8,8 +10,8 @@ namespace voxen::os
 namespace Process
 {
 
-int32_t getProcessId() noexcept;
-int32_t getThreadId() noexcept;
+VOXEN_API int32_t getProcessId() noexcept;
+VOXEN_API int32_t getThreadId() noexcept;
 
 } // namespace Process
 

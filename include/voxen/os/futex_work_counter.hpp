@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <atomic>
 #include <cstdint>
 #include <utility>
@@ -11,7 +13,7 @@ namespace voxen::os
 // Stores combined outstanding work counter and "stop requested" flag.
 // Even though it handles all syscalls and atomic operations internally
 // you are still responsible for using its functions correctly.
-class FutexWorkCounter final {
+class VOXEN_API FutexWorkCounter final {
 public:
 	// <remaining work items; stop flag>
 	using Value = std::pair<uint32_t, bool>;

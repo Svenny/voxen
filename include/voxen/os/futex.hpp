@@ -1,5 +1,7 @@
 #pragma once
 
+#include <voxen/visibility.hpp>
+
 #include <atomic>
 #include <cstdint>
 
@@ -14,26 +16,26 @@ namespace Futex
 // other than `value`. Might also return due to spurious wakeup. This function
 // does not perform any checking loops, you are expected to do it yourself.
 // This is a syscall so it's not particularly fast.
-void waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept;
+VOXEN_API void waitInfinite(std::atomic_uint32_t *addr, uint32_t value) noexcept;
 
 // Wait (block thread) until value at `addr` changes to something
 // other than `value` or `timeout_msec` milliseconds pass, whichever comes first.
 // Just the same as `waitInfinite()` but with a timeout.
-void waitFor(std::atomic_uint32_t *addr, uint32_t value, uint32_t timeout_msec) noexcept;
+VOXEN_API void waitFor(std::atomic_uint32_t *addr, uint32_t value, uint32_t timeout_msec) noexcept;
 
 // Wake at least one thread (if any) waiting on `addr`.
 // This is a syscall so it's not particularly fast.
-void wakeSingle(std::atomic_uint32_t *addr) noexcept;
+VOXEN_API void wakeSingle(std::atomic_uint32_t *addr) noexcept;
 
 // Wake all threads (if any) waiting on `addr`.
 // This is a syscall so it's not particularly fast.
-void wakeAll(std::atomic_uint32_t *addr) noexcept;
+VOXEN_API void wakeAll(std::atomic_uint32_t *addr) noexcept;
 
 } // namespace Futex
 
 // A lightweight alternative to `std::mutex` (4 bytes versus ~40-80).
 // Trivial to create/destroy, can be used for fine-grained locks.
-class FutexLock {
+class VOXEN_API FutexLock {
 public:
 	FutexLock() = default;
 	FutexLock(FutexLock &&) = delete;
@@ -54,7 +56,7 @@ private:
 // Trivial to create/destroy, can be used for fine-grained locks.
 // NOTE: its exclusive-only locking performance is worse
 // than `FutexLock`. Do not use it if shared locking is not needed.
-class FutexRWLock {
+class VOXEN_API FutexRWLock {
 public:
 	FutexRWLock() = default;
 	FutexRWLock(FutexRWLock &&) = delete;
