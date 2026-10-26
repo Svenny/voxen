@@ -30,7 +30,7 @@ namespace extras
 // };
 //
 // Foo::Foo() : m_impl(1, 2) {}
-// Foo::Impl Foo::impl() { return m_impl.object(); }
+// Foo::Impl &Foo::impl() { return m_impl.object(); }
 //
 // int Foo::foo()
 // {
@@ -39,28 +39,27 @@ namespace extras
 template<typename T, size_t S, size_t A>
 class pimpl {
 public:
+	// Constructs `T` from `args`. Never takes a single `pimpl` argument, copies and moves go to their own overloads.
 	template<typename... Args>
-	constexpr pimpl(Args &&...args);
+		requires(sizeof...(Args) != 1 || (!std::is_same_v<std::remove_cvref_t<Args>, pimpl> && ...))
+	explicit pimpl(Args &&...args);
 
-	constexpr pimpl(pimpl &&other) noexcept;
-	constexpr pimpl(const pimpl &other);
-	constexpr pimpl &operator=(pimpl &&other) noexcept;
-	constexpr pimpl &operator=(const pimpl &other);
-	constexpr ~pimpl() noexcept;
+	pimpl(pimpl &&other) noexcept;
+	pimpl(const pimpl &other);
+	pimpl &operator=(pimpl &&other) noexcept;
+	pimpl &operator=(const pimpl &other);
+	~pimpl() noexcept;
 
-	[[clang::always_inline]] constexpr T &object() noexcept { return *std::launder(reinterpret_cast<T *>(m_storage)); }
+	[[clang::always_inline]] T &object() noexcept { return *std::launder(reinterpret_cast<T *>(m_storage)); }
 
-	[[clang::always_inline]] constexpr const T &object() const noexcept
+	[[clang::always_inline]] const T &object() const noexcept
 	{
 		return *std::launder(reinterpret_cast<const T *>(m_storage));
 	}
 
-	[[clang::always_inline]] constexpr T *operator->() noexcept
-	{
-		return std::launder(reinterpret_cast<T *>(m_storage));
-	}
+	[[clang::always_inline]] T *operator->() noexcept { return std::launder(reinterpret_cast<T *>(m_storage)); }
 
-	[[clang::always_inline]] constexpr const T *operator->() const noexcept
+	[[clang::always_inline]] const T *operator->() const noexcept
 	{
 		return std::launder(reinterpret_cast<const T *>(m_storage));
 	}
@@ -71,7 +70,8 @@ private:
 
 template<typename T, size_t S, size_t A>
 template<typename... Args>
-constexpr pimpl<T, S, A>::pimpl(Args &&...args)
+	requires(sizeof...(Args) != 1 || (!std::is_same_v<std::remove_cvref_t<Args>, pimpl<T, S, A>> && ...))
+pimpl<T, S, A>::pimpl(Args &&...args)
 {
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
@@ -79,7 +79,7 @@ constexpr pimpl<T, S, A>::pimpl(Args &&...args)
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A>::pimpl(pimpl &&other) noexcept
+pimpl<T, S, A>::pimpl(pimpl &&other) noexcept
 {
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
@@ -88,32 +88,32 @@ constexpr pimpl<T, S, A>::pimpl(pimpl &&other) noexcept
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A>::pimpl(const pimpl &other)
+pimpl<T, S, A>::pimpl(const pimpl &other)
 {
 	static_assert(S >= sizeof(T), "Storage is too small");
 	static_assert(A >= alignof(T), "Alignment is too weak");
 	static_assert(std::is_copy_constructible_v<T>, "Type must be copy-constructible");
-	new (m_storage) T(other);
+	new (m_storage) T(other.object());
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator=(pimpl &&other) noexcept
+pimpl<T, S, A> &pimpl<T, S, A>::operator=(pimpl &&other) noexcept
 {
 	static_assert(std::is_nothrow_move_assignable_v<T>, "Type must be nothrow move-assignable");
-	object() = std::move(other);
+	object() = std::move(other.object());
 	return *this;
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A> &pimpl<T, S, A>::operator=(const pimpl &other)
+pimpl<T, S, A> &pimpl<T, S, A>::operator=(const pimpl &other)
 {
 	static_assert(std::is_copy_assignable_v<T>, "Type must be copy-assignable");
-	object() = other;
+	object() = other.object();
 	return *this;
 }
 
 template<typename T, size_t S, size_t A>
-constexpr pimpl<T, S, A>::~pimpl() noexcept
+pimpl<T, S, A>::~pimpl() noexcept
 {
 	static_assert(std::is_nothrow_destructible_v<T>, "Type must be nothrow destructible");
 	object().~T();
