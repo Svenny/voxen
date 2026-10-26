@@ -54,7 +54,7 @@ if (LINUX)
 	# `std::stacktrace` implementation in libstdc++
 	target_link_libraries(voxen PRIVATE stdc++exp)
 endif()
-target_link_libraries(tk PRIVATE 3rdparty::llvm-demangle 3rdparty::zlib)
+target_link_libraries(tk PRIVATE 3rdparty::fmt 3rdparty::llvm-demangle 3rdparty::zlib)
 target_link_libraries(game PRIVATE voxen)
 
 include(include/CMakeLists.txt)

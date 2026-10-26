@@ -1,13 +1,12 @@
 #include <tk/cli.hpp>
-#include <tk/rng.hpp>
+#include <tk/uid.hpp>
 
-#include <cinttypes>
 #include <cstdint>
 #include <cstdio>
 
 int main(int argc, char *argv[])
 {
-	tk::cli::Parser parser("uidgen", "Generates random UIDs in `voxen::UID` string format");
+	tk::cli::Parser parser("uidgen", "Generates random UIDs in `tk::UID` string format");
 	parser.addFlag("help", 'h', "Display this help");
 	parser.addOption({
 		.name = "count",
@@ -36,12 +35,9 @@ int main(int argc, char *argv[])
 	}
 
 	for (int64_t i = 0; i < count; i++) {
-		const uint64_t v0 = tk::rng::entropySeed();
-		const uint64_t v1 = tk::rng::entropySeed();
-
-		// Same format as `voxen::UID::toChars()`
-		printf("%08" PRIx32 "-%08" PRIx32 "-%08" PRIx32 "-%08" PRIx32 "\n", uint32_t(v0 >> 32u), uint32_t(v0),
-			uint32_t(v1 >> 32u), uint32_t(v1));
+		char chars[tk::UID::CHAR_REPR_LENGTH];
+		tk::UID::generateRandom().toChars(chars);
+		puts(chars);
 	}
 
 	return 0;

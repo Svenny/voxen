@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/svc/message_types.hpp>
+#include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
 
 #include <cstdint>

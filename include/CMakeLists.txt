@@ -36,6 +36,7 @@ voxen_target_natvis(m include/m/m.natvis)
 set(TK_HEADERS
 	include/tk/cli.hpp
 	include/tk/demangle.hpp
+	include/tk/format.hpp
 	include/tk/fs.hpp
 	include/tk/hash.hpp
 	include/tk/json.hpp
@@ -43,6 +44,7 @@ set(TK_HEADERS
 	include/tk/png.hpp
 	include/tk/rng.hpp
 	include/tk/toml.hpp
+	include/tk/uid.hpp
 )
 
 target_include_directories(tk PUBLIC include)
@@ -67,7 +69,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/scratch_memory_allocator.hpp
 	include/voxen/common/scratch_memory_containers.hpp
 	include/voxen/common/shared_object_pool.hpp
-	include/voxen/common/uid.hpp
 	include/voxen/common/v8g_concepts.hpp
 	include/voxen/common/v8g_flat_map.hpp
 	include/voxen/common/v8g_flat_map_impl.hpp
@@ -172,6 +173,7 @@ set(VOXEN_HEADERS
 	include/voxen/error_condition.hpp
 	include/voxen/exception.hpp
 	include/voxen/log.hpp
+	include/voxen/uid.hpp
 	include/voxen/visibility.hpp
 )
 

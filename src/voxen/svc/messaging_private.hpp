@@ -1,8 +1,8 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/message_handling.hpp>
+#include <voxen/uid.hpp>
 
 #include <atomic>
 #include <cstddef>
