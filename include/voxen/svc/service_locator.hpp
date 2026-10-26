@@ -4,9 +4,9 @@
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
 
-#include <extras/move_only_function.hpp>
 #include <extras/pimpl.hpp>
 
+#include <functional>
 #include <memory>
 
 namespace voxen::svc
@@ -47,9 +47,9 @@ public:
 	// `ServiceLocator` reference can be safely saved inside the created service.
 	// Locator's lifetime is guaranteed to exceed that of any service it owns.
 	template<CService Service>
-	using TServiceFactoryFunction = extras::move_only_function<std::unique_ptr<Service>(ServiceLocator &)>;
+	using TServiceFactoryFunction = std::move_only_function<std::unique_ptr<Service>(ServiceLocator &)>;
 	// Generic factory function for a service; for internal usage
-	using ServiceFactoryFunction = extras::move_only_function<std::unique_ptr<IService>(ServiceLocator &)>;
+	using ServiceFactoryFunction = std::move_only_function<std::unique_ptr<IService>(ServiceLocator &)>;
 
 	ServiceLocator();
 	ServiceLocator(ServiceLocator &&) = delete;
