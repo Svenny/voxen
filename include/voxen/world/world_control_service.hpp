@@ -2,7 +2,6 @@
 
 #include <voxen/common/uid.hpp>
 
-#include <extras/move_only_function.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/visibility.hpp>
 #include <voxen/world/world_fwd.hpp>
@@ -10,6 +9,7 @@
 #include <extras/pimpl.hpp>
 
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <system_error>
 
@@ -30,22 +30,22 @@ public:
 		// This callback is called periodically from an unspecified thread
 		// while the world is starting to update the user-visible progress meter.
 		// It receives the current estimation of progress in [0..1] range.
-		extras::move_only_function<void(float)> progress_callback;
+		std::move_only_function<void(float)> progress_callback;
 		// This callback is called from an unspecified thread after world
 		// starting completes. The world connection is established only if
 		// the reported error condition is zero.
-		extras::move_only_function<void(std::error_condition)> result_callback;
+		std::move_only_function<void(std::error_condition)> result_callback;
 	};
 
 	struct SaveRequest {
 		// This callback is called periodically from an unspecified thread
 		// while the world is saving to update the user-visible progress meter.
 		// It receives the current estimation of progress in [0..1] range.
-		extras::move_only_function<void(float)> progress_callback;
+		std::move_only_function<void(float)> progress_callback;
 		// This callback is called from an unspecified thread after world
 		// saving/stopping completees. If the reported error condition
 		// is not zero then world saving failed.
-		extras::move_only_function<void(std::error_condition)> result_callback;
+		std::move_only_function<void(std::error_condition)> result_callback;
 	};
 
 	constexpr static UID SERVICE_UID = UID("cdc4d6ea-aefc6092-704c68dd-42d12661");

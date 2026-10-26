@@ -6,10 +6,10 @@
 #include <voxen/svc/message_types.hpp>
 #include <voxen/visibility.hpp>
 
-#include <extras/move_only_function.hpp>
 #include <extras/pimpl.hpp>
 
 #include <cstdint>
+#include <functional>
 #include <utility>
 
 namespace voxen::svc
@@ -143,8 +143,8 @@ public:
 	void waitMessages(uint32_t timeout_msec = UINT32_MAX);
 
 private:
-	using MessageHandler = extras::move_only_function<void(MessageInfo &, void *)>;
-	using CompletionHandler = extras::move_only_function<void(RequestCompletionInfo &, void *)>;
+	using MessageHandler = std::move_only_function<void(MessageInfo &, void *)>;
+	using CompletionHandler = std::move_only_function<void(RequestCompletionInfo &, void *)>;
 	using HandlerItem = std::pair<UID, MessageHandler>;
 	using CompletionHandlerItem = std::pair<UID, CompletionHandler>;
 
