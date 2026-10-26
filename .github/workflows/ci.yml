@@ -39,6 +39,9 @@ jobs:
       fail-fast: false
       matrix:
         preset: [ linux-debug, linux-release ]
+        include:
+          - preset: linux-debug
+            configure-args: -DVOXEN_BUILD_SANDBOX=ON
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
@@ -58,7 +61,7 @@ jobs:
           cmake --version
 
       - name: Configure
-        run: cmake --preset ${{ matrix.preset }}
+        run: cmake --preset ${{ matrix.preset }} ${{ matrix.configure-args }}
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }}
@@ -72,6 +75,9 @@ jobs:
       fail-fast: false
       matrix:
         preset: [ windows-ninja-debug, windows-ninja-release ]
+        include:
+          - preset: windows-ninja-debug
+            configure-args: -DVOXEN_BUILD_SANDBOX=ON
     steps:
       - name: Checkout the commit
         uses: actions/checkout@v7
@@ -103,7 +109,7 @@ jobs:
       - name: Configure
         run: |
           cmake --version
-          cmake --preset windows-ninja
+          cmake --preset windows-ninja ${{ matrix.configure-args }}
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }}
