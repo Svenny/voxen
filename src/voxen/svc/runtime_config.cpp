@@ -1,8 +1,8 @@
-#include <voxen/common/runtime_config.hpp>
+#include <voxen/svc/runtime_config.hpp>
 
 #include <voxen/gfx/gfx_options.hpp>
 
-namespace voxen
+namespace voxen::svc
 {
 
 struct RuntimeConfig::Impl {
@@ -35,4 +35,4 @@ RuntimeConfig &RuntimeConfig::instance() noexcept
 	return g_instance;
 }
 
-} // namespace voxen
+} // namespace voxen::svc

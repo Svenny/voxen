@@ -1,16 +1,16 @@
 #include <voxen/svc/engine.hpp>
 
-#include <voxen/common/config.hpp>
-#include <voxen/common/filemanager.hpp>
-#include <voxen/common/runtime_config.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/log.hpp>
 #include <voxen/os/time.hpp>
 #include <voxen/svc/async_file_io_service.hpp>
+#include <voxen/svc/config.hpp>
+#include <voxen/svc/file_manager.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/pipe_memory_allocator.hpp>
+#include <voxen/svc/runtime_config.hpp>
 #include <voxen/svc/task_service.hpp>
 #include <voxen/version.hpp>
 
@@ -234,8 +234,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	// when started with a command line. Without it (e.g. in tests) don't touch any files.
 	if (!m_start_args.argv0().empty()) {
 		// TODO: convert `FileManager` to a service
-		voxen::FileManager::setProfileName(m_start_args.argv0(),
-			std::string(cli_opts.value("profile").value_or("default")));
+		FileManager::setProfileName(m_start_args.argv0(), std::string(cli_opts.value("profile").value_or("default")));
 		// TODO: this is some old temporary junk, remove it
 		patchConfig(cli_opts, Config::mainConfig());
 	}

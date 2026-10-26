@@ -12,15 +12,15 @@ class Parser;
 
 } // namespace tk::cli
 
-namespace voxen
-{
-
-namespace gfx
+namespace voxen::gfx
 {
 
 struct GfxOptions;
 
-}
+} // namespace voxen::gfx
+
+namespace voxen::svc
+{
 
 class VOXEN_API RuntimeConfig final {
 public:
@@ -47,4 +47,4 @@ private:
 	extras::pimpl<Impl, 256, 8> m_impl;
 };
 
-} // namespace voxen
+} // namespace voxen::svc

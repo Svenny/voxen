@@ -173,8 +173,8 @@ std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToAct
 std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::mouseKeyToActionMap;
 std::map<bool, PlayerActionEvent> InputEventAdapter::scrollToActionMap;
 string InputEventAdapter::actionSettingsPath = "configs/action_settings.toml";
-Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
-Config *InputEventAdapter::actionSettingsConfig = nullptr;
+svc::Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
+svc::Config *InputEventAdapter::actionSettingsConfig = nullptr;
 
 namespace
 {
@@ -234,9 +234,9 @@ std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseWheelToPlayerEvent(co
 void InputEventAdapter::init()
 {
 	assert(actionSettingsConfig == nullptr);
-	actionSettingsConfig = new Config(actionSettingsPath, actionSettingConfigScheme);
+	actionSettingsConfig = new svc::Config(actionSettingsPath, actionSettingConfigScheme);
 
-	for (const Config::SchemeEntry &entry : actionSettingConfigScheme) {
+	for (const svc::Config::SchemeEntry &entry : actionSettingConfigScheme) {
 		const string &default_value = std::get<string>(entry.default_value);
 		const string &value_string
 			= actionSettingsConfig->optionString(entry.section, entry.parameter_name).value_or(default_value);
@@ -267,10 +267,10 @@ void InputEventAdapter::release() noexcept
 	actionSettingsConfig = nullptr;
 }
 
-Config::Scheme InputEventAdapter::actionSettingsScheme()
+svc::Config::Scheme InputEventAdapter::actionSettingsScheme()
 {
 	static const char *player_section = "player actions";
-	Config::Scheme s;
+	svc::Config::Scheme s;
 
 	s.push_back({
 		player_section,

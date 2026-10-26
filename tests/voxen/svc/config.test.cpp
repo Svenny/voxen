@@ -1,4 +1,4 @@
-#include <voxen/common/config.hpp>
+#include <voxen/svc/config.hpp>
 
 #include <tk/toml.hpp>
 
@@ -9,7 +9,7 @@
 #include <variant>
 #include <vector>
 
-namespace voxen
+namespace voxen::svc
 {
 
 namespace
@@ -36,7 +36,7 @@ std::vector<std::string> findMismatches(const Config::Scheme &scheme, const tk::
 
 } // namespace
 
-TEST_CASE("'Config' default file text matches the scheme", "[voxen::config]")
+TEST_CASE("'Config' default file text matches the scheme", "[voxen::svc::config]")
 {
 	SECTION("Main config scheme")
 	{
@@ -63,4 +63,4 @@ TEST_CASE("'Config' default file text matches the scheme", "[voxen::config]")
 	}
 }
 
-} // namespace voxen
+} // namespace voxen::svc

@@ -1,7 +1,6 @@
 #include <voxen/client/main_thread_service.hpp>
 
 #include <voxen/client/gui.hpp>
-#include <voxen/common/config.hpp>
 #include <voxen/common/scratch_memory_allocator.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/gfx/gfx_system.hpp>
@@ -9,6 +8,7 @@
 #include <voxen/gfx/ui/ui_system.hpp>
 #include <voxen/log.hpp>
 #include <voxen/os/window.hpp>
+#include <voxen/svc/config.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
@@ -65,7 +65,7 @@ MainThreadService::MainThreadService(svc::ServiceLocator &svc, Config cfg) : m_i
 
 	impl.message_sender = svc.requestService<svc::MessagingService>().createSender(SERVICE_UID);
 
-	auto *main_config = voxen::Config::mainConfig();
+	auto *main_config = svc::Config::mainConfig();
 
 	impl.log_fps = main_config->getBool("dev", "fps_logging");
 

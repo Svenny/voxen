@@ -1,10 +1,10 @@
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 
-#include <voxen/common/filemanager.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/log.hpp>
+#include <voxen/svc/file_manager.hpp>
 
 #include <extras/defer.hpp>
 
@@ -32,7 +32,7 @@ PipelineCache::PipelineCache(Device &dev, std::string path) : m_dev(dev), m_save
 	std::optional<std::vector<std::byte>> cache_data;
 	if (!m_save_path.empty()) {
 		Log::debug("Trying to preinitialize pipeline cache from `{}`", m_save_path);
-		cache_data = FileManager::readUserFile(m_save_path);
+		cache_data = svc::FileManager::readUserFile(m_save_path);
 	}
 
 	VkPipelineCacheCreateInfo info = {};
@@ -79,7 +79,7 @@ bool PipelineCache::dump() noexcept
 	}
 
 	Log::debug("Saving {} bytes of pipeline cache data to {}", buffer_size, m_save_path);
-	return FileManager::writeUserFile(m_save_path, std::span(static_cast<std::byte *>(buffer), buffer_size));
+	return svc::FileManager::writeUserFile(m_save_path, std::span(static_cast<std::byte *>(buffer), buffer_size));
 }
 
 } // namespace voxen::gfx::vk

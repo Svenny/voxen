@@ -1,6 +1,5 @@
 #include <voxen/gfx/font_renderer.hpp>
 
-#include <voxen/common/filemanager.hpp>
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/gfx/gfx_system.hpp>
@@ -12,6 +11,7 @@
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/log.hpp>
+#include <voxen/svc/file_manager.hpp>
 
 #include <tk/png.hpp>
 
@@ -273,7 +273,7 @@ void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> tex
 void FontRenderer::createFontAtlasTexture()
 {
 	// TODO: don't hardcode this so hard
-	auto maybe_png_array = FileManager::readFile("assets/fonts/ascii.png");
+	auto maybe_png_array = svc::FileManager::readFile("assets/fonts/ascii.png");
 	if (!maybe_png_array.has_value()) {
 		Log::error("Can't load font atlas PNG");
 		throw Exception::fromError(VoxenErrc::InvalidData, "font atlas read failed");

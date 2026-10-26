@@ -63,10 +63,7 @@ set(VOXEN_HEADERS
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
 	include/voxen/common/common_fwd.hpp
-	include/voxen/common/config.hpp
-	include/voxen/common/filemanager.hpp
 	include/voxen/common/private_object_pool.hpp
-	include/voxen/common/runtime_config.hpp
 	include/voxen/common/scratch_memory_allocator.hpp
 	include/voxen/common/scratch_memory_containers.hpp
 	include/voxen/common/shared_object_pool.hpp
@@ -144,7 +141,9 @@ set(VOXEN_HEADERS
 	include/voxen/os/window.hpp
 	include/voxen/os/window_events.hpp
 	include/voxen/svc/async_file_io_service.hpp
+	include/voxen/svc/config.hpp
 	include/voxen/svc/engine.hpp
+	include/voxen/svc/file_manager.hpp
 	include/voxen/svc/message_handling.hpp
 	include/voxen/svc/message_queue.hpp
 	include/voxen/svc/message_sender.hpp
@@ -152,6 +151,7 @@ set(VOXEN_HEADERS
 	include/voxen/svc/messaging_service.hpp
 	include/voxen/svc/pipe_memory_allocator.hpp
 	include/voxen/svc/pipe_memory_function.hpp
+	include/voxen/svc/runtime_config.hpp
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp
 	include/voxen/svc/svc_fwd.hpp

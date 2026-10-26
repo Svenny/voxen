@@ -7,8 +7,8 @@
 #include <tuple>
 #include <utility>
 
-#include <voxen/common/config.hpp>
 #include <voxen/os/window_events.hpp>
+#include <voxen/svc/config.hpp>
 
 #include "player_action_events.hpp"
 
@@ -28,7 +28,7 @@ public:
 	static void release() noexcept;
 
 private:
-	static Config::Scheme actionSettingsScheme();
+	static svc::Config::Scheme actionSettingsScheme();
 
 	static int stringToMapkey(std::string_view s, std::tuple<int, int>* tuple_ptr,
 		bool* scroll_ptr); // 0 - unknown type, 1 - keyboard, 2 - mouse button, 3 - scroll
@@ -43,8 +43,8 @@ private:
 	static std::map<std::tuple<int, int>, PlayerActionEvent> mouseKeyToActionMap;
 	static std::map<bool, PlayerActionEvent> scrollToActionMap;
 	static std::string actionSettingsPath;
-	static Config* actionSettingsConfig;
-	static Config::Scheme actionSettingConfigScheme;
+	static svc::Config* actionSettingsConfig;
+	static svc::Config::Scheme actionSettingConfigScheme;
 
 	static const std::array<std::pair<os::Key, std::string>, 94> KEYCODE_2_STRING;
 	static const std::array<std::pair<os::MouseButton, std::string>, 5> MOUSEKEY_2_STRING;

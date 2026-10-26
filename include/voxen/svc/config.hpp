@@ -15,7 +15,7 @@
 #include <variant>
 #include <vector>
 
-namespace voxen
+namespace voxen::svc
 {
 
 class VOXEN_API Config {
@@ -84,4 +84,4 @@ private:
 	static const std::filesystem::path kMainConfigRelPath;
 };
 
-} // namespace voxen
+} // namespace voxen::svc

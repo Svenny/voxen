@@ -1,9 +1,9 @@
-#include <voxen/common/config.hpp>
+#include <voxen/svc/config.hpp>
 
-#include <voxen/common/filemanager.hpp>
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/log.hpp>
+#include <voxen/svc/file_manager.hpp>
 
 #include <tk/toml.hpp>
 
@@ -21,7 +21,7 @@
 using namespace std::filesystem;
 using std::string_view;
 
-namespace voxen
+namespace voxen::svc
 {
 
 const path Config::kMainConfigRelPath = "configs/main.toml";
@@ -372,4 +372,4 @@ Config::option_t Config::optionFromString(string_view s, size_t type)
 	}
 }
 
-} // namespace voxen
+} // namespace voxen::svc
