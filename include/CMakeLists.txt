@@ -9,7 +9,6 @@ set(EXTRAS_HEADERS
 	include/extras/linear_allocator.hpp
 	include/extras/pimpl.hpp
 	include/extras/refcnt_ptr.hpp
-	include/extras/string_utils.hpp
 )
 
 target_include_directories(extras INTERFACE include)
