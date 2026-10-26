@@ -3,10 +3,10 @@
 #include <voxen/visibility.hpp>
 
 #include <extras/enum_utils.hpp>
-#include <extras/source_location.hpp>
 
 #include <fmt/base.h>
 
+#include <source_location>
 #include <string_view>
 
 namespace voxen
@@ -45,7 +45,7 @@ public:
 	};
 
 	template<typename... Args>
-	static void log(Level level, extras::source_location where, std::string_view format_str, Args &&...args) noexcept
+	static void log(Level level, std::source_location where, std::string_view format_str, Args &&...args) noexcept
 	{
 		if (!willBeLogged(level)) {
 			return;
@@ -66,60 +66,60 @@ private:
 
 	static Level m_current_level;
 
-	static void doLog(Level level, extras::source_location where, std::string_view format_str,
+	static void doLog(Level level, std::source_location where, std::string_view format_str,
 		fmt::format_args format_args) noexcept;
 
 public:
 	// Yes, a very long code generation macro
 #define LOG_MAKE_FUNCTIONS(name, level) \
 	template<typename T1> \
-	constexpr static void name(T1 &&arg1, extras::source_location where = extras::source_location::current()) noexcept \
+	constexpr static void name(T1 &&arg1, std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1)); \
 	} \
 	template<typename T1, typename T2> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2)); \
 	} \
 	template<typename T1, typename T2, typename T3> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7)); \
 	} \
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -128,7 +128,7 @@ public:
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, \
 		typename T9> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
-		T9 &&arg9, extras::source_location where = extras::source_location::current()) noexcept \
+		T9 &&arg9, std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -137,7 +137,7 @@ public:
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, \
 		typename T9, typename T10> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
-		T9 &&arg9, T10 &&arg10, extras::source_location where = extras::source_location::current()) noexcept \
+		T9 &&arg9, T10 &&arg10, std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -147,7 +147,7 @@ public:
 		typename T9, typename T10, typename T11> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
 		T9 &&arg9, T10 &&arg10, T11 &&arg11, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -157,7 +157,7 @@ public:
 		typename T9, typename T10, typename T11, typename T12> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
 		T9 &&arg9, T10 &&arg10, T11 &&arg11, T12 &&arg12, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -168,7 +168,7 @@ public:
 		typename T9, typename T10, typename T11, typename T12, typename T13> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
 		T9 &&arg9, T10 &&arg10, T11 &&arg11, T12 &&arg12, T13 &&arg13, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -179,7 +179,7 @@ public:
 		typename T9, typename T10, typename T11, typename T12, typename T13, typename T14> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
 		T9 &&arg9, T10 &&arg10, T11 &&arg11, T12 &&arg12, T13 &&arg13, T14 &&arg14, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -190,7 +190,7 @@ public:
 		typename T9, typename T10, typename T11, typename T12, typename T13, typename T14, typename T15> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
 		T9 &&arg9, T10 &&arg10, T11 &&arg11, T12 &&arg12, T13 &&arg13, T14 &&arg14, T15 &&arg15, \
-		extras::source_location where = extras::source_location::current()) noexcept \
+		std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \

@@ -3,8 +3,7 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/util/log.hpp>
 
-#include <extras/source_location.hpp>
-
+#include <source_location>
 #include <utility>
 
 namespace voxen::gfx::vk
@@ -28,7 +27,7 @@ VkBool32 debugMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeve
 	bool spec = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
 	bool perf = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
 
-	Log::log(level, extras::source_location::current(), "Vulkan debug message ({}):\n{}",
+	Log::log(level, std::source_location::current(), "Vulkan debug message ({}):\n{}",
 		spec && perf ? "spec+perf" : (spec ? "spec" : "perf"), pCallbackData->pMessage);
 
 	return VK_FALSE;

@@ -2,8 +2,6 @@
 
 #include <voxen/visibility.hpp>
 
-#include <extras/source_location.hpp>
-
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -11,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <source_location>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -21,7 +20,7 @@ namespace voxen
 
 class VOXEN_API Config {
 public:
-	using Location = extras::source_location;
+	using Location = std::source_location;
 	using option_t = std::variant<std::string, int64_t, double, bool>;
 
 	struct SchemeEntry {

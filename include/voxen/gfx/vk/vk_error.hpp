@@ -4,8 +4,7 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/visibility.hpp>
 
-#include <extras/source_location.hpp>
-
+#include <source_location>
 #include <system_error>
 #include <type_traits>
 
@@ -31,7 +30,7 @@ class VOXEN_API VulkanException final : public Exception {
 public:
 	// `api` must be the name of Vulkan function that returned `result`
 	explicit VulkanException(VkResult result, const char *api,
-		extras::source_location loc = extras::source_location::current());
+		std::source_location loc = std::source_location::current());
 	VulkanException(VulkanException &&) = default;
 	VulkanException(const VulkanException &) = default;
 	VulkanException &operator=(VulkanException &&) = default;

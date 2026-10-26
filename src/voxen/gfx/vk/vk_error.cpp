@@ -49,7 +49,7 @@ error_code make_error_code(VkResult result) noexcept
 namespace voxen::gfx::vk
 {
 
-VulkanException::VulkanException(VkResult result, const char *api, extras::source_location loc)
+VulkanException::VulkanException(VkResult result, const char *api, std::source_location loc)
 	: Exception(formatMessage(result, api), std::make_error_code(result).default_error_condition(), loc)
 {}
 
