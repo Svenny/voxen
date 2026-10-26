@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <utility>
 
-namespace voxen
+namespace voxen::os
 {
 
 // A tiny utility to help threads wait for incoming work without busy looping.
@@ -48,4 +48,4 @@ private:
 	std::atomic_uint32_t m_counter = 0;
 };
 
-} // namespace voxen
+} // namespace voxen::os
