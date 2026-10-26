@@ -1,82 +1,82 @@
-/* Golang-style defer functionality
- * A modified version of this snippet:
- * https://gist.github.com/p2004a/045726d70a490d12ad62
- *
- * Usage:
- *
- * void foo(int value)
- * {
- *     // Works on any scope exit
- *     defer { bar(); };
- *     // Works only when exiting the scope via exception
- *     defer_fail { baz(); };
- *
- *     if (value == 0) {
- *         // Automatic call to `bar()` here
- *         return;
- *     } else if (value == 1) {
- *         // Automatic call to `baz()` here
- *         // Automatic call to `bar()` here
- *         throw 10;
- *     }
- *     // Automatic call to `bar()` here
- * }
- *
- * NOTE: body of deferred code must be noexcept. Doing potentially
- * throwing operations in destructor is a bad idea anyway.
-*/
 #pragma once
 
 #include <exception>
+#include <type_traits>
 #include <utility>
 
-namespace extras
+// Go-style deferred calls, like `std::experimental::scope_exit` and `scope_fail`
+// from Library Fundamentals TS v3 (which MS STL doesn't have). Usage:
+//
+// void foo(int value)
+// {
+//     // Runs on any scope exit
+//     defer { bar(); };
+//     // Runs only when the scope is left by an exception
+//     defer_fail { baz(); };
+//
+//     if (value == 0) {
+//         // `bar()` is called here
+//         return;
+//     } else if (value == 1) {
+//         // `baz()`, then `bar()` are called here
+//         throw 10;
+//     }
+//     // `bar()` is called here
+// }
+//
+// Deferred code must be noexcept, it runs from a destructor.
+
+namespace extras::detail
 {
 
-template<typename F, bool FAIL_ONLY = false>
-class defer_finalizer {
+template<typename F, bool FAIL_ONLY>
+class deferred_call {
 public:
-	template<typename T>
-	defer_finalizer(T &&f_) noexcept : f(std::forward<T>(f_))
-	{}
+	static_assert(std::is_nothrow_invocable_v<F &>, "Deferred code must be noexcept");
 
-	defer_finalizer(defer_finalizer &&) = delete;
-	defer_finalizer(const defer_finalizer &) = delete;
-	defer_finalizer &operator=(defer_finalizer &&) = delete;
-	defer_finalizer &operator=(const defer_finalizer &) = delete;
+	explicit deferred_call(F &&f) noexcept : m_f(std::move(f)) {}
 
-	~defer_finalizer() noexcept
+	deferred_call(deferred_call &&) = delete;
+	deferred_call(const deferred_call &) = delete;
+	deferred_call &operator=(deferred_call &&) = delete;
+	deferred_call &operator=(const deferred_call &) = delete;
+
+	~deferred_call() noexcept
 	{
-		if constexpr (FAIL_ONLY) {
-			if (std::uncaught_exceptions() == 0) {
-				return;
-			}
+		// Compare against the count at construction, not against zero: during stack
+		// unwinding a scope can be left normally while an exception is in flight
+		if (FAIL_ONLY && std::uncaught_exceptions() <= m_uncaught_exceptions) {
+			return;
 		}
 
-		f();
+		m_f();
 	}
 
 private:
-	F f;
+	F m_f;
+	int m_uncaught_exceptions = FAIL_ONLY ? std::uncaught_exceptions() : 0;
 };
 
-[[maybe_unused]] static struct {
-	template<typename F>
-	[[maybe_unused]] defer_finalizer<F> operator<<(F &&f) noexcept
-	{
-		return defer_finalizer<F>(std::forward<F>(f));
-	}
+struct defer_tag {};
+struct defer_fail_tag {};
 
-	template<typename F>
-	[[maybe_unused]] defer_finalizer<F, true> operator>>(F &&f) noexcept
-	{
-		return defer_finalizer<F, true>(std::forward<F>(f));
-	}
-} deferrer;
+template<typename F>
+deferred_call<F, false> operator+(defer_tag, F &&f) noexcept
+{
+	return deferred_call<F, false>(std::forward<F>(f));
+}
 
-} // namespace extras
+template<typename F>
+deferred_call<F, true> operator+(defer_fail_tag, F &&f) noexcept
+{
+	return deferred_call<F, true>(std::forward<F>(f));
+}
 
-#define DEFER_TOKENPASTE(x, y) x##y
-#define DEFER_TOKENPASTE2(x, y) DEFER_TOKENPASTE(x, y)
-#define defer auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::deferrer << [&]() noexcept
-#define defer_fail auto DEFER_TOKENPASTE2(__deferred_lambda_call, __COUNTER__) = extras::deferrer >> [&]() noexcept
+} // namespace extras::detail
+
+#define EXTRAS_DEFER_CONCAT_IMPL(x, y) x##y
+#define EXTRAS_DEFER_CONCAT(x, y) EXTRAS_DEFER_CONCAT_IMPL(x, y)
+#define defer \
+	auto EXTRAS_DEFER_CONCAT(extras_deferred_call_, __COUNTER__) = extras::detail::defer_tag {} + [&]() noexcept
+#define defer_fail \
+	auto EXTRAS_DEFER_CONCAT(extras_deferred_call_, __COUNTER__) = extras::detail::defer_fail_tag {} + [&]() noexcept
