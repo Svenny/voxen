@@ -2,12 +2,12 @@
 
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/land/land_service.hpp>
+#include <voxen/log.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/world/player_state_message.hpp>
 #include <voxen/world/world_control_service.hpp>
 

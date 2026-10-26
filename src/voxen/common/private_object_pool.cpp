@@ -1,6 +1,6 @@
 #include <voxen/common/private_object_pool.hpp>
 
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <cassert>
 #include <new>

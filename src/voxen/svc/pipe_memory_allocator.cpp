@@ -1,10 +1,10 @@
 #include <voxen/svc/pipe_memory_allocator.hpp>
 
 #include <voxen/debug/thread_name.hpp>
+#include <voxen/error_condition.hpp>
+#include <voxen/exception.hpp>
+#include <voxen/log.hpp>
 #include <voxen/os/futex.hpp>
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/log.hpp>
 
 #include <fmt/format.h>
 

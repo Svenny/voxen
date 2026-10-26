@@ -7,11 +7,11 @@
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/gfx/ui/ui_system.hpp>
+#include <voxen/log.hpp>
 #include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>
 #include <voxen/world/world_tick_id.hpp>

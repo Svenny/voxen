@@ -1,7 +1,7 @@
 #include <voxen/gfx/vk/vk_debug_utils.hpp>
 
 #include <voxen/gfx/vk/vk_utils.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <source_location>
 #include <utility>

@@ -7,7 +7,7 @@
 #include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <extras/defer.hpp>
 

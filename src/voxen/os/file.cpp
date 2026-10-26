@@ -1,8 +1,8 @@
 #include <voxen/os/file.hpp>
 
-#include <voxen/util/exception.hpp>
+#include <voxen/exception.hpp>
+#include <voxen/log.hpp>
 #include <voxen/util/hash.hpp>
-#include <voxen/util/log.hpp>
 
 #ifndef _WIN32
 	#include <fcntl.h>

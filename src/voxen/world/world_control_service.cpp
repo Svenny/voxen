@@ -2,8 +2,8 @@
 
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/land/land_service.hpp>
+#include <voxen/log.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/world/world_state.hpp>
 
 #include "world_sim_thread.hpp"

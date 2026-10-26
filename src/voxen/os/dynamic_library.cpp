@@ -1,6 +1,6 @@
 #include <voxen/os/dynamic_library.hpp>
 
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #ifndef _WIN32
 	#include <dlfcn.h>

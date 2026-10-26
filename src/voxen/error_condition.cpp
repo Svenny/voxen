@@ -1,4 +1,4 @@
-#include <voxen/util/error_condition.hpp>
+#include <voxen/error_condition.hpp>
 
 #include <string>
 

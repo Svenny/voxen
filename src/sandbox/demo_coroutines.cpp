@@ -1,9 +1,9 @@
+#include <voxen/log.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>
-#include <voxen/util/log.hpp>
 
 #include <tk/rng.hpp>
 

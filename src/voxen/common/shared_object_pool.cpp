@@ -1,7 +1,7 @@
 #include <voxen/common/shared_object_pool.hpp>
 
 #include <voxen/debug/bug_found.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <fmt/format.h>
 

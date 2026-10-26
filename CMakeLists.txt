@@ -62,7 +62,7 @@ include(src/CMakeLists.txt)
 
 option(VOXEN_USE_PCH "Use precompiled headers" ON)
 if(VOXEN_USE_PCH)
-	target_precompile_headers(voxen PRIVATE <voxen/pch.hpp>)
+	target_precompile_headers(voxen PRIVATE src/voxen/pch.hpp)
 endif()
 
 add_subdirectory(tools)

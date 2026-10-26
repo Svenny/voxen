@@ -1,12 +1,12 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 
+#include <voxen/error_condition.hpp>
+#include <voxen/exception.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <extras/defer.hpp>
 

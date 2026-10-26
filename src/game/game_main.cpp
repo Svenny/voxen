@@ -2,10 +2,10 @@
 
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/debug/uid_registry.hpp>
+#include <voxen/exception.hpp>
+#include <voxen/log.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
 #include <voxen/world/world_control_service.hpp>
 

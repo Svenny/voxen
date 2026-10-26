@@ -10,6 +10,7 @@
 #include <voxen/land/land_state.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
+#include <voxen/log.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_queue.hpp>
 #include <voxen/svc/message_sender.hpp>
@@ -19,7 +20,6 @@
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/concentric_octahedra_walker.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/util/lru_visit_ordering.hpp>
 
 #include "land_private_consts.hpp"

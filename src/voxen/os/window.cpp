@@ -1,8 +1,8 @@
 #include <voxen/os/window.hpp>
 
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/error_condition.hpp>
+#include <voxen/exception.hpp>
+#include <voxen/log.hpp>
 
 #include <m/vector.hpp>
 

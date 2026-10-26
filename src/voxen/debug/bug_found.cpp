@@ -1,6 +1,6 @@
 #include <voxen/debug/bug_found.hpp>
 
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <tk/demangle.hpp>
 

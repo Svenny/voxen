@@ -1,7 +1,7 @@
 #include <voxen/gfx/vk/vk_error.hpp>
 
+#include <voxen/error_condition.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
-#include <voxen/util/error_condition.hpp>
 
 #include <fmt/format.h>
 
