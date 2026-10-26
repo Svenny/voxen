@@ -1,10 +1,10 @@
 #pragma once
 
-#include <voxen/common/shared_object_pool.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/svc/svc_fwd.hpp>
+#include <voxen/util/shared_object_pool.hpp>
 #include <voxen/util/tick_id.hpp>
 
 #include <cstdint>

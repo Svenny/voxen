@@ -1,10 +1,10 @@
 #pragma once
 
-#include <voxen/common/scratch_memory_allocator.hpp>
-#include <voxen/common/scratch_memory_containers.hpp>
 #include <voxen/gfx/ui/ui_render_data.hpp>
 #include <voxen/gfx/ui/ui_setup_types.hpp>
 #include <voxen/gfx/ui/ui_system.hpp>
+#include <voxen/util/scratch_memory_allocator.hpp>
+#include <voxen/util/scratch_memory_containers.hpp>
 
 #include <cstddef>
 #include <cstdint>

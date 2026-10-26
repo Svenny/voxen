@@ -1,5 +1,5 @@
-#include <voxen/common/v8g_hash_trie.hpp>
-#include <voxen/common/v8g_hash_trie_impl.hpp>
+#include <voxen/util/v8g_hash_trie.hpp>
+#include <voxen/util/v8g_hash_trie_impl.hpp>
 
 #include <voxen/land/chunk_key.hpp>
 

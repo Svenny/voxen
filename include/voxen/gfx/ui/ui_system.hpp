@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/common_fwd.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
+#include <voxen/util/util_fwd.hpp>
 
 #include <extras/pimpl.hpp>
 

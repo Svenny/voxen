@@ -1,4 +1,4 @@
-#include <voxen/common/shared_object_pool.hpp>
+#include <voxen/util/shared_object_pool.hpp>
 
 #include <voxen/debug/bug_found.hpp>
 #include <voxen/log.hpp>

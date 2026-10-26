@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/v8g_concepts.hpp>
-#include <voxen/common/v8g_helpers.hpp>
+#include <voxen/util/v8g_concepts.hpp>
+#include <voxen/util/v8g_helpers.hpp>
 
 #include <extras/dyn_array.hpp>
 #include <extras/function_ref.hpp>

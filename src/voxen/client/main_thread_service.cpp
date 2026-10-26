@@ -1,7 +1,6 @@
 #include <voxen/client/main_thread_service.hpp>
 
 #include <voxen/client/gui.hpp>
-#include <voxen/common/scratch_memory_allocator.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/ui/ui_builder.hpp>
@@ -12,6 +11,7 @@
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/util/scratch_memory_allocator.hpp>
 #include <voxen/util/tick_id.hpp>
 #include <voxen/world/world_control_service.hpp>
 #include <voxen/world/world_state.hpp>

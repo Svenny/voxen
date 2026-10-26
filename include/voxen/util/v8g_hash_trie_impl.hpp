@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/v8g_concepts.hpp>
-#include <voxen/common/v8g_hash_trie.hpp>
+#include <voxen/util/v8g_concepts.hpp>
+#include <voxen/util/v8g_hash_trie.hpp>
 
 #include <extras/function_ref.hpp>
 
