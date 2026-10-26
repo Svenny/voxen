@@ -1,7 +1,8 @@
 #pragma once
 
 #include <voxen/land/land_public_consts.hpp>
-#include <voxen/util/hash.hpp>
+
+#include <tk/hash.hpp>
 
 #include <m/vector.hpp>
 
@@ -82,7 +83,7 @@ struct ChunkKey {
 	}
 
 	// Hash is bijective and guarantees no collisions
-	uint64_t hash() const noexcept { return Hash::xxh64Fixed(packed()); }
+	uint64_t hash() const noexcept { return tk::hash::xxh64Fixed(packed()); }
 
 	uint64_t scale_log2 : Consts::CHUNK_KEY_SCALE_BITS;
 	int64_t x : Consts::CHUNK_KEY_XZ_BITS;

@@ -5,10 +5,11 @@
 #include <voxen/gfx/ui/ui_builder.hpp>
 #include <voxen/gfx/ui/ui_render_data.hpp>
 #include <voxen/gfx/ui/ui_setup_types.hpp>
-#include <voxen/util/hash.hpp>
 
 #include "ui_render_list_builder.hpp"
 #include "ui_system_impl.hpp"
+
+#include <tk/hash.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -31,10 +32,10 @@ namespace
 uint64_t calcContainerId(uint64_t parent_id, std::u8string_view id_string, size_t child_index) noexcept
 {
 	if (id_string.empty()) {
-		return Hash::xxh64Fixed(parent_id + child_index);
+		return tk::hash::xxh64Fixed(parent_id + child_index);
 	}
 
-	return Hash::xxh64Fixed(parent_id + std::hash<std::u8string_view>()(id_string));
+	return tk::hash::xxh64Fixed(parent_id + std::hash<std::u8string_view>()(id_string));
 }
 
 template<bool X_AXIS>

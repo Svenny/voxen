@@ -3,12 +3,13 @@
 #include <voxen/log.hpp>
 #include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
-#include <voxen/util/hash.hpp>
 
 #include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"
 #include "task_queue_set.hpp"
 #include "task_service_slave.hpp"
+
+#include <tk/hash.hpp>
 
 #include <functional>
 #include <memory>
@@ -92,7 +93,7 @@ public:
 		// e.g. prefer the current thread (if enqueueing from another task)
 		// or do account for hardware topology and try threads in order of cache sharing.
 		// This will get especially important if we ever launch on NUMA systems.
-		uint64_t random_value = Hash::xxh64Fixed(counter ^ reinterpret_cast<uintptr_t>(header));
+		uint64_t random_value = tk::hash::xxh64Fixed(counter ^ reinterpret_cast<uintptr_t>(header));
 		size_t queue_id = random_value % m_cfg.num_threads;
 
 		m_queue_set.pushTask(queue_id, std::move(handle));

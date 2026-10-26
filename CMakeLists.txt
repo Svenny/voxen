@@ -41,11 +41,11 @@ find_package(Threads REQUIRED)
 target_link_libraries(voxen PUBLIC
 	extras
 	m
+	tk
 	3rdparty::fmt
 	Threads::Threads
 )
 target_link_libraries(voxen PRIVATE
-	tk
 	3rdparty::sdl
 	3rdparty::vma
 	3rdparty::vulkan-headers

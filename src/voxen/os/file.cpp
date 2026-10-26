@@ -2,7 +2,8 @@
 
 #include <voxen/exception.hpp>
 #include <voxen/log.hpp>
-#include <voxen/util/hash.hpp>
+
+#include <tk/hash.hpp>
 
 #ifndef _WIN32
 	#include <fcntl.h>
@@ -200,7 +201,7 @@ std::expected<File::NativeHandle, std::error_code> doOpen(const std::filesystem:
 		// This should give different names even if some timestamps do collide.
 		auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
-		uint64_t hash = Hash::xxh64Fixed(static_cast<uint64_t>(timestamp));
+		uint64_t hash = tk::hash::xxh64Fixed(static_cast<uint64_t>(timestamp));
 		// Replicate fetch_add result in our local variable
 		hash += g_temp_file_randomizer.fetch_add(hash, std::memory_order_relaxed);
 
