@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/util/tagged_tick_id.hpp>
+#include <voxen/util/tick_id.hpp>
 
 #include <cstddef>
 #include <cstdint>

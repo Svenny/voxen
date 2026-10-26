@@ -5,7 +5,7 @@
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 #include <voxen/svc/svc_fwd.hpp>
-#include <voxen/world/world_tick_id.hpp>
+#include <voxen/util/tick_id.hpp>
 
 #include <cstdint>
 #include <memory>
@@ -79,7 +79,7 @@ public:
 	Generator &operator=(const Generator &) = delete;
 	~Generator();
 
-	void onWorldTickBegin(world::TickId new_tick);
+	void onWorldTickBegin(WorldTickId new_tick);
 	void setSeed(uint64_t seed);
 	// Uses `bld` to wait for tasks enqueued by this builder.
 	// Call it before destroying to protect from use-after-free.
@@ -120,7 +120,7 @@ private:
 
 	GeneratorGlobalMap m_global_map;
 
-	world::TickId m_current_world_tick = world::TickId::INVALID;
+	WorldTickId m_current_world_tick = WorldTickId::INVALID;
 	uint64_t m_global_map_gen_task_counter = 0;
 
 	SharedObjectPool<GeneratorRegionalMap, REGIONAL_MAP_POOL_HINT> m_regional_map_pool;
