@@ -6,8 +6,6 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 
-#include <extras/enum_utils.hpp>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -310,7 +308,7 @@ void MessageRouter::completeRequest(MessageHeader *msg, RequestStatus status) no
 	constexpr uint32_t WAIT_BIT = 1u << 16;
 
 	// Convert to bitmask (bits [18:17]) and write it with OR (there were zeros before)
-	uint32_t mask = extras::to_underlying(status) << 17;
+	uint32_t mask = std::to_underlying(status) << 17;
 	uint32_t word = msg->aux_data.atomic_word.fetch_or(mask, std::memory_order_acq_rel);
 
 	if (word & WAIT_BIT) {

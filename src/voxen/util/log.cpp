@@ -24,6 +24,28 @@ Log::Level Log::m_current_level = Log::Level::Trace;
 // FMT can still do temporary internal allocations but we can't control that.
 static thread_local fmt::memory_buffer t_message_buffer;
 
+static std::string_view levelName(Log::Level value) noexcept
+{
+	using namespace std::string_view_literals;
+
+	switch (value) {
+	case Log::Level::Trace:
+		return "TRACE"sv;
+	case Log::Level::Debug:
+		return "DEBUG"sv;
+	case Log::Level::Info:
+		return "INFO"sv;
+	case Log::Level::Warn:
+		return "WARN"sv;
+	case Log::Level::Error:
+		return "ERROR"sv;
+	case Log::Level::Fatal:
+		return "FATAL"sv;
+	case Log::Level::Off:
+		return "OFF"sv;
+	} // No `default` to make `-Werror -Wswitch` protection work
+}
+
 static fmt::text_style styleForLevel(Log::Level level) noexcept
 {
 	fmt::text_style style;
@@ -108,7 +130,7 @@ void Log::doLog(Level level, std::source_location where, std::string_view format
 		auto sys_time = std::chrono::system_clock::now();
 		auto local_time = sys_time + std::chrono::current_zone()->get_info(sys_time).offset;
 		fmt::print(sink, "[{:%F %T}][{} {}][{:s}:{:d}][{:s}] {:s}\n", local_time, pid, tid, where.file_name(),
-			where.line(), fmt::styled(extras::enum_name(level), styleForLevel(level)), text);
+			where.line(), fmt::styled(levelName(level), styleForLevel(level)), text);
 	}
 	catch (const std::system_error &err) {
 		// Reaching this clause means printing to `sink` failed for system reasons (bad file?).
@@ -130,37 +152,7 @@ void Log::doLog(Level level, std::source_location where, std::string_view format
 void Log::setLevel(Level level) noexcept
 {
 	m_current_level = level;
-	info("Changing log level to [{}]", extras::enum_name(level));
+	info("Changing log level to [{}]", levelName(level));
 }
 
 } // namespace voxen
-
-namespace extras
-{
-
-using voxen::Log;
-
-template<>
-std::string_view enum_name(Log::Level value) noexcept
-{
-	using namespace std::string_view_literals;
-
-	switch (value) {
-	case Log::Level::Trace:
-		return "TRACE"sv;
-	case Log::Level::Debug:
-		return "DEBUG"sv;
-	case Log::Level::Info:
-		return "INFO"sv;
-	case Log::Level::Warn:
-		return "WARN"sv;
-	case Log::Level::Error:
-		return "ERROR"sv;
-	case Log::Level::Fatal:
-		return "FATAL"sv;
-	case Log::Level::Off:
-		return "OFF"sv;
-	} // No `default` to make `-Werror -Wswitch` protection work
-}
-
-} // namespace extras

@@ -2,8 +2,6 @@
 
 #include <voxen/visibility.hpp>
 
-#include <extras/enum_utils.hpp>
-
 #include <fmt/base.h>
 
 #include <source_location>
@@ -146,8 +144,7 @@ public:
 	template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, \
 		typename T9, typename T10, typename T11> \
 	constexpr static void name(T1 &&arg1, T2 &&arg2, T3 &&arg3, T4 &&arg4, T5 &&arg5, T6 &&arg6, T7 &&arg7, T8 &&arg8, \
-		T9 &&arg9, T10 &&arg10, T11 &&arg11, \
-		std::source_location where = std::source_location::current()) noexcept \
+		T9 &&arg9, T10 &&arg10, T11 &&arg11, std::source_location where = std::source_location::current()) noexcept \
 	{ \
 		log(level, where, std::forward<T1>(arg1), std::forward<T2>(arg2), std::forward<T3>(arg3), \
 			std::forward<T4>(arg4), std::forward<T5>(arg5), std::forward<T6>(arg6), std::forward<T7>(arg7), \
@@ -209,11 +206,3 @@ public:
 };
 
 } // namespace voxen
-
-namespace extras
-{
-
-template<>
-std::string_view enum_name(voxen::Log::Level value) noexcept;
-
-}
