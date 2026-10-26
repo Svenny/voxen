@@ -5,6 +5,7 @@
 #include <extras/attributes.hpp>
 
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
@@ -14,81 +15,6 @@
 
 namespace extras
 {
-
-template<typename T>
-class dyn_array_iterator : public std::contiguous_iterator_tag {
-public:
-	using value_type = T;
-	using difference_type = ptrdiff_t;
-	using pointer = T *;
-	using reference = T &;
-	using iterator_category = std::contiguous_iterator_tag;
-
-	constexpr dyn_array_iterator() noexcept {}
-	constexpr dyn_array_iterator(std::add_const_t<T> *ptr) noexcept : m_ptr(ptr) {}
-	constexpr dyn_array_iterator(std::remove_const_t<T> *ptr) noexcept : m_ptr(ptr) {}
-
-	constexpr T &operator*() const noexcept { return *m_ptr; }
-	constexpr T *operator->() const noexcept { return m_ptr; }
-	constexpr T &operator[](ptrdiff_t diff) const noexcept { return m_ptr[diff]; }
-
-	constexpr bool operator==(const dyn_array_iterator &other) const noexcept { return m_ptr == other.m_ptr; }
-	constexpr bool operator!=(const dyn_array_iterator &other) const noexcept { return m_ptr != other.m_ptr; }
-	constexpr bool operator<(const dyn_array_iterator &other) const noexcept { return m_ptr < other.m_ptr; }
-	constexpr bool operator>(const dyn_array_iterator &other) const noexcept { return m_ptr > other.m_ptr; }
-	constexpr bool operator<=(const dyn_array_iterator &other) const noexcept { return m_ptr <= other.m_ptr; }
-	constexpr bool operator>=(const dyn_array_iterator &other) const noexcept { return m_ptr >= other.m_ptr; }
-
-	constexpr ptrdiff_t operator-(const dyn_array_iterator &other) const noexcept { return m_ptr - other.m_ptr; }
-	constexpr dyn_array_iterator operator-(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr - diff); }
-	constexpr dyn_array_iterator operator+(ptrdiff_t diff) const noexcept { return dyn_array_iterator(m_ptr + diff); }
-
-	constexpr friend dyn_array_iterator operator+(ptrdiff_t diff, const dyn_array_iterator &iter) noexcept
-	{
-		return iter + diff;
-	}
-
-	constexpr dyn_array_iterator &operator+=(ptrdiff_t diff) noexcept
-	{
-		m_ptr += diff;
-		return *this;
-	}
-
-	constexpr dyn_array_iterator &operator-=(ptrdiff_t diff) noexcept
-	{
-		m_ptr -= diff;
-		return *this;
-	}
-
-	constexpr dyn_array_iterator &operator++() noexcept
-	{
-		m_ptr++;
-		return *this;
-	}
-
-	constexpr dyn_array_iterator &operator--() noexcept
-	{
-		m_ptr--;
-		return *this;
-	}
-
-	constexpr dyn_array_iterator operator++(int) noexcept
-	{
-		dyn_array_iterator old_me(m_ptr);
-		m_ptr++;
-		return old_me;
-	}
-
-	constexpr dyn_array_iterator operator--(int) noexcept
-	{
-		dyn_array_iterator old_me(m_ptr);
-		m_ptr--;
-		return old_me;
-	}
-
-private:
-	T *m_ptr = nullptr;
-};
 
 template<typename T, typename Allocator = std::allocator<T>>
 class dyn_array {
@@ -114,8 +40,9 @@ public:
 	using pointer = T *;
 	using const_pointer = const T *;
 
-	using iterator = dyn_array_iterator<T>;
-	using const_iterator = dyn_array_iterator<const T>;
+	// Plain pointers: contiguous, and `iterator` converts to `const_iterator`
+	using iterator = T *;
+	using const_iterator = const T *;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -221,6 +148,11 @@ public:
 	[[nodiscard]] constexpr T &operator[](size_type pos) noexcept { return m_data[pos]; }
 	[[nodiscard]] constexpr const T &operator[](size_type pos) const noexcept { return m_data[pos]; }
 
+	[[nodiscard]] constexpr T &front() noexcept { return m_data[0]; }
+	[[nodiscard]] constexpr const T &front() const noexcept { return m_data[0]; }
+	[[nodiscard]] constexpr T &back() noexcept { return m_data[m_size - 1]; }
+	[[nodiscard]] constexpr const T &back() const noexcept { return m_data[m_size - 1]; }
+
 	[[nodiscard]] constexpr T *data() noexcept { return m_data; }
 	[[nodiscard]] constexpr const T *data() const noexcept { return m_data; }
 
@@ -235,6 +167,20 @@ public:
 	[[nodiscard]] constexpr iterator end() noexcept { return iterator(m_data + m_size); }
 	[[nodiscard]] constexpr const_iterator end() const noexcept { return const_iterator(m_data + m_size); }
 	[[nodiscard]] constexpr const_iterator cend() const noexcept { return const_iterator(m_data + m_size); }
+
+	[[nodiscard]] constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+	[[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
+	[[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end()); }
+
+	[[nodiscard]] constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+	[[nodiscard]] constexpr const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
+	[[nodiscard]] constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(begin()); }
+
+	[[nodiscard]] constexpr friend bool operator==(const dyn_array &lhs, const dyn_array &rhs)
+		requires std::equality_comparable<T>
+	{
+		return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+	}
 
 private:
 	size_type m_size = 0;
