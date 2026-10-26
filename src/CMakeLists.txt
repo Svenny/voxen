@@ -22,7 +22,6 @@ set(VOXEN_SOURCES
 	src/voxen/common/config.cpp
 	src/voxen/common/filemanager.cpp
 	src/voxen/common/gameview.cpp
-	src/voxen/common/pipe_memory_allocator.cpp
 	src/voxen/common/player.cpp
 	src/voxen/common/private_object_pool.cpp
 	src/voxen/common/runtime_config.cpp
@@ -99,6 +98,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/messaging_private.cpp
 	src/voxen/svc/messaging_private.hpp
 	src/voxen/svc/messaging_service.cpp
+	src/voxen/svc/pipe_memory_allocator.cpp
 	src/voxen/svc/service_base.cpp
 	src/voxen/svc/service_locator.cpp
 	src/voxen/svc/task_builder.cpp

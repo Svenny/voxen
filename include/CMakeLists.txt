@@ -61,7 +61,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
 	include/voxen/common/gameview.hpp
-	include/voxen/common/pipe_memory_allocator.hpp
 	include/voxen/common/player.hpp
 	include/voxen/common/player_state_message.hpp
 	include/voxen/common/private_object_pool.hpp
@@ -149,6 +148,7 @@ set(VOXEN_HEADERS
 	include/voxen/svc/message_sender.hpp
 	include/voxen/svc/message_types.hpp
 	include/voxen/svc/messaging_service.hpp
+	include/voxen/svc/pipe_memory_allocator.hpp
 	include/voxen/svc/pipe_memory_function.hpp
 	include/voxen/svc/service_base.hpp
 	include/voxen/svc/service_locator.hpp

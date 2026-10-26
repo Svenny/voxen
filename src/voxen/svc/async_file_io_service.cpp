@@ -1,8 +1,8 @@
 #include <voxen/svc/async_file_io_service.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/util/error_condition.hpp>

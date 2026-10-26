@@ -1,6 +1,6 @@
 #include <voxen/svc/message_sender.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 
 #include "messaging_private.hpp"
 
