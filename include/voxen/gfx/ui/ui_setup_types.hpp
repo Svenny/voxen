@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/util/packed_color.hpp>
+#include <m/color.hpp>
 
 #include <cstdint>
 #include <limits>
@@ -113,7 +113,7 @@ struct Layout {
 
 struct BorderSide {
 	uint16_t width = 0;
-	PackedColorSrgb color = { 0, 0, 0, 0 };
+	m::rgba8_srgb color = { 0, 0, 0, 0 };
 };
 
 struct Border {
@@ -125,7 +125,7 @@ struct Border {
 };
 
 struct FillRectangle {
-	PackedColorSrgb color = { 0, 0, 0, 0 };
+	m::rgba8_srgb color = { 0, 0, 0, 0 };
 };
 
 // Arguments for `UiBuilder::div()`
@@ -153,7 +153,7 @@ struct TextSetup {
 	std::u8string_view text = u8"";
 	uint16_t font_id = 0;
 	uint16_t font_size = 0;
-	PackedColorSrgb color = { 0, 0, 0, 255 };
+	m::rgba8_srgb color = { 0, 0, 0, 255 };
 };
 
 } // namespace voxen::gfx::ui

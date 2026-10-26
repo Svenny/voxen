@@ -18,6 +18,7 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/include/extras PREFIX Headers FILES ${EXTR
 voxen_target_natvis(extras include/extras/extras.natvis)
 
 set(M_HEADERS
+	include/m/color.hpp
 	include/m/format.hpp
 	include/m/fwd.hpp
 	include/m/m.hpp
@@ -161,7 +162,6 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
 	include/voxen/util/lru_visit_ordering.hpp
-	include/voxen/util/packed_color.hpp
 	include/voxen/util/tick_id.hpp
 	include/voxen/world/player.hpp
 	include/voxen/world/player_state_message.hpp

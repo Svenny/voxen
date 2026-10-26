@@ -1,8 +1,8 @@
 #pragma once
 
 #include <voxen/gfx/gfx_fwd.hpp>
-#include <voxen/util/packed_color.hpp>
 
+#include <m/color.hpp>
 #include <m/vector.hpp>
 
 #include <memory>
@@ -28,7 +28,7 @@ public:
 	struct TextItem {
 		std::string_view text;
 		m::float2 origin_screen;
-		PackedColorSrgb color;
+		m::rgba8_srgb color;
 	};
 
 	FontRenderer(GfxSystem &gfx);

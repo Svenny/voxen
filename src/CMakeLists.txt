@@ -113,7 +113,6 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_service_slave.cpp
 	src/voxen/svc/task_service_slave.hpp
 	src/voxen/util/concentric_octahedra_walker.cpp
-	src/voxen/util/packed_color.cpp
 	src/voxen/world/player.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp

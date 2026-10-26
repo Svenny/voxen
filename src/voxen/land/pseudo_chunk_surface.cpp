@@ -6,10 +6,10 @@
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
-#include <voxen/util/packed_color.hpp>
 
 #include "land_geometry_utils_private.hpp"
 
+#include <m/color.hpp>
 #include <m/packing.hpp>
 
 #include <algorithm>
@@ -172,7 +172,7 @@ void PseudoChunkSurface::generate(ChunkAdjacencyRef adj)
 
 		packNormal(FACE_NORMAL[orientation], vertex_attrib);
 
-		PackedColorSrgb packed_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
+		m::rgba8_srgb packed_color = TempBlockMeta::BLOCK_FIXED_COLOR[block_id];
 		uint16_t color = TempBlockMeta::packColor555(packed_color);
 
 		vertex_attrib.mat_hist_entries = m::uint16_t4(color, 0, 0, 0);

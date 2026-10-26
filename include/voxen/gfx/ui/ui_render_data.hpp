@@ -1,7 +1,6 @@
 #pragma once
 
-#include <voxen/util/packed_color.hpp>
-
+#include <m/color.hpp>
 #include <m/vector.hpp>
 
 #include <cstdint>
@@ -20,7 +19,7 @@ struct PerItemRenderData {
 struct VertexRenderData {
 	m::float2 position;
 	m::float2 uv;
-	PackedColorSrgb color;
+	m::rgba8_srgb color;
 	uint32_t item_id;
 };
 

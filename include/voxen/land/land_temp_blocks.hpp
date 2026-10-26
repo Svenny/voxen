@@ -1,7 +1,8 @@
 #pragma once
 
 #include <voxen/land/land_chunk.hpp>
-#include <voxen/util/packed_color.hpp>
+
+#include <m/color.hpp>
 
 #include <cstdint>
 
@@ -28,7 +29,7 @@ public:
 
 	constexpr static Chunk::BlockId NUM_BLOCKS = BlockCount;
 
-	constexpr static PackedColorSrgb BLOCK_FIXED_COLOR[NUM_BLOCKS] = {
+	constexpr static m::rgba8_srgb BLOCK_FIXED_COLOR[NUM_BLOCKS] = {
 		{ 0, 0, 0, 0 }, // Empty
 		{ 10, 10, 15 }, // Underlimit
 
@@ -54,7 +55,7 @@ public:
 
 	static bool isBlockEmpty(Chunk::BlockId id) noexcept { return id == 0; }
 
-	static uint16_t packColor555(PackedColorSrgb color) noexcept
+	static uint16_t packColor555(m::rgba8_srgb color) noexcept
 	{
 		// Set "fixed color" flag
 		int32_t packer = 1 << 15;
