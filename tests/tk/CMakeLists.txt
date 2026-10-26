@@ -9,6 +9,7 @@ target_sources(test-tk PRIVATE
 	png.test.cpp
 	rng.test.cpp
 	toml.test.cpp
+	uid.test.cpp
 )
 
 target_link_libraries(test-tk PRIVATE
@@ -24,3 +25,4 @@ add_test(NAME tk-json COMMAND test-tk "[tk::json]")
 add_test(NAME tk-png COMMAND test-tk "[tk::png]")
 add_test(NAME tk-rng COMMAND test-tk "[tk::rng]")
 add_test(NAME tk-toml COMMAND test-tk "[tk::toml]")
+add_test(NAME tk-uid COMMAND test-tk "[tk::uid]")

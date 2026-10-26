@@ -1,9 +1,9 @@
 #include <voxen/svc/service_locator.hpp>
 
-#include <voxen/common/uid.hpp>
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/svc/service_base.hpp>
+#include <voxen/uid.hpp>
 
 #include "../../voxen_test_common.hpp"
 

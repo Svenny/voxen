@@ -1,6 +1,5 @@
 #include <voxen/gfx/gfx_land_loader.hpp>
 
-#include <voxen/common/uid.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
@@ -14,9 +13,10 @@
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/messaging_service.hpp>
 #include <voxen/svc/service_locator.hpp>
+#include <voxen/uid.hpp>
 #include <voxen/world/world_state.hpp>
 
-#include <tk/hash.hpp>
+#include <tk/uid.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -74,7 +74,7 @@ public:
 			return dcmd;
 		}
 
-		const UID key_uid = deriveUid(LAND_LOADER_DOMAIN_UID, key.packed());
+		const UID key_uid = tk::deriveUid(LAND_LOADER_DOMAIN_UID, key.packed());
 
 		vk::MeshStreamer &streamer = *m_gfx.meshStreamer();
 		vk::MeshStreamer::MeshInfo mesh_info;

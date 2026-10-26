@@ -1,10 +1,10 @@
 #include <voxen/svc/message_queue.hpp>
 
-#include <voxen/common/uid.hpp>
 #include <voxen/svc/engine.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_types.hpp>
 #include <voxen/svc/messaging_service.hpp>
+#include <voxen/uid.hpp>
 
 #include "../../voxen_test_common.hpp"
 

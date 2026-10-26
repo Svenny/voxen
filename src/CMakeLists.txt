@@ -1,6 +1,7 @@
 set(TK_SOURCES
 	src/tk/cli.cpp
 	src/tk/demangle.cpp
+	src/tk/format.cpp
 	src/tk/fs.cpp
 	src/tk/json.cpp
 	src/tk/png.cpp
@@ -8,6 +9,7 @@ set(TK_SOURCES
 	src/tk/text_utils.cpp
 	src/tk/text_utils.hpp
 	src/tk/toml.cpp
+	src/tk/uid.cpp
 )
 
 target_sources(tk PRIVATE ${TK_SOURCES})
@@ -26,7 +28,6 @@ set(VOXEN_SOURCES
 	src/voxen/common/runtime_config.cpp
 	src/voxen/common/scratch_memory_allocator.cpp
 	src/voxen/common/shared_object_pool.cpp
-	src/voxen/common/uid.cpp
 	src/voxen/debug/bug_found.cpp
 	src/voxen/debug/thread_name.cpp
 	src/voxen/debug/uid_registry.cpp

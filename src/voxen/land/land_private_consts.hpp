@@ -1,7 +1,7 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/land/land_public_consts.hpp>
+#include <voxen/uid.hpp>
 
 #include <cstdint>
 

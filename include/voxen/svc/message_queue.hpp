@@ -1,9 +1,9 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/message_types.hpp>
+#include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
 
 #include <extras/pimpl.hpp>

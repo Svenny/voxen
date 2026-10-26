@@ -1,10 +1,10 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/gfx/frame_tick_id.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/gfx/vk/vma_fwd.hpp>
+#include <voxen/uid.hpp>
 #include <voxen/util/lru_visit_ordering.hpp>
 
 #include <cstdint>

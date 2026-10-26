@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
+#include <voxen/uid.hpp>
 
 #include <concepts>
 #include <type_traits>

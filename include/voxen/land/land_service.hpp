@@ -1,8 +1,8 @@
 #pragma once
 
-#include <voxen/common/uid.hpp>
 #include <voxen/land/land_fwd.hpp>
 #include <voxen/svc/service_base.hpp>
+#include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
