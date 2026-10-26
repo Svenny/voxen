@@ -2,13 +2,17 @@
 
 #include "../test_common.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <span>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -307,4 +311,30 @@ TEST_CASE("'dyn_array' properly manages object lifetimes", "[extras::dyn_array]"
 		CHECK_THROWS_WITH(arr = arr2, "boom");
 		CHECK(ts.size() == 21);
 	}
+}
+
+TEST_CASE("'dyn_array' has standard container accessors", "[extras::dyn_array]")
+{
+	static_assert(std::contiguous_iterator<extras::dyn_array<int>::iterator>);
+	static_assert(std::contiguous_iterator<extras::dyn_array<int>::const_iterator>);
+	static_assert(std::is_convertible_v<extras::dyn_array<int>::iterator, extras::dyn_array<int>::const_iterator>);
+
+	extras::dyn_array<int> a { 1, 2, 3 };
+	const auto &ca = a;
+
+	CHECK(a.front() == 1);
+	CHECK(ca.back() == 3);
+	a.back() = 4;
+	CHECK(ca.back() == 4);
+
+	// Mutable iterators convert to const ones and compare with them
+	extras::dyn_array<int>::const_iterator first = a.begin();
+	CHECK(std::find(first, ca.end(), 2) == a.begin() + 1);
+	CHECK(std::vector<int>(a.rbegin(), a.rend()) == std::vector { 4, 2, 1 });
+	CHECK(std::vector<int>(ca.crbegin(), ca.crend()) == std::vector { 4, 2, 1 });
+
+	CHECK(a == extras::dyn_array<int> { 1, 2, 4 });
+	CHECK(a != extras::dyn_array<int> { 1, 2 });
+	CHECK(a != extras::dyn_array<int> { 1, 2, 3 });
+	CHECK(extras::dyn_array<int>() == extras::dyn_array<int>());
 }
