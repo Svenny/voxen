@@ -82,9 +82,23 @@ jobs:
         run: git lfs pull --exclude="toolchains/*/linux-*"
 
       - name: Install LLVM
+        # A failed install leaves the runner's preinstalled LLVM in place, which would only show up as
+        # a confusing configure error. Retry transient failures, then check the version we got.
         run: |
-          choco install llvm --version=${{ env.LLVM_VERSION }} --allow-downgrade --force -y
-          & "C:\Program Files\LLVM\bin\clang-cl.exe" --version
+          # Check exit codes ourselves, don't throw on the first failure
+          $PSNativeCommandUseErrorActionPreference = $false
+          for ($attempt = 1; ; $attempt++) {
+            choco install llvm --version=$env:LLVM_VERSION --allow-downgrade --force -y --no-progress
+            if ($LASTEXITCODE -in 0, 1641, 3010) { break }
+            if ($attempt -eq 3) { throw "choco failed to install LLVM $env:LLVM_VERSION (exit code $LASTEXITCODE)" }
+            Write-Host "choco failed (exit code $LASTEXITCODE), retrying in 30 seconds"
+            Start-Sleep -Seconds 30
+          }
+          $version = & "C:\Program Files\LLVM\bin\clang-cl.exe" --version
+          $version
+          if (-not ($version -match "clang version $([regex]::Escape($env:LLVM_VERSION))\b")) {
+            throw "Expected LLVM $env:LLVM_VERSION after installing it"
+          }
 
       - name: Configure
         run: |
