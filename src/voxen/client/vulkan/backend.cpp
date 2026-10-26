@@ -2,7 +2,6 @@
 
 #include <voxen/client/vulkan/descriptor_set_layout.hpp>
 #include <voxen/client/vulkan/pipeline.hpp>
-#include <voxen/client/vulkan/pipeline_cache.hpp>
 #include <voxen/client/vulkan/pipeline_layout.hpp>
 #include <voxen/client/vulkan/shader_module.hpp>
 #include <voxen/gfx/gfx_system.hpp>
@@ -29,7 +28,7 @@ struct Backend::Impl {
 		alignas(T) std::byte storage[sizeof(T)];
 	};
 
-	std::tuple<Storage<ShaderModuleCollection>, Storage<PipelineCache>, Storage<DescriptorSetLayoutCollection>,
+	std::tuple<Storage<ShaderModuleCollection>, Storage<DescriptorSetLayoutCollection>,
 		Storage<PipelineLayoutCollection>, Storage<PipelineCollection>>
 		storage;
 
@@ -102,7 +101,6 @@ bool Backend::doStart(gfx::GfxSystem &gfx) noexcept
 		m_device = m_gfx_system->device();
 
 		m_impl.constructModule(m_shader_module_collection);
-		m_impl.constructModule(m_pipeline_cache, "pipeline.cache");
 		m_impl.constructModule(m_descriptor_set_layout_collection);
 		m_impl.constructModule(m_pipeline_layout_collection);
 
@@ -142,7 +140,6 @@ void Backend::doStop() noexcept
 
 	m_impl.destructModule(m_pipeline_layout_collection);
 	m_impl.destructModule(m_descriptor_set_layout_collection);
-	m_impl.destructModule(m_pipeline_cache);
 	m_impl.destructModule(m_shader_module_collection);
 
 	m_device = nullptr;

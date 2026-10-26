@@ -38,6 +38,7 @@ class Instance;
 class IRenderGraph;
 class MeshStreamer;
 class PhysicalDevice;
+class PipelineCache;
 class RenderGraphBuilder;
 class RenderGraphExecution;
 class RenderGraphRunner;

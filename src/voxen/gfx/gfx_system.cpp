@@ -14,6 +14,7 @@
 #include <voxen/gfx/vk/vk_instance.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/gfx/vk/vk_physical_device.hpp>
+#include <voxen/gfx/vk/vk_pipeline_cache.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/os/window.hpp>
 #include <voxen/util/error_condition.hpp>
@@ -101,6 +102,7 @@ vk::PhysicalDevice *selectGpu(std::span<gfx::vk::PhysicalDevice> gpus, std::stri
 struct GfxSystem::ComponentStorage {
 	alignas(vk::Instance) std::byte vk_instance[sizeof(vk::Instance)];
 	alignas(vk::Device) std::byte vk_device[sizeof(vk::Device)];
+	alignas(vk::PipelineCache) std::byte vk_pipeline_cache[sizeof(vk::PipelineCache)];
 	alignas(vk::CommandAllocator) std::byte vk_command_allocator[sizeof(vk::CommandAllocator)];
 	alignas(vk::TransientBufferAllocator) std::byte vk_transient_buffer_allocator[sizeof(vk::TransientBufferAllocator)];
 	alignas(vk::DmaSystem) std::byte vk_dma_system[sizeof(vk::DmaSystem)];
@@ -129,6 +131,7 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 	}
 
 	m_vk_device.reset(new (comp.vk_device) vk::Device(*m_vk_instance, *selected_gpu));
+	m_vk_pipeline_cache.reset(new (comp.vk_pipeline_cache) vk::PipelineCache(*m_vk_device, "pipeline.cache"));
 
 	m_vk_command_allocator.reset(new (comp.vk_command_allocator) vk::CommandAllocator(*this));
 	m_vk_transient_buffer_allocator.reset(
