@@ -2,10 +2,10 @@
 
 #include "test_common.hpp" // IWYU pragma: export
 
+#include <voxen/error_condition.hpp>
+#include <voxen/exception.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/svc/engine.hpp>
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
 
 #include <catch2/matchers/catch_matchers_predicate.hpp>
 

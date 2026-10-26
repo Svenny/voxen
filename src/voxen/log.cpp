@@ -1,4 +1,4 @@
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <voxen/os/process.hpp>
 

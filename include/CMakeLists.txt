@@ -157,11 +157,8 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_handle.hpp
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
-	include/voxen/util/error_condition.hpp
-	include/voxen/util/exception.hpp
 	include/voxen/util/futex_work_counter.hpp
 	include/voxen/util/hash.hpp
-	include/voxen/util/log.hpp
 	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/resolution.hpp
@@ -172,6 +169,9 @@ set(VOXEN_HEADERS
 	include/voxen/world/world_fwd.hpp
 	include/voxen/world/world_state.hpp
 	include/voxen/world/world_tick_id.hpp
+	include/voxen/error_condition.hpp
+	include/voxen/exception.hpp
+	include/voxen/log.hpp
 	include/voxen/visibility.hpp
 )
 

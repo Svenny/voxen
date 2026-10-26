@@ -1,6 +1,8 @@
 #include <voxen/gfx/font_renderer.hpp>
 
 #include <voxen/common/filemanager.hpp>
+#include <voxen/error_condition.hpp>
+#include <voxen/exception.hpp>
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_command_allocator.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
@@ -9,9 +11,7 @@
 #include <voxen/gfx/vk/vk_pipeline.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
-#include <voxen/util/error_condition.hpp>
-#include <voxen/util/exception.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <tk/png.hpp>
 

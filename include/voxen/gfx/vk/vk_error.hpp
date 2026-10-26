@@ -1,7 +1,7 @@
 #pragma once
 
+#include <voxen/exception.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
-#include <voxen/util/exception.hpp>
 #include <voxen/visibility.hpp>
 
 #include <source_location>

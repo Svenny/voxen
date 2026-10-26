@@ -1,6 +1,6 @@
 #include <voxen/common/filemanager.hpp>
 
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <tk/fs.hpp>
 

@@ -1,6 +1,6 @@
 #include <voxen/os/file.hpp>
 
-#include <voxen/util/exception.hpp>
+#include <voxen/exception.hpp>
 
 #include <extras/defer.hpp>
 

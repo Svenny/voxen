@@ -2,7 +2,7 @@
 
 #include <voxen/client/input_event_adapter.hpp>
 #include <voxen/client/player_action_events.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 #include <voxen/world/world_state.hpp>
 
 #include <utility>

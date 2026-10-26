@@ -111,16 +111,16 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_service_slave.cpp
 	src/voxen/svc/task_service_slave.hpp
 	src/voxen/util/concentric_octahedra_walker.cpp
-	src/voxen/util/error_condition.cpp
-	src/voxen/util/exception.cpp
 	src/voxen/util/futex_work_counter.cpp
 	src/voxen/util/hash.cpp
-	src/voxen/util/log.cpp
 	src/voxen/util/packed_color.cpp
 	src/voxen/world/player.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp
 	src/voxen/world/world_sim_thread.hpp
+	src/voxen/error_condition.cpp
+	src/voxen/exception.cpp
+	src/voxen/log.cpp
 )
 
 target_sources(game PRIVATE

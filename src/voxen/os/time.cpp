@@ -1,7 +1,7 @@
 #include <voxen/os/time.hpp>
 
 #include <voxen/debug/bug_found.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #ifdef _WIN32
 	#include <Windows.h>

@@ -1,9 +1,9 @@
 #include <voxen/svc/task_service.hpp>
 
+#include <voxen/log.hpp>
 #include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/util/hash.hpp>
-#include <voxen/util/log.hpp>
 
 #include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"

@@ -5,9 +5,9 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
+#include <voxen/log.hpp>
 #include <voxen/os/window.hpp>
 #include <voxen/svc/message_sender.hpp>
-#include <voxen/util/log.hpp>
 #include <voxen/world/player.hpp>
 #include <voxen/world/player_state_message.hpp>
 #include <voxen/world/world_control_service.hpp>

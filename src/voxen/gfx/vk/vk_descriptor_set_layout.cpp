@@ -2,7 +2,7 @@
 
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
-#include <voxen/util/log.hpp>
+#include <voxen/log.hpp>
 
 #include <extras/defer.hpp>
 
