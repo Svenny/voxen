@@ -187,8 +187,10 @@ Window::Window(Config cfg)
 	stopTextInput();
 	useRegularCursor();
 
-	Log::info("Created window {}x{} ({}x{} pixels), display scale {}", windowSize().width, windowSize().height,
-		framebufferSize().width, framebufferSize().height, SDL_GetWindowDisplayScale(m_window));
+	const m::int2 window_size = windowSize();
+	const m::int2 framebuffer_size = framebufferSize();
+	Log::info("Created window {}x{} ({}x{} pixels), display scale {}", window_size.x, window_size.y, framebuffer_size.x,
+		framebuffer_size.y, SDL_GetWindowDisplayScale(m_window));
 }
 
 Window::Window(Window &&other) noexcept
@@ -235,14 +237,14 @@ void Window::waitEvents()
 	}
 }
 
-Resolution Window::windowSize() const
+m::int2 Window::windowSize() const
 {
 	int width = 0, height = 0;
 	SDL_GetWindowSize(m_window, &width, &height);
 	return { width, height };
 }
 
-Resolution Window::framebufferSize() const
+m::int2 Window::framebufferSize() const
 {
 	int width = 0, height = 0;
 	SDL_GetWindowSizeInPixels(m_window, &width, &height);

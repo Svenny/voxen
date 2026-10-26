@@ -150,17 +150,17 @@ void GameView::handleMouseMotion(m::double2 delta) noexcept
 	m_mouse_delta += delta;
 }
 
-void GameView::handleResize(Resolution framebuffer_size) noexcept
+void GameView::handleResize(m::int2 framebuffer_size) noexcept
 {
-	if (framebuffer_size.valid()) {
+	if (framebuffer_size.x > 0 && framebuffer_size.y > 0) {
 		setWindowSize(framebuffer_size);
 		updateMatrices();
 	}
 }
 
-void GameView::setWindowSize(Resolution size) noexcept
+void GameView::setWindowSize(m::int2 size) noexcept
 {
-	m_window_size = m::double2(size.width, size.height);
+	m_window_size = m::double2(size);
 
 	double tan_half_fovy = std::tan(m_fov_y / 2.0);
 	double aspect = m_window_size.x / m_window_size.y;

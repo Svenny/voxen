@@ -302,8 +302,8 @@ void UiSystemImpl::beginFrame(ScratchMemoryAllocatorScope &scratch, UiSystem::Pe
 	m_root_container->hovered = false;
 
 	if (per_frame.cursor_position.x >= 0.0 && per_frame.cursor_position.y >= 0.0
-		&& per_frame.cursor_position.x <= per_frame.window_resolution.width
-		&& per_frame.cursor_position.y <= per_frame.window_resolution.height) {
+		&& per_frame.cursor_position.x <= per_frame.window_resolution.x
+		&& per_frame.cursor_position.y <= per_frame.window_resolution.y) {
 		m_root_container->hovered = true;
 	}
 
@@ -311,8 +311,8 @@ void UiSystemImpl::beginFrame(ScratchMemoryAllocatorScope &scratch, UiSystem::Pe
 
 	m_root_container->x = 0.0f;
 	m_root_container->y = 0.0f;
-	m_root_container->width = static_cast<float>(per_frame.window_resolution.width);
-	m_root_container->height = static_cast<float>(per_frame.window_resolution.height);
+	m_root_container->width = static_cast<float>(per_frame.window_resolution.x);
+	m_root_container->height = static_cast<float>(per_frame.window_resolution.y);
 }
 
 RenderData UiSystemImpl::endFrame()

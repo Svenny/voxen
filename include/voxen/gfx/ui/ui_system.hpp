@@ -2,7 +2,6 @@
 
 #include <voxen/common/common_fwd.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
-#include <voxen/util/resolution.hpp>
 
 #include <extras/pimpl.hpp>
 
@@ -27,7 +26,7 @@ namespace voxen::gfx::ui
 class UiSystem {
 public:
 	struct PerFrameData {
-		Resolution window_resolution;
+		m::int2 window_resolution;
 		m::double2 cursor_position;
 		bool left_button_pressed;
 	};

@@ -162,7 +162,6 @@ set(VOXEN_HEADERS
 	include/voxen/util/futex_work_counter.hpp
 	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
-	include/voxen/util/resolution.hpp
 	include/voxen/util/tagged_tick_id.hpp
 	include/voxen/world/player.hpp
 	include/voxen/world/player_state_message.hpp

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <voxen/util/resolution.hpp>
-
 #include <extras/enum_utils.hpp>
 
 #include <m/vector.hpp>
@@ -235,7 +233,7 @@ struct MouseWheelEvent {
 
 // Framebuffer size of the window has changed
 struct WindowResizeEvent {
-	Resolution framebuffer_size;
+	m::int2 framebuffer_size;
 };
 
 // User asked to close the window, `Window::shouldClose()` returns true from now on
