@@ -4,11 +4,10 @@
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 
-#include <extras/enum_utils.hpp>
-
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 namespace voxen::gfx
 {
@@ -44,7 +43,7 @@ std::pair<FrameTickId, FrameTickId> FrameTickSource::startNextTick(GfxSystem& gf
 	TimelinePack completed_pack;
 
 	vk::Device* dev = gfx.device();
-	for (uint32_t q = 0; q < extras::to_underlying(Queue::QueueCount); q++) {
+	for (uint32_t q = 0; q < std::to_underlying(Queue::QueueCount); q++) {
 		current_tick_pack.timelines[q] = dev->getLastSubmittedTimeline(Queue(q));
 		completed_pack.timelines[q] = dev->getCompletedTimeline(Queue(q));
 	}
