@@ -58,15 +58,8 @@ public:
 
 	using pointer = refcnt_ptr<T>;
 
-	fixed_pool() noexcept
-	{
-		if constexpr (R) {
-			// Default-construct all objects for reusable pool
-			for (size_t i = 0; i < N; i++) {
-				new (&m_objects[i]) T();
-			}
-		}
-	}
+	// Reusable pools hold `std::array<T, N>`, it default-constructs all objects
+	fixed_pool() noexcept = default;
 
 	fixed_pool(fixed_pool &&) = delete;
 	fixed_pool(const fixed_pool &) = delete;
@@ -131,8 +124,7 @@ public:
 		// to be atomic - unlocking has the needed release semantics
 		m_usage_counts[pos].store(1, std::memory_order_relaxed);
 
-		T *object = std::launder(reinterpret_cast<T *>(&m_objects[pos]));
-		return pointer(object, function_ref(*this));
+		return pointer(&m_objects[pos], function_ref(*this));
 	}
 
 	// Returns the number of free objects in the pool. This method is thread-safe.
