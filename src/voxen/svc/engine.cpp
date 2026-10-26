@@ -1,6 +1,5 @@
 #include <voxen/svc/engine.hpp>
 
-#include <voxen/client/main_thread_service.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
 #include <voxen/common/runtime_config.hpp>
@@ -14,7 +13,6 @@
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
-#include <voxen/world/world_control_service.hpp>
 
 #include "async_counter_tracker.hpp"
 
@@ -161,16 +159,6 @@ auto makeAsyncFileIoService(ServiceLocator &svc)
 	return std::make_unique<AsyncFileIoService>(svc, AsyncFileIoService::Config {});
 }
 
-auto makeMainThreadService(ServiceLocator &svc)
-{
-	return std::make_unique<client::MainThreadService>(svc, client::MainThreadService::Config {});
-}
-
-auto makeWorldControlService(ServiceLocator &svc)
-{
-	return std::make_unique<world::ControlService>(svc);
-}
-
 std::atomic_bool g_instance_created = false;
 
 // Since it's singleton we can use fixed storage
@@ -260,16 +248,12 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 		"voxen::svc::detail::AsyncCounterTracker");
 	debug::UidRegistry::registerLiteral(TaskService::SERVICE_UID, "voxen::svc::TaskService");
 	debug::UidRegistry::registerLiteral(AsyncFileIoService::SERVICE_UID, "voxen::svc::AsyncFileIoService");
-	debug::UidRegistry::registerLiteral(client::MainThreadService::SERVICE_UID, "voxen::client::MainThreadService");
-	debug::UidRegistry::registerLiteral(world::ControlService::SERVICE_UID, "voxen::world::ControlService");
 
 	m_service_locator.registerServiceFactory<MessagingService>(makeMsgService);
 	m_service_locator.registerServiceFactory<PipeMemoryAllocator>(makePipeAllocService);
 	m_service_locator.registerServiceFactory<detail::AsyncCounterTracker>(makeAsyncCounterTracker);
 	m_service_locator.registerServiceFactory<TaskService>(makeTaskService);
 	m_service_locator.registerServiceFactory<AsyncFileIoService>(makeAsyncFileIoService);
-	m_service_locator.registerServiceFactory<client::MainThreadService>(makeMainThreadService);
-	m_service_locator.registerServiceFactory<world::ControlService>(makeWorldControlService);
 }
 
 Engine::~Engine() = default;

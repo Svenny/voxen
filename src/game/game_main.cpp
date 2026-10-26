@@ -1,7 +1,9 @@
 #include "game_ui.hpp"
 
 #include <voxen/client/main_thread_service.hpp>
+#include <voxen/debug/uid_registry.hpp>
 #include <voxen/svc/engine.hpp>
+#include <voxen/svc/service_locator.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
 #include <voxen/version.hpp>
@@ -13,8 +15,30 @@
 #include <cstdlib>
 #include <exception>
 #include <latch>
+#include <memory>
 #include <system_error>
 #include <utility>
+
+namespace
+{
+
+// `Engine` registers only its core services, add the higher-level ones the game uses
+void registerGameServices(voxen::svc::ServiceLocator &svc)
+{
+	using voxen::client::MainThreadService;
+	using voxen::world::ControlService;
+
+	voxen::debug::UidRegistry::registerLiteral(MainThreadService::SERVICE_UID, "voxen::client::MainThreadService");
+	voxen::debug::UidRegistry::registerLiteral(ControlService::SERVICE_UID, "voxen::world::ControlService");
+
+	svc.registerServiceFactory<MainThreadService>([](voxen::svc::ServiceLocator &sl) {
+		return std::make_unique<MainThreadService>(sl, MainThreadService::Config {});
+	});
+	svc.registerServiceFactory<ControlService>(
+		[](voxen::svc::ServiceLocator &sl) { return std::make_unique<ControlService>(sl); });
+}
+
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -39,6 +63,7 @@ int main(int argc, char *argv[])
 		}
 
 		auto engine = voxen::svc::Engine::create(std::move(engine_args));
+		registerGameServices(engine->serviceLocator());
 
 		// We don't have UI and save/load yet, so just create a new world.
 		auto &world_control = engine->serviceLocator().requestService<voxen::world::ControlService>();
