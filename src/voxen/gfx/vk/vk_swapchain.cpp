@@ -12,6 +12,8 @@
 #include <extras/defer.hpp>
 #include <extras/dyn_array.hpp>
 
+#include <m/vector.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -413,9 +415,9 @@ uint32_t Swapchain::updateSwapchainParameters()
 	if (!m_extent_from_window) {
 		m_image_extent = caps.currentExtent;
 	} else {
-		auto [width, height] = m_window.framebufferSize();
-		m_image_extent.width = static_cast<uint32_t>(width);
-		m_image_extent.height = static_cast<uint32_t>(height);
+		const m::int2 size = m_window.framebufferSize();
+		m_image_extent.width = static_cast<uint32_t>(size.x);
+		m_image_extent.height = static_cast<uint32_t>(size.y);
 	}
 
 	// Select image format

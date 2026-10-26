@@ -1,7 +1,6 @@
 #pragma once
 
 #include <voxen/os/window_events.hpp>
-#include <voxen/util/resolution.hpp>
 #include <voxen/visibility.hpp>
 
 #include <m/vector.hpp>
@@ -54,10 +53,10 @@ public:
 	// Window size in logical units. May differ from `framebufferSize()`
 	// when the OS scales windows (e.g. Wayland with fractional scaling).
 	// Minimized windows keep their last size.
-	Resolution windowSize() const;
+	m::int2 windowSize() const;
 	// Window framebuffer size in pixels. Usually you need this function.
 	// Minimized windows keep their last size.
-	Resolution framebufferSize() const;
+	m::int2 framebufferSize() const;
 
 	// Current cursor position in framebuffer pixels
 	m::double2 cursorPos() const;

@@ -4,7 +4,6 @@
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/svc/svc_fwd.hpp>
-#include <voxen/util/resolution.hpp>
 #include <voxen/world/player.hpp>
 #include <voxen/world/world_tick_id.hpp>
 
@@ -23,7 +22,7 @@ public:
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	// Relative mouse motion in framebuffer pixels
 	void handleMouseMotion(m::double2 delta) noexcept;
-	void handleResize(Resolution framebuffer_size) noexcept;
+	void handleResize(m::int2 framebuffer_size) noexcept;
 
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
@@ -90,7 +89,7 @@ private:
 	bool m_state[Direction::Count];
 
 private:
-	void setWindowSize(Resolution size) noexcept;
+	void setWindowSize(m::int2 size) noexcept;
 	void updateMatrices() noexcept;
 	void resetKeyState() noexcept;
 };
