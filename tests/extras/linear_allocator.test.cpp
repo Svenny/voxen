@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <vector>
 
 namespace
 {
@@ -134,3 +135,46 @@ TEST_CASE("'linear_allocator' doesn't call free callback from destructor", "[ext
 }
 
 } // namespace
+
+namespace
+{
+
+// Starts with a tiny free range reservation and exposes its capacity
+class TestAllocator3 final : public extras::linear_allocator<TestAllocator3, uint32_t, 64> {
+public:
+	using Base = extras::linear_allocator<TestAllocator3, uint32_t, 64>;
+
+	TestAllocator3() : Base(1 << 20, 2) {}
+
+	size_t freeRangesCapacity() const noexcept { return m_free_ranges.capacity(); }
+
+	static void on_allocator_freed(Base &) noexcept {}
+};
+
+} // namespace
+
+TEST_CASE("'linear_allocator' doesn't reallocate in free()", "[extras::linear_allocator]")
+{
+	TestAllocator3 alloc;
+
+	// Sequential allocations from the front keep a single free range
+	std::vector<TestAllocator3::range_type> ranges;
+	for (int i = 0; i < 64; i++) {
+		auto range = alloc.allocate(64, 64);
+		REQUIRE(range.has_value());
+		ranges.push_back(*range);
+	}
+
+	// Freeing every other allocation creates a new free range each time
+	const size_t capacity = alloc.freeRangesCapacity();
+	for (size_t i = 0; i < ranges.size(); i += 2) {
+		alloc.free(ranges[i]);
+		CHECK(alloc.freeRangesCapacity() == capacity);
+	}
+
+	for (size_t i = 1; i < ranges.size(); i += 2) {
+		alloc.free(ranges[i]);
+	}
+
+	CHECK(alloc.is_free());
+}

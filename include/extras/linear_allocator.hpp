@@ -70,14 +70,15 @@ public:
 				continue;
 			}
 
-			// Ensure there is room for at least two more objects.
-			// First one can be emplaced down the code. If allocation fails here,
-			// we won't modify the vector, thus ensuring strong exception safety.
-			// Second one can be emplaced during `free(adjusted_begin, adjusted_end)`,
-			// so this reservation guarantees that `free()` is actually noexcept.
-			// TODO (Svenny): but it seems to force linear (not exponential) capacity growth.
-			// ...but we don't need to care about it unless free blocks number is increasing.
-			m_free_ranges.reserve(m_free_ranges.size() + 2);
+			// Free ranges are never adjacent, a live allocation separates any two of them,
+			// so there are at most `m_num_allocations + 1`. `free()` inserts one more before
+			// merging, so with this allocation counted it needs `m_num_allocations + 3`.
+			// Reserving it here (before any modification, for strong exception safety)
+			// also covers the split below and keeps `free()` actually noexcept.
+			const size_t needed_capacity = m_num_allocations + 3;
+			if (m_free_ranges.capacity() < needed_capacity) {
+				m_free_ranges.reserve(std::max(needed_capacity, 2 * m_free_ranges.capacity()));
+			}
 
 			bool used_inplace = false;
 
@@ -99,6 +100,7 @@ public:
 				m_free_ranges.erase(m_free_ranges.begin() + ptrdiff_t(i));
 			}
 
+			m_num_allocations++;
 			return range_type(adjusted_begin, adjusted_end);
 		}
 
@@ -111,6 +113,7 @@ public:
 	{
 		assert(is_free());
 		m_free_ranges.clear();
+		m_num_allocations = 1;
 		return range_type(0, m_full_size);
 	}
 
@@ -159,6 +162,8 @@ public:
 		const size_type begin = range.first;
 		const size_type end = range.second;
 		assert(begin < end);
+		assert(m_num_allocations > 0);
+		m_num_allocations--;
 
 		// Find the first "higher" free block and insert a new one right before it
 		auto iter = std::upper_bound(m_free_ranges.begin(), m_free_ranges.end(), std::make_pair(begin, end));
@@ -198,6 +203,7 @@ public:
 		if (!is_free()) {
 			m_free_ranges.clear();
 			m_free_ranges.emplace_back(0, m_full_size);
+			m_num_allocations = 0;
 			B::on_allocator_freed(*this);
 		}
 	}
@@ -214,6 +220,8 @@ protected:
 	std::vector<range_type> m_free_ranges;
 	// Full size of the memory block this allocator is suballocating.
 	const size_type m_full_size = 0;
+	// Number of live allocations, bounds the number of free ranges
+	size_t m_num_allocations = 0;
 
 private:
 	static size_type align_up(size_type size, size_type alignment) noexcept
