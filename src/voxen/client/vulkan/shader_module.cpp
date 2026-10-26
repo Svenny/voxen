@@ -29,7 +29,7 @@ void ShaderModule::load(std::string_view relative_path)
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	VkResult result = backend.vkCreateShaderModule(device, &info, nullptr, &m_shader_module);
+	VkResult result = backend.device().dt().vkCreateShaderModule(device, &info, nullptr, &m_shader_module);
 	if (result != VK_SUCCESS) {
 		throw gfx::vk::VulkanException(result, "vkCreateShaderModule");
 	}
@@ -43,7 +43,7 @@ void ShaderModule::unload() noexcept
 
 	auto &backend = Backend::backend();
 	VkDevice device = backend.device().handle();
-	backend.vkDestroyShaderModule(device, m_shader_module, nullptr);
+	backend.device().dt().vkDestroyShaderModule(device, m_shader_module, nullptr);
 	m_shader_module = VK_NULL_HANDLE;
 }
 

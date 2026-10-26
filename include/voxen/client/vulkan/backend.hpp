@@ -53,10 +53,6 @@ public:
 	PipelineCollection &pipelineCollection() noexcept { return *m_pipeline_collection; }
 	const PipelineCollection &pipelineCollection() const noexcept { return *m_pipeline_collection; }
 
-	// Declare pointers to Vulkan API entry points, moved
-	// into a separate file because of size and ugliness
-#include "api_table_declare.in"
-
 	// Backend is the only Vulkan-related class designed
 	// to be a singleton. The main arguments for this decision:
 	// 1. Launching multiple backends makes no sense
@@ -85,9 +81,6 @@ private:
 	static constinit Backend s_instance;
 
 	static std::string_view stateToString(State state) noexcept;
-
-	bool loadDeviceLevelApi(VkDevice device) noexcept;
-	void unloadDeviceLevelApi() noexcept;
 
 	bool doStart(gfx::GfxSystem &gfx) noexcept;
 	void doStop() noexcept;
