@@ -1,7 +1,7 @@
 #include <voxen/svc/task_handle.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 
 #include "async_counter_tracker.hpp"
 #include "task_handle_private.hpp"

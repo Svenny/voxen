@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace voxen
+namespace voxen::svc
 {
 
 // This service provides a very fast, thread-safe memory allocator
@@ -34,7 +34,7 @@ namespace voxen
 //
 // NOTE: this service is technically a singleton,
 // for it employs global state for maximum performance.
-class VOXEN_API PipeMemoryAllocator final : public svc::IService {
+class VOXEN_API PipeMemoryAllocator final : public IService {
 public:
 	constexpr static UID SERVICE_UID = UID("6208542f-29928272-d52e602f-f48b908d");
 
@@ -57,7 +57,7 @@ public:
 	// Service constructor, call only from the factory function.
 	// If another service instance is currently active,
 	// throws `Exception` with `VoxenErrc::AlreadyRegistered`.
-	explicit PipeMemoryAllocator(svc::ServiceLocator& svc, Config cfg);
+	explicit PipeMemoryAllocator(ServiceLocator& svc, Config cfg);
 	PipeMemoryAllocator(PipeMemoryAllocator&&) = delete;
 	PipeMemoryAllocator(const PipeMemoryAllocator&) = delete;
 	PipeMemoryAllocator& operator=(PipeMemoryAllocator&&) = delete;
@@ -137,4 +137,4 @@ struct TPipeMemoryAllocator {
 	static size_t max_size() noexcept { return PipeMemoryAllocator::MAX_ALLOC_SIZE / sizeof(T); }
 };
 
-} // namespace voxen
+} // namespace voxen::svc

@@ -2,8 +2,8 @@
 
 // DRAFT: AssetService skeleton, nothing uses it yet
 
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/uid.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/pipe_memory_function.hpp>
 
 #include <array>

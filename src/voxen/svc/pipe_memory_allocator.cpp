@@ -1,4 +1,4 @@
-#include <voxen/common/pipe_memory_allocator.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/os/futex.hpp>
@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace voxen
+namespace voxen::svc
 {
 
 namespace
@@ -266,7 +266,7 @@ thread_local std::unique_ptr<PipeMemorySlab, ThreadSlabDeleter> t_this_thread_sl
 
 } // anonymous namespace
 
-PipeMemoryAllocator::PipeMemoryAllocator(svc::ServiceLocator& /*svc*/, Config cfg)
+PipeMemoryAllocator::PipeMemoryAllocator(ServiceLocator& /*svc*/, Config cfg)
 {
 	if (g_slab_gc_run_flag.load(std::memory_order_acquire)) {
 		Log::error("PipeMemoryAllocator service is already started!");
@@ -330,4 +330,4 @@ void PipeMemoryAllocator::deallocate(void* ptr) noexcept
 		->ctl.live_allocations.fetch_sub(1, std::memory_order_release);
 }
 
-} // namespace voxen
+} // namespace voxen::svc

@@ -3,12 +3,12 @@
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/common/config.hpp>
 #include <voxen/common/filemanager.hpp>
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/common/runtime_config.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/os/time.hpp>
 #include <voxen/svc/async_file_io_service.hpp>
 #include <voxen/svc/messaging_service.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
@@ -255,7 +255,7 @@ Engine::Engine(EngineStartArgs args) : m_start_args(std::move(args))
 	}
 
 	debug::UidRegistry::registerLiteral(MessagingService::SERVICE_UID, "voxen::svc::MessagingService");
-	debug::UidRegistry::registerLiteral(PipeMemoryAllocator::SERVICE_UID, "voxen::PipeMemoryAllocator");
+	debug::UidRegistry::registerLiteral(PipeMemoryAllocator::SERVICE_UID, "voxen::svc::PipeMemoryAllocator");
 	debug::UidRegistry::registerLiteral(detail::AsyncCounterTracker::SERVICE_UID,
 		"voxen::svc::detail::AsyncCounterTracker");
 	debug::UidRegistry::registerLiteral(TaskService::SERVICE_UID, "voxen::svc::TaskService");

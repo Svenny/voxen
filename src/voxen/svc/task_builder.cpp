@@ -1,7 +1,7 @@
 #include <voxen/svc/task_builder.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/debug/bug_found.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/task_context.hpp>
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>

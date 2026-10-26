@@ -1,8 +1,8 @@
 #include <voxen/svc/task_service.hpp>
 
-#include <voxen/common/pipe_memory_allocator.hpp>
 #include <voxen/os/time.hpp>
 #include <voxen/svc/engine.hpp>
+#include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/svc_fwd.hpp>
 #include <voxen/svc/task_builder.hpp>
 #include <voxen/svc/task_coro.hpp>
