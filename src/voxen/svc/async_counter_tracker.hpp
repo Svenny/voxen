@@ -4,11 +4,10 @@
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/service_base.hpp>
 
-#include <extras/hardware_params.hpp>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <new>
 #include <span>
 #include <utility>
 #include <vector>
@@ -74,7 +73,7 @@ private:
 
 	// Completion list stores counter values divided by `NUM_COMPLETION_LIST`
 	// so that they form a continuous sequence 0, 1, 2, ... inside the list
-	struct alignas(extras::hardware_params::cache_line) CompletionList {
+	struct alignas(std::hardware_destructive_interference_size) CompletionList {
 		// This and every smaller value is completed
 		std::atomic_uint64_t fully_completed_value = 0;
 		// Segments of completed values with some gap from `fully_completed_value`.
@@ -84,7 +83,8 @@ private:
 	};
 
 	// Initial value is `NUM_COMPLETION_LISTS`, it gives 1 in every list after division
-	alignas(extras::hardware_params::cache_line) std::atomic_uint64_t m_next_allocated_counter = NUM_COMPLETION_LISTS;
+	alignas(std::hardware_destructive_interference_size) std::atomic_uint64_t m_next_allocated_counter
+		= NUM_COMPLETION_LISTS;
 	CompletionList m_completion_lists[NUM_COMPLETION_LISTS];
 };
 
