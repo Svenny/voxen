@@ -4,13 +4,12 @@
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/message_handling.hpp>
 
-#include <extras/hardware_params.hpp>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <exception>
+#include <new>
 #include <span>
 #include <utility>
 #include <vector>
@@ -74,7 +73,7 @@ struct MessageHeader {
 	void *payload() noexcept;
 };
 
-class alignas(extras::hardware_params::cache_line) InboundQueue {
+class alignas(std::hardware_destructive_interference_size) InboundQueue {
 public:
 	InboundQueue() = default;
 	InboundQueue(InboundQueue &&) = delete;

@@ -2,12 +2,11 @@
 
 #include <voxen/svc/svc_fwd.hpp>
 
-#include <extras/hardware_params.hpp>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <new>
 
 namespace voxen::svc::detail
 {
@@ -45,11 +44,11 @@ private:
 		uint32_t stop_flag : 1 = 0;
 	};
 
-	struct alignas(extras::hardware_params::cache_line) RingBufferHeader {
+	struct alignas(std::hardware_destructive_interference_size) RingBufferHeader {
 		std::atomic<ProduceConsumeIndex> current_index { ProduceConsumeIndex {} };
 	};
 
-	struct alignas(extras::hardware_params::cache_line) RingBufferStorage {
+	struct alignas(std::hardware_destructive_interference_size) RingBufferStorage {
 		std::atomic<TaskHeader *> item[RING_BUFFER_SIZE];
 	};
 
