@@ -22,10 +22,7 @@ set(VOXEN_SOURCES
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
-	src/voxen/common/config.cpp
-	src/voxen/common/filemanager.cpp
 	src/voxen/common/private_object_pool.cpp
-	src/voxen/common/runtime_config.cpp
 	src/voxen/common/scratch_memory_allocator.cpp
 	src/voxen/common/shared_object_pool.cpp
 	src/voxen/debug/bug_found.cpp
@@ -92,7 +89,9 @@ set(VOXEN_SOURCES
 	src/voxen/svc/async_counter_tracker.cpp
 	src/voxen/svc/async_counter_tracker.hpp
 	src/voxen/svc/async_file_io_service.cpp
+	src/voxen/svc/config.cpp
 	src/voxen/svc/engine.cpp
+	src/voxen/svc/file_manager.cpp
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp
 	src/voxen/svc/message_sender.cpp
@@ -100,6 +99,7 @@ set(VOXEN_SOURCES
 	src/voxen/svc/messaging_private.hpp
 	src/voxen/svc/messaging_service.cpp
 	src/voxen/svc/pipe_memory_allocator.cpp
+	src/voxen/svc/runtime_config.cpp
 	src/voxen/svc/service_base.cpp
 	src/voxen/svc/service_locator.cpp
 	src/voxen/svc/task_builder.cpp

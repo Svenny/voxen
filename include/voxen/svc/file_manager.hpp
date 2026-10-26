@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace voxen
+namespace voxen::svc
 {
 
 // Whole-file I/O relative to the game data and user profile directories.
@@ -35,4 +35,4 @@ private:
 	static std::filesystem::path game_data_path;
 };
 
-} // namespace voxen
+} // namespace voxen::svc

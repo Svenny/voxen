@@ -1,12 +1,12 @@
 #include <voxen/client/gameview.hpp>
 
-#include <voxen/common/config.hpp>
 #include <voxen/land/land_messages.hpp>
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/log.hpp>
 #include <voxen/os/window.hpp>
+#include <voxen/svc/config.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/world/player.hpp>
 #include <voxen/world/player_state_message.hpp>
@@ -24,7 +24,7 @@ GameView::GameView(os::Window& window) : m_window(window)
 	m_fov_y = m::radians(70.0);
 	setWindowSize(window.framebufferSize());
 
-	Config* main_config = Config::mainConfig();
+	svc::Config* main_config = svc::Config::mainConfig();
 	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");
 	m_forward_speed = main_config->getDouble("controller", "forward_speed");
 	m_strafe_speed = main_config->getDouble("controller", "strafe_speed");

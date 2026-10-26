@@ -1,6 +1,5 @@
 #include <voxen/gfx/vk/vk_pipeline.hpp>
 
-#include <voxen/common/filemanager.hpp>
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
@@ -8,6 +7,7 @@
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/log.hpp>
+#include <voxen/svc/file_manager.hpp>
 
 #include <extras/defer.hpp>
 
@@ -82,7 +82,7 @@ private:
 	VkShaderModule loadModule(std::string_view relative_path)
 	{
 		Log::debug("Loading shader module `{}`", relative_path);
-		auto code = FileManager::readFile(relative_path);
+		auto code = svc::FileManager::readFile(relative_path);
 		auto &code_bytes = code.value();
 
 		VkShaderModuleCreateInfo info = {};

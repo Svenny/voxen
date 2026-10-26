@@ -1,6 +1,5 @@
 #include <voxen/gfx/gfx_system.hpp>
 
-#include <voxen/common/runtime_config.hpp>
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/gfx/font_renderer.hpp>
@@ -23,6 +22,7 @@
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/log.hpp>
 #include <voxen/os/window.hpp>
+#include <voxen/svc/runtime_config.hpp>
 
 #include <cstddef>
 #include <span>
@@ -123,7 +123,7 @@ GfxSystem::GfxSystem(svc::ServiceLocator &svc, os::Window &main_window)
 	Log::info("Starting gfx system");
 
 	// TODO: once options service is implemented, get options from `svc` instead of `RuntimeConfig`
-	const GfxOptions &opts = RuntimeConfig::instance().gfxOptions();
+	const GfxOptions &opts = svc::RuntimeConfig::instance().gfxOptions();
 
 	ComponentStorage &comp = *m_component_storage;
 	m_vk_instance.reset(new (comp.vk_instance) vk::Instance(opts));

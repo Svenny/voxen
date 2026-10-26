@@ -1,4 +1,4 @@
-#include <voxen/common/filemanager.hpp>
+#include <voxen/svc/file_manager.hpp>
 
 #include <voxen/log.hpp>
 
@@ -8,7 +8,7 @@
 
 using std::filesystem::path;
 
-namespace voxen
+namespace voxen::svc
 {
 
 namespace
@@ -95,4 +95,4 @@ std::optional<std::string> FileManager::readTextFile(const path &relative_path)
 	return logError(tk::fs::readTextFile(gameDataPath() / relative_path));
 }
 
-} // namespace voxen
+} // namespace voxen::svc
