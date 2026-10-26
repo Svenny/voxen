@@ -53,6 +53,7 @@ set(VOXEN_HEADERS
 	include/voxen/assets/asset_decoder.hpp
 	include/voxen/assets/asset_service.hpp
 	include/voxen/assets/assets_fwd.hpp
+	include/voxen/client/gameview.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
@@ -60,7 +61,6 @@ set(VOXEN_HEADERS
 	include/voxen/common/common_fwd.hpp
 	include/voxen/common/config.hpp
 	include/voxen/common/filemanager.hpp
-	include/voxen/common/gameview.hpp
 	include/voxen/common/private_object_pool.hpp
 	include/voxen/common/runtime_config.hpp
 	include/voxen/common/scratch_memory_allocator.hpp

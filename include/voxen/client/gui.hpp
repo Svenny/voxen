@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/common/gameview.hpp>
+#include <voxen/client/gameview.hpp>
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/os/window_events.hpp>
 #include <voxen/svc/svc_fwd.hpp>

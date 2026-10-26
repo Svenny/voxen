@@ -10,7 +10,7 @@
 
 #include <m/m.hpp>
 
-namespace voxen
+namespace voxen::client
 {
 
 class GameView {
@@ -95,4 +95,4 @@ private:
 	void resetKeyState() noexcept;
 };
 
-} // namespace voxen
+} // namespace voxen::client

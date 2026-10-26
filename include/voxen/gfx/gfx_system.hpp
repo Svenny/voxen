@@ -9,12 +9,12 @@
 
 #include <memory>
 
-namespace voxen
+namespace voxen::client
 {
 
 class GameView;
 
-} // namespace voxen
+} // namespace voxen::client
 
 namespace voxen::gfx
 {
@@ -60,7 +60,7 @@ public:
 	// If it throws an exception, most likely this means a device loss or out of memory.
 	// In either case the system becomes unusable and must be either restarted or terminated.
 	// Further calls to `drawFrame()` will almost certainly throw too.
-	void drawFrame(const world::State& state, const GameView& view, ui::UiSystem& ui);
+	void drawFrame(const world::State& state, const client::GameView& view, ui::UiSystem& ui);
 
 	// Wait (block) until the given frame tick ID completes GPU execution.
 	// When this function returns, any resource associated with `tick_id`
