@@ -136,6 +136,7 @@ set(VOXEN_HEADERS
 	include/voxen/os/dynamic_library.hpp
 	include/voxen/os/file.hpp
 	include/voxen/os/futex.hpp
+	include/voxen/os/futex_work_counter.hpp
 	include/voxen/os/os_fwd.hpp
 	include/voxen/os/process.hpp
 	include/voxen/os/time.hpp
@@ -159,7 +160,6 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_handle.hpp
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
-	include/voxen/util/futex_work_counter.hpp
 	include/voxen/util/lru_visit_ordering.hpp
 	include/voxen/util/packed_color.hpp
 	include/voxen/util/tagged_tick_id.hpp

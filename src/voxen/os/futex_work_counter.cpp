@@ -1,8 +1,8 @@
-#include <voxen/util/futex_work_counter.hpp>
+#include <voxen/os/futex_work_counter.hpp>
 
 #include <voxen/os/futex.hpp>
 
-namespace voxen
+namespace voxen::os
 {
 
 namespace
@@ -25,7 +25,7 @@ auto FutexWorkCounter::loadRelaxed() const noexcept -> Value
 void FutexWorkCounter::addWork(uint32_t amount) noexcept
 {
 	if (m_counter.fetch_add(amount, std::memory_order_release) == 0) {
-		os::Futex::wakeAll(&m_counter);
+		Futex::wakeAll(&m_counter);
 	}
 }
 
@@ -39,7 +39,7 @@ auto FutexWorkCounter::removeWork(uint32_t amount) noexcept -> Value
 void FutexWorkCounter::requestStop() noexcept
 {
 	if (m_counter.fetch_or(STOP_BIT, std::memory_order_release) == 0) {
-		os::Futex::wakeAll(&m_counter);
+		Futex::wakeAll(&m_counter);
 	}
 }
 
@@ -48,11 +48,11 @@ auto FutexWorkCounter::wait() noexcept -> Value
 	uint32_t value = m_counter.load(std::memory_order_acquire);
 
 	while (value == 0) {
-		os::Futex::waitInfinite(&m_counter, value);
+		Futex::waitInfinite(&m_counter, value);
 		value = m_counter.load(std::memory_order_acquire);
 	}
 
 	return unpackValue(value);
 }
 
-} // namespace voxen
+} // namespace voxen::os

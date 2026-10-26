@@ -4,10 +4,10 @@
 #include <voxen/error_condition.hpp>
 #include <voxen/exception.hpp>
 #include <voxen/os/futex.hpp>
+#include <voxen/os/futex_work_counter.hpp>
 #include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/svc/task_coro.hpp>
-#include <voxen/util/futex_work_counter.hpp>
 
 #include "async_counter_tracker.hpp"
 
@@ -82,7 +82,7 @@ private:
 	SharedObjectPool<os::File, AsyncFileIoService::FILE_HANDLE_POOL_HINT> m_file_handle_pool;
 
 	std::thread m_io_thread;
-	FutexWorkCounter m_io_work_counter;
+	os::FutexWorkCounter m_io_work_counter;
 	os::FutexLock m_io_queue_lock;
 	std::queue<IoQueueItem> m_io_queue;
 
