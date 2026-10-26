@@ -38,8 +38,6 @@ voxen_add_library(voxen SHARED)
 voxen_add_executable(game "")
 
 find_package(Threads REQUIRED)
-# `tk` is PUBLIC because engine headers use it. Being a static library, it then gets linked into
-# libvoxen and into every binary linking it, which is safe only while `tk` has no mutable global state.
 target_link_libraries(voxen PUBLIC
 	extras
 	m
