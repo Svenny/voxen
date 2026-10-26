@@ -1,6 +1,5 @@
 #include <voxen/land/land_service.hpp>
 
-#include <voxen/common/shared_object_pool.hpp>
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/chunk_ticket.hpp>
@@ -21,6 +20,7 @@
 #include <voxen/svc/task_service.hpp>
 #include <voxen/util/concentric_octahedra_walker.hpp>
 #include <voxen/util/lru_visit_ordering.hpp>
+#include <voxen/util/shared_object_pool.hpp>
 
 #include "land_private_consts.hpp"
 #include "land_private_messages.hpp"

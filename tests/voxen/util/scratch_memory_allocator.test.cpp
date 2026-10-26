@@ -1,4 +1,4 @@
-#include <voxen/common/scratch_memory_allocator.hpp>
+#include <voxen/util/scratch_memory_allocator.hpp>
 
 #include "../../voxen_test_common.hpp"
 

@@ -1,4 +1,4 @@
-#include <voxen/common/private_object_pool.hpp>
+#include <voxen/util/private_object_pool.hpp>
 
 #include "../../voxen_test_common.hpp"
 

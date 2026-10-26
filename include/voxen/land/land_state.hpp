@@ -1,9 +1,9 @@
 #pragma once
 
-#include <voxen/common/v8g_hash_trie.hpp>
 #include <voxen/land/chunk_key.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/pseudo_chunk_surface.hpp>
+#include <voxen/util/v8g_hash_trie.hpp>
 
 namespace voxen
 {

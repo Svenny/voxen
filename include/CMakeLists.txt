@@ -62,17 +62,6 @@ set(VOXEN_HEADERS
 	include/voxen/client/main_thread_service.hpp
 	include/voxen/client/input_event_adapter.hpp
 	include/voxen/client/player_action_events.hpp
-	include/voxen/common/common_fwd.hpp
-	include/voxen/common/private_object_pool.hpp
-	include/voxen/common/scratch_memory_allocator.hpp
-	include/voxen/common/scratch_memory_containers.hpp
-	include/voxen/common/shared_object_pool.hpp
-	include/voxen/common/v8g_concepts.hpp
-	include/voxen/common/v8g_flat_map.hpp
-	include/voxen/common/v8g_flat_map_impl.hpp
-	include/voxen/common/v8g_hash_trie.hpp
-	include/voxen/common/v8g_hash_trie_impl.hpp
-	include/voxen/common/v8g_helpers.hpp
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
@@ -162,7 +151,18 @@ set(VOXEN_HEADERS
 	include/voxen/svc/task_service.hpp
 	include/voxen/util/concentric_octahedra_walker.hpp
 	include/voxen/util/lru_visit_ordering.hpp
+	include/voxen/util/private_object_pool.hpp
+	include/voxen/util/scratch_memory_allocator.hpp
+	include/voxen/util/scratch_memory_containers.hpp
+	include/voxen/util/shared_object_pool.hpp
 	include/voxen/util/tick_id.hpp
+	include/voxen/util/util_fwd.hpp
+	include/voxen/util/v8g_concepts.hpp
+	include/voxen/util/v8g_flat_map.hpp
+	include/voxen/util/v8g_flat_map_impl.hpp
+	include/voxen/util/v8g_hash_trie.hpp
+	include/voxen/util/v8g_hash_trie_impl.hpp
+	include/voxen/util/v8g_helpers.hpp
 	include/voxen/world/player.hpp
 	include/voxen/world/player_state_message.hpp
 	include/voxen/world/world_control_service.hpp

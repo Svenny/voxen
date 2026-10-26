@@ -22,9 +22,6 @@ set(VOXEN_SOURCES
 	src/voxen/client/gui.cpp
 	src/voxen/client/input_event_adapter.cpp
 	src/voxen/client/main_thread_service.cpp
-	src/voxen/common/private_object_pool.cpp
-	src/voxen/common/scratch_memory_allocator.cpp
-	src/voxen/common/shared_object_pool.cpp
 	src/voxen/debug/bug_found.cpp
 	src/voxen/debug/thread_name.cpp
 	src/voxen/debug/uid_registry.cpp
@@ -113,6 +110,9 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_service_slave.cpp
 	src/voxen/svc/task_service_slave.hpp
 	src/voxen/util/concentric_octahedra_walker.cpp
+	src/voxen/util/private_object_pool.cpp
+	src/voxen/util/scratch_memory_allocator.cpp
+	src/voxen/util/shared_object_pool.cpp
 	src/voxen/world/player.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp
