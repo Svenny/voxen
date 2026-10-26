@@ -1,6 +1,5 @@
 #include <voxen/os/time.hpp>
 
-#include <voxen/debug/bug_found.hpp>
 #include <voxen/log.hpp>
 
 #ifdef _WIN32
@@ -11,6 +10,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <iterator>
 
 namespace voxen::os
@@ -102,7 +102,7 @@ bool Time::nanosleepFor(struct timespec timeout) noexcept
 				"'Time::nanosleepFor()' could not create a timer with 'CREATE_WAITABLE_TIMER_HIGH_RESOLUTION'.\n"
 				"This flag is supported from Windows 10 1803, and there is no fallback path implemented.\n"
 				"Most likely you are running an older Windows version.");
-			debug::bugFound("Can't create high-resolution timer for 'Time::nanosleepFor()'");
+			std::abort();
 		}
 	}
 
