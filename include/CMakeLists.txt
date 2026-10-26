@@ -91,6 +91,8 @@ set(VOXEN_HEADERS
 	include/voxen/debug/bug_found.hpp
 	include/voxen/debug/thread_name.hpp
 	include/voxen/debug/uid_registry.hpp
+	include/voxen/gfx/graph/land_render_passes.hpp
+	include/voxen/gfx/graph/render_graph_common.hpp
 	include/voxen/gfx/ui/ui_builder.hpp
 	include/voxen/gfx/ui/ui_fwd.hpp
 	include/voxen/gfx/ui/ui_render_data.hpp
@@ -103,6 +105,7 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/vk/render_graph_execution.hpp
 	include/voxen/gfx/vk/render_graph_resource.hpp
 	include/voxen/gfx/vk/render_graph_runner.hpp
+	include/voxen/gfx/vk/standard_render_graph.hpp
 	include/voxen/gfx/vk/vk_command_allocator.hpp
 	include/voxen/gfx/vk/vk_debug_utils.hpp
 	include/voxen/gfx/vk/vk_device.hpp
