@@ -6,15 +6,12 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
+#include <voxen/gfx/vk/vk_pipeline.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/gfx/vk/vk_transient_buffer_allocator.hpp>
 #include <voxen/util/error_condition.hpp>
 #include <voxen/util/exception.hpp>
 #include <voxen/util/log.hpp>
-
-// TODO: legacy code
-#include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/pipeline.hpp>
 
 #include <tk/png.hpp>
 
@@ -263,11 +260,10 @@ void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> tex
 		},
 	};
 
-	auto &legacy_backend = client::vulkan::Backend::backend();
 	VkPipelineLayout pipeline_layout = m_gfx.pipelineLayoutCollection()->uiFontLayout();
 
 	ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		legacy_backend.pipelineCollection()[client::vulkan::PipelineCollection::UI_FONT_PIPELINE]);
+		(*m_gfx.pipelineCollection())[vk::PipelineCollection::UI_FONT_PIPELINE]);
 	ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2), &inv_screen_size);
 	ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, std::size(descriptors),
 		descriptors);

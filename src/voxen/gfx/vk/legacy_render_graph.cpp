@@ -1,7 +1,5 @@
 #include <voxen/gfx/vk/legacy_render_graph.hpp>
 
-#include <voxen/client/vulkan/backend.hpp>
-#include <voxen/client/vulkan/pipeline.hpp>
 #include <voxen/gfx/font_renderer.hpp>
 #include <voxen/gfx/gfx_land_loader.hpp>
 #include <voxen/gfx/gfx_system.hpp>
@@ -12,6 +10,7 @@
 #include <voxen/gfx/vk/render_graph_execution.hpp>
 #include <voxen/gfx/vk/vk_descriptor_set_layout.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
+#include <voxen/gfx/vk/vk_pipeline.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/land/land_chunk.hpp>
 #include <voxen/land/land_public_consts.hpp>
@@ -240,14 +239,13 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 	VkCommandBuffer cmd_buf = exec.frameContext().commandBuffer();
 	auto &ddt = m_gfx->device()->dt();
 
-	auto &legacy_backend = client::vulkan::Backend::backend();
-	auto &legacy_pipeline_collection = legacy_backend.pipelineCollection();
+	auto &legacy_pipeline_collection = *m_gfx->pipelineCollection();
 	auto &legacy_layout_collection = *m_gfx->pipelineLayoutCollection();
 
 	VkPipelineLayout layout = legacy_layout_collection.landFrustumCullLayout();
 
 	ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE,
-		legacy_pipeline_collection[client::vulkan::PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE]);
+		legacy_pipeline_collection[PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE]);
 	ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1, &m_main_scene_dset, 0, nullptr);
 
 	// Clear all draw counters to zero first, then wait for all clears with one barrier
@@ -323,8 +321,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 	};
 	ddt.vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
 
-	auto &legacy_backend = client::vulkan::Backend::backend();
-	auto &legacy_pipeline_collection = legacy_backend.pipelineCollection();
+	auto &legacy_pipeline_collection = *m_gfx->pipelineCollection();
 	auto &legacy_layout_collection = *m_gfx->pipelineLayoutCollection();
 
 	// Draw land chunk meshes that have passed frustum culling
@@ -332,7 +329,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		VkPipelineLayout chunk_mesh_pipeline_layout = legacy_layout_collection.landChunkMeshLayout();
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[client::vulkan::PipelineCollection::LAND_CHUNK_MESH_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::LAND_CHUNK_MESH_PIPELINE]);
 
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, chunk_mesh_pipeline_layout, 0, 1,
 			&m_main_scene_dset, 0, nullptr);
@@ -382,7 +379,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer.buffer, index_buffer.buffer_offset, VK_INDEX_TYPE_UINT16);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[client::vulkan::PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE]);
 
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &m_main_scene_dset,
 			0, nullptr);
@@ -455,7 +452,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer.buffer, index_buffer.buffer_offset, VK_INDEX_TYPE_UINT16);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[client::vulkan::PipelineCollection::LAND_SELECTOR_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::LAND_SELECTOR_PIPELINE]);
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &m_main_scene_dset, 0,
 			nullptr);
 		ddt.vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_const), &push_const);
@@ -575,12 +572,12 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 			},
 		};
 
-		VkPipelineLayout pipeline_layout = m_gfx->pipelineLayoutCollection()->uiBasicLayout();
+		VkPipelineLayout pipeline_layout = legacy_layout_collection.uiBasicLayout();
 
 		const m::float2 inv_screen_size = m::float2(1.0f) / m::float2(viewport.width, viewport.height);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_backend.pipelineCollection()[client::vulkan::PipelineCollection::UI_BASIC_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::UI_BASIC_PIPELINE]);
 		ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2),
 			&inv_screen_size);
 		ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
