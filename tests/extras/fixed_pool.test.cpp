@@ -97,3 +97,39 @@ TEST_CASE("The most basic test of 'reusable_fixed_pool'", "[extras::fixed_pool]"
 	ptr2->add(5);
 	ptr3->add(3);
 }
+
+namespace
+{
+
+class CountedObject final {
+public:
+	CountedObject() noexcept { s_constructed++; }
+	~CountedObject() noexcept { s_destroyed++; }
+
+	void clear() noexcept {}
+
+	static inline int s_constructed = 0;
+	static inline int s_destroyed = 0;
+};
+
+} // namespace
+
+TEST_CASE("'reusable_fixed_pool' constructs every object once", "[extras::fixed_pool]")
+{
+	CountedObject::s_constructed = 0;
+	CountedObject::s_destroyed = 0;
+
+	{
+		extras::reusable_fixed_pool<CountedObject, 4> pool;
+		CHECK(CountedObject::s_constructed == 4);
+
+		// Allocation and release reuse objects, they don't construct or destroy them
+		auto ptr = pool.allocate();
+		REQUIRE(ptr);
+		ptr = extras::refcnt_ptr<CountedObject>();
+		CHECK(CountedObject::s_constructed == 4);
+		CHECK(CountedObject::s_destroyed == 0);
+	}
+
+	CHECK(CountedObject::s_destroyed == 4);
+}
