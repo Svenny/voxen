@@ -16,7 +16,7 @@
 namespace voxen::world
 {
 
-class VOXEN_API ControlService : public svc::IService {
+class VOXEN_API ControlService final : public svc::IService {
 public:
 	struct StartRequest {
 		// Path to the world save storage directory.

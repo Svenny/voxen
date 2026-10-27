@@ -14,7 +14,7 @@
 namespace voxen::svc
 {
 
-class VOXEN_API TaskService : public IService {
+class VOXEN_API TaskService final : public IService {
 public:
 	constexpr static UID SERVICE_UID = UID("28786522-a1076eb8-12aeb24a-53f130ca");
 
