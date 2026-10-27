@@ -1,0 +1,42 @@
+; SPIR-V
+; Version: 1.6
+; Bound: 100
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+        %dbg = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %buf %gid
+               OpExecutionMode %main LocalSize 64 1 1
+       %file = OpString "a.comp"
+      %uname = OpString "uint"
+               OpName %main "main"
+               OpDecorate %arr ArrayStride 4
+               OpDecorate %Buf Block
+               OpMemberDecorate %Buf 0 Offset 0
+               OpDecorate %buf Binding 0
+               OpDecorate %buf DescriptorSet 0
+               OpDecorate %gid BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+         %fn = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %arr = OpTypeRuntimeArray %uint
+        %Buf = OpTypeStruct %arr
+      %p_Buf = OpTypePointer StorageBuffer %Buf
+        %buf = OpVariable %p_Buf StorageBuffer
+     %v3uint = OpTypeVector %uint 3
+     %p_gid = OpTypePointer Input %v3uint
+        %gid = OpVariable %p_gid Input
+     %uint_0 = OpConstant %uint 0
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+     %p_uint = OpTypePointer Input %uint
+    %ps_uint = OpTypePointer StorageBuffer %uint
+        %src = OpExtInst %void %dbg DebugSource %file
+       %main = OpFunction %void None %fn
+      %entry = OpLabel
+         %gp = OpAccessChain %p_uint %gid %uint_0
+          %x = OpLoad %uint %gp
+         %dp = OpAccessChain %ps_uint %buf %uint_0 %x
+               OpStore %dp %x
+               OpReturn
+               OpFunctionEnd

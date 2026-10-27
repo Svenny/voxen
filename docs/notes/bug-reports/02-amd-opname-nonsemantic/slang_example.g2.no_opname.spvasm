@@ -1,0 +1,96 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Khronos Slang Compiler; 0
+; Bound: 85
+; Schema: 0
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %2 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %11 "main" %56 %42
+               OpExecutionMode %11 LocalSize 64 1 1
+          %1 = OpString "RWStructuredBuffer<uint> data;
+[shader(\"compute\")]
+[numthreads(64, 1, 1)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+    data[id.x] = id.x;
+}
+"
+          %5 = OpString "slang_example.slang"
+               OpSource Slang 1
+         %18 = OpString "uint"
+         %27 = OpString "main"
+         %33 = OpString "slangc"
+         %34 = OpString "-target spirv -g2 -profile spirv_1_6 -stage compute -entry main"
+         %36 = OpString "id"
+         %59 = OpString "__member0"
+         %61 = OpString "RWStructuredBuffer"
+         %63 = OpString "data"
+               OpName %53 "RWStructuredBuffer"
+               OpMemberName %53 0 "__member0"
+               OpName %56 "data"
+               OpName %11 "main"
+               OpDecorate %42 BuiltIn GlobalInvocationId
+               OpDecorate %51 ArrayStride 4
+               OpDecorate %54 ArrayStride 4
+               OpDecorate %53 Block
+               OpMemberDecorate %53 0 Offset 0
+               OpDecorate %56 Binding 0
+               OpDecorate %56 DescriptorSet 0
+          %3 = OpTypeVoid
+          %6 = OpTypeInt 32 0
+          %7 = OpConstant %6 11
+          %8 = OpConstant %6 5
+          %9 = OpConstant %6 100
+         %12 = OpTypeFunction %3
+         %14 = OpTypeVector %6 3
+         %19 = OpConstant %6 32
+         %20 = OpConstant %6 6
+         %21 = OpConstant %6 131072
+         %23 = OpConstant %6 3
+         %25 = OpConstant %6 0
+         %28 = OpConstant %6 4
+         %37 = OpConstant %6 1
+         %41 = OpTypePointer Input %14
+         %49 = OpTypeInt 32 1
+         %50 = OpConstant %49 0
+         %51 = OpTypePointer StorageBuffer %6
+         %54 = OpTypeRuntimeArray %6
+         %53 = OpTypeStruct %54
+         %55 = OpTypePointer StorageBuffer %53
+         %64 = OpConstant %6 26
+         %42 = OpVariable %41 Input
+         %56 = OpVariable %55 StorageBuffer
+         %82 = OpUndef %14
+         %80 = OpExtInst %3 %2 DebugInfoNone
+         %38 = OpExtInst %3 %2 DebugExpression
+          %4 = OpExtInst %3 %2 DebugSource %5 %1
+         %10 = OpExtInst %3 %2 DebugCompilationUnit %9 %8 %4 %7
+         %17 = OpExtInst %3 %2 DebugTypeBasic %18 %19 %20 %21
+         %22 = OpExtInst %3 %2 DebugTypeVector %17 %23
+         %24 = OpExtInst %3 %2 DebugTypeFunction %25 %3 %22
+         %26 = OpExtInst %3 %2 DebugFunction %27 %24 %4 %28 %20 %10 %27 %25 %28
+         %32 = OpExtInst %3 %2 DebugEntryPoint %26 %10 %33 %34
+         %35 = OpExtInst %3 %2 DebugLocalVariable %36 %22 %4 %28 %20 %26 %25 %37
+         %57 = OpExtInst %3 %2 DebugTypeArray %17 %25
+         %58 = OpExtInst %3 %2 DebugTypeMember %59 %57 %4 %25 %25 %25 %25 %25
+         %60 = OpExtInst %3 %2 DebugTypeComposite %61 %37 %4 %25 %25 %10 %61 %25 %21 %58
+         %62 = OpExtInst %3 %2 DebugGlobalVariable %63 %60 %4 %37 %64 %10 %63 %56 %25
+         %11 = OpFunction %3 None %12
+         %13 = OpLabel
+         %29 = OpExtInst %3 %2 DebugFunctionDefinition %26 %11
+         %83 = OpExtInst %3 %2 DebugScope %26
+         %70 = OpExtInst %3 %2 DebugLine %4 %28 %28 %20 %20
+         %43 = OpExtInst %3 %2 DebugValue %35 %82 %38
+         %45 = OpExtInst %3 %2 DebugLine %4 %20 %20 %8 %20
+         %47 = OpLoad %14 %42
+         %48 = OpCompositeExtract %6 %47 0
+         %52 = OpAccessChain %51 %56 %50 %48
+         %65 = OpLoad %14 %42
+         %66 = OpCompositeExtract %6 %65 0
+               OpStore %52 %66
+               OpReturn
+         %84 = OpExtInst %3 %2 DebugNoScope
+               OpFunctionEnd

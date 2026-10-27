@@ -1,0 +1,64 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Google Shaderc over Glslang; 11
+; Bound: 38
+; Schema: 0
+               OpCapability Shader
+               OpCapability Int64
+               OpCapability PhysicalStorageBufferAddresses
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %4 "main" %gl_GlobalInvocationID %20 %30
+               OpExecutionMode %4 LocalSize 64 1 1
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %_runtimearr_ulong ArrayStride 8
+               OpDecorate %_struct_18 Block
+               OpMemberDecorate %_struct_18 0 NonReadable
+               OpMemberDecorate %_struct_18 0 Offset 0
+               OpDecorate %20 NonReadable
+               OpDecorate %20 Binding 1
+               OpDecorate %20 DescriptorSet 0
+               OpDecorate %_runtimearr_24 ArrayStride 8
+               OpDecorate %_struct_26 Block
+               OpMemberDecorate %_struct_26 0 NonWritable
+               OpMemberDecorate %_struct_26 0 Offset 0
+               OpDecorate %_struct_27 Block
+               OpMemberDecorate %_struct_27 0 Offset 0
+               OpDecorate %30 NonWritable
+               OpDecorate %30 Binding 0
+               OpDecorate %30 DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+      %ulong = OpTypeInt 64 0
+%_runtimearr_ulong = OpTypeRuntimeArray %ulong
+ %_struct_18 = OpTypeStruct %_runtimearr_ulong
+%_ptr_StorageBuffer__struct_18 = OpTypePointer StorageBuffer %_struct_18
+         %20 = OpVariable %_ptr_StorageBuffer__struct_18 StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer__struct_27 PhysicalStorageBuffer
+%_runtimearr_24 = OpTypeRuntimeArray %_ptr_PhysicalStorageBuffer__struct_27
+ %_struct_26 = OpTypeStruct %_runtimearr_24
+ %_struct_27 = OpTypeStruct %uint
+%_ptr_PhysicalStorageBuffer__struct_27 = OpTypePointer PhysicalStorageBuffer %_struct_27
+%_ptr_StorageBuffer__struct_26 = OpTypePointer StorageBuffer %_struct_26
+         %30 = OpVariable %_ptr_StorageBuffer__struct_26 StorageBuffer
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_27 = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer__struct_27
+%_ptr_StorageBuffer_ulong = OpTypePointer StorageBuffer %ulong
+          %4 = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %_ptr_Input_uint %gl_GlobalInvocationID %uint_0
+         %15 = OpLoad %uint %14
+         %33 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer__struct_27 %30 %int_0 %15
+         %34 = OpLoad %_ptr_PhysicalStorageBuffer__struct_27 %33
+         %35 = OpConvertPtrToU %ulong %34
+         %37 = OpAccessChain %_ptr_StorageBuffer_ulong %20 %int_0 %15
+               OpStore %37 %35
+               OpReturn
+               OpFunctionEnd

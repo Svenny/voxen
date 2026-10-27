@@ -1,0 +1,78 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Google Shaderc over Glslang; 11
+; Bound: 60
+; Schema: 0
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %4 "main" %11 %27 %49
+               OpExecutionMode %4 LocalSize 64 1 1
+               OpDecorate %11 BuiltIn GlobalInvocationId
+               OpDecorate %22 ArrayStride 8
+               OpDecorate %23 Block
+               OpMemberDecorate %23 0 NonWritable
+               OpMemberDecorate %23 0 Offset 0
+               OpDecorate %24 Block
+               OpMemberDecorate %24 0 Offset 0
+               OpDecorate %27 NonWritable
+               OpDecorate %27 Binding 0
+               OpDecorate %27 DescriptorSet 0
+               OpDecorate %46 ArrayStride 8
+               OpDecorate %47 Block
+               OpMemberDecorate %47 0 Offset 0
+               OpDecorate %49 Binding 1
+               OpDecorate %49 DescriptorSet 0
+          %2 = OpTypeVoid
+          %3 = OpTypeFunction %2
+          %6 = OpTypeInt 32 0
+          %9 = OpTypeVector %6 3
+         %10 = OpTypePointer Input %9
+         %11 = OpVariable %10 Input
+         %12 = OpConstant %6 0
+         %13 = OpTypePointer Input %6
+         %16 = OpTypeBool
+         %19 = OpConstantFalse %16
+               OpTypeForwardPointer %21 PhysicalStorageBuffer
+         %22 = OpTypeRuntimeArray %21
+         %23 = OpTypeStruct %22
+         %24 = OpTypeStruct %6
+         %21 = OpTypePointer PhysicalStorageBuffer %24
+         %26 = OpTypePointer StorageBuffer %23
+         %27 = OpVariable %26 StorageBuffer
+         %29 = OpTypeInt 32 1
+         %37 = OpConstant %29 0
+         %39 = OpTypePointer StorageBuffer %21
+         %42 = OpConstantTrue %16
+         %46 = OpTypeRuntimeArray %21
+         %47 = OpTypeStruct %46
+         %48 = OpTypePointer StorageBuffer %47
+         %49 = OpVariable %48 StorageBuffer
+         %58 = OpUndef %21
+          %4 = OpFunction %2 None %3
+          %5 = OpLabel
+         %14 = OpAccessChain %13 %11 %12
+         %15 = OpLoad %6 %14
+         %28 = OpArrayLength %6 %27 0
+         %30 = OpBitcast %29 %28
+         %31 = OpBitcast %6 %30
+         %32 = OpULessThan %16 %15 %31
+               OpSelectionMerge %34 None
+               OpBranchConditional %32 %33 %34
+         %33 = OpLabel
+         %40 = OpAccessChain %39 %27 %37 %15
+         %41 = OpLoad %21 %40
+               OpBranch %34
+         %34 = OpLabel
+         %57 = OpPhi %21 %58 %5 %41 %33
+         %59 = OpSelect %16 %32 %42 %19
+               OpSelectionMerge %45 None
+               OpBranchConditional %59 %44 %45
+         %44 = OpLabel
+         %52 = OpAccessChain %39 %49 %37 %15
+               OpStore %52 %57
+               OpBranch %45
+         %45 = OpLabel
+               OpReturn
+               OpFunctionEnd
