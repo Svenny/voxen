@@ -12,23 +12,22 @@ namespace voxen::gfx::vk
 namespace
 {
 
-VkBool32 debugMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-	void * /*pUserData*/) noexcept
+VkBool32 debugMessageCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT types,
+	const VkDebugUtilsMessengerCallbackDataEXT *data, void * /*user_data*/) noexcept
 {
 	Log::Level level = Log::Level::Info;
 
-	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+	if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		level = Log::Level::Error;
-	} else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+	} else if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
 		level = Log::Level::Warn;
 	}
 
-	bool spec = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
-	bool perf = !!(messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
+	bool spec = !!(types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
+	bool perf = !!(types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT);
 
 	Log::log(level, std::source_location::current(), "Vulkan debug message ({}):\n{}",
-		spec && perf ? "spec+perf" : (spec ? "spec" : "perf"), pCallbackData->pMessage);
+		spec && perf ? "spec+perf" : (spec ? "spec" : "perf"), data->pMessage);
 
 	return VK_FALSE;
 }

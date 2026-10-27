@@ -19,7 +19,7 @@ public:
 	void handleEvent(const os::WindowEvent &event);
 
 	void init(const world::State &world_start_state);
-	void update(const world::State &lastState, double dt, svc::MessageSender &msend);
+	void update(const world::State &last_state, double dt, svc::MessageSender &msend);
 
 	GameView &view();
 

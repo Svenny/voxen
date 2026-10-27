@@ -240,27 +240,27 @@ void GameView::update(const world::Player &player, WorldTickId tick_id, double d
 
 		dx = -m_mouse_delta.x * m_mouse_sensitivity;
 		double tan_half_fovx = std::tan(m_fov_x * 0.5);
-		double yawAngle = atan(2 * dx * tan_half_fovx / m_window_size.x);
+		double yaw_angle = atan(2 * dx * tan_half_fovx / m_window_size.x);
 
 		dy = -m_mouse_delta.y * m_mouse_sensitivity;
 		double tan_half_fovy = std::tan(m_fov_y * 0.5);
-		double pitchAngle = atan(2 * dy * tan_half_fovy / m_window_size.y);
+		double pitch_angle = atan(2 * dy * tan_half_fovy / m_window_size.y);
 
 		m_mouse_delta = m::double2();
 
-		double rollAngle = 0;
+		double roll_angle = 0;
 		if (m_state[Direction::RollLeft]) {
-			rollAngle -= m_roll_speed * dt;
+			roll_angle -= m_roll_speed * dt;
 		}
 		if (m_state[Direction::RollRight]) {
-			rollAngle += m_roll_speed * dt;
+			roll_angle += m_roll_speed * dt;
 		}
 
 		// Rotations are about camera axes (looking along -Z), so they are applied
 		// before the current orientation. Positive angles follow the right-hand rule.
-		const m::dquat pitch = m::dquat::fromAxisAngle(m::double3(1, 0, 0), pitchAngle);
-		const m::dquat yaw = m::dquat::fromAxisAngle(m::double3(0, 1, 0), yawAngle);
-		const m::dquat roll = m::dquat::fromAxisAngle(m::double3(0, 0, -1), rollAngle);
+		const m::dquat pitch = m::dquat::fromAxisAngle(m::double3(1, 0, 0), pitch_angle);
+		const m::dquat yaw = m::dquat::fromAxisAngle(m::double3(0, 1, 0), yaw_angle);
+		const m::dquat roll = m::dquat::fromAxisAngle(m::double3(0, 0, -1), roll_angle);
 		const m::dquat rotation = m::mul(yaw, m::mul(pitch, roll));
 
 		m::double3 new_position = m_local_player.position();

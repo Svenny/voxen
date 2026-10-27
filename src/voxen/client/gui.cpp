@@ -55,9 +55,9 @@ void Gui::init(const world::State &world_start_state)
 	InputEventAdapter::init();
 }
 
-void Gui::update(const world::State &lastState, double dt, svc::MessageSender &msend)
+void Gui::update(const world::State &last_state, double dt, svc::MessageSender &msend)
 {
-	m_gameview.update(lastState.player(), lastState.tickId(), dt, msend);
+	m_gameview.update(last_state.player(), last_state.tickId(), dt, msend);
 }
 
 } // namespace voxen::client
