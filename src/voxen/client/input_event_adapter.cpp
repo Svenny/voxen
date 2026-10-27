@@ -137,19 +137,17 @@ const std::array<std::pair<Key, string>, 94> KEYCODE_2_STRING = {
 	// Press event: LCONTROL
 	// Release event: LCONTROL+CONTROL
 	// So, mods setted only on release, which broke logic for some actions
-	/*
-	make_pair(Key::CapsLock, "CAPS_LOCK"),
-	make_pair(Key::ScrollLock, "SCROLL_LOCK"),
-	make_pair(Key::NumLock, "NUM_LOCK"),
-	make_pair(Key::LeftShift, "LSHIFT"),
-	make_pair(Key::LeftControl, "LCONTROL"),
-	make_pair(Key::LeftAlt, "LALT"),
-	make_pair(Key::LeftSuper, "LSUPER"),
-	make_pair(Key::RightShift, "RSHIFT"),
-	make_pair(Key::RightControl, "RCONTROL"),
-	make_pair(Key::RightAlt, "RALT"),
-	make_pair(Key::RightSuper, "RSUPER"),
-	*/
+	// make_pair(Key::CapsLock, "CAPS_LOCK"),
+	// make_pair(Key::ScrollLock, "SCROLL_LOCK"),
+	// make_pair(Key::NumLock, "NUM_LOCK"),
+	// make_pair(Key::LeftShift, "LSHIFT"),
+	// make_pair(Key::LeftControl, "LCONTROL"),
+	// make_pair(Key::LeftAlt, "LALT"),
+	// make_pair(Key::LeftSuper, "LSUPER"),
+	// make_pair(Key::RightShift, "RSHIFT"),
+	// make_pair(Key::RightControl, "RCONTROL"),
+	// make_pair(Key::RightAlt, "RALT"),
+	// make_pair(Key::RightSuper, "RSUPER"),
 };
 // clang-format on
 

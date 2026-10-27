@@ -1,5 +1,3 @@
-/* Just like std::vector, but non-resizable, i.e its size is fixed at
- * creation time. Fills in the gap between std::vector and std::array. */
 #pragma once
 
 #include <extras/attributes.hpp>
@@ -16,6 +14,8 @@
 namespace extras
 {
 
+// Just like std::vector, but non-resizable, i.e its size is fixed at
+// creation time. Fills in the gap between std::vector and std::array.
 template<typename T, typename Allocator = std::allocator<T>>
 class dyn_array {
 public:

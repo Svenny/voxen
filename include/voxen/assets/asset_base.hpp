@@ -89,95 +89,91 @@ void loadAssetPart(AssetPartLoadRequest request, F &&completion_fn)
 }
 #endif
 
-/*
-
-class TextureAssetTraits {
-public:
-	using AssetType = TextureAsset;
-	using AssetHandleType = SharedPoolPtr<TextureAsset>;
-	using DecoderType = TextureAssetDecoder;
-
-	AssetHandleType createAsset();
-
-private:
-};
-
-class TextureAsset : public AssetBase {
-public:
-	using Traits = TextureAssetTraits;
-	using MipBytes = extras::dyn_array<std::byte>;
-
-	struct LoadMipRequest {
-		AssetService &service;
-		Priority priority;
-		int32_t mip;
-	};
-
-	template<typename F>
-	void loadMip(LoadMipRequest req, F &&completion_fn)
-	{
-		req.service.loadAssetPart({
-			.asset_file_ref = this->getFileRef(),
-			.byte_range = byteRangeForMip(req.mip),
-			.write_memory = nullptr,
-			.priority = req.priority,
-		}, [mip = req.mip, fn = std::forward<F>(completion_fn)](std::expected<std::span<std::byte>, std::error_code> maybe_memory)) {
-			fn(maybe_memory.map(decodeMipLevel));
-		};
-	}
-
-private:
-	int32_t m_width = 0;
-	int32_t m_height = 0;
-	int32_t m_depth_or_layers = 0;
-	int32_t m_mips = 0;
-
-	TextureType m_type;
-	PixelFormat m_pixel_format;
-	ColorSpace m_color_space;
-
-	std::pair<size_t, size_t> byteRangeForMip(int32_t mip) const noexcept;
-	std::expected<MipBytes, std::error_code> decodeMipLevel(int32_t mip);
-};
-
-void mycode()
-{
-	AssetService &asvc;
-	TaskService &tsvc;
-
-	asvc.registerAssetTraits<TextureAssetTraits>();
-
-	// Calculate where this texture should be stored
-	size_t my_texture_id;
-
-	// Main asset loading
-	asvc.loadWithCompletion<TextureAsset>({
-		.uid = ASSET_UID,
-		.priority = Priority::Normal,
-	}, [snd = this->m_sender, texid = my_texture_id](AssetLoadResult<TextureAsset> result) {
-		if (result.error()) {
-			snd->send<TextureLoadFailed>(MY_UID, texid, result.error());
-		} else {
-			snd->send<TextureLoadedMessage>(MY_UID, texid, result.takeHandle());
-		}
-	});
-
-	// Streaming is similar
-	AssetHandle<TextureAsset> my_texture;
-
-	my_texture->loadMip({
-		.service = asvc,
-		.priority = Priority::Normal,
-		.mip = 0,
-	}, [snd = this->m_sender, texid = my_texture_id](AssetPartLoadResult<TextureAsset::MipBytes> result) {
-		if (result.error()) {
-			snd->send<TextureMipStreamFailed>(MY_UID, texid, 0, result.error());
-		} else {
-			snd->send<TextureMipStreamMessage>(MY_UID, texid, 0, result.takeData());
-		}
-	});
-}
-
-*/
+// class TextureAssetTraits {
+// public:
+// 	using AssetType = TextureAsset;
+// 	using AssetHandleType = SharedPoolPtr<TextureAsset>;
+// 	using DecoderType = TextureAssetDecoder;
+//
+// 	AssetHandleType createAsset();
+//
+// private:
+// };
+//
+// class TextureAsset : public AssetBase {
+// public:
+// 	using Traits = TextureAssetTraits;
+// 	using MipBytes = extras::dyn_array<std::byte>;
+//
+// 	struct LoadMipRequest {
+// 		AssetService &service;
+// 		Priority priority;
+// 		int32_t mip;
+// 	};
+//
+// 	template<typename F>
+// 	void loadMip(LoadMipRequest req, F &&completion_fn)
+// 	{
+// 		req.service.loadAssetPart({
+// 			.asset_file_ref = this->getFileRef(),
+// 			.byte_range = byteRangeForMip(req.mip),
+// 			.write_memory = nullptr,
+// 			.priority = req.priority,
+// 		}, [mip = req.mip, fn = std::forward<F>(completion_fn)](std::expected<std::span<std::byte>, std::error_code> maybe_memory)) {
+// 			fn(maybe_memory.map(decodeMipLevel));
+// 		};
+// 	}
+//
+// private:
+// 	int32_t m_width = 0;
+// 	int32_t m_height = 0;
+// 	int32_t m_depth_or_layers = 0;
+// 	int32_t m_mips = 0;
+//
+// 	TextureType m_type;
+// 	PixelFormat m_pixel_format;
+// 	ColorSpace m_color_space;
+//
+// 	std::pair<size_t, size_t> byteRangeForMip(int32_t mip) const noexcept;
+// 	std::expected<MipBytes, std::error_code> decodeMipLevel(int32_t mip);
+// };
+//
+// void mycode()
+// {
+// 	AssetService &asvc;
+// 	TaskService &tsvc;
+//
+// 	asvc.registerAssetTraits<TextureAssetTraits>();
+//
+// 	// Calculate where this texture should be stored
+// 	size_t my_texture_id;
+//
+// 	// Main asset loading
+// 	asvc.loadWithCompletion<TextureAsset>({
+// 		.uid = ASSET_UID,
+// 		.priority = Priority::Normal,
+// 	}, [snd = this->m_sender, texid = my_texture_id](AssetLoadResult<TextureAsset> result) {
+// 		if (result.error()) {
+// 			snd->send<TextureLoadFailed>(MY_UID, texid, result.error());
+// 		} else {
+// 			snd->send<TextureLoadedMessage>(MY_UID, texid, result.takeHandle());
+// 		}
+// 	});
+//
+// 	// Streaming is similar
+// 	AssetHandle<TextureAsset> my_texture;
+//
+// 	my_texture->loadMip({
+// 		.service = asvc,
+// 		.priority = Priority::Normal,
+// 		.mip = 0,
+// 	}, [snd = this->m_sender, texid = my_texture_id](AssetPartLoadResult<TextureAsset::MipBytes> result) {
+// 		if (result.error()) {
+// 			snd->send<TextureMipStreamFailed>(MY_UID, texid, 0, result.error());
+// 		} else {
+// 			snd->send<TextureMipStreamMessage>(MY_UID, texid, 0, result.takeData());
+// 		}
+// 	});
+// }
 
 } // namespace voxen::assets

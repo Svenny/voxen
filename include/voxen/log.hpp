@@ -13,29 +13,29 @@ namespace voxen::Log
 
 // Log levels are defined by increasing severity - it's valid to compare them as integers
 enum class Level : int {
-	/* Information about implementation details of some specific action (e.g. values of variables on each
-	 * iteration of a loop in some algorithm). There should generally be no logging of this level in the
-	 * production code as it may clutter the log and cause significant performance overhead, while its
-	 * scope of applicability is too narrow (usually only useful during one debugging session). */
+	// Information about implementation details of some specific action (e.g. values of variables on each
+	// iteration of a loop in some algorithm). There should generally be no logging of this level in the
+	// production code as it may clutter the log and cause significant performance overhead, while its
+	// scope of applicability is too narrow (usually only useful during one debugging session).
 	Trace,
-	/* A general information about the low-level program workflow (e.g when entering/exiting a
-	 * specific function). Entries of this type may be used in places where expectations of a failure
-	 * are relatively higher (e.g in operations involving file or network I/O). */
+	// A general information about the low-level program workflow (e.g when entering/exiting a
+	// specific function). Entries of this type may be used in places where expectations of a failure
+	// are relatively higher (e.g in operations involving file or network I/O).
 	Debug,
-	/* A general information about the high-level program workflow (e.g. when transitioning between high-level
-	 * states or when entering/exiting some large or long-running functions). Entries of this type should give a
-	 * general understanding of what happens in the program. */
+	// A general information about the high-level program workflow (e.g. when transitioning between high-level
+	// states or when entering/exiting some large or long-running functions). Entries of this type should give a
+	// general understanding of what happens in the program.
 	Info,
-	/* An error happened, but the current action can still be completed, though with some negative impact
-	 * (e.g. extra performance overhead or partially missing data). */
+	// An error happened, but the current action can still be completed, though with some negative impact
+	// (e.g. extra performance overhead or partially missing data).
 	Warn,
-	/* An error happened which makes completing the current action impossible (e.g. file not found
-	 * during texture loading) but does not require immediate program termination. */
+	// An error happened which makes completing the current action impossible (e.g. file not found
+	// during texture loading) but does not require immediate program termination.
 	Error,
-	/* An error happened which makes further program execution impossible (e.g. segfault). In most
-	 * cases this implies (more probably) a bug in the code or (less probably) some external
-	 * environment malfunction, such as going out of memory, losing access to critical files,
-	 * driver or hardware failure etc. */
+	// An error happened which makes further program execution impossible (e.g. segfault). In most
+	// cases this implies (more probably) a bug in the code or (less probably) some external
+	// environment malfunction, such as going out of memory, losing access to critical files,
+	// driver or hardware failure etc.
 	Fatal,
 
 	Off // Not actually a logging level, use it with `setLevel` to disable logging completely
