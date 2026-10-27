@@ -16,7 +16,7 @@ struct FrameTickSource::TimelinePack {
 	FrameTickId tick_id;
 	uint64_t timelines[vk::Device::QueueCount];
 
-	bool allComplete(const TimelinePack& completed_pack) const noexcept
+	bool allComplete(const TimelinePack &completed_pack) const noexcept
 	{
 		for (size_t i = 0; i < std::size(timelines); i++) {
 			if (timelines[i] > completed_pack.timelines[i]) {
@@ -31,7 +31,7 @@ struct FrameTickSource::TimelinePack {
 FrameTickSource::FrameTickSource() = default;
 FrameTickSource::~FrameTickSource() = default;
 
-std::pair<FrameTickId, FrameTickId> FrameTickSource::startNextTick(GfxSystem& gfx)
+std::pair<FrameTickId, FrameTickId> FrameTickSource::startNextTick(GfxSystem &gfx)
 {
 	using Queue = vk::Device::Queue;
 
@@ -42,7 +42,7 @@ std::pair<FrameTickId, FrameTickId> FrameTickSource::startNextTick(GfxSystem& gf
 	// And completed timelines here
 	TimelinePack completed_pack;
 
-	vk::Device* dev = gfx.device();
+	vk::Device *dev = gfx.device();
 	for (uint32_t q = 0; q < std::to_underlying(Queue::QueueCount); q++) {
 		current_tick_pack.timelines[q] = dev->getLastSubmittedTimeline(Queue(q));
 		completed_pack.timelines[q] = dev->getCompletedTimeline(Queue(q));
@@ -68,7 +68,7 @@ std::pair<FrameTickId, FrameTickId> FrameTickSource::startNextTick(GfxSystem& gf
 	return { m_completed_tick_id, m_current_tick_id };
 }
 
-void FrameTickSource::waitTickCompletion(GfxSystem& gfx, FrameTickId tick_id)
+void FrameTickSource::waitTickCompletion(GfxSystem &gfx, FrameTickId tick_id)
 {
 	if (tick_id <= m_completed_tick_id) {
 		// Already completed

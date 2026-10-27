@@ -57,11 +57,11 @@ public:
 	// Service constructor, call only from the factory function.
 	// If another service instance is currently active,
 	// throws `Exception` with `VoxenErrc::AlreadyRegistered`.
-	explicit PipeMemoryAllocator(ServiceLocator& svc, Config cfg);
-	PipeMemoryAllocator(PipeMemoryAllocator&&) = delete;
-	PipeMemoryAllocator(const PipeMemoryAllocator&) = delete;
-	PipeMemoryAllocator& operator=(PipeMemoryAllocator&&) = delete;
-	PipeMemoryAllocator& operator=(const PipeMemoryAllocator&) = delete;
+	explicit PipeMemoryAllocator(ServiceLocator &svc, Config cfg);
+	PipeMemoryAllocator(PipeMemoryAllocator &&) = delete;
+	PipeMemoryAllocator(const PipeMemoryAllocator &) = delete;
+	PipeMemoryAllocator &operator=(PipeMemoryAllocator &&) = delete;
+	PipeMemoryAllocator &operator=(const PipeMemoryAllocator &) = delete;
 	~PipeMemoryAllocator() noexcept override;
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
@@ -72,7 +72,7 @@ public:
 	// This call is fast, the short path is a thread-local access and a bunch of arithmetic.
 	//
 	// NOTE: you must not call it while the service is not active.
-	[[gnu::malloc, gnu::alloc_size(1), gnu::alloc_align(2), nodiscard]] static void* allocate(size_t size,
+	[[gnu::malloc, gnu::alloc_size(1), gnu::alloc_align(2), nodiscard]] static void *allocate(size_t size,
 		size_t align = alignof(std::max_align_t));
 
 	// Free pointer returned by previous call to `allocate()` (can be null).
@@ -82,15 +82,15 @@ public:
 	// reclaimed later, once no "live" allocations remain in the whole block.
 	//
 	// NOTE: every allocation must be deallocated *before* the service is stopped.
-	static void deallocate(void* ptr) noexcept;
+	static void deallocate(void *ptr) noexcept;
 
 	// Allocate and construct an object, semantic equivalent of `new T(args...)`.
 	// If the object constructor throws, memory is automatically deallocated.
 	// Otherwise, the caller owns the returned pointer and must destory/deallocate it.
 	template<typename T, typename... Args>
-	[[nodiscard]] static T* make(Args&&... args)
+	[[nodiscard]] static T *make(Args &&...args)
 	{
-		void* storage = allocate(sizeof(T), alignof(T));
+		void *storage = allocate(sizeof(T), alignof(T));
 
 		// Don't codegen unnecessary try/catch sections if the object is nothrow constructible
 		if constexpr (std::is_nothrow_constructible_v<T, Args...>) {
@@ -114,25 +114,25 @@ struct TPipeMemoryAllocator {
 	using value_type = T;
 
 	TPipeMemoryAllocator() = default;
-	TPipeMemoryAllocator(TPipeMemoryAllocator&&) = default;
-	TPipeMemoryAllocator(const TPipeMemoryAllocator&) = default;
-	TPipeMemoryAllocator& operator=(TPipeMemoryAllocator&&) = default;
-	TPipeMemoryAllocator& operator=(const TPipeMemoryAllocator&) = default;
+	TPipeMemoryAllocator(TPipeMemoryAllocator &&) = default;
+	TPipeMemoryAllocator(const TPipeMemoryAllocator &) = default;
+	TPipeMemoryAllocator &operator=(TPipeMemoryAllocator &&) = default;
+	TPipeMemoryAllocator &operator=(const TPipeMemoryAllocator &) = default;
 	~TPipeMemoryAllocator() = default;
 
 	template<typename U>
-	TPipeMemoryAllocator(const TPipeMemoryAllocator<U>&) noexcept
+	TPipeMemoryAllocator(const TPipeMemoryAllocator<U> &) noexcept
 	{}
 
-	bool operator==(const TPipeMemoryAllocator&) const = default;
+	bool operator==(const TPipeMemoryAllocator &) const = default;
 
-	T* allocate(size_t n)
+	T *allocate(size_t n)
 	{
-		void* ptr = PipeMemoryAllocator::allocate(sizeof(T) * n, alignof(T));
-		return reinterpret_cast<T*>(ptr);
+		void *ptr = PipeMemoryAllocator::allocate(sizeof(T) * n, alignof(T));
+		return reinterpret_cast<T *>(ptr);
 	}
 
-	void deallocate(T* ptr, size_t /*n*/) noexcept { return PipeMemoryAllocator::deallocate(ptr); }
+	void deallocate(T *ptr, size_t /*n*/) noexcept { return PipeMemoryAllocator::deallocate(ptr); }
 
 	static size_t max_size() noexcept { return PipeMemoryAllocator::MAX_ALLOC_SIZE / sizeof(T); }
 };

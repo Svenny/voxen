@@ -45,11 +45,11 @@ public:
 	// Window and service locator must remain valid during the whole object lifetime.
 	//
 	// TODO: support headless mode (creating without a window).
-	explicit GfxSystem(svc::ServiceLocator& svc, os::Window& main_window);
-	GfxSystem(GfxSystem&&) = delete;
-	GfxSystem(const GfxSystem&) = delete;
-	GfxSystem& operator=(GfxSystem&&) = delete;
-	GfxSystem& operator=(const GfxSystem&) = delete;
+	explicit GfxSystem(svc::ServiceLocator &svc, os::Window &main_window);
+	GfxSystem(GfxSystem &&) = delete;
+	GfxSystem(const GfxSystem &) = delete;
+	GfxSystem &operator=(GfxSystem &&) = delete;
+	GfxSystem &operator=(const GfxSystem &) = delete;
 	~GfxSystem();
 
 	// Acquire the latest observable state from the engine,
@@ -60,37 +60,37 @@ public:
 	// If it throws an exception, most likely this means a device loss or out of memory.
 	// In either case the system becomes unusable and must be either restarted or terminated.
 	// Further calls to `drawFrame()` will almost certainly throw too.
-	void drawFrame(const world::State& state, const client::GameView& view, ui::UiSystem& ui);
+	void drawFrame(const world::State &state, const client::GameView &view, ui::UiSystem &ui);
 
 	// Wait (block) until the given frame tick ID completes GPU execution.
 	// When this function returns, any resource associated with `tick_id`
 	// or earlier can be freely released or recycled without CPU-GPU race.
 	void waitFrameCompletion(FrameTickId tick_id);
 
-	vk::Instance* instance() noexcept { return m_vk_instance.get(); }
-	vk::Device* device() noexcept { return m_vk_device.get(); }
-	vk::PipelineCache* pipelineCache() noexcept { return m_vk_pipeline_cache.get(); }
+	vk::Instance *instance() noexcept { return m_vk_instance.get(); }
+	vk::Device *device() noexcept { return m_vk_device.get(); }
+	vk::PipelineCache *pipelineCache() noexcept { return m_vk_pipeline_cache.get(); }
 
 	// TODO: legacy parts, remove them
-	vk::DescriptorSetLayoutCollection* descriptorSetLayoutCollection() noexcept
+	vk::DescriptorSetLayoutCollection *descriptorSetLayoutCollection() noexcept
 	{
 		return m_vk_descriptor_set_layout_collection.get();
 	}
-	vk::PipelineLayoutCollection* pipelineLayoutCollection() noexcept { return m_vk_pipeline_layout_collection.get(); }
-	vk::PipelineCollection* pipelineCollection() noexcept { return m_vk_pipeline_collection.get(); }
+	vk::PipelineLayoutCollection *pipelineLayoutCollection() noexcept { return m_vk_pipeline_layout_collection.get(); }
+	vk::PipelineCollection *pipelineCollection() noexcept { return m_vk_pipeline_collection.get(); }
 
-	vk::CommandAllocator* commandAllocator() noexcept { return m_vk_command_allocator.get(); }
-	vk::TransientBufferAllocator* transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
-	vk::DmaSystem* dmaSystem() noexcept { return m_vk_dma_system.get(); }
+	vk::CommandAllocator *commandAllocator() noexcept { return m_vk_command_allocator.get(); }
+	vk::TransientBufferAllocator *transientBufferAllocator() noexcept { return m_vk_transient_buffer_allocator.get(); }
+	vk::DmaSystem *dmaSystem() noexcept { return m_vk_dma_system.get(); }
 
-	vk::MeshStreamer* meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
-	LandLoader* landLoader() noexcept { return m_land_loader.get(); }
-	FontRenderer* fontRenderer() noexcept { return m_font_renderer.get(); }
+	vk::MeshStreamer *meshStreamer() noexcept { return m_vk_mesh_streamer.get(); }
+	LandLoader *landLoader() noexcept { return m_land_loader.get(); }
+	FontRenderer *fontRenderer() noexcept { return m_font_renderer.get(); }
 
-	vk::RenderGraphRunner* renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
-	vk::LegacyRenderGraph* renderGraph() noexcept { return m_render_graph.get(); }
+	vk::RenderGraphRunner *renderGraphRunner() noexcept { return m_vk_render_graph_runner.get(); }
+	vk::LegacyRenderGraph *renderGraph() noexcept { return m_render_graph.get(); }
 
-	const FrameTickSource* frameTickSource() const noexcept { return m_frame_tick_source.get(); }
+	const FrameTickSource *frameTickSource() const noexcept { return m_frame_tick_source.get(); }
 
 private:
 	struct ComponentStorage;
@@ -99,7 +99,7 @@ private:
 	// so there is no deallocation, only the destructor call.
 	struct ComponentDeleter {
 		template<typename T>
-		void operator()(T* ptr) noexcept
+		void operator()(T *ptr) noexcept
 		{
 			ptr->~T();
 		}

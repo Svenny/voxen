@@ -19,12 +19,12 @@
 namespace voxen::client
 {
 
-GameView::GameView(os::Window& window) : m_window(window)
+GameView::GameView(os::Window &window) : m_window(window)
 {
 	m_fov_y = m::radians(70.0);
 	setWindowSize(window.framebufferSize());
 
-	svc::Config* main_config = svc::Config::mainConfig();
+	svc::Config *main_config = svc::Config::mainConfig();
 	m_mouse_sensitivity = main_config->getDouble("controller", "mouse_sensitivity");
 	m_forward_speed = main_config->getDouble("controller", "forward_speed");
 	m_strafe_speed = main_config->getDouble("controller", "strafe_speed");
@@ -35,7 +35,7 @@ GameView::GameView(os::Window& window) : m_window(window)
 	resetKeyState();
 }
 
-void GameView::init(const world::Player& player) noexcept
+void GameView::init(const world::Player &player) noexcept
 {
 	m_local_player = player;
 	m_chunk_loading_position = player.position();
@@ -105,7 +105,7 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 			m_is_chunk_loading_point_locked = !m_is_chunk_loading_point_locked;
 			m_chunk_loading_position = m_local_player.position();
 
-			const m::double3& pos = m_chunk_loading_position;
+			const m::double3 &pos = m_chunk_loading_position;
 			if (m_is_chunk_loading_point_locked) {
 				Log::info("Chunk loading point locked at ({:.1f}, {:.1f}, {:.1f})", pos.x, pos.y, pos.z);
 			} else {
@@ -183,7 +183,7 @@ void GameView::resetKeyState() noexcept
 	}
 }
 
-void GameView::update(const world::Player& player, WorldTickId tick_id, double dt, svc::MessageSender& msend) noexcept
+void GameView::update(const world::Player &player, WorldTickId tick_id, double dt, svc::MessageSender &msend) noexcept
 {
 	if (m_is_pause) {
 		if (!m_is_used_orientation_cursor) {

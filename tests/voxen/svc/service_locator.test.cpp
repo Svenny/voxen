@@ -26,7 +26,7 @@ class DepService : public IService {
 public:
 	constexpr static UID SERVICE_UID = U;
 
-	DepService(ServiceLocator& svc) noexcept : m_svc(svc) {}
+	DepService(ServiceLocator &svc) noexcept : m_svc(svc) {}
 
 	~DepService() override
 	{
@@ -45,16 +45,16 @@ public:
 
 	UID serviceUid() const noexcept override { return SERVICE_UID; }
 
-	static std::unique_ptr<DepService> factory(ServiceLocator& svc)
+	static std::unique_ptr<DepService> factory(ServiceLocator &svc)
 	{
 		requestDeps(svc);
 		return std::make_unique<DepService>(svc);
 	}
 
 protected:
-	ServiceLocator& m_svc;
+	ServiceLocator &m_svc;
 
-	static void requestDeps(ServiceLocator& svc)
+	static void requestDeps(ServiceLocator &svc)
 	{
 		if constexpr (sizeof...(Deps) > 0) {
 			constexpr UID uids[] = { Deps::SERVICE_UID... };
@@ -70,7 +70,7 @@ protected:
 template<UID U, CService... Deps>
 class BadService : public DepService<U, Deps...> {
 public:
-	static std::unique_ptr<BadService> factory(ServiceLocator& svc)
+	static std::unique_ptr<BadService> factory(ServiceLocator &svc)
 	{
 		DepService<U, Deps...>::requestDeps(svc);
 		throw std::runtime_error("oops");
@@ -81,16 +81,16 @@ public:
 template<UID U, CService... Deps>
 class RecursiveService : public DepService<U, Deps...> {
 public:
-	RecursiveService(ServiceLocator& svc) noexcept : DepService<U, Deps...>(svc) {}
+	RecursiveService(ServiceLocator &svc) noexcept : DepService<U, Deps...>(svc) {}
 
 	template<CService S>
-	static void registerDependency(ServiceLocator& svc)
+	static void registerDependency(ServiceLocator &svc)
 	{
 		CHECK_NOTHROW(svc.registerServiceFactory<S>(S::factory));
 		CHECK_NOTHROW(svc.requestService<S>());
 	}
 
-	static std::unique_ptr<RecursiveService> factory(ServiceLocator& svc)
+	static std::unique_ptr<RecursiveService> factory(ServiceLocator &svc)
 	{
 		(..., registerDependency<Deps>(svc));
 		return std::make_unique<RecursiveService>(svc);
@@ -101,11 +101,11 @@ public:
 template<UID U, CService... Deps>
 class ThreadedService : public DepService<U, Deps...> {
 public:
-	ThreadedService(ServiceLocator& svc) noexcept : DepService<U, Deps...>(svc) {}
+	ThreadedService(ServiceLocator &svc) noexcept : DepService<U, Deps...>(svc) {}
 
-	static void threadFunc(ServiceLocator& svc) { DepService<U, Deps...>::requestDeps(svc); }
+	static void threadFunc(ServiceLocator &svc) { DepService<U, Deps...>::requestDeps(svc); }
 
-	static std::unique_ptr<ThreadedService> factory(ServiceLocator& svc)
+	static std::unique_ptr<ThreadedService> factory(ServiceLocator &svc)
 	{
 		std::thread t(threadFunc, std::ref(svc));
 		t.join();

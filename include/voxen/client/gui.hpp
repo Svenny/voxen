@@ -12,16 +12,16 @@ namespace voxen::client
 
 class VOXEN_API Gui {
 public:
-	explicit Gui(os::Window& window);
+	explicit Gui(os::Window &window);
 	~Gui() noexcept;
 
 	// Feed an input event received from the window
-	void handleEvent(const os::WindowEvent& event);
+	void handleEvent(const os::WindowEvent &event);
 
-	void init(const world::State& world_start_state);
-	void update(const world::State& lastState, double dt, svc::MessageSender& msend);
+	void init(const world::State &world_start_state);
+	void update(const world::State &lastState, double dt, svc::MessageSender &msend);
 
-	GameView& view();
+	GameView &view();
 
 private:
 	GameView m_gameview;

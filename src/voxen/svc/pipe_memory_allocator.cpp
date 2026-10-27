@@ -37,13 +37,13 @@ constexpr size_t STORAGE_SIZE = SLAB_SIZE - sizeof(PipeMemorySlabControl);
 
 struct PipeMemorySlab {
 	PipeMemorySlab() = default;
-	PipeMemorySlab(PipeMemorySlab&&) = delete;
-	PipeMemorySlab(const PipeMemorySlab&) = delete;
-	PipeMemorySlab& operator=(PipeMemorySlab&&) = delete;
-	PipeMemorySlab& operator=(const PipeMemorySlab&) = delete;
+	PipeMemorySlab(PipeMemorySlab &&) = delete;
+	PipeMemorySlab(const PipeMemorySlab &) = delete;
+	PipeMemorySlab &operator=(PipeMemorySlab &&) = delete;
+	PipeMemorySlab &operator=(const PipeMemorySlab &) = delete;
 	~PipeMemorySlab() = default;
 
-	void* tryAllocate(size_t size, size_t align) noexcept
+	void *tryAllocate(size_t size, size_t align) noexcept
 	{
 		// Points past the last storage byte
 		const uintptr_t end = reinterpret_cast<uintptr_t>(this + 1);
@@ -61,7 +61,7 @@ struct PipeMemorySlab {
 			// Relaxed - counter ordering is not needed until we move this slab
 			// to the garbage list; but then we won't reach this line anymore.
 			ctl.live_allocations.fetch_add(1, std::memory_order_relaxed);
-			return reinterpret_cast<void*>(ptr);
+			return reinterpret_cast<void *>(ptr);
 		}
 
 		// `ptr < bottom` - out of bounds, not enough space
@@ -81,14 +81,14 @@ struct PipeMemorySlab {
 
 static_assert(sizeof(PipeMemorySlab) == SLAB_SIZE, "Check SLAB_SIZE/STORAGE_SIZE correctness");
 
-PipeMemorySlab* newSlab()
+PipeMemorySlab *newSlab()
 {
 	// TODO: map memory with hugepages
-	void* ptr = operator new(SLAB_SIZE, std::align_val_t(SLAB_SIZE));
+	void *ptr = operator new(SLAB_SIZE, std::align_val_t(SLAB_SIZE));
 	return new (ptr) PipeMemorySlab;
 }
 
-void deleteSlab(PipeMemorySlab* slab) noexcept
+void deleteSlab(PipeMemorySlab *slab) noexcept
 {
 	// Ensure no live allocations remain
 	uint32_t live_allocs = slab->ctl.live_allocations.load(std::memory_order_acquire);
@@ -114,29 +114,29 @@ PipeMemoryAllocator::Config g_service_config;
 class SlabCollection {
 public:
 	SlabCollection() = default;
-	SlabCollection(SlabCollection&&) = delete;
-	SlabCollection(const SlabCollection&) = delete;
-	SlabCollection& operator=(SlabCollection&&) = delete;
-	SlabCollection& operator=(const SlabCollection&) = delete;
+	SlabCollection(SlabCollection &&) = delete;
+	SlabCollection(const SlabCollection &) = delete;
+	SlabCollection &operator=(SlabCollection &&) = delete;
+	SlabCollection &operator=(const SlabCollection &) = delete;
 
 	~SlabCollection() noexcept
 	{
-		for (PipeMemorySlab* slab : m_gc_slabs) {
+		for (PipeMemorySlab *slab : m_gc_slabs) {
 			deleteSlab(slab);
 		}
 
-		for (PipeMemorySlab* slab : m_free_slabs) {
+		for (PipeMemorySlab *slab : m_free_slabs) {
 			deleteSlab(slab);
 		}
 	}
 
-	void putGarbageSlab(PipeMemorySlab* slab) noexcept
+	void putGarbageSlab(PipeMemorySlab *slab) noexcept
 	{
 		std::lock_guard lk(m_lock);
 		m_gc_slabs.emplace_back(slab);
 	}
 
-	PipeMemorySlab* replaceSlab(PipeMemorySlab* slab)
+	PipeMemorySlab *replaceSlab(PipeMemorySlab *slab)
 	{
 		// Scoped lock - `newSlab()` is slow and needs no locking
 		{
@@ -161,7 +161,7 @@ public:
 
 	void reclaimFreedSlabs() noexcept
 	{
-		PipeMemorySlab* slab_to_delete = nullptr;
+		PipeMemorySlab *slab_to_delete = nullptr;
 
 		// Scoped lock - `deleteSlab()` is slow and needs no locking
 		{
@@ -178,7 +178,7 @@ public:
 			}
 
 			for (size_t i = 0; i < m_gc_slabs.size(); /*nothing*/) {
-				PipeMemorySlab* slab = m_gc_slabs[i];
+				PipeMemorySlab *slab = m_gc_slabs[i];
 
 				// Relaxed ordering - we simply need to observe zero at some point.
 				// There is no chance of it increasing until we reset the slab.
@@ -204,8 +204,8 @@ public:
 
 private:
 	os::FutexLock m_lock;
-	std::vector<PipeMemorySlab*> m_gc_slabs;
-	std::vector<PipeMemorySlab*> m_free_slabs;
+	std::vector<PipeMemorySlab *> m_gc_slabs;
+	std::vector<PipeMemorySlab *> m_free_slabs;
 };
 
 // Global collection of garbage and free slabs.
@@ -240,7 +240,7 @@ void gcThreadProc()
 }
 
 struct ThreadSlabDeleter {
-	void operator()(PipeMemorySlab* slab) noexcept
+	void operator()(PipeMemorySlab *slab) noexcept
 	{
 		// This deleter should only get called at thread exit, as otherwise
 		// we disown it manually (see `PipeMemoryAllocator::allocate()`).
@@ -266,7 +266,7 @@ thread_local std::unique_ptr<PipeMemorySlab, ThreadSlabDeleter> t_this_thread_sl
 
 } // anonymous namespace
 
-PipeMemoryAllocator::PipeMemoryAllocator(ServiceLocator& /*svc*/, Config cfg)
+PipeMemoryAllocator::PipeMemoryAllocator(ServiceLocator & /*svc*/, Config cfg)
 {
 	if (g_slab_gc_run_flag.load(std::memory_order_acquire)) {
 		Log::error("PipeMemoryAllocator service is already started!");
@@ -287,17 +287,17 @@ PipeMemoryAllocator::~PipeMemoryAllocator() noexcept
 	g_slab_gc_thread.join();
 }
 
-void* PipeMemoryAllocator::allocate(size_t size, size_t align)
+void *PipeMemoryAllocator::allocate(size_t size, size_t align)
 {
 	if (size > MAX_ALLOC_SIZE || align > MAX_ALIGNMENT) [[unlikely]] {
 		// TODO: throw voxen-specific exception (with stacktrace and all)
 		throw std::bad_alloc();
 	}
 
-	PipeMemorySlab* thread_slab = t_this_thread_slab.get();
+	PipeMemorySlab *thread_slab = t_this_thread_slab.get();
 
 	if (thread_slab) [[likely]] {
-		void* ptr = thread_slab->tryAllocate(size, align);
+		void *ptr = thread_slab->tryAllocate(size, align);
 		if (ptr) [[likely]] {
 			return ptr;
 		}
@@ -313,12 +313,12 @@ void* PipeMemoryAllocator::allocate(size_t size, size_t align)
 	t_this_thread_slab.reset(thread_slab);
 
 	// Now this must succeed
-	void* ptr = thread_slab->tryAllocate(size, align);
+	void *ptr = thread_slab->tryAllocate(size, align);
 	assert(ptr);
 	return ptr;
 }
 
-void PipeMemoryAllocator::deallocate(void* ptr) noexcept
+void PipeMemoryAllocator::deallocate(void *ptr) noexcept
 {
 	if (!ptr) [[unlikely]] {
 		return;
@@ -326,7 +326,7 @@ void PipeMemoryAllocator::deallocate(void* ptr) noexcept
 
 	// Simply mask off lower bits to get slab base address
 	uintptr_t slab_ptr = uintptr_t(ptr) & ~(SLAB_SIZE - 1u);
-	std::launder(reinterpret_cast<PipeMemorySlab*>(slab_ptr))
+	std::launder(reinterpret_cast<PipeMemorySlab *>(slab_ptr))
 		->ctl.live_allocations.fetch_sub(1, std::memory_order_release);
 }
 
