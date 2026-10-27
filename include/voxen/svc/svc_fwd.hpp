@@ -28,7 +28,11 @@ class CoroSubTaskStateBase;
 template<typename>
 class CoroSubTaskState;
 class CoroTaskState;
+struct MessageQueueImpl;
 class PrivateTaskHandle;
+struct RuntimeConfigImpl;
+struct ServiceLocatorImpl;
+struct TaskBuilderImpl;
 struct TaskHeader;
 class TaskQueueSet;
 class TaskServiceImpl;

@@ -18,7 +18,7 @@ namespace voxen::svc
 
 static_assert(alignof(detail::TaskHeader) >= alignof(uint64_t), "TaskHeader has insufficient alignment");
 
-struct TaskBuilder::Impl {
+struct detail::TaskBuilderImpl {
 	TaskService &service;
 
 	std::vector<uint64_t> wait_counters;
@@ -152,13 +152,13 @@ void TaskBuilder::createTaskHandle(CoroTask handle)
 
 void TaskBuilder::doEnqueueTask()
 {
-	Impl &impl = m_impl.object();
+	detail::TaskBuilderImpl &impl = m_impl.object();
 	impl.last_task_counter = impl.service.enqueueTask(std::move(impl.last_task_handle));
 }
 
 TaskHandle TaskBuilder::doEnqueueTaskWithHandle()
 {
-	Impl &impl = m_impl.object();
+	detail::TaskBuilderImpl &impl = m_impl.object();
 	impl.last_task_counter = impl.service.enqueueTask(impl.last_task_handle);
 	return std::move(impl.last_task_handle);
 }

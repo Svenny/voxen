@@ -17,12 +17,12 @@ using detail::InboundQueue;
 using detail::MessageHeader;
 using detail::MessageRouter;
 
-struct MessageQueue::Impl {
-	Impl() = default;
-	Impl(Impl &&other) noexcept { *this = std::move(other); }
-	Impl(const Impl &) = delete;
+struct detail::MessageQueueImpl {
+	MessageQueueImpl() = default;
+	MessageQueueImpl(MessageQueueImpl &&other) noexcept { *this = std::move(other); }
+	MessageQueueImpl(const MessageQueueImpl &) = delete;
 
-	Impl &operator=(Impl &&other) noexcept
+	MessageQueueImpl &operator=(MessageQueueImpl &&other) noexcept
 	{
 		std::swap(inbound_queue, other.inbound_queue);
 		std::swap(handlers, other.handlers);
@@ -30,16 +30,16 @@ struct MessageQueue::Impl {
 		return *this;
 	}
 
-	Impl &operator=(const Impl &) = delete;
-	~Impl() = default;
+	MessageQueueImpl &operator=(const MessageQueueImpl &) = delete;
+	~MessageQueueImpl() = default;
 
 	InboundQueue *inbound_queue = nullptr;
 	// Sorted array of message UID => handler functions.
 	// Slow insertions but quite fast and cache-efficient lookups.
 	// TODO: use something with even faster/simpler lookups? Semi-perfect hashing?
-	std::vector<HandlerItem> handlers;
+	std::vector<MessageQueue::HandlerItem> handlers;
 	// Same for completion handlers
-	std::vector<CompletionHandlerItem> completion_handlers;
+	std::vector<MessageQueue::CompletionHandlerItem> completion_handlers;
 };
 
 MessageQueue::MessageQueue() noexcept = default;
@@ -69,7 +69,7 @@ MessageQueue::~MessageQueue() noexcept
 
 void MessageQueue::pollMessages()
 {
-	Impl &impl = m_impl.object();
+	detail::MessageQueueImpl &impl = m_impl.object();
 
 	while (true) {
 		// Pop messages in small batches to take locks less often.
@@ -137,7 +137,7 @@ void MessageQueue::pollMessages()
 
 void MessageQueue::waitMessages(uint32_t timeout_msec)
 {
-	Impl &impl = m_impl.object();
+	detail::MessageQueueImpl &impl = m_impl.object();
 	impl.inbound_queue->wait(timeout_msec);
 	pollMessages();
 }

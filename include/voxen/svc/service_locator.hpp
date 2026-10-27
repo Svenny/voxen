@@ -1,6 +1,7 @@
 #pragma once
 
 #include <voxen/svc/service_base.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
 
@@ -127,8 +128,7 @@ public:
 	}
 
 private:
-	struct Impl;
-	extras::pimpl<Impl, 288, 8> m_impl;
+	extras::pimpl<detail::ServiceLocatorImpl, 288, 8> m_impl;
 
 	void registerServiceFactory(UID id, ServiceFactoryFunction factory);
 };

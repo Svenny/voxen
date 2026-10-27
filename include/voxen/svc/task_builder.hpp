@@ -86,8 +86,7 @@ public:
 	uint64_t getLastTaskCounter() const noexcept;
 
 private:
-	struct Impl;
-	extras::pimpl<Impl, 64, 8> m_impl;
+	extras::pimpl<detail::TaskBuilderImpl, 64, 8> m_impl;
 
 	detail::TaskHeader *createTaskHandle();
 	void createTaskHandle(PipeMemoryFunction<void(TaskContext &)> fn);

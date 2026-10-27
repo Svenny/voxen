@@ -36,9 +36,9 @@ struct WindowLibraryRaii {
 
 } // namespace
 
-struct MainThreadService::Impl {
+struct detail::MainThreadServiceImpl {
 	svc::ServiceLocator &svc;
-	Config cfg;
+	MainThreadService::Config cfg;
 
 	bool log_fps = false;
 

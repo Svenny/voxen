@@ -5,7 +5,7 @@
 namespace voxen::svc
 {
 
-struct RuntimeConfig::Impl {
+struct detail::RuntimeConfigImpl {
 	gfx::GfxOptions gfx_options;
 };
 
@@ -31,7 +31,7 @@ void RuntimeConfig::addOptions(tk::cli::Parser &parser)
 
 void RuntimeConfig::fill(const tk::cli::Args &args)
 {
-	Impl &me = m_impl.object();
+	detail::RuntimeConfigImpl &me = m_impl.object();
 	me.gfx_options.fillFromCli(args);
 }
 
