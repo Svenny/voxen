@@ -79,7 +79,7 @@ private:
 	WorldTickId m_previous_tick_id;
 	os::Window &m_window;
 
-	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
+	// TODO: This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_pause = true;
 	bool m_is_chunk_loading_point_locked = false;
 	bool m_is_used_orientation_cursor = false;

@@ -23,7 +23,7 @@ class Device;
 //
 // Do not create this object manually, access it through `FrameContextRing::current()`.
 //
-// TODO features:
+// TODO: features to add:
 // - Async readback (`allocateReadbackTicket(size)` -> returns "buffer-promise" object)
 // - Async queries, mostly timestamp (`writeTimestamp(...)` -> returns "timestamp-promise" object)
 // - Performance stats (wait stalls, descriptor sets, constant upload allocation, etc.)
