@@ -1,7 +1,7 @@
 #include <voxen/client/gameview.hpp>
 
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_messages.hpp>
-#include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/log.hpp>

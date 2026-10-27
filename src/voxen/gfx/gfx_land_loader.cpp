@@ -4,8 +4,8 @@
 #include <voxen/gfx/gfx_system.hpp>
 #include <voxen/gfx/vk/vk_mesh_streamer.hpp>
 #include <voxen/land/chunk_ticket.hpp>
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_messages.hpp>
-#include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_service.hpp>
 #include <voxen/land/land_state.hpp>
 #include <voxen/land/pseudo_chunk_surface.hpp>
