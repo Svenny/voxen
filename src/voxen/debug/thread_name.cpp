@@ -42,7 +42,7 @@ void setThreadName(std::string_view name)
 	using PfnSetThreadDescription = HRESULT (*)(HANDLE, PCWSTR);
 
 	// Look it up once
-	static PfnSetThreadDescription pfn = []() {
+	static PfnSetThreadDescription s_pfn = []() {
 		HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
 		if (kernel32) {
 			return reinterpret_cast<PfnSetThreadDescription>(GetProcAddress(kernel32, "SetThreadDescription"));
@@ -50,7 +50,7 @@ void setThreadName(std::string_view name)
 		return (PfnSetThreadDescription) nullptr;
 	}();
 
-	if (pfn) {
+	if (s_pfn) {
 		// Use `SetThreadDescription` if available (from windows 10 1607 something)
 		wchar_t wbuf[LIMIT];
 		for (size_t i = 0; i < LIMIT; i++) {

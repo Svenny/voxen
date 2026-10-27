@@ -24,8 +24,8 @@ using std::string_view;
 namespace voxen::svc
 {
 
-const path Config::kMainConfigRelPath = "configs/main.toml";
-std::unique_ptr<Config> Config::g_instance = nullptr;
+const path Config::MAIN_CONFIG_REL_PATH = "configs/main.toml";
+std::unique_ptr<Config> Config::s_instance = nullptr;
 
 namespace
 {
@@ -182,10 +182,10 @@ Config::~Config() noexcept = default;
 
 Config *Config::mainConfig()
 {
-	if (!g_instance) {
-		g_instance = std::make_unique<Config>(kMainConfigRelPath, mainConfigScheme());
+	if (!s_instance) {
+		s_instance = std::make_unique<Config>(MAIN_CONFIG_REL_PATH, mainConfigScheme());
 	}
-	return g_instance.get();
+	return s_instance.get();
 }
 
 Config::Scheme Config::mainConfigScheme()
