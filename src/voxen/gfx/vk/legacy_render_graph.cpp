@@ -13,7 +13,7 @@
 #include <voxen/gfx/vk/vk_pipeline.hpp>
 #include <voxen/gfx/vk/vk_pipeline_layout.hpp>
 #include <voxen/land/land_chunk.hpp>
-#include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
 #include "shader_interop_priv.hpp"

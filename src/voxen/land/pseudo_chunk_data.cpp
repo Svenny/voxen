@@ -2,7 +2,7 @@
 
 #include <voxen/land/cube_array.hpp>
 #include <voxen/land/land_chunk.hpp>
-#include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 

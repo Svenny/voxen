@@ -1,7 +1,7 @@
 #include <voxen/land/compressed_chunk_storage.hpp>
 
 #include <voxen/land/cube_array.hpp>
-#include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_utils.hpp>
 
 #include "../../voxen_test_common.hpp"

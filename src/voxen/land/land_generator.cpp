@@ -1,6 +1,6 @@
 #include <voxen/land/land_generator.hpp>
 
-#include <voxen/land/land_public_consts.hpp>
+#include <voxen/land/land_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/task_builder.hpp>

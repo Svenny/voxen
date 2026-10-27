@@ -1,8 +1,8 @@
 #pragma once
 
 #include <voxen/gfx/frame_tick_id.hpp>
+#include <voxen/gfx/gfx_consts.hpp>
 #include <voxen/gfx/gfx_fwd.hpp>
-#include <voxen/gfx/gfx_public_consts.hpp>
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 

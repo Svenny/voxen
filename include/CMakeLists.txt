@@ -100,9 +100,10 @@ set(VOXEN_HEADERS
 	include/voxen/gfx/font_renderer.hpp
 	include/voxen/gfx/frame_tick_id.hpp
 	include/voxen/gfx/frame_tick_source.hpp
+	include/voxen/gfx/gfx_consts.hpp
 	include/voxen/gfx/gfx_land_loader.hpp
 	include/voxen/gfx/gfx_options.hpp
-	include/voxen/gfx/gfx_public_consts.hpp
+	include/voxen/gfx/gfx_consts.hpp
 	include/voxen/gfx/gfx_system.hpp
 	include/voxen/gfx/gfx_fwd.hpp
 	include/voxen/land/chunk_key.hpp
@@ -110,10 +111,11 @@ set(VOXEN_HEADERS
 	include/voxen/land/compressed_chunk_storage.hpp
 	include/voxen/land/cube_array.hpp
 	include/voxen/land/land_chunk.hpp
+	include/voxen/land/land_consts.hpp
 	include/voxen/land/land_fwd.hpp
 	include/voxen/land/land_generator.hpp
 	include/voxen/land/land_messages.hpp
-	include/voxen/land/land_public_consts.hpp
+	include/voxen/land/land_consts.hpp
 	include/voxen/land/land_service.hpp
 	include/voxen/land/land_state.hpp
 	include/voxen/land/land_temp_blocks.hpp

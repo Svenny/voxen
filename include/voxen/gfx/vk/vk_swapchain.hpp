@@ -1,6 +1,6 @@
 #pragma once
 
-#include <voxen/gfx/gfx_public_consts.hpp>
+#include <voxen/gfx/gfx_consts.hpp>
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/os/os_fwd.hpp>
 
