@@ -1,4 +1,4 @@
-﻿#include <voxen/exception.hpp>
+#include <voxen/exception.hpp>
 
 #include <fmt/format.h>
 
