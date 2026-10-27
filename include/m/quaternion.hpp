@@ -35,7 +35,7 @@ struct quaternion {
 	constexpr explicit quaternion(const quaternion<U> &q) noexcept : x(T(q.x)), y(T(q.y)), z(T(q.z)), w(T(q.w))
 	{}
 
-	static constexpr quaternion identity() noexcept { return {}; }
+	constexpr static quaternion identity() noexcept { return {}; }
 
 	// `axis` must be unit length
 	static quaternion fromAxisAngle(const vector<T, 3> &axis, T angle) noexcept
@@ -45,7 +45,7 @@ struct quaternion {
 	}
 
 	// `rot` must be a proper rotation matrix (orthonormal with determinant 1)
-	static constexpr quaternion fromRotationMatrix(const matrix<T, 3, 3> &rot) noexcept
+	constexpr static quaternion fromRotationMatrix(const matrix<T, 3, 3> &rot) noexcept
 	{
 		// Shepperd's method: pick the largest of `w, x, y, z` by diagonal
 		// elements and derive the others from it to keep precision
