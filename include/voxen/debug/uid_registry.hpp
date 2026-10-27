@@ -6,15 +6,12 @@
 #include <string>
 #include <string_view>
 
-namespace voxen::debug
-{
-
 // A "database" mapping UIDs to human-readable string descriptions.
 // This feature has negligible performance impact and some (minor) memory overhead.
 //
 // Currently there is no switch to turn the feature off to save memory.
 // We should first improve the implementation if memory becomes an issue.
-namespace UidRegistry
+namespace voxen::debug::UidRegistry
 {
 
 // Controls how `lookup()` will format its output
@@ -64,6 +61,4 @@ inline std::string lookup(UID id, Format format = FORMAT_STRING_AND_UID)
 	return str;
 }
 
-} // namespace UidRegistry
-
-} // namespace voxen::debug
+} // namespace voxen::debug::UidRegistry

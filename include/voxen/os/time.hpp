@@ -5,10 +5,7 @@
 #include <cstdint>
 #include <ctime>
 
-namespace voxen::os
-{
-
-namespace Time
+namespace voxen::os::Time
 {
 
 // High-resolution sleep for a given (relative) amount of time.
@@ -31,6 +28,4 @@ struct LocalTime {
 // Returns zero-initialized structure if the conversion fails.
 VOXEN_API LocalTime localTime(std::time_t time) noexcept;
 
-} // namespace Time
-
-} // namespace voxen::os
+} // namespace voxen::os::Time
