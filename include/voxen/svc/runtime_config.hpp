@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/visibility.hpp>
 
 #include <extras/pimpl.hpp>
@@ -43,8 +44,7 @@ public:
 	static RuntimeConfig &instance() noexcept;
 
 private:
-	struct VOXEN_LOCAL Impl;
-	extras::pimpl<Impl, 256, 8> m_impl;
+	extras::pimpl<detail::RuntimeConfigImpl, 256, 8> m_impl;
 };
 
 } // namespace voxen::svc

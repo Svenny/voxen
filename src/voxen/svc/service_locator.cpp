@@ -21,7 +21,7 @@
 namespace voxen::svc
 {
 
-struct ServiceLocator::Impl {
+struct detail::ServiceLocatorImpl {
 	// Protects access to all fields. Locked shared for read-only operations
 	// and exclusive for read-write ones (to register/start services).
 	std::shared_mutex lock;
@@ -31,7 +31,7 @@ struct ServiceLocator::Impl {
 
 	// Registered factory functions for services.
 	// We will fail creation if a new service is requested but there is no factory for it.
-	std::unordered_map<UID, ServiceFactoryFunction> factory_map;
+	std::unordered_map<UID, ServiceLocator::ServiceFactoryFunction> factory_map;
 
 	// Stores services' UIDs in order of their start.
 	// Stopping (destruction) will happen in reverse order.

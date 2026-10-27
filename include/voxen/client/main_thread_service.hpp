@@ -1,5 +1,6 @@
 #pragma once
 
+#include <voxen/client/client_fwd.hpp>
 #include <voxen/gfx/ui/ui_fwd.hpp>
 #include <voxen/svc/service_base.hpp>
 #include <voxen/uid.hpp>
@@ -39,8 +40,7 @@ public:
 	void doMainLoop(FrameCallback frame_callback);
 
 private:
-	struct Impl;
-	extras::pimpl<Impl, 384, 8> m_impl;
+	extras::pimpl<detail::MainThreadServiceImpl, 384, 8> m_impl;
 };
 
 } // namespace voxen::client

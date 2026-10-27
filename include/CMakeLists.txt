@@ -57,6 +57,7 @@ set(VOXEN_HEADERS
 	include/voxen/assets/asset_decoder.hpp
 	include/voxen/assets/asset_service.hpp
 	include/voxen/assets/assets_fwd.hpp
+	include/voxen/client/client_fwd.hpp
 	include/voxen/client/gameview.hpp
 	include/voxen/client/gui.hpp
 	include/voxen/client/main_thread_service.hpp

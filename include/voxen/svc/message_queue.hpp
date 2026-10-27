@@ -3,6 +3,7 @@
 #include <voxen/svc/message_handling.hpp>
 #include <voxen/svc/message_sender.hpp>
 #include <voxen/svc/message_types.hpp>
+#include <voxen/svc/svc_fwd.hpp>
 #include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
 
@@ -148,8 +149,9 @@ private:
 	using HandlerItem = std::pair<UID, MessageHandler>;
 	using CompletionHandlerItem = std::pair<UID, CompletionHandler>;
 
-	struct Impl;
-	extras::pimpl<Impl, 72, 8> m_impl;
+	extras::pimpl<detail::MessageQueueImpl, 72, 8> m_impl;
+
+	friend struct detail::MessageQueueImpl;
 
 	static bool handlerComparator(const HandlerItem &a, const HandlerItem &b) noexcept;
 	static bool completionHandlerComparator(const CompletionHandlerItem &a, const CompletionHandlerItem &b) noexcept;
