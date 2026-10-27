@@ -1,6 +1,6 @@
 #include <voxen/gfx/vk/render_graph_resource.hpp>
 
-#include "render_graph_private.hpp"
+#include "render_graph_priv.hpp"
 
 #include <cassert>
 #include <utility>

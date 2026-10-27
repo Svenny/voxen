@@ -7,7 +7,7 @@ set(TK_SOURCES
 	src/tk/png.cpp
 	src/tk/rng.cpp
 	src/tk/text_utils.cpp
-	src/tk/text_utils.hpp
+	src/tk/text_utils_priv.hpp
 	src/tk/toml.cpp
 	src/tk/uid.cpp
 )
@@ -27,19 +27,18 @@ set(VOXEN_SOURCES
 	src/voxen/debug/uid_registry.cpp
 	src/voxen/gfx/ui/ui_builder.cpp
 	src/voxen/gfx/ui/ui_render_list_builder.cpp
-	src/voxen/gfx/ui/ui_render_list_builder.hpp
+	src/voxen/gfx/ui/ui_render_list_builder_priv.hpp
 	src/voxen/gfx/ui/ui_system.cpp
-	src/voxen/gfx/ui/ui_system_impl.hpp
+	src/voxen/gfx/ui/ui_system_priv.hpp
 	src/voxen/gfx/vk/frame_context.cpp
 	src/voxen/gfx/vk/legacy_render_graph.cpp
 	src/voxen/gfx/vk/render_graph.cpp
 	src/voxen/gfx/vk/render_graph_builder.cpp
 	src/voxen/gfx/vk/render_graph_execution.cpp
-	src/voxen/gfx/vk/render_graph_private.cpp
-	src/voxen/gfx/vk/render_graph_private.hpp
+	src/voxen/gfx/vk/render_graph_priv.hpp
 	src/voxen/gfx/vk/render_graph_resource.cpp
 	src/voxen/gfx/vk/render_graph_runner.cpp
-	src/voxen/gfx/vk/shader_interop.hpp
+	src/voxen/gfx/vk/shader_interop_priv.hpp
 	src/voxen/gfx/vk/standard_render_graph.cpp
 	src/voxen/gfx/vk/vk_command_allocator.cpp
 	src/voxen/gfx/vk/vk_debug_utils.cpp
@@ -55,7 +54,7 @@ set(VOXEN_SOURCES
 	src/voxen/gfx/vk/vk_pipeline.cpp
 	src/voxen/gfx/vk/vk_pipeline_cache.cpp
 	src/voxen/gfx/vk/vk_pipeline_layout.cpp
-	src/voxen/gfx/vk/vk_private_consts.hpp
+	src/voxen/gfx/vk/vk_consts_priv.hpp
 	src/voxen/gfx/vk/vk_swapchain.cpp
 	src/voxen/gfx/vk/vk_transient_buffer_allocator.cpp
 	src/voxen/gfx/vk/vk_utils.cpp
@@ -67,11 +66,11 @@ set(VOXEN_SOURCES
 	src/voxen/land/chunk_ticket.cpp
 	src/voxen/land/compressed_chunk_storage.cpp
 	src/voxen/land/land_chunk.cpp
+	src/voxen/land/land_consts_priv.hpp
 	src/voxen/land/land_generator.cpp
-	src/voxen/land/land_geometry_utils_private.cpp
-	src/voxen/land/land_geometry_utils_private.hpp
-	src/voxen/land/land_private_consts.hpp
-	src/voxen/land/land_private_messages.hpp
+	src/voxen/land/land_geometry_utils.cpp
+	src/voxen/land/land_geometry_utils_priv.hpp
+	src/voxen/land/land_messages_priv.hpp
 	src/voxen/land/land_service.cpp
 	src/voxen/land/land_state.cpp
 	src/voxen/land/pseudo_chunk_data.cpp
@@ -84,7 +83,7 @@ set(VOXEN_SOURCES
 	src/voxen/os/time.cpp
 	src/voxen/os/window.cpp
 	src/voxen/svc/async_counter_tracker.cpp
-	src/voxen/svc/async_counter_tracker.hpp
+	src/voxen/svc/async_counter_tracker_priv.hpp
 	src/voxen/svc/async_file_io_service.cpp
 	src/voxen/svc/config.cpp
 	src/voxen/svc/engine.cpp
@@ -92,8 +91,8 @@ set(VOXEN_SOURCES
 	src/voxen/svc/message_handling.cpp
 	src/voxen/svc/message_queue.cpp
 	src/voxen/svc/message_sender.cpp
-	src/voxen/svc/messaging_private.cpp
-	src/voxen/svc/messaging_private.hpp
+	src/voxen/svc/messaging.cpp
+	src/voxen/svc/messaging_priv.hpp
 	src/voxen/svc/messaging_service.cpp
 	src/voxen/svc/pipe_memory_allocator.cpp
 	src/voxen/svc/runtime_config.cpp
@@ -103,12 +102,12 @@ set(VOXEN_SOURCES
 	src/voxen/svc/task_context.cpp
 	src/voxen/svc/task_coro.cpp
 	src/voxen/svc/task_handle.cpp
-	src/voxen/svc/task_handle_private.hpp
+	src/voxen/svc/task_handle_priv.hpp
 	src/voxen/svc/task_queue_set.cpp
-	src/voxen/svc/task_queue_set.hpp
+	src/voxen/svc/task_queue_set_priv.hpp
 	src/voxen/svc/task_service.cpp
 	src/voxen/svc/task_service_slave.cpp
-	src/voxen/svc/task_service_slave.hpp
+	src/voxen/svc/task_service_slave_priv.hpp
 	src/voxen/util/concentric_octahedra_walker.cpp
 	src/voxen/util/private_object_pool.cpp
 	src/voxen/util/scratch_memory_allocator.cpp
@@ -116,7 +115,7 @@ set(VOXEN_SOURCES
 	src/voxen/world/player.cpp
 	src/voxen/world/world_control_service.cpp
 	src/voxen/world/world_sim_thread.cpp
-	src/voxen/world/world_sim_thread.hpp
+	src/voxen/world/world_sim_thread_priv.hpp
 	src/voxen/error_condition.cpp
 	src/voxen/exception.cpp
 	src/voxen/log.cpp
@@ -124,7 +123,7 @@ set(VOXEN_SOURCES
 
 target_sources(game PRIVATE
 	src/game/game_main.cpp
-	src/game/game_ui.hpp
+	src/game/game_ui_priv.hpp
 	src/game/game_ui.cpp
 )
 

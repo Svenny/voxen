@@ -2,7 +2,7 @@
 
 #include <voxen/os/futex.hpp>
 
-#include "messaging_private.hpp"
+#include "messaging_priv.hpp"
 
 #include <atomic>
 #include <cassert>

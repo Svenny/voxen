@@ -1,4 +1,4 @@
-#include "messaging_private.hpp"
+#include "messaging_priv.hpp"
 
 #include <voxen/debug/uid_registry.hpp>
 #include <voxen/error_condition.hpp>

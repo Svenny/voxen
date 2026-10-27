@@ -3,7 +3,7 @@
 #include <voxen/land/land_service.hpp>
 #include <voxen/svc/message_sender.hpp>
 
-#include "land_private_messages.hpp"
+#include "land_messages_priv.hpp"
 
 #include <cassert>
 #include <utility>

@@ -16,7 +16,7 @@
 #include <voxen/land/land_public_consts.hpp>
 #include <voxen/land/land_temp_blocks.hpp>
 
-#include "shader_interop.hpp"
+#include "shader_interop_priv.hpp"
 
 #include <m/m.hpp>
 

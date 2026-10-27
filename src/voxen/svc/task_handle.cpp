@@ -3,8 +3,8 @@
 #include <voxen/os/futex.hpp>
 #include <voxen/svc/pipe_memory_allocator.hpp>
 
-#include "async_counter_tracker.hpp"
-#include "task_handle_private.hpp"
+#include "async_counter_tracker_priv.hpp"
+#include "task_handle_priv.hpp"
 
 #include <atomic>
 #include <cassert>

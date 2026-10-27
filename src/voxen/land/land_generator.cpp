@@ -5,7 +5,7 @@
 #include <voxen/land/land_utils.hpp>
 #include <voxen/svc/task_builder.hpp>
 
-#include "land_geometry_utils_private.hpp"
+#include "land_geometry_utils_priv.hpp"
 
 #include <tk/hash.hpp>
 #include <tk/rng.hpp>

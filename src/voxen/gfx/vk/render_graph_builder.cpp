@@ -2,8 +2,8 @@
 
 #include <voxen/gfx/gfx_system.hpp>
 
-#include "render_graph_private.hpp"
-#include "vk_private_consts.hpp"
+#include "render_graph_priv.hpp"
+#include "vk_consts_priv.hpp"
 
 #include <fmt/format.h>
 

@@ -6,7 +6,7 @@
 #include <voxen/svc/service_locator.hpp>
 #include <voxen/world/world_state.hpp>
 
-#include "world_sim_thread.hpp"
+#include "world_sim_thread_priv.hpp"
 
 #include <utility>
 

@@ -3,7 +3,7 @@
 #include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
 
-#include "messaging_private.hpp"
+#include "messaging_priv.hpp"
 
 namespace voxen::svc
 {

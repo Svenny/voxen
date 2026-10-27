@@ -4,10 +4,10 @@
 #include <voxen/svc/pipe_memory_allocator.hpp>
 #include <voxen/svc/service_locator.hpp>
 
-#include "async_counter_tracker.hpp"
-#include "task_handle_private.hpp"
-#include "task_queue_set.hpp"
-#include "task_service_slave.hpp"
+#include "async_counter_tracker_priv.hpp"
+#include "task_handle_priv.hpp"
+#include "task_queue_set_priv.hpp"
+#include "task_service_slave_priv.hpp"
 
 #include <tk/hash.hpp>
 

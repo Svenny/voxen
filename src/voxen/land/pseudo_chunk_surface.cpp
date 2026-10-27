@@ -7,7 +7,7 @@
 #include <voxen/land/land_utils.hpp>
 #include <voxen/land/pseudo_chunk_data.hpp>
 
-#include "land_geometry_utils_private.hpp"
+#include "land_geometry_utils_priv.hpp"
 
 #include <m/color.hpp>
 #include <m/packing.hpp>

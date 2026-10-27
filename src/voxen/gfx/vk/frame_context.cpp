@@ -9,7 +9,7 @@
 #include <voxen/gfx/vk/vk_utils.hpp>
 #include <voxen/log.hpp>
 
-#include "vk_private_consts.hpp"
+#include "vk_consts_priv.hpp"
 
 #include <extras/defer.hpp>
 

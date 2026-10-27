@@ -1,6 +1,6 @@
 #include <voxen/svc/message_queue.hpp>
 
-#include "messaging_private.hpp"
+#include "messaging_priv.hpp"
 
 #include <extras/defer.hpp>
 

@@ -9,8 +9,8 @@
 #include <voxen/gfx/vk/vk_include.hpp>
 #include <voxen/log.hpp>
 
-#include "render_graph_private.hpp"
-#include "vk_private_consts.hpp"
+#include "render_graph_priv.hpp"
+#include "vk_consts_priv.hpp"
 
 #include <vk_mem_alloc.h>
 
