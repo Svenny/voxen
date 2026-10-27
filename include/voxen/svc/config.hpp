@@ -80,8 +80,8 @@ private:
 	std::filesystem::path m_path;
 
 private:
-	static std::unique_ptr<Config> g_instance;
-	static const std::filesystem::path kMainConfigRelPath;
+	static std::unique_ptr<Config> s_instance;
+	static const std::filesystem::path MAIN_CONFIG_REL_PATH;
 };
 
 } // namespace voxen::svc

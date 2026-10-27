@@ -399,84 +399,84 @@ void parseToken(string_view s, PlayerActionEvent event, string_view parameter_na
 
 svc::Config::Scheme actionSettingsScheme()
 {
-	static const char *player_section = "player actions";
+	constexpr const char *PLAYER_SECTION = "player actions";
 	svc::Config::Scheme s;
 
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveForward)),
 		"Fly forward",
 		keyboardKeyToString(Key::W, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveRight)),
 		"Fly right",
 		keyboardKeyToString(Key::D, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveLeft)),
 		"Fly left",
 		keyboardKeyToString(Key::A, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveBackward)),
 		"Fly backward",
 		keyboardKeyToString(Key::S, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveDown)),
 		"Fly down",
 		keyboardKeyToString(Key::C, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::MoveUp)),
 		"Fly up",
 		keyboardKeyToString(Key::Space, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::RollLeft)),
 		"Roll counterclockwise",
 		keyboardKeyToString(Key::Q, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::RollRight)),
 		"Rool clockwise",
 		keyboardKeyToString(Key::E, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::PauseGame)),
 		"Pause movement and release cursor",
 		mouseButtonToString(MouseButton::Left, 0) + string(KEYS_SEQUENCE_DELIMITER) + keyboardKeyToString(Key::Escape, 0),
 	});
 
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::IncreaseSpeed)),
 		"Incrase movement speed",
 		scrollToString(1.0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::DecreaseSpeed)),
 		"Decrease movement speed",
 		scrollToString(-1.0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::LockChunkLoadingPoint)),
 		"Lock chunk-loading position",
 		keyboardKeyToString(Key::F, 0),
 	});
 	s.push_back({
-		player_section,
+		PLAYER_SECTION,
 		string(actionToString(PlayerActionEvent::ModifyBlock)),
 		"Modify the block in front of you",
 		mouseButtonToString(MouseButton::Right, 0),
