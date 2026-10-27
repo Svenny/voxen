@@ -1,0 +1,22 @@
+#version 460
+#extension GL_EXT_buffer_reference : require
+
+layout(buffer_reference) buffer Ref { uint x; };
+
+layout(local_size_x = 64) in;
+layout(set = 0, binding = 0) readonly buffer In { Ref ref[]; } g_in;
+layout(set = 0, binding = 1) buffer Out { Ref ref[]; } g_out;
+
+void main()
+{
+	uint i = gl_GlobalInvocationID.x;
+	Ref r;
+	bool ok = false;
+	if (i < g_in.ref.length()) {
+		r = g_in.ref[i];
+		ok = true;
+	}
+	if (ok) {
+		g_out.ref[i] = r;
+	}
+}

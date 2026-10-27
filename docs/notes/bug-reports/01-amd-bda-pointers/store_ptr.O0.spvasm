@@ -1,0 +1,90 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Google Shaderc over Glslang; 11
+; Bound: 41
+; Schema: 0
+               OpCapability Shader
+               OpCapability Int64
+               OpCapability PhysicalStorageBufferAddresses
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID %g_out %g_in
+               OpExecutionMode %main LocalSize 64 1 1
+               OpSource GLSL 460
+               OpSourceExtension "GL_EXT_buffer_reference"
+               OpSourceExtension "GL_EXT_shader_explicit_arithmetic_types_int64"
+               OpSourceExtension "GL_GOOGLE_cpp_style_line_directive"
+               OpSourceExtension "GL_GOOGLE_include_directive"
+               OpName %main "main"
+               OpName %i "i"
+               OpName %gl_GlobalInvocationID "gl_GlobalInvocationID"
+               OpName %Out "Out"
+               OpMemberName %Out 0 "r"
+               OpName %Ref "Ref"
+               OpMemberName %Ref 0 "x"
+               OpName %g_out "g_out"
+               OpName %In "In"
+               OpMemberName %In 0 "v"
+               OpName %g_in "g_in"
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %_runtimearr_16 ArrayStride 8
+               OpDecorate %Out Block
+               OpMemberDecorate %Out 0 NonReadable
+               OpMemberDecorate %Out 0 Offset 0
+               OpDecorate %Ref Block
+               OpMemberDecorate %Ref 0 Offset 0
+               OpDecorate %_runtimearr__ptr_PhysicalStorageBuffer_Ref ArrayStride 8
+               OpDecorate %g_out NonReadable
+               OpDecorate %g_out Binding 1
+               OpDecorate %g_out DescriptorSet 0
+               OpDecorate %_runtimearr_ulong ArrayStride 8
+               OpDecorate %In Block
+               OpMemberDecorate %In 0 NonWritable
+               OpMemberDecorate %In 0 Offset 0
+               OpDecorate %g_in NonWritable
+               OpDecorate %g_in Binding 0
+               OpDecorate %g_in DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Function_uint = OpTypePointer Function %uint
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_uint = OpTypePointer Input %uint
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_Ref PhysicalStorageBuffer
+%_runtimearr_16 = OpTypeRuntimeArray %_ptr_PhysicalStorageBuffer_Ref
+        %Out = OpTypeStruct %_runtimearr_16
+        %Ref = OpTypeStruct %uint
+%_ptr_PhysicalStorageBuffer_Ref = OpTypePointer PhysicalStorageBuffer %Ref
+%_runtimearr__ptr_PhysicalStorageBuffer_Ref = OpTypeRuntimeArray %_ptr_PhysicalStorageBuffer_Ref
+%_ptr_StorageBuffer_Out = OpTypePointer StorageBuffer %Out
+      %g_out = OpVariable %_ptr_StorageBuffer_Out StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %ulong = OpTypeInt 64 0
+%_runtimearr_ulong = OpTypeRuntimeArray %ulong
+         %In = OpTypeStruct %_runtimearr_ulong
+%_ptr_StorageBuffer_In = OpTypePointer StorageBuffer %In
+       %g_in = OpVariable %_ptr_StorageBuffer_In StorageBuffer
+%_ptr_StorageBuffer_ulong = OpTypePointer StorageBuffer %ulong
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_Ref = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_Ref
+    %uint_64 = OpConstant %uint 64
+     %uint_1 = OpConstant %uint 1
+         %40 = OpConstantComposite %v3uint %uint_64 %uint_1 %uint_1
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+          %i = OpVariable %_ptr_Function_uint Function
+         %14 = OpAccessChain %_ptr_Input_uint %gl_GlobalInvocationID %uint_0
+         %15 = OpLoad %uint %14
+               OpStore %i %15
+         %25 = OpLoad %uint %i
+         %31 = OpLoad %uint %i
+         %33 = OpAccessChain %_ptr_StorageBuffer_ulong %g_in %int_0 %31
+         %34 = OpLoad %ulong %33
+         %35 = OpConvertUToPtr %_ptr_PhysicalStorageBuffer_Ref %34
+         %37 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_Ref %g_out %int_0 %25
+               OpStore %37 %35
+               OpReturn
+               OpFunctionEnd
