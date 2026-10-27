@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <voxen/uid.hpp>
 #include <voxen/visibility.hpp>
