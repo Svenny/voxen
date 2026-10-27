@@ -71,13 +71,13 @@ uint32_t checksumCrc32(std::span<const std::byte> data) noexcept
 {
 	// Size argument to crc32 is `uInt`, not `uLong` or `size_t`.
 	// So loop several times if requested size is bigger.
-	constexpr size_t limit = std::numeric_limits<uInt>::max();
+	constexpr size_t LIMIT = std::numeric_limits<uInt>::max();
 
 	uLong crc = crc32(0, Z_NULL, 0);
 
-	while (data.size() >= limit) {
-		crc = crc32(crc, reinterpret_cast<const Bytef *>(data.data()), limit);
-		data = data.subspan(limit);
+	while (data.size() >= LIMIT) {
+		crc = crc32(crc, reinterpret_cast<const Bytef *>(data.data()), LIMIT);
+		data = data.subspan(LIMIT);
 	}
 
 	// Now we can safely shorten span size to `uInt`

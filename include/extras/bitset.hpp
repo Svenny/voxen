@@ -86,8 +86,8 @@ public:
 	// Return index of the first zero bit or `SIZE_MAX` if all bits are ones
 	size_t first_zero() const noexcept
 	{
-		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
-		for (size_t i = 0; i < limit; i++) {
+		constexpr size_t LIMIT = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
+		for (size_t i = 0; i < LIMIT; i++) {
 			auto cnt = size_t(std::countr_one(m_data[i]));
 			if (cnt < 64) {
 				return i * 64 + cnt;
@@ -108,8 +108,8 @@ public:
 	// Does nothing and returns `SIZE_MAX` if all bits are ones.
 	size_t occupy_zero() noexcept
 	{
-		constexpr size_t limit = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
-		for (size_t i = 0; i < limit; i++) {
+		constexpr size_t LIMIT = ALL_BITS_USED ? NUM_INTS : NUM_INTS - 1;
+		for (size_t i = 0; i < LIMIT; i++) {
 			auto cnt = size_t(std::countr_one(m_data[i]));
 			if (cnt < 64) {
 				m_data[i] |= (uint64_t(1) << cnt);

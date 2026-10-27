@@ -279,42 +279,42 @@ constexpr auto computeLerp()
 
 TEST_CASE("Constant evaluation of rounding functions matches runtime", "[m::vector]")
 {
-	constexpr RoundingResults compile_time = computeRounding();
+	constexpr RoundingResults COMPILE_TIME = computeRounding();
 	const RoundingResults run_time = computeRounding();
 
-	CHECK(compile_time.floor == run_time.floor);
-	CHECK(compile_time.ceil == run_time.ceil);
-	CHECK(compile_time.trunc == run_time.trunc);
-	CHECK(compile_time.round == run_time.round);
+	CHECK(COMPILE_TIME.floor == run_time.floor);
+	CHECK(COMPILE_TIME.ceil == run_time.ceil);
+	CHECK(COMPILE_TIME.trunc == run_time.trunc);
+	CHECK(COMPILE_TIME.round == run_time.round);
 }
 
 TEST_CASE("Constant evaluation of sqrt is within one ulp of runtime", "[m::vector]")
 {
-	constexpr auto compile_time = computeSqrt();
+	constexpr auto COMPILE_TIME = computeSqrt();
 	const auto run_time = computeSqrt();
 
 	size_t mismatches = 0;
 	for (size_t i = 0; i < SQRT_INPUTS.size(); i++) {
-		if (!withinOneUlp(compile_time[i], run_time[i])) {
+		if (!withinOneUlp(COMPILE_TIME[i], run_time[i])) {
 			mismatches++;
 			UNSCOPED_INFO(
-				fmt::format("sqrt({}) = {} at compile time, {} at runtime", SQRT_INPUTS[i], compile_time[i], run_time[i]));
+				fmt::format("sqrt({}) = {} at compile time, {} at runtime", SQRT_INPUTS[i], COMPILE_TIME[i], run_time[i]));
 		}
 	}
 	CHECK(mismatches == 0);
 
 	// Types other than `double` take the same code path but with different exponent ranges
-	constexpr float subnormal_f = sqrt(1e-40f);
-	constexpr float large_f = sqrt(3e38f);
-	CHECK(withinOneUlp(subnormal_f, std::sqrt(1e-40f)));
-	CHECK(withinOneUlp(large_f, std::sqrt(3e38f)));
+	constexpr float SUBNORMAL_F = sqrt(1e-40f);
+	constexpr float LARGE_F = sqrt(3e38f);
+	CHECK(withinOneUlp(SUBNORMAL_F, std::sqrt(1e-40f)));
+	CHECK(withinOneUlp(LARGE_F, std::sqrt(3e38f)));
 
-	constexpr long double large_l = sqrt(1e300L);
-	CHECK(withinOneUlp(large_l, std::sqrt(1e300L)));
+	constexpr long double LARGE_L = sqrt(1e300L);
+	CHECK(withinOneUlp(LARGE_L, std::sqrt(1e300L)));
 	// Prevent -Wliteral-range where long double maps to double
 #if __SIZEOF_LONG_DOUBLE__ > 8
-	constexpr long double tiny_l = sqrt(1e-4940L);
-	CHECK(withinOneUlp(tiny_l, std::sqrt(1e-4940L)));
+	constexpr long double TINY_L = sqrt(1e-4940L);
+	CHECK(withinOneUlp(TINY_L, std::sqrt(1e-4940L)));
 #endif
 }
 
@@ -331,7 +331,7 @@ TEST_CASE("Geometric functions", "[m::vector]")
 
 TEST_CASE("Constant evaluation of lerp is within the rounding of its product", "[m::vector]")
 {
-	constexpr auto compile_time = computeLerp();
+	constexpr auto COMPILE_TIME = computeLerp();
 
 	size_t violations = 0;
 	size_t differences = 0;
@@ -341,11 +341,11 @@ TEST_CASE("Constant evaluation of lerp is within the rounding of its product", "
 		// Runtime fuses this product into the sum, constant evaluation rounds it first
 		const double bound = 0.5 * ulpOf(t * (b - a)) + ulpOf(run_time);
 
-		differences += compile_time[i] != run_time;
-		if (abs(compile_time[i] - run_time) > bound) {
+		differences += COMPILE_TIME[i] != run_time;
+		if (abs(COMPILE_TIME[i] - run_time) > bound) {
 			violations++;
 			UNSCOPED_INFO(
-				fmt::format("lerp({}, {}, {}) = {} at compile time, {} at runtime", a, b, t, compile_time[i], run_time));
+				fmt::format("lerp({}, {}, {}) = {} at compile time, {} at runtime", a, b, t, COMPILE_TIME[i], run_time));
 		}
 	}
 	CHECK(violations == 0);

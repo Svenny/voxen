@@ -47,11 +47,11 @@ public:
 
 	[[nodiscard]] std::optional<range_type> allocate(size_type size, size_type align)
 	{
-		constexpr size_type granularity = G;
+		constexpr size_type GRANULARITY = G;
 
 		assert(size > 0 && align > 0);
-		size = align_up(size, granularity);
-		align = std::max(align, granularity);
+		size = align_up(size, GRANULARITY);
+		align = std::max(align, GRANULARITY);
 
 		if (size > m_full_size) [[unlikely]] {
 			// Outright reject unfeasibly big requests

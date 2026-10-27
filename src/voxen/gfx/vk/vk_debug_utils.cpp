@@ -108,8 +108,8 @@ DebugUtils::CmdLabelScope DebugUtils::cmdPushLabel(VkCommandBuffer cmd, const ch
 
 DebugUtils::CmdLabelScope DebugUtils::cmdPushLabel(VkCommandBuffer cmd, const char *name)
 {
-	constexpr float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	return cmdPushLabel(cmd, name, color);
+	constexpr float COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	return cmdPushLabel(cmd, name, COLOR);
 }
 
 void DebugUtils::setObjectName(VkDevice device, uint64_t handle, VkObjectType type, const char *name) noexcept

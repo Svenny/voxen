@@ -11,8 +11,8 @@ auto AssetService::addIndexFile(const std::filesystem::path &path) -> IndexHandl
 {
 	(void) path;
 
-	constexpr uintptr_t id = 15;
-	return IndexHandle(reinterpret_cast<IndexHandleImpl *>(id), Deleter(*this));
+	constexpr uintptr_t ID = 15;
+	return IndexHandle(reinterpret_cast<IndexHandleImpl *>(ID), Deleter(*this));
 }
 
 auto AssetService::mountArchive(const std::filesystem::path &data_relative_path, int32_t priority) -> MountHandle
@@ -20,8 +20,8 @@ auto AssetService::mountArchive(const std::filesystem::path &data_relative_path,
 	(void) data_relative_path;
 	(void) priority;
 
-	constexpr uintptr_t id = 25;
-	return MountHandle(reinterpret_cast<MountHandleImpl *>(id), Deleter(*this));
+	constexpr uintptr_t ID = 25;
+	return MountHandle(reinterpret_cast<MountHandleImpl *>(ID), Deleter(*this));
 }
 
 auto AssetService::mountLooseDirectory(const std::filesystem::path &data_relative_path, int32_t priority) -> MountHandle
@@ -29,8 +29,8 @@ auto AssetService::mountLooseDirectory(const std::filesystem::path &data_relativ
 	(void) data_relative_path;
 	(void) priority;
 
-	constexpr uintptr_t id = 35;
-	return MountHandle(reinterpret_cast<MountHandleImpl *>(id), Deleter(*this));
+	constexpr uintptr_t ID = 35;
+	return MountHandle(reinterpret_cast<MountHandleImpl *>(ID), Deleter(*this));
 }
 
 void AssetService::removeIndexHandle(IndexHandleImpl *handle) noexcept

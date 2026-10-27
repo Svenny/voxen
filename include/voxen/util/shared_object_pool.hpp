@@ -35,11 +35,11 @@ public:
 
 	constexpr static size_t calcSlabSize(size_t object_size, size_t objects_hint) noexcept
 	{
-		constexpr size_t ptr_size = sizeof(void *);
+		constexpr size_t PTR_SIZE = sizeof(void *);
 		// Add one byte per object for refcounts
-		size_t slab_size = objects_hint * std::max(object_size, ptr_size) + objects_hint;
+		size_t slab_size = objects_hint * std::max(object_size, PTR_SIZE) + objects_hint;
 		// Align header start to the pointer size
-		slab_size = (slab_size + ptr_size - 1u) & ~(ptr_size - 1u);
+		slab_size = (slab_size + PTR_SIZE - 1u) & ~(PTR_SIZE - 1u);
 		slab_size += SLAB_HEADER_SIZE;
 		return std::bit_ceil(slab_size);
 	}
