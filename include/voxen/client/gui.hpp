@@ -25,7 +25,7 @@ public:
 
 private:
 	GameView m_gameview;
-	// TODO stack for another GUI elements
+	// TODO: stack for another GUI elements
 };
 
 } // namespace voxen::client

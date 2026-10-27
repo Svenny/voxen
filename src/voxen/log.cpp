@@ -140,7 +140,7 @@ void Log::detail::doLog(Level level, std::source_location where, std::string_vie
 		FILE *sink = stdout;
 		if (level >= Level::Warn) {
 			// Flush `stdout` to not mess the messages when it's directed to same output as `stderr`
-			// TODO (Svenny): check if `stdout` and `stderr` target different outputs?
+			// TODO: check if `stdout` and `stderr` target different outputs?
 			fflush(stdout);
 			sink = stderr;
 		}
@@ -157,14 +157,14 @@ void Log::detail::doLog(Level level, std::source_location where, std::string_vie
 		// Reaching this clause means printing to `sink` failed for system reasons (bad file?).
 		// Retrying here is probably useless if `sink` was `stderr` but might work for `stdout`.
 		fflush(stdout);
-		// TODO (Svenny): date/time can be printed here too but I'm too lazy to implement it
+		// TODO: date/time can be printed here too but I'm too lazy to implement it
 		fprintf(stderr, "[XXXX-XX-XX XX:XX:XX][%d %d][%s:%u][ERROR] std::system_error when printing log: %s:%d (%s)\n",
 			pid, tid, where.file_name(), where.line(), err.code().category().name(), err.code().value(), err.what());
 	}
 	catch (...) {
 		// Reaching this clause means something is deeply broken... but try one last time
 		fflush(stdout);
-		// TODO (Svenny): date/time can be printed here too but I'm too lazy to implement it
+		// TODO: date/time can be printed here too but I'm too lazy to implement it
 		fprintf(stderr, "[XXXX-XX-XX XX:XX:XX][%d %d][%s:%u][ERROR] Unknown exception when printing log!\n", pid, tid,
 			where.file_name(), where.line());
 	}

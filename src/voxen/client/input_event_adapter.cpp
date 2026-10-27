@@ -132,7 +132,7 @@ const std::array<std::pair<Key, string>, 94> KEYCODE_2_STRING = {
 	make_pair(Key::KpEqual, "NUMPAD_EQUAL"),
 	make_pair(Key::Menu, "MENU")
 
-	// NOTE(sirgienko) Disabled because modifier keys change modifier state themselves.
+	// NOTE: disabled because modifier keys change modifier state themselves.
 	// For example, you press LCONTROL
 	// Press event: LCONTROL
 	// Release event: LCONTROL+CONTROL
