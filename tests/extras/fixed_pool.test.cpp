@@ -6,6 +6,9 @@
 
 #include <utility>
 
+namespace extras
+{
+
 namespace
 {
 
@@ -133,3 +136,5 @@ TEST_CASE("'reusable_fixed_pool' constructs every object once", "[extras::fixed_
 
 	CHECK(CountedObject::s_destroyed == 4);
 }
+
+} // namespace extras

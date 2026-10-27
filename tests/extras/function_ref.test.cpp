@@ -4,10 +4,18 @@
 
 #include <type_traits>
 
-static int testFunction(int a, int b)
+namespace extras
+{
+
+namespace
+{
+
+int testFunction(int a, int b)
 {
 	return a + b;
 }
+
+} // namespace
 
 TEST_CASE("'function_ref' can be created from various objects", "[extras::function_ref]")
 {
@@ -35,7 +43,12 @@ TEST_CASE("'function_ref' can be created from various objects", "[extras::functi
 	REQUIRE(fn4);
 }
 
-static void dummy() noexcept {}
+namespace
+{
+
+void dummy() noexcept {}
+
+} // namespace
 
 TEST_CASE("'function_ref' handles noexcept properly", "[extras::function_ref]")
 {
@@ -72,3 +85,5 @@ static_assert(!std::is_constructible_v<extras::function_ref<int()>, Throwing &>)
 static_assert(!std::is_constructible_v<extras::function_ref<void *(int)>, Throwing &>);
 
 } // namespace
+
+} // namespace extras

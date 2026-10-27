@@ -14,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+namespace extras
+{
+
 namespace
 {
 
@@ -338,3 +341,5 @@ TEST_CASE("'dyn_array' has standard container accessors", "[extras::dyn_array]")
 	CHECK(a != extras::dyn_array<int> { 1, 2, 3 });
 	CHECK(extras::dyn_array<int>() == extras::dyn_array<int>());
 }
+
+} // namespace extras

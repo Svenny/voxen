@@ -6,7 +6,13 @@
 
 #include <utility>
 
-static void managerFunction(int *value, extras::refcnt_ptr_action action) noexcept
+namespace extras
+{
+
+namespace
+{
+
+void managerFunction(int *value, extras::refcnt_ptr_action action) noexcept
 {
 	if (action == extras::refcnt_ptr_action::acquire_ref) {
 		(*value)++;
@@ -16,6 +22,8 @@ static void managerFunction(int *value, extras::refcnt_ptr_action action) noexce
 		REQUIRE(false);
 	}
 }
+
+} // namespace
 
 TEST_CASE("'refcnt_ptr' calls manager function correctly", "[extras::refcnt_ptr]")
 {
@@ -59,3 +67,5 @@ TEST_CASE("'refcnt_ptr' calls manager function correctly", "[extras::refcnt_ptr]
 	ptr2.reset();
 	REQUIRE(ref_count == 0);
 }
+
+} // namespace extras

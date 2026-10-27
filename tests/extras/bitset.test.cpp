@@ -4,6 +4,9 @@
 
 #include <cstdint>
 
+namespace extras
+{
+
 TEST_CASE("'bitset' free-list features work properly", "[extras::bitset]")
 {
 	extras::bitset<512> set;
@@ -123,3 +126,5 @@ TEST_CASE("'bitset' basic functions work properly", "[extras::bitset]")
 		REQUIRE(set.popcount() == 96);
 	}
 }
+
+} // namespace extras
