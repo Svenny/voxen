@@ -80,7 +80,7 @@ struct vector<T, 2> {
 	constexpr bool operator==(const vector &) const noexcept = default;
 
 private:
-	static constexpr T vector::*MEMBERS[2] = { &vector::x, &vector::y };
+	constexpr static T vector::*MEMBERS[2] = { &vector::x, &vector::y };
 };
 
 template<CComponent T>
@@ -115,7 +115,7 @@ struct vector<T, 3> {
 	constexpr bool operator==(const vector &) const noexcept = default;
 
 private:
-	static constexpr T vector::*MEMBERS[3] = { &vector::x, &vector::y, &vector::z };
+	constexpr static T vector::*MEMBERS[3] = { &vector::x, &vector::y, &vector::z };
 };
 
 template<CComponent T>
@@ -153,7 +153,7 @@ struct vector<T, 4> {
 	constexpr bool operator==(const vector &) const noexcept = default;
 
 private:
-	static constexpr T vector::*MEMBERS[4] = { &vector::x, &vector::y, &vector::z, &vector::w };
+	constexpr static T vector::*MEMBERS[4] = { &vector::x, &vector::y, &vector::z, &vector::w };
 };
 
 namespace detail

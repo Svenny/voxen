@@ -61,7 +61,7 @@ struct matrix {
 		}
 	}
 
-	static constexpr matrix identity() noexcept
+	constexpr static matrix identity() noexcept
 		requires(R == C)
 	{
 		matrix a;

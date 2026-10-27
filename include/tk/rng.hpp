@@ -50,8 +50,8 @@ public:
 		return z ^ (z >> 31);
 	}
 
-	static constexpr uint64_t min() noexcept { return 0; }
-	static constexpr uint64_t max() noexcept { return UINT64_MAX; }
+	constexpr static uint64_t min() noexcept { return 0; }
+	constexpr static uint64_t max() noexcept { return UINT64_MAX; }
 
 	constexpr bool operator==(const SplitMix64 &) const noexcept = default;
 
@@ -105,8 +105,8 @@ public:
 		m_state = acc_mult * m_state + acc_plus;
 	}
 
-	static constexpr uint64_t min() noexcept { return 0; }
-	static constexpr uint64_t max() noexcept { return UINT64_MAX; }
+	constexpr static uint64_t min() noexcept { return 0; }
+	constexpr static uint64_t max() noexcept { return UINT64_MAX; }
 
 	constexpr bool operator==(const Pcg64 &) const noexcept = default;
 

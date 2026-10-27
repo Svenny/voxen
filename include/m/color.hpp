@@ -73,13 +73,13 @@ struct rgba8 {
 	// Decode to linear [0, 1] RGBA values
 	constexpr float4 toFloat4() const noexcept { return float4(toFloat3(), unpackUnorm<float>(a)); }
 
-	static constexpr rgba8 opaqueBlack() noexcept { return { 0, 0, 0, 255 }; }
-	static constexpr rgba8 transparentBlack() noexcept { return { 0, 0, 0, 0 }; }
-	static constexpr rgba8 opaqueWhite() noexcept { return { 255, 255, 255, 255 }; }
-	static constexpr rgba8 transparentWhite() noexcept { return { 255, 255, 255, 0 }; }
+	constexpr static rgba8 opaqueBlack() noexcept { return { 0, 0, 0, 255 }; }
+	constexpr static rgba8 transparentBlack() noexcept { return { 0, 0, 0, 0 }; }
+	constexpr static rgba8 opaqueWhite() noexcept { return { 255, 255, 255, 255 }; }
+	constexpr static rgba8 transparentWhite() noexcept { return { 255, 255, 255, 0 }; }
 
 private:
-	static constexpr uint8_t encode(float linear) noexcept
+	constexpr static uint8_t encode(float linear) noexcept
 	{
 		if constexpr (Srgb) {
 			return packUnorm<uint8_t>(detail::srgbEncode(linear));
@@ -88,7 +88,7 @@ private:
 		}
 	}
 
-	static constexpr float decode(uint8_t value) noexcept
+	constexpr static float decode(uint8_t value) noexcept
 	{
 		if constexpr (Srgb) {
 			return detail::srgbDecode(unpackUnorm<float>(value));
