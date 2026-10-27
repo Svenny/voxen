@@ -35,7 +35,7 @@ constexpr VkDeviceSize BUFFER_SIZE_STEP = 1 * 1024 * 1024;
 struct TransientBufferAllocator::Buffer {
 	VkBuffer vk_handle = VK_NULL_HANDLE;
 	VmaAllocation vma_handle = VK_NULL_HANDLE;
-	std::byte* host_pointer = nullptr;
+	std::byte *host_pointer = nullptr;
 
 	VkDeviceSize buffer_size = 0;
 	// Allocation goes from top to bottom,
@@ -45,16 +45,16 @@ struct TransientBufferAllocator::Buffer {
 	FrameTickId last_allocation_tick = FrameTickId::INVALID;
 };
 
-TransientBufferAllocator::TransientBufferAllocator(Device& dev) : m_dev(dev) {}
+TransientBufferAllocator::TransientBufferAllocator(Device &dev) : m_dev(dev) {}
 
 TransientBufferAllocator::~TransientBufferAllocator()
 {
 	for (uint32_t type = 0; type < TypeCount; type++) {
-		for (auto& buffer : m_free_list[type]) {
+		for (auto &buffer : m_free_list[type]) {
 			m_dev.enqueueDestroy(buffer.vk_handle, buffer.vma_handle);
 		}
 
-		for (auto& buffer : m_used_list[type]) {
+		for (auto &buffer : m_used_list[type]) {
 			m_dev.enqueueDestroy(buffer.vk_handle, buffer.vma_handle);
 		}
 	}
@@ -71,8 +71,8 @@ auto TransientBufferAllocator::allocate(Type type, VkDeviceSize size, VkDeviceSi
 	assert(align > 0 && (align & (align - 1)) == 0);
 	assert(m_current_tick_id.valid());
 
-	auto& free_list = m_free_list[type];
-	auto& used_list = m_used_list[type];
+	auto &free_list = m_free_list[type];
+	auto &used_list = m_used_list[type];
 
 	auto iter = free_list.begin();
 	while (iter != free_list.end()) {
@@ -103,7 +103,7 @@ auto TransientBufferAllocator::allocate(Type type, VkDeviceSize size, VkDeviceSi
 	addBuffer(type, size);
 
 	assert(free_list.size() == 1);
-	Buffer& buffer = free_list.front();
+	Buffer &buffer = free_list.front();
 	assert(buffer.allocation_top >= size);
 
 	buffer.last_allocation_tick = m_current_tick_id;
@@ -126,8 +126,8 @@ void TransientBufferAllocator::onFrameTickBegin(FrameTickId completed_tick, Fram
 {
 	// Do the same logic for each buffer type independently
 	for (uint32_t type = 0; type < TypeCount; type++) {
-		auto& free_list = m_free_list[type];
-		auto& used_list = m_used_list[type];
+		auto &free_list = m_free_list[type];
+		auto &used_list = m_used_list[type];
 
 		// What if allocations have stopped at all?
 		// Then buffers won't make it to the used list, so check in free list as well.
@@ -234,10 +234,10 @@ void TransientBufferAllocator::addBuffer(Type type, VkDeviceSize min_size)
 		size >> 20, disambig.data());
 	m_dev.setObjectName(vk_handle, name_buf);
 
-	Buffer& buffer = m_free_list[type].emplace_front();
+	Buffer &buffer = m_free_list[type].emplace_front();
 	buffer.vk_handle = vk_handle;
 	buffer.vma_handle = vma_handle;
-	buffer.host_pointer = static_cast<std::byte*>(alloc_info.pMappedData);
+	buffer.host_pointer = static_cast<std::byte *>(alloc_info.pMappedData);
 	buffer.buffer_size = size;
 	buffer.allocation_top = size;
 }

@@ -42,16 +42,16 @@ void RequestCompletionInfo::rethrowIfFailed()
 	}
 }
 
-RequestHandleBase::RequestHandleBase(detail::MessageHeader* hdr) noexcept : m_hdr(hdr)
+RequestHandleBase::RequestHandleBase(detail::MessageHeader *hdr) noexcept : m_hdr(hdr)
 {
 	// Add refcount stored in low 16 bits of atomic word.
 	// Relaxed - we're creating this handle as part of message allocation.
 	hdr->aux_data.atomic_word.fetch_add(1, std::memory_order_relaxed);
 }
 
-RequestHandleBase::RequestHandleBase(RequestHandleBase&& other) noexcept : m_hdr(std::exchange(other.m_hdr, nullptr)) {}
+RequestHandleBase::RequestHandleBase(RequestHandleBase &&other) noexcept : m_hdr(std::exchange(other.m_hdr, nullptr)) {}
 
-RequestHandleBase& RequestHandleBase::operator=(RequestHandleBase&& other) noexcept
+RequestHandleBase &RequestHandleBase::operator=(RequestHandleBase &&other) noexcept
 {
 	std::swap(m_hdr, other.m_hdr);
 	return *this;
@@ -70,7 +70,7 @@ void RequestHandleBase::reset() noexcept
 	}
 }
 
-void* RequestHandleBase::payload() noexcept
+void *RequestHandleBase::payload() noexcept
 {
 	assert(m_hdr);
 	return m_hdr->payload();

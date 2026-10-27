@@ -24,22 +24,22 @@ void CoroTaskStateBase::rethrowIfHasException()
 	}
 }
 
-void* CoroTaskStateBase::operator new(size_t bytes)
+void *CoroTaskStateBase::operator new(size_t bytes)
 {
 	return PipeMemoryAllocator::allocate(bytes, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 }
 
-void* CoroTaskStateBase::operator new(size_t bytes, std::align_val_t align)
+void *CoroTaskStateBase::operator new(size_t bytes, std::align_val_t align)
 {
 	return PipeMemoryAllocator::allocate(bytes, static_cast<size_t>(align));
 }
 
-void CoroTaskStateBase::operator delete(void* ptr) noexcept
+void CoroTaskStateBase::operator delete(void *ptr) noexcept
 {
 	return PipeMemoryAllocator::deallocate(ptr);
 }
 
-void CoroTaskStateBase::operator delete(void* ptr, std::align_val_t /*align*/) noexcept
+void CoroTaskStateBase::operator delete(void *ptr, std::align_val_t /*align*/) noexcept
 {
 	return PipeMemoryAllocator::deallocate(ptr);
 }
@@ -51,7 +51,7 @@ void CoroTaskState::blockOnCounter(uint64_t counter) noexcept
 	m_blocked_on_counter = counter;
 }
 
-void CoroTaskState::blockOnSubTask(CoroSubTaskStateBase* sub_task) noexcept
+void CoroTaskState::blockOnSubTask(CoroSubTaskStateBase *sub_task) noexcept
 {
 	assert(m_blocked_on_counter == 0);
 	assert(m_sub_task_stack_top == nullptr);
@@ -64,7 +64,7 @@ void CoroTaskState::blockOnSubTask(CoroSubTaskStateBase* sub_task) noexcept
 
 void CoroTaskState::updateSubTaskStack() noexcept
 {
-	CoroSubTaskStateBase* ptr = m_sub_task_stack_top;
+	CoroSubTaskStateBase *ptr = m_sub_task_stack_top;
 
 	while (ptr) {
 		if (ptr->m_blocked_on_counter != 0) {
@@ -87,7 +87,7 @@ void CoroTaskState::resumeStep(std::coroutine_handle<> my_coro)
 	assert(m_blocked_on_counter == 0);
 
 	while (m_sub_task_stack_top) {
-		CoroSubTaskStateBase* top = m_sub_task_stack_top;
+		CoroSubTaskStateBase *top = m_sub_task_stack_top;
 		// Should be the last line in loop body but that would require one more if
 		top->m_next_sub_task = nullptr;
 
@@ -123,7 +123,7 @@ void CoroSubTaskStateBase::blockOnCounter(uint64_t counter) noexcept
 	}
 }
 
-void CoroSubTaskStateBase::blockOnSubTask(CoroSubTaskStateBase* sub_task) noexcept
+void CoroSubTaskStateBase::blockOnSubTask(CoroSubTaskStateBase *sub_task) noexcept
 {
 	assert(m_blocked_on_counter == 0);
 	assert(m_next_sub_task == nullptr);

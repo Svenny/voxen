@@ -14,10 +14,10 @@ namespace voxen::client
 
 class GameView {
 public:
-	GameView(os::Window& window);
+	GameView(os::Window &window);
 
-	void init(const world::Player& player) noexcept;
-	void update(const world::Player& player, WorldTickId tick_id, double dt, svc::MessageSender& msend) noexcept;
+	void init(const world::Player &player) noexcept;
+	void update(const world::Player &player, WorldTickId tick_id, double dt, svc::MessageSender &msend) noexcept;
 
 	bool handleEvent(client::PlayerActionEvent, bool is_activate) noexcept;
 	// Relative mouse motion in framebuffer pixels
@@ -27,12 +27,12 @@ public:
 	double fovX() const noexcept { return m_fov_x; }
 	double fovY() const noexcept { return m_fov_y; }
 
-	const m::float4x4& viewToClip() const noexcept { return m_view_to_clip; }
-	const m::float4x4& translatedWorldToView() const noexcept { return m_tr_world_to_view; }
-	const m::float4x4& translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
-	const m::double3& cameraPosition() const noexcept { return m_local_player.position(); }
+	const m::float4x4 &viewToClip() const noexcept { return m_view_to_clip; }
+	const m::float4x4 &translatedWorldToView() const noexcept { return m_tr_world_to_view; }
+	const m::float4x4 &translatedWorldToClip() const noexcept { return m_tr_world_to_clip; }
+	const m::double3 &cameraPosition() const noexcept { return m_local_player.position(); }
 	// Center of the land loading area: follows the camera unless locked by `LockChunkLoadingPoint`
-	const m::double3& chunkLoadingPosition() const noexcept { return m_chunk_loading_position; }
+	const m::double3 &chunkLoadingPosition() const noexcept { return m_chunk_loading_position; }
 
 	// Block ID currently selected for insertion
 	auto selectedBlockId() const noexcept { return m_current_block_id; }
@@ -77,7 +77,7 @@ private:
 
 	// Previous tick id
 	WorldTickId m_previous_tick_id;
-	os::Window& m_window;
+	os::Window &m_window;
 
 	// TODO This is temporary solution, we should replace then add pause widget to Gui stack
 	bool m_is_pause = true;

@@ -53,7 +53,7 @@ TEST_CASE("'MessageQueue' basic unicast test", "[voxen::svc::message_queue]")
 	MessageQueue mq1;
 	MessageQueue mq2;
 
-	auto u2_message_handler = [&](TestUnicastMessage& msg, MessageInfo& info) {
+	auto u2_message_handler = [&](TestUnicastMessage &msg, MessageInfo &info) {
 		CHECK(info.senderUid() == U1);
 		CHECK(msg.owned_object != nullptr);
 		CHECK(*msg.owned_object == 10);
@@ -63,7 +63,7 @@ TEST_CASE("'MessageQueue' basic unicast test", "[voxen::svc::message_queue]")
 		mq2.send<TestUnicastSignal>(U1);
 	};
 
-	auto u1_signal_handler = [&](MessageInfo& info) {
+	auto u1_signal_handler = [&](MessageInfo &info) {
 		CHECK(info.senderUid() == U2);
 		CHECK(received_object != nullptr);
 		CHECK(*received_object == 20);
@@ -71,7 +71,7 @@ TEST_CASE("'MessageQueue' basic unicast test", "[voxen::svc::message_queue]")
 	};
 
 	{
-		auto& msg = engine->serviceLocator().requestService<MessagingService>();
+		auto &msg = engine->serviceLocator().requestService<MessagingService>();
 
 		mq1 = msg.registerAgent(U1);
 		mq1.registerHandler<TestUnicastSignal>(u1_signal_handler);
@@ -100,19 +100,19 @@ TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 	MessageQueue mq2;
 	MessageQueue mq3;
 
-	auto good_request_handler = [&](TestRequestMessage& msg, MessageInfo& info) {
+	auto good_request_handler = [&](TestRequestMessage &msg, MessageInfo &info) {
 		CHECK(info.senderUid() == U1);
 		msg.sum = msg.a + msg.b;
 	};
 
-	auto bad_request_handler = [&](TestRequestMessage& msg, MessageInfo& info) {
+	auto bad_request_handler = [&](TestRequestMessage &msg, MessageInfo &info) {
 		CHECK(info.senderUid() == U1);
 		msg.sum = 1337;
 		throw std::runtime_error("boom");
 	};
 
 	{
-		auto& msg = engine->serviceLocator().requestService<MessagingService>();
+		auto &msg = engine->serviceLocator().requestService<MessagingService>();
 
 		mq1 = msg.registerAgent(U1);
 
@@ -176,7 +176,7 @@ TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 
 		bool received = false;
 
-		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage& msg, RequestCompletionInfo& info) {
+		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage &msg, RequestCompletionInfo &info) {
 			CHECK(info.status() == RequestStatus::Complete);
 			CHECK(msg.sum == 15);
 			received = true;
@@ -196,7 +196,7 @@ TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 
 		bool received = false;
 
-		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage& msg, RequestCompletionInfo& info) {
+		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage &msg, RequestCompletionInfo &info) {
 			CHECK(info.status() == RequestStatus::Failed);
 			CHECK(msg.sum == 1337);
 			CHECK_THROWS_WITH(info.rethrowIfFailed(), "boom");
@@ -217,7 +217,7 @@ TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 
 		bool received = false;
 
-		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage& msg, RequestCompletionInfo& info) {
+		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage &msg, RequestCompletionInfo &info) {
 			CHECK(info.status() == RequestStatus::Dropped);
 			CHECK(msg.sum == -1);
 			received = true;
@@ -251,7 +251,7 @@ TEST_CASE("'MessageQueue' basic request test", "[voxen::svc::message_queue]")
 
 		bool received = false;
 
-		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage& msg, RequestCompletionInfo& info) {
+		mq1.registerCompletionHandler<TestRequestMessage>([&](TestRequestMessage &msg, RequestCompletionInfo &info) {
 			CHECK(info.status() == RequestStatus::Dropped);
 			CHECK(msg.sum == -1);
 			received = true;

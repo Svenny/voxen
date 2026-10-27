@@ -5,7 +5,7 @@
 namespace voxen::assets
 {
 
-void IAssetDecoder::Deleter::operator()(IAssetDecoder* ptr) noexcept
+void IAssetDecoder::Deleter::operator()(IAssetDecoder *ptr) noexcept
 {
 	ptr->~IAssetDecoder();
 	svc::PipeMemoryAllocator::deallocate(ptr);

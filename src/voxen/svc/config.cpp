@@ -30,37 +30,37 @@ std::unique_ptr<Config> Config::g_instance = nullptr;
 namespace
 {
 
-std::optional<Config::option_t> optionFromToml(const tk::toml::Value& value, size_t type)
+std::optional<Config::option_t> optionFromToml(const tk::toml::Value &value, size_t type)
 {
 	switch (type) {
 	case 0:
 		static_assert(std::is_same_v<std::string, std::variant_alternative_t<0, Config::option_t>>);
-		if (const std::string* str = value.get<std::string>(); str) {
+		if (const std::string *str = value.get<std::string>(); str) {
 			return *str;
 		}
 		break;
 
 	case 1:
 		static_assert(std::is_same_v<int64_t, std::variant_alternative_t<1, Config::option_t>>);
-		if (const int64_t* integer = value.get<int64_t>(); integer) {
+		if (const int64_t *integer = value.get<int64_t>(); integer) {
 			return *integer;
 		}
 		break;
 
 	case 2:
 		static_assert(std::is_same_v<double, std::variant_alternative_t<2, Config::option_t>>);
-		if (const double* number = value.get<double>(); number) {
+		if (const double *number = value.get<double>(); number) {
 			return *number;
 		}
 		// Allow writing integer values without `.0`
-		if (const int64_t* integer = value.get<int64_t>(); integer) {
+		if (const int64_t *integer = value.get<int64_t>(); integer) {
 			return double(*integer);
 		}
 		break;
 
 	case 3:
 		static_assert(std::is_same_v<bool, std::variant_alternative_t<3, Config::option_t>>);
-		if (const bool* boolean = value.get<bool>(); boolean) {
+		if (const bool *boolean = value.get<bool>(); boolean) {
 			return *boolean;
 		}
 		break;
@@ -92,17 +92,17 @@ T parseNumber(std::string_view s)
 	return value;
 }
 
-tk::toml::Value optionToToml(const Config::option_t& value)
+tk::toml::Value optionToToml(const Config::option_t &value)
 {
-	return std::visit([](const auto& v) { return tk::toml::Value(v); }, value);
+	return std::visit([](const auto &v) { return tk::toml::Value(v); }, value);
 }
 
 } // namespace
 
-std::string Config::defaultFileText(const Scheme& scheme)
+std::string Config::defaultFileText(const Scheme &scheme)
 {
 	std::vector<std::string_view> sections;
-	for (const Config::SchemeEntry& entry : scheme) {
+	for (const Config::SchemeEntry &entry : scheme) {
 		if (std::find(sections.begin(), sections.end(), entry.section) == sections.end()) {
 			sections.push_back(entry.section);
 		}
@@ -113,7 +113,7 @@ std::string Config::defaultFileText(const Scheme& scheme)
 	for (std::string_view section : sections) {
 		text += fmt::format("\n[{}]\n", tk::toml::formatKey(section));
 
-		for (const Config::SchemeEntry& entry : scheme) {
+		for (const Config::SchemeEntry &entry : scheme) {
 			if (entry.section != section) {
 				continue;
 			}
@@ -158,12 +158,12 @@ Config::Config(path relative_path, Config::Scheme scheme) : m_path(std::move(rel
 		}
 	}
 
-	for (const SchemeEntry& entry : scheme) {
+	for (const SchemeEntry &entry : scheme) {
 		option_t value = entry.default_value;
 
-		const tk::toml::Value* section = file_data ? file_data->find(entry.section) : nullptr;
-		const tk::toml::Table* section_table = section ? section->get<tk::toml::Table>() : nullptr;
-		const tk::toml::Value* file_value = section_table ? section_table->find(entry.parameter_name) : nullptr;
+		const tk::toml::Value *section = file_data ? file_data->find(entry.section) : nullptr;
+		const tk::toml::Table *section_table = section ? section->get<tk::toml::Table>() : nullptr;
+		const tk::toml::Value *file_value = section_table ? section_table->find(entry.parameter_name) : nullptr;
 
 		if (file_value) {
 			if (auto converted = optionFromToml(*file_value, entry.default_value.index()); converted) {
@@ -180,7 +180,7 @@ Config::Config(path relative_path, Config::Scheme scheme) : m_path(std::move(rel
 
 Config::~Config() noexcept = default;
 
-Config* Config::mainConfig()
+Config *Config::mainConfig()
 {
 	if (!g_instance) {
 		g_instance = std::make_unique<Config>(kMainConfigRelPath, mainConfigScheme());
