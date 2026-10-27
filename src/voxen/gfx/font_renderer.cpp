@@ -263,7 +263,7 @@ void FontRenderer::drawUi(VkCommandBuffer cmd_buf, std::span<const TextItem> tex
 	VkPipelineLayout pipeline_layout = m_gfx.pipelineLayoutCollection()->uiFontLayout();
 
 	ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		(*m_gfx.pipelineCollection())[vk::PipelineCollection::UI_FONT_PIPELINE]);
+		(*m_gfx.pipelineCollection())[vk::PipelineCollection::GraphicsPipelineUiFont]);
 	ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2), &inv_screen_size);
 	ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, std::size(descriptors),
 		descriptors);

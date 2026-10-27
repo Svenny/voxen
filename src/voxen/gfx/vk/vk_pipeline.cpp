@@ -26,27 +26,27 @@ namespace
 // Shader modules are needed only during pipeline creation, they are destroyed right after it
 class ShaderModuleCollection {
 public:
-	enum ShaderId : uint32_t {
-		LAND_DEBUG_CHUNK_BOUNDS_VERTEX,
-		LAND_DEBUG_CHUNK_BOUNDS_FRAGMENT,
-		LAND_FRUSTUM_CULL_COMPUTE,
-		LAND_CHUNK_MESH_VERTEX,
-		LAND_CHUNK_MESH_FRAGMENT,
-		LAND_SELECTOR_VERTEX,
-		LAND_SELECTOR_FRAGMENT,
-		UI_FONT_VERTEX,
-		UI_FONT_FRAGMENT,
-		UI_BASIC_VERTEX,
-		UI_BASIC_FRAGMENT,
+	enum Shader : uint32_t {
+		ShaderLandDebugChunkBoundsVertex,
+		ShaderLandDebugChunkBoundsFragment,
+		ShaderLandFrustumCullCompute,
+		ShaderLandChunkMeshVertex,
+		ShaderLandChunkMeshFragment,
+		ShaderLandSelectorVertex,
+		ShaderLandSelectorFragment,
+		ShaderUiFontVertex,
+		ShaderUiFontFragment,
+		ShaderUiBasicVertex,
+		ShaderUiBasicFragment,
 
-		NUM_SHADERS
+		ShaderCount
 	};
 
 	explicit ShaderModuleCollection(Device &dev) : m_dev(dev)
 	{
 		defer_fail { destroyModules(); };
 
-		for (uint32_t i = 0; i < NUM_SHADERS; i++) {
+		for (uint32_t i = 0; i < ShaderCount; i++) {
 			m_shader_modules[i] = loadModule(SHADER_PATHS[i]);
 		}
 	}
@@ -57,10 +57,10 @@ public:
 	ShaderModuleCollection &operator=(const ShaderModuleCollection &) = delete;
 	~ShaderModuleCollection() noexcept { destroyModules(); }
 
-	VkShaderModule operator[](ShaderId idx) const noexcept { return m_shader_modules[idx]; }
+	VkShaderModule operator[](Shader idx) const noexcept { return m_shader_modules[idx]; }
 
 private:
-	// Indexed by `ShaderId`
+	// Indexed by `Shader`
 	constexpr static std::string_view SHADER_PATHS[] = {
 		"assets/shaders/land/debug_chunk_bounds.vert.spv",
 		"assets/shaders/land/debug_chunk_bounds.frag.spv",
@@ -74,10 +74,10 @@ private:
 		"assets/shaders/ui/ui_basic.vert.spv",
 		"assets/shaders/ui/ui_basic.frag.spv",
 	};
-	static_assert(std::size(SHADER_PATHS) == NUM_SHADERS, "Add a path for every shader ID");
+	static_assert(std::size(SHADER_PATHS) == ShaderCount, "Add a path for every shader ID");
 
 	Device &m_dev;
-	std::array<VkShaderModule, NUM_SHADERS> m_shader_modules = {};
+	std::array<VkShaderModule, ShaderCount> m_shader_modules = {};
 
 	VkShaderModule loadModule(std::string_view relative_path)
 	{
@@ -275,7 +275,7 @@ struct GraphicsPipelineParts {
 		}
 	}
 
-	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::NUM_GRAPHICS_PIPELINES];
+	VkGraphicsPipelineCreateInfo create_infos[PipelineCollection::GraphicsPipelineCount];
 
 	const VertexFormatEmpty vert_fmt_empty;
 	const DefaultInputAssemblyState default_input_assembly_state;
@@ -330,22 +330,22 @@ void addParts(GraphicsPipelineParts &parts, const ShaderModuleCollection &module
 	const PipelineLayoutCollection &layouts);
 
 template<>
-void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipelineParts &parts,
+void addParts<PipelineCollection::GraphicsPipelineLandDebugChunkBounds>(GraphicsPipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_debug_chunk_bounds_parts;
-	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::GraphicsPipelineLandDebugChunkBounds];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_DEBUG_CHUNK_BOUNDS_VERTEX];
+	vert_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandDebugChunkBoundsVertex];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_DEBUG_CHUNK_BOUNDS_FRAGMENT];
+	frag_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandDebugChunkBoundsFragment];
 	frag_stage_info.pName = "main";
 
 	auto &input_assembly_info = my_parts.input_assembly_info;
@@ -370,23 +370,23 @@ void addParts<PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE>(GraphicsPipe
 }
 
 template<>
-void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelineParts &parts,
+void addParts<PipelineCollection::GraphicsPipelineLandChunkMesh>(GraphicsPipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_chunk_mesh_parts;
 
-	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_CHUNK_MESH_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::GraphicsPipelineLandChunkMesh];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_CHUNK_MESH_VERTEX];
+	vert_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandChunkMeshVertex];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_CHUNK_MESH_FRAGMENT];
+	frag_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandChunkMeshFragment];
 	frag_stage_info.pName = "main";
 
 	my_create_info.stageCount = 2;
@@ -406,23 +406,23 @@ void addParts<PipelineCollection::LAND_CHUNK_MESH_PIPELINE>(GraphicsPipelinePart
 }
 
 template<>
-void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts &parts,
+void addParts<PipelineCollection::GraphicsPipelineLandSelector>(GraphicsPipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.land_selector_parts;
 
-	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_SELECTOR_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::GraphicsPipelineLandSelector];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = module_collection[ShaderModuleCollection::LAND_SELECTOR_VERTEX];
+	vert_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandSelectorVertex];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = module_collection[ShaderModuleCollection::LAND_SELECTOR_FRAGMENT];
+	frag_stage_info.module = module_collection[ShaderModuleCollection::ShaderLandSelectorFragment];
 	frag_stage_info.pName = "main";
 
 	auto &zs_info = my_parts.depth_stencil_info;
@@ -446,22 +446,22 @@ void addParts<PipelineCollection::LAND_SELECTOR_PIPELINE>(GraphicsPipelineParts 
 }
 
 template<>
-void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts,
+void addParts<PipelineCollection::GraphicsPipelineUiFont>(GraphicsPipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.ui_font_parts;
-	auto &my_create_info = parts.create_infos[PipelineCollection::UI_FONT_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::GraphicsPipelineUiFont];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = module_collection[ShaderModuleCollection::UI_FONT_VERTEX];
+	vert_stage_info.module = module_collection[ShaderModuleCollection::ShaderUiFontVertex];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = module_collection[ShaderModuleCollection::UI_FONT_FRAGMENT];
+	frag_stage_info.module = module_collection[ShaderModuleCollection::ShaderUiFontFragment];
 	frag_stage_info.pName = "main";
 
 	my_create_info.stageCount = 2;
@@ -481,22 +481,22 @@ void addParts<PipelineCollection::UI_FONT_PIPELINE>(GraphicsPipelineParts &parts
 }
 
 template<>
-void addParts<PipelineCollection::UI_BASIC_PIPELINE>(GraphicsPipelineParts &parts,
+void addParts<PipelineCollection::GraphicsPipelineUiBasic>(GraphicsPipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
 	auto &my_parts = parts.ui_basic_parts;
-	auto &my_create_info = parts.create_infos[PipelineCollection::UI_BASIC_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::GraphicsPipelineUiBasic];
 
 	auto &vert_stage_info = my_parts.stages[0];
 	vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vert_stage_info.module = module_collection[ShaderModuleCollection::UI_BASIC_VERTEX];
+	vert_stage_info.module = module_collection[ShaderModuleCollection::ShaderUiBasicVertex];
 	vert_stage_info.pName = "main";
 
 	auto &frag_stage_info = my_parts.stages[1];
 	frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	frag_stage_info.module = module_collection[ShaderModuleCollection::UI_BASIC_FRAGMENT];
+	frag_stage_info.module = module_collection[ShaderModuleCollection::ShaderUiBasicFragment];
 	frag_stage_info.pName = "main";
 
 	my_create_info.stageCount = 2;
@@ -528,7 +528,7 @@ struct ComputePipelineParts {
 		}
 	}
 
-	VkComputePipelineCreateInfo create_infos[PipelineCollection::NUM_COMPUTE_PIPELINES];
+	VkComputePipelineCreateInfo create_infos[PipelineCollection::ComputePipelineCount];
 };
 
 template<uint32_t ID>
@@ -536,14 +536,14 @@ void addParts(ComputePipelineParts &parts, const ShaderModuleCollection &module_
 	const PipelineLayoutCollection &layouts);
 
 template<>
-void addParts<PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE>(ComputePipelineParts &parts,
+void addParts<PipelineCollection::ComputePipelineLandFrustumCull>(ComputePipelineParts &parts,
 	const ShaderModuleCollection &module_collection, const PipelineLayoutCollection &layouts)
 {
-	auto &my_create_info = parts.create_infos[PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE];
+	auto &my_create_info = parts.create_infos[PipelineCollection::ComputePipelineLandFrustumCull];
 
 	my_create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	my_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-	my_create_info.stage.module = module_collection[ShaderModuleCollection::LAND_FRUSTUM_CULL_COMPUTE];
+	my_create_info.stage.module = module_collection[ShaderModuleCollection::ShaderLandFrustumCullCompute];
 	my_create_info.stage.pName = "main";
 
 	my_create_info.layout = layouts.landFrustumCullLayout();
@@ -553,7 +553,7 @@ template<uint32_t ID = 0>
 void fillPipelineParts(GraphicsPipelineParts &parts, const ShaderModuleCollection &module_collection,
 	const PipelineLayoutCollection &layouts)
 {
-	if constexpr (ID < PipelineCollection::NUM_GRAPHICS_PIPELINES) {
+	if constexpr (ID < PipelineCollection::GraphicsPipelineCount) {
 		addParts<ID>(parts, module_collection, layouts);
 		fillPipelineParts<ID + 1>(parts, module_collection, layouts);
 	}
@@ -563,7 +563,7 @@ template<uint32_t ID = 0>
 void fillPipelineParts(ComputePipelineParts &parts, const ShaderModuleCollection &module_collection,
 	const PipelineLayoutCollection &layouts)
 {
-	if constexpr (ID < PipelineCollection::NUM_COMPUTE_PIPELINES) {
+	if constexpr (ID < PipelineCollection::ComputePipelineCount) {
 		addParts<ID>(parts, module_collection, layouts);
 		fillPipelineParts<ID + 1>(parts, module_collection, layouts);
 	}
@@ -587,7 +587,7 @@ PipelineCollection::PipelineCollection(Device &dev, const PipelineCache &cache, 
 	auto graphics_parts = std::make_unique<GraphicsPipelineParts>(color_format);
 	fillPipelineParts(*graphics_parts, module_collection, layouts);
 
-	VkResult result = dev.dt().vkCreateGraphicsPipelines(device, cache.handle(), NUM_GRAPHICS_PIPELINES,
+	VkResult result = dev.dt().vkCreateGraphicsPipelines(device, cache.handle(), GraphicsPipelineCount,
 		graphics_parts->create_infos, nullptr, m_graphics_pipelines.data());
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateGraphicsPipelines");
@@ -596,8 +596,8 @@ PipelineCollection::PipelineCollection(Device &dev, const PipelineCache &cache, 
 	auto compute_parts = std::make_unique<ComputePipelineParts>();
 	fillPipelineParts(*compute_parts, module_collection, layouts);
 
-	result = dev.dt().vkCreateComputePipelines(device, cache.handle(), NUM_COMPUTE_PIPELINES,
-		compute_parts->create_infos, nullptr, m_compute_pipelines.data());
+	result = dev.dt().vkCreateComputePipelines(device, cache.handle(), ComputePipelineCount, compute_parts->create_infos,
+		nullptr, m_compute_pipelines.data());
 	if (result != VK_SUCCESS) {
 		throw VulkanException(result, "vkCreateComputePipelines");
 	}
@@ -611,15 +611,15 @@ PipelineCollection::~PipelineCollection() noexcept
 	destroyPipelines();
 }
 
-VkPipeline PipelineCollection::operator[](GraphicsPipelineId idx) const noexcept
+VkPipeline PipelineCollection::operator[](GraphicsPipeline idx) const noexcept
 {
-	assert(idx < NUM_GRAPHICS_PIPELINES);
+	assert(idx < GraphicsPipelineCount);
 	return m_graphics_pipelines[idx];
 }
 
-VkPipeline PipelineCollection::operator[](ComputePipelineId idx) const noexcept
+VkPipeline PipelineCollection::operator[](ComputePipeline idx) const noexcept
 {
-	assert(idx < NUM_COMPUTE_PIPELINES);
+	assert(idx < ComputePipelineCount);
 	return m_compute_pipelines[idx];
 }
 

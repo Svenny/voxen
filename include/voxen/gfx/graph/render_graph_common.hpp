@@ -20,8 +20,8 @@ class VOXEN_API IRenderPass {
 class RenderGraphBuffer {};
 class RenderGraphImage {};
 
-enum RenderPassType {
-	Graphcs,
+enum class RenderPassType {
+	Graphics,
 	Compute,
 	SubGraph,
 };

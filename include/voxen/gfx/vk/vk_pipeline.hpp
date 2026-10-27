@@ -22,32 +22,32 @@ public:
 	PipelineCollection &operator=(const PipelineCollection &) = delete;
 	~PipelineCollection() noexcept;
 
-	enum GraphicsPipelineId : uint32_t {
-		LAND_DEBUG_CHUNK_BOUNDS_PIPELINE,
-		LAND_CHUNK_MESH_PIPELINE,
-		LAND_SELECTOR_PIPELINE,
-		UI_FONT_PIPELINE,
-		UI_BASIC_PIPELINE,
+	enum GraphicsPipeline : uint32_t {
+		GraphicsPipelineLandDebugChunkBounds,
+		GraphicsPipelineLandChunkMesh,
+		GraphicsPipelineLandSelector,
+		GraphicsPipelineUiFont,
+		GraphicsPipelineUiBasic,
 
-		NUM_GRAPHICS_PIPELINES
+		GraphicsPipelineCount
 	};
 
-	enum ComputePipelineId : uint32_t {
-		LAND_FRUSTUM_CULL_PIPELINE,
+	enum ComputePipeline : uint32_t {
+		ComputePipelineLandFrustumCull,
 
-		NUM_COMPUTE_PIPELINES
+		ComputePipelineCount
 	};
 
-	VkPipeline operator[](GraphicsPipelineId idx) const noexcept;
-	VkPipeline operator[](ComputePipelineId idx) const noexcept;
+	VkPipeline operator[](GraphicsPipeline idx) const noexcept;
+	VkPipeline operator[](ComputePipeline idx) const noexcept;
 
 private:
 	Device &m_dev;
 
 	void destroyPipelines() noexcept;
 
-	std::array<VkPipeline, NUM_GRAPHICS_PIPELINES> m_graphics_pipelines;
-	std::array<VkPipeline, NUM_COMPUTE_PIPELINES> m_compute_pipelines;
+	std::array<VkPipeline, GraphicsPipelineCount> m_graphics_pipelines;
+	std::array<VkPipeline, ComputePipelineCount> m_compute_pipelines;
 };
 
 } // namespace voxen::gfx::vk

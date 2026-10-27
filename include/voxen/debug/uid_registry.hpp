@@ -15,14 +15,14 @@ namespace voxen::debug::UidRegistry
 {
 
 // Controls how `lookup()` will format its output
-enum Format {
+enum class Format {
 	// `<string> (<uid>)` if found, `<uid>` otherwise.
 	// This is the default mode as it's the most informative.
-	FORMAT_STRING_AND_UID = 0,
+	StringAndUid = 0,
 	// `<string>` if found, `<uid>` otherwise
-	FORMAT_STRING_OR_UID = 1,
+	StringOrUid = 1,
 	// `<string>` if found, empty string otherwise
-	FORMAT_STRING_ONLY = 2,
+	StringOnly = 2,
 };
 
 // Register string associated with `id`, overwriting the previous one, if any.
@@ -51,10 +51,10 @@ VOXEN_API void unregister(UID id) noexcept;
 // See `Format` for the description of available format modes.
 //
 // Takes output by reference to reduce reallocations in bulk queries.
-VOXEN_API void lookup(UID id, std::string &out, Format format = FORMAT_STRING_AND_UID);
+VOXEN_API void lookup(UID id, std::string &out, Format format = Format::StringAndUid);
 
 // Simpler form of `lookup(id, out, format)`
-inline std::string lookup(UID id, Format format = FORMAT_STRING_AND_UID)
+inline std::string lookup(UID id, Format format = Format::StringAndUid)
 {
 	std::string str;
 	lookup(id, str, format);
