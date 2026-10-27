@@ -12,7 +12,7 @@
 #include <voxen/os/os_fwd.hpp>
 #include <voxen/visibility.hpp>
 
-#include "vk_private_consts.hpp"
+#include "vk_consts_priv.hpp"
 
 #include <deque>
 #include <string>

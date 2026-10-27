@@ -1,6 +1,6 @@
 #include <voxen/gfx/ui/ui_builder.hpp>
 
-#include "ui_system_impl.hpp"
+#include "ui_system_priv.hpp"
 
 namespace voxen::gfx::ui
 {

@@ -6,7 +6,7 @@
 #include <voxen/svc/task_coro.hpp>
 #include <voxen/svc/task_service.hpp>
 
-#include "task_handle_private.hpp"
+#include "task_handle_priv.hpp"
 
 #include <algorithm>
 #include <cstddef>

@@ -6,8 +6,8 @@
 #include <voxen/util/scratch_memory_allocator.hpp>
 #include <voxen/util/scratch_memory_containers.hpp>
 
-#include "ui_render_list_builder.hpp"
-#include "ui_system_impl.hpp"
+#include "ui_render_list_builder_priv.hpp"
+#include "ui_system_priv.hpp"
 
 #include <tk/hash.hpp>
 

@@ -1,4 +1,4 @@
-#include "game_ui.hpp"
+#include "game_ui_priv.hpp"
 
 #include <voxen/gfx/ui/ui_setup_types.hpp>
 #include <voxen/version.hpp>

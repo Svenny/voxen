@@ -14,7 +14,7 @@
 #include <voxen/svc/task_service.hpp>
 #include <voxen/version.hpp>
 
-#include "async_counter_tracker.hpp"
+#include "async_counter_tracker_priv.hpp"
 
 #include <tk/cli.hpp>
 

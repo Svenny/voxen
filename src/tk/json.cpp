@@ -1,6 +1,6 @@
 #include <tk/json.hpp>
 
-#include "text_utils.hpp"
+#include "text_utils_priv.hpp"
 
 #include <charconv>
 #include <limits>

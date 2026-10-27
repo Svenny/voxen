@@ -1,4 +1,4 @@
-#include "text_utils.hpp"
+#include "text_utils_priv.hpp"
 
 #include <algorithm>
 #include <charconv>

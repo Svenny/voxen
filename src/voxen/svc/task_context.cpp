@@ -1,6 +1,6 @@
 #include <voxen/svc/task_context.hpp>
 
-#include "task_handle_private.hpp"
+#include "task_handle_priv.hpp"
 
 namespace voxen::svc
 {

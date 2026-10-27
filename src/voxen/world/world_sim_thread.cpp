@@ -1,4 +1,4 @@
-#include "world_sim_thread.hpp"
+#include "world_sim_thread_priv.hpp"
 
 #include <voxen/debug/thread_name.hpp>
 #include <voxen/land/land_service.hpp>

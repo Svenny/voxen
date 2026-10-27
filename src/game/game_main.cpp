@@ -1,4 +1,4 @@
-#include "game_ui.hpp"
+#include "game_ui_priv.hpp"
 
 #include <voxen/client/main_thread_service.hpp>
 #include <voxen/debug/uid_registry.hpp>

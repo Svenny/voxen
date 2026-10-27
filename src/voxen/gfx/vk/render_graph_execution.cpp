@@ -3,7 +3,7 @@
 #include <voxen/gfx/vk/vk_device.hpp>
 #include <voxen/gfx/vk/vk_error.hpp>
 
-#include "render_graph_private.hpp"
+#include "render_graph_priv.hpp"
 
 #include <vk_mem_alloc.h>
 

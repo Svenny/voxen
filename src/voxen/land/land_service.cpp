@@ -22,8 +22,8 @@
 #include <voxen/util/lru_visit_ordering.hpp>
 #include <voxen/util/shared_object_pool.hpp>
 
-#include "land_private_consts.hpp"
-#include "land_private_messages.hpp"
+#include "land_consts_priv.hpp"
+#include "land_messages_priv.hpp"
 
 #include <m/vector.hpp>
 

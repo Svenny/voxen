@@ -1,9 +1,9 @@
-#include "task_queue_set.hpp"
+#include "task_queue_set_priv.hpp"
 
 #include <voxen/log.hpp>
 #include <voxen/os/futex.hpp>
 
-#include "task_handle_private.hpp"
+#include "task_handle_priv.hpp"
 
 #include <array>
 #include <bit>
