@@ -108,7 +108,7 @@ VkBufferUsageFlags bufferAccessToUsage(VkAccessFlags2 flags)
 {
 	VkBufferUsageFlags usage = 0;
 
-	constexpr std::pair<VkAccessFlags2, VkBufferUsageFlags> mapping[] = {
+	constexpr std::pair<VkAccessFlags2, VkBufferUsageFlags> MAPPING[] = {
 		{ VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT },
 		{ VK_ACCESS_2_UNIFORM_READ_BIT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
 		{ VK_ACCESS_2_TRANSFER_READ_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
@@ -118,7 +118,7 @@ VkBufferUsageFlags bufferAccessToUsage(VkAccessFlags2 flags)
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT },
 	};
 
-	for (const auto &entry : mapping) {
+	for (const auto &entry : MAPPING) {
 		if (flags & entry.first) {
 			flags &= ~entry.first;
 			usage |= entry.second;
@@ -135,7 +135,7 @@ VkImageUsageFlags imageAccessToUsage(VkAccessFlags2 flags)
 {
 	VkImageUsageFlags usage = 0;
 
-	constexpr std::pair<VkAccessFlags2, VkImageUsageFlags> mapping[] = {
+	constexpr std::pair<VkAccessFlags2, VkImageUsageFlags> MAPPING[] = {
 		{ VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT },
 		{ VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
@@ -146,7 +146,7 @@ VkImageUsageFlags imageAccessToUsage(VkAccessFlags2 flags)
 		{ VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, VK_IMAGE_USAGE_STORAGE_BIT },
 	};
 
-	for (const auto &entry : mapping) {
+	for (const auto &entry : MAPPING) {
 		if (flags & entry.first) {
 			flags &= ~entry.first;
 			usage |= entry.second;

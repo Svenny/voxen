@@ -34,9 +34,9 @@ public:
 		// Stresses both destruction order and the ability
 		// to call `findService` from service destructors.
 		if constexpr (sizeof...(Deps) > 0) {
-			constexpr UID uids[] = { Deps::SERVICE_UID... };
+			constexpr UID UIDS[] = { Deps::SERVICE_UID... };
 
-			for (UID u : uids) {
+			for (UID u : UIDS) {
 				INFO(fmt::format("Service {} dtor checks if dependency UID {} is still active", U, u));
 				CHECK(m_svc.findService(u) != nullptr);
 			}
@@ -57,9 +57,9 @@ protected:
 	static void requestDeps(ServiceLocator &svc)
 	{
 		if constexpr (sizeof...(Deps) > 0) {
-			constexpr UID uids[] = { Deps::SERVICE_UID... };
+			constexpr UID UIDS[] = { Deps::SERVICE_UID... };
 
-			for (UID u : uids) {
+			for (UID u : UIDS) {
 				svc.requestService(u);
 			}
 		}
