@@ -35,18 +35,18 @@ bool logError(const std::expected<void, std::string> &result)
 	return true;
 }
 
-} // anonymous namespace
+path g_user_data_path;
+path g_game_data_path;
 
-path FileManager::user_data_path;
-path FileManager::game_data_path;
+} // anonymous namespace
 
 void FileManager::setProfileName(const std::string &path_to_binary, const std::string &profile_name)
 {
 	// Path to voxen binary is <install root>/bin/voxen, go two files above to get install root
 	auto install_root = std::filesystem::path(path_to_binary).parent_path().parent_path();
 
-	user_data_path = (install_root / "data" / "user" / profile_name).lexically_normal();
-	game_data_path = (install_root / "data").lexically_normal();
+	g_user_data_path = (install_root / "data" / "user" / profile_name).lexically_normal();
+	g_game_data_path = (install_root / "data").lexically_normal();
 }
 
 std::optional<std::vector<std::byte>> FileManager::readUserFile(const path &relative_path)
@@ -93,6 +93,16 @@ std::optional<std::string> FileManager::readTextFile(const path &relative_path)
 	}
 
 	return logError(tk::fs::readTextFile(gameDataPath() / relative_path));
+}
+
+const path &FileManager::userDataPath() noexcept
+{
+	return g_user_data_path;
+}
+
+const path &FileManager::gameDataPath() noexcept
+{
+	return g_game_data_path;
 }
 
 } // namespace voxen::svc

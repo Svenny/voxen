@@ -4,13 +4,9 @@
 
 #include <cstddef>
 
-namespace voxen::svc::detail
+namespace voxen::svc::detail::TaskServiceSlave
 {
 
-class TaskServiceSlave {
-public:
-	static void threadFn(TaskService &my_service, size_t my_queue, AsyncCounterTracker &counter_tracker,
-		TaskQueueSet &queue_set);
-};
+void threadFn(TaskService &my_service, size_t my_queue, AsyncCounterTracker &counter_tracker, TaskQueueSet &queue_set);
 
-} // namespace voxen::svc::detail
+} // namespace voxen::svc::detail::TaskServiceSlave

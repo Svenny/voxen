@@ -42,7 +42,7 @@ void registerGameServices(voxen::svc::ServiceLocator &svc)
 
 int main(int argc, char *argv[])
 {
-	using voxen::Log;
+	namespace Log = voxen::Log;
 
 	try {
 		using ArgvStatus = voxen::svc::EngineStartArgs::ArgvParseStatus;
