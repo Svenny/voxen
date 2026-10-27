@@ -5,11 +5,8 @@
 #include <atomic>
 #include <cstdint>
 
-namespace voxen::os
-{
-
 // Futex ops freely available to build custom synchronization primitives
-namespace Futex
+namespace voxen::os::Futex
 {
 
 // Wait (block thread) until value at `addr` changes to something
@@ -31,7 +28,10 @@ VOXEN_API void wakeSingle(std::atomic_uint32_t *addr) noexcept;
 // This is a syscall so it's not particularly fast.
 VOXEN_API void wakeAll(std::atomic_uint32_t *addr) noexcept;
 
-} // namespace Futex
+} // namespace voxen::os::Futex
+
+namespace voxen::os
+{
 
 // A lightweight alternative to `std::mutex` (4 bytes versus ~40-80).
 // Trivial to create/destroy, can be used for fine-grained locks.

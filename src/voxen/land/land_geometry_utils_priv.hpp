@@ -14,7 +14,9 @@ struct SurfaceMatHistEntry {
 	uint16_t weight = 0;
 };
 
-namespace GeometryUtils
+} // namespace voxen::land::detail
+
+namespace voxen::land::detail::GeometryUtils
 {
 
 void addMatHistEntry(std::vector<SurfaceMatHistEntry> &entries, const SurfaceMatHistEntry &entry);
@@ -24,6 +26,4 @@ void resolveMatHist(std::span<SurfaceMatHistEntry> entries, PseudoChunkData::Cel
 
 void unpackCellEntryMatHist(std::span<SurfaceMatHistEntry, 4> entries, const PseudoChunkData::CellEntry &cell) noexcept;
 
-} // namespace GeometryUtils
-
-} // namespace voxen::land::detail
+} // namespace voxen::land::detail::GeometryUtils

@@ -4,15 +4,10 @@
 
 #include <cstdint>
 
-namespace voxen::os
-{
-
-namespace Process
+namespace voxen::os::Process
 {
 
 VOXEN_API int32_t getProcessId() noexcept;
 VOXEN_API int32_t getThreadId() noexcept;
 
-} // namespace Process
-
-} // namespace voxen::os
+} // namespace voxen::os::Process
