@@ -18,13 +18,16 @@
 namespace voxen
 {
 
-Log::Level Log::m_current_level = Log::Level::Trace;
+namespace
+{
+
+Log::Level g_current_level = Log::Level::Trace;
 
 // Thread-local "waterline cache" buffer to avoid allocations on each print.
 // FMT can still do temporary internal allocations but we can't control that.
-static thread_local fmt::memory_buffer t_message_buffer;
+thread_local fmt::memory_buffer t_message_buffer;
 
-static std::string_view levelName(Log::Level value) noexcept
+std::string_view levelName(Log::Level value) noexcept
 {
 	using namespace std::string_view_literals;
 
@@ -46,7 +49,7 @@ static std::string_view levelName(Log::Level value) noexcept
 	} // No `default` to make `-Werror -Wswitch` protection work
 }
 
-static fmt::text_style styleForLevel(Log::Level level) noexcept
+fmt::text_style styleForLevel(Log::Level level) noexcept
 {
 	fmt::text_style style;
 
@@ -76,7 +79,25 @@ static fmt::text_style styleForLevel(Log::Level level) noexcept
 	return style;
 }
 
-void Log::doLog(Level level, std::source_location where, std::string_view format_str,
+} // namespace
+
+Log::Level Log::level() noexcept
+{
+	return g_current_level;
+}
+
+void Log::setLevel(Level level) noexcept
+{
+	g_current_level = level;
+	info("Changing log level to [{}]", levelName(level));
+}
+
+bool Log::willBeLogged(Level level) noexcept
+{
+	return level >= g_current_level;
+}
+
+void Log::detail::doLog(Level level, std::source_location where, std::string_view format_str,
 	fmt::format_args format_args) noexcept
 {
 	// Prepare formatted text (or failure message) to be logged
@@ -147,12 +168,6 @@ void Log::doLog(Level level, std::source_location where, std::string_view format
 		fprintf(stderr, "[XXXX-XX-XX XX:XX:XX][%d %d][%s:%u][ERROR] Unknown exception when printing log!\n", pid, tid,
 			where.file_name(), where.line());
 	}
-}
-
-void Log::setLevel(Level level) noexcept
-{
-	m_current_level = level;
-	info("Changing log level to [{}]", levelName(level));
 }
 
 } // namespace voxen

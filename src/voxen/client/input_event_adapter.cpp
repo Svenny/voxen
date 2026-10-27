@@ -2,9 +2,16 @@
 
 #include <voxen/client/player_action_events.hpp>
 #include <voxen/log.hpp>
+#include <voxen/svc/config.hpp>
 
+#include <array>
 #include <cassert>
+#include <map>
 #include <ranges>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <utility>
 
 using std::make_pair;
 using std::string;
@@ -18,8 +25,18 @@ using voxen::os::MouseButton;
 namespace voxen::client
 {
 
+namespace
+{
+
+constexpr std::string_view KEYS_DELIMITER = "+";
+constexpr std::string_view KEYS_SEQUENCE_DELIMITER = ", ";
+constexpr std::string_view SCROLL_UP_STRING = "ScrollUp";
+constexpr std::string_view SCROLL_DOWN_STRING = "ScrollDown";
+
+constexpr std::string_view ACTION_SETTINGS_PATH = "configs/action_settings.toml";
+
 // clang-format off: turns this array into a mess
-const std::array<std::pair<Key, string>, 94> InputEventAdapter::KEYCODE_2_STRING = {
+const std::array<std::pair<Key, string>, 94> KEYCODE_2_STRING = {
 	make_pair(Key::Space, "SPACE"),
 	make_pair(Key::Apostrophe, "APOSTROPHE"), /* ' */
 	make_pair(Key::Comma, "COMMA"), /* , */
@@ -136,7 +153,7 @@ const std::array<std::pair<Key, string>, 94> InputEventAdapter::KEYCODE_2_STRING
 };
 // clang-format on
 
-const std::array<std::pair<KeyModBit, string>, 6> InputEventAdapter::MODS_2_STRING = {
+const std::array<std::pair<KeyModBit, string>, 6> MODS_2_STRING = {
 	make_pair(KeyModBit::Shift, "Shift"),
 	make_pair(KeyModBit::Control, "Control"),
 	make_pair(KeyModBit::Alt, "Alt"),
@@ -145,7 +162,7 @@ const std::array<std::pair<KeyModBit, string>, 6> InputEventAdapter::MODS_2_STRI
 	make_pair(KeyModBit::NumLock, "Numlock"),
 };
 
-const std::array<std::pair<PlayerActionEvent, string>, 13> InputEventAdapter::PLAYERACTIONS_2_STRINGS = {
+const std::array<std::pair<PlayerActionEvent, string>, 13> PLAYERACTIONS_2_STRINGS = {
 	make_pair(PlayerActionEvent::MoveForward, "move forward"),
 	make_pair(PlayerActionEvent::MoveBackward, "move backward"),
 	make_pair(PlayerActionEvent::MoveUp, "move up"),
@@ -161,7 +178,7 @@ const std::array<std::pair<PlayerActionEvent, string>, 13> InputEventAdapter::PL
 	make_pair(PlayerActionEvent::ModifyBlock, "modify block"),
 };
 
-const std::array<std::pair<MouseButton, string>, 5> InputEventAdapter::MOUSEKEY_2_STRING = {
+const std::array<std::pair<MouseButton, string>, 5> MOUSEKEY_2_STRING = {
 	make_pair(MouseButton::Left, "MOUSE_LEFT"),
 	make_pair(MouseButton::Right, "MOUSE_RIGHT"),
 	make_pair(MouseButton::Middle, "MOUSE_MIDDLE"),
@@ -169,15 +186,10 @@ const std::array<std::pair<MouseButton, string>, 5> InputEventAdapter::MOUSEKEY_
 	make_pair(MouseButton::X2, "MOUSE_5"),
 };
 
-std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::keyboardKeyToActionMap;
-std::map<tuple<int, int>, PlayerActionEvent> InputEventAdapter::mouseKeyToActionMap;
-std::map<bool, PlayerActionEvent> InputEventAdapter::scrollToActionMap;
-string InputEventAdapter::actionSettingsPath = "configs/action_settings.toml";
-svc::Config::Scheme InputEventAdapter::actionSettingConfigScheme = InputEventAdapter::actionSettingsScheme();
-svc::Config *InputEventAdapter::actionSettingsConfig = nullptr;
-
-namespace
-{
+std::map<tuple<int, int>, PlayerActionEvent> g_keyboard_key_to_action_map;
+std::map<tuple<int, int>, PlayerActionEvent> g_mouse_key_to_action_map;
+std::map<bool, PlayerActionEvent> g_scroll_to_action_map;
+svc::Config *g_action_settings_config = nullptr;
 
 // Lock key states are not a part of bindings
 int bindingMods(os::KeyMods mods) noexcept
@@ -187,87 +199,205 @@ int bindingMods(os::KeyMods mods) noexcept
 	return mods.to_underlying();
 }
 
-} // namespace
-
-std::pair<PlayerActionEvent, bool> InputEventAdapter::keyToPlayerEvent(const os::KeyEvent &event)
+string_view actionToString(PlayerActionEvent event)
 {
-	// We support only press/release logic for actions at this moment,
-	// so key repeats are treated as presses (activations).
-	int mods = bindingMods(event.mods);
+	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
+		if (it->first == event) {
+			return string_view(it->second);
+		}
+	}
+	return string_view();
+}
 
-	// TODO: this is even shittier than the rest of input mapping logic
-	// but I don't want to add 10 whole new mappings just for this.
-	if (event.key >= Key::Digit1 && event.key <= Key::Digit0 && mods == 0) {
-		int base = int(PlayerActionEvent::ChooseItem0);
-		int digit = (event.key == Key::Digit0) ? 0 : int(event.key) - int(Key::Digit1) + 1;
-		return make_pair(PlayerActionEvent(base + digit), event.pressed);
+PlayerActionEvent stringToAction(string_view s)
+{
+	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
+		if (it->second == s) {
+			return it->first;
+		}
+	}
+	return PlayerActionEvent::None;
+}
+
+string keyboardKeyToString(Key key, int mods)
+{
+	string result;
+
+	for (auto it = KEYCODE_2_STRING.begin(); it != KEYCODE_2_STRING.end(); it++) {
+		if (it->first == key) {
+			result = it->second;
+		}
 	}
 
-	auto search = keyboardKeyToActionMap.find(tuple<int, int>(int(event.key), mods));
-	if (search != keyboardKeyToActionMap.end()) {
-		return make_pair(search->second, event.pressed);
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
+		if (mods & int(it->first)) {
+			result += string(KEYS_DELIMITER) + it->second;
+		}
+	}
+
+	return result;
+}
+
+std::string scrollToString(double yoffset)
+{
+	if (yoffset >= 0) {
+		return string(SCROLL_UP_STRING);
 	} else {
-		return make_pair(PlayerActionEvent::None, true);
+		return string(SCROLL_DOWN_STRING);
 	}
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseButtonToPlayerEvent(const os::MouseButtonEvent &event)
+string mouseButtonToString(MouseButton button, int mods)
 {
-	auto search = mouseKeyToActionMap.find(tuple<int, int>(int(event.button), bindingMods(event.mods)));
-	if (search != mouseKeyToActionMap.end()) {
-		return make_pair(search->second, event.pressed);
-	} else {
-		return make_pair(PlayerActionEvent::None, true);
+	string result;
+
+	for (auto it = MOUSEKEY_2_STRING.begin(); it != MOUSEKEY_2_STRING.end(); it++) {
+		if (it->first == button) {
+			result = it->second;
+		}
 	}
+
+	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
+		if (mods & int(it->first)) {
+			result += string(KEYS_DELIMITER) + it->second;
+		}
+	}
+
+	return result;
 }
 
-std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseWheelToPlayerEvent(const os::MouseWheelEvent &event)
+void parseComplexToken(string_view s, int &key, int &mods, int &key_type, bool &fully_parsed)
 {
-	auto search = scrollToActionMap.find(event.delta.y >= 0);
-	if (search != scrollToActionMap.end()) {
-		return make_pair(search->second, true);
-	} else {
-		return make_pair(PlayerActionEvent::None, true);
+	if (fully_parsed == false) {
+		return;
 	}
-}
 
-void InputEventAdapter::init()
-{
-	assert(actionSettingsConfig == nullptr);
-	actionSettingsConfig = new svc::Config(actionSettingsPath, actionSettingConfigScheme);
+	bool found = false;
+	for (const auto &pair : KEYCODE_2_STRING) {
+		if (pair.second == s) {
+			key = int(pair.first);
+			found = true;
+			key_type = 1;
+			break;
+		}
+	}
 
-	for (const svc::Config::SchemeEntry &entry : actionSettingConfigScheme) {
-		const string &default_value = std::get<string>(entry.default_value);
-		const string &value_string
-			= actionSettingsConfig->optionString(entry.section, entry.parameter_name).value_or(default_value);
-
-		string_view value(value_string);
-		PlayerActionEvent event = stringToAction(entry.parameter_name);
-
-		string_view parameter_name(entry.parameter_name);
-
-		if (event != PlayerActionEvent::None) {
-			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos) {
-				parseToken(value, event, parameter_name, default_value);
-			} else {
-				for (auto token : std::views::split(value, KEYS_SEQUENCE_DELIMITER)) {
-					parseToken(string_view(token.begin(), token.end()), event, parameter_name, default_value);
-				}
+	if (!found) {
+		for (const auto &pair : MOUSEKEY_2_STRING) {
+			if (pair.second == s) {
+				key = int(pair.first);
+				found = true;
+				key_type = 2;
+				break;
 			}
+		}
+	}
+
+	if (!found) {
+		for (const auto &pair : MODS_2_STRING) {
+			if (pair.second == s) {
+				mods |= int(pair.first);
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found) {
+		fully_parsed = false;
+		return;
+	}
+}
+
+// Returns 0 - unknown type, 1 - keyboard, 2 - mouse button, 3 - scroll
+int stringToMapkey(string_view s, tuple<int, int> *tuple_ptr, bool *scroll_ptr)
+{
+	if (s.find(KEYS_DELIMITER) == string::npos) {
+		// Simple form, just only key without any modifiers
+		for (const auto &pair : KEYCODE_2_STRING) {
+			if (pair.second == s) {
+				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
+				return 1;
+			}
+		}
+		for (const auto &pair : MOUSEKEY_2_STRING) {
+			if (pair.second == s) {
+				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
+				return 2;
+			}
+		}
+		if (SCROLL_UP_STRING == s) {
+			*scroll_ptr = true;
+			return 3;
+		} else if (SCROLL_DOWN_STRING == s) {
+			*scroll_ptr = false;
+			return 3;
 		} else {
-			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value",
-				entry.parameter_name, value_string);
+			return 0;
+		}
+	} else {
+		int key = 0;
+		int mods = 0;
+		int key_type = 0; // 0 - unknown, 1 - key button, 2 - mouse button
+		bool fully_parsed = true;
+
+		for (auto subtoken : std::views::split(s, KEYS_DELIMITER)) {
+			parseComplexToken(string_view(subtoken.begin(), subtoken.end()), key, mods, key_type, fully_parsed);
+		}
+
+		if (fully_parsed == false) {
+			return 0;
+		} else {
+			if (key_type == 0) {
+				return 0;
+			} else if (key_type == 1) {
+				*tuple_ptr = tuple<int, int>(key, mods);
+				return 1;
+			} else if (key_type == 2) {
+				*tuple_ptr = tuple<int, int>(key, mods);
+				return 2;
+			} else {
+				assert(false);
+				return 0;
+			}
 		}
 	}
 }
 
-void InputEventAdapter::release() noexcept
+void parseToken(string_view s, PlayerActionEvent event, string_view parameter_name, string_view default_value)
 {
-	delete actionSettingsConfig;
-	actionSettingsConfig = nullptr;
+	tuple<int, int> keys_with_mods;
+	bool scroll;
+
+	int type = stringToMapkey(s, &keys_with_mods, &scroll);
+	if (type != 0) {
+		if (type == 1) {
+			g_keyboard_key_to_action_map[keys_with_mods] = event;
+		} else if (type == 2) {
+			g_mouse_key_to_action_map[keys_with_mods] = event;
+		} else if (type == 3) {
+			g_scroll_to_action_map[scroll] = event;
+		} else {
+			assert(false);
+		}
+	} else {
+		Log::warn("Can't parse \"{}\" for \"{}\" action, use default value", s, parameter_name);
+
+		type = stringToMapkey(default_value, &keys_with_mods, &scroll);
+		assert(type != 0); // Because default value must be always valid
+		if (type == 1) {
+			g_keyboard_key_to_action_map[keys_with_mods] = event;
+		} else if (type == 2) {
+			g_mouse_key_to_action_map[keys_with_mods] = event;
+		} else if (type == 3) {
+			g_scroll_to_action_map[scroll] = event;
+		} else {
+			assert(false);
+		}
+	}
 }
 
-svc::Config::Scheme InputEventAdapter::actionSettingsScheme()
+svc::Config::Scheme actionSettingsScheme()
 {
 	static const char *player_section = "player actions";
 	svc::Config::Scheme s;
@@ -355,202 +485,85 @@ svc::Config::Scheme InputEventAdapter::actionSettingsScheme()
 	return s;
 }
 
-string_view InputEventAdapter::actionToString(PlayerActionEvent event)
-{
-	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
-		if (it->first == event) {
-			return string_view(it->second);
-		}
-	}
-	return string_view();
-}
+} // namespace
 
-PlayerActionEvent InputEventAdapter::stringToAction(string_view s)
+std::pair<PlayerActionEvent, bool> InputEventAdapter::keyToPlayerEvent(const os::KeyEvent &event)
 {
-	for (auto it = PLAYERACTIONS_2_STRINGS.begin(); it != PLAYERACTIONS_2_STRINGS.end(); it++) {
-		if (it->second == s) {
-			return it->first;
-		}
-	}
-	return PlayerActionEvent::None;
-}
+	// We support only press/release logic for actions at this moment,
+	// so key repeats are treated as presses (activations).
+	int mods = bindingMods(event.mods);
 
-string InputEventAdapter::keyboardKeyToString(Key key, int mods)
-{
-	string result;
-
-	for (auto it = KEYCODE_2_STRING.begin(); it != KEYCODE_2_STRING.end(); it++) {
-		if (it->first == key) {
-			result = it->second;
-		}
+	// TODO: this is even shittier than the rest of input mapping logic
+	// but I don't want to add 10 whole new mappings just for this.
+	if (event.key >= Key::Digit1 && event.key <= Key::Digit0 && mods == 0) {
+		int base = int(PlayerActionEvent::ChooseItem0);
+		int digit = (event.key == Key::Digit0) ? 0 : int(event.key) - int(Key::Digit1) + 1;
+		return make_pair(PlayerActionEvent(base + digit), event.pressed);
 	}
 
-	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
-		if (mods & int(it->first)) {
-			result += string(KEYS_DELIMITER) + it->second;
-		}
-	}
-
-	return result;
-}
-
-std::string InputEventAdapter::scrollToString(double yoffset)
-{
-	if (yoffset >= 0) {
-		return string(SCROLL_UP_STRING);
+	auto search = g_keyboard_key_to_action_map.find(tuple<int, int>(int(event.key), mods));
+	if (search != g_keyboard_key_to_action_map.end()) {
+		return make_pair(search->second, event.pressed);
 	} else {
-		return string(SCROLL_DOWN_STRING);
+		return make_pair(PlayerActionEvent::None, true);
 	}
 }
 
-string InputEventAdapter::mouseButtonToString(MouseButton button, int mods)
+std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseButtonToPlayerEvent(const os::MouseButtonEvent &event)
 {
-	string result;
-
-	for (auto it = MOUSEKEY_2_STRING.begin(); it != MOUSEKEY_2_STRING.end(); it++) {
-		if (it->first == button) {
-			result = it->second;
-		}
-	}
-
-	for (auto it = MODS_2_STRING.begin(); it != MODS_2_STRING.end(); it++) {
-		if (mods & int(it->first)) {
-			result += string(KEYS_DELIMITER) + it->second;
-		}
-	}
-
-	return result;
-}
-
-int InputEventAdapter::stringToMapkey(string_view s, tuple<int, int> *tuple_ptr, bool *scroll_ptr)
-{
-	if (s.find(KEYS_DELIMITER) == string::npos) {
-		// Simple form, just only key without any modifiers
-		for (const auto &pair : KEYCODE_2_STRING) {
-			if (pair.second == s) {
-				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
-				return 1;
-			}
-		}
-		for (const auto &pair : MOUSEKEY_2_STRING) {
-			if (pair.second == s) {
-				*tuple_ptr = tuple<int, int>(int(pair.first), 0);
-				return 2;
-			}
-		}
-		if (SCROLL_UP_STRING == s) {
-			*scroll_ptr = true;
-			return 3;
-		} else if (SCROLL_DOWN_STRING == s) {
-			*scroll_ptr = false;
-			return 3;
-		} else {
-			return 0;
-		}
+	auto search = g_mouse_key_to_action_map.find(tuple<int, int>(int(event.button), bindingMods(event.mods)));
+	if (search != g_mouse_key_to_action_map.end()) {
+		return make_pair(search->second, event.pressed);
 	} else {
-		int key = 0;
-		int mods = 0;
-		int key_type = 0; // 0 - unknown, 1 - key button, 2 - mouse button
-		bool fully_parsed = true;
+		return make_pair(PlayerActionEvent::None, true);
+	}
+}
 
-		for (auto subtoken : std::views::split(s, KEYS_DELIMITER)) {
-			parseComplexToken(string_view(subtoken.begin(), subtoken.end()), key, mods, key_type, fully_parsed);
-		}
+std::pair<PlayerActionEvent, bool> InputEventAdapter::mouseWheelToPlayerEvent(const os::MouseWheelEvent &event)
+{
+	auto search = g_scroll_to_action_map.find(event.delta.y >= 0);
+	if (search != g_scroll_to_action_map.end()) {
+		return make_pair(search->second, true);
+	} else {
+		return make_pair(PlayerActionEvent::None, true);
+	}
+}
 
-		if (fully_parsed == false) {
-			return 0;
-		} else {
-			if (key_type == 0) {
-				return 0;
-			} else if (key_type == 1) {
-				*tuple_ptr = tuple<int, int>(key, mods);
-				return 1;
-			} else if (key_type == 2) {
-				*tuple_ptr = tuple<int, int>(key, mods);
-				return 2;
+void InputEventAdapter::init()
+{
+	assert(g_action_settings_config == nullptr);
+	svc::Config::Scheme scheme = actionSettingsScheme();
+	g_action_settings_config = new svc::Config(ACTION_SETTINGS_PATH, scheme);
+
+	for (const svc::Config::SchemeEntry &entry : scheme) {
+		const string &default_value = std::get<string>(entry.default_value);
+		const string &value_string
+			= g_action_settings_config->optionString(entry.section, entry.parameter_name).value_or(default_value);
+
+		string_view value(value_string);
+		PlayerActionEvent event = stringToAction(entry.parameter_name);
+
+		string_view parameter_name(entry.parameter_name);
+
+		if (event != PlayerActionEvent::None) {
+			if (value.find(KEYS_SEQUENCE_DELIMITER) == string::npos) {
+				parseToken(value, event, parameter_name, default_value);
 			} else {
-				assert(false);
-				return 0;
+				for (auto token : std::views::split(value, KEYS_SEQUENCE_DELIMITER)) {
+					parseToken(string_view(token.begin(), token.end()), event, parameter_name, default_value);
+				}
 			}
+		} else {
+			Log::warn("Unknown action value while parsing key action file: \"{}\" key with \"{}\" value",
+				entry.parameter_name, value_string);
 		}
 	}
 }
 
-void InputEventAdapter::parseToken(string_view s, PlayerActionEvent event, string_view parameter_name,
-	string_view default_value)
+void InputEventAdapter::release() noexcept
 {
-	tuple<int, int> keys_with_mods;
-	bool scroll;
-
-	int type = stringToMapkey(s, &keys_with_mods, &scroll);
-	if (type != 0) {
-		if (type == 1) {
-			keyboardKeyToActionMap[keys_with_mods] = event;
-		} else if (type == 2) {
-			mouseKeyToActionMap[keys_with_mods] = event;
-		} else if (type == 3) {
-			scrollToActionMap[scroll] = event;
-		} else {
-			assert(false);
-		}
-	} else {
-		Log::warn("Can't parse \"{}\" for \"{}\" action, use default value", s, parameter_name);
-
-		type = stringToMapkey(default_value, &keys_with_mods, &scroll);
-		assert(type != 0); // Because default value must be always valid
-		if (type == 1) {
-			keyboardKeyToActionMap[keys_with_mods] = event;
-		} else if (type == 2) {
-			mouseKeyToActionMap[keys_with_mods] = event;
-		} else if (type == 3) {
-			scrollToActionMap[scroll] = event;
-		} else {
-			assert(false);
-		}
-	}
-}
-
-void InputEventAdapter::parseComplexToken(string_view s, int &key, int &mods, int &key_type, bool &fully_parsed)
-{
-	if (fully_parsed == false) {
-		return;
-	}
-
-	bool found = false;
-	for (const auto &pair : KEYCODE_2_STRING) {
-		if (pair.second == s) {
-			key = int(pair.first);
-			found = true;
-			key_type = 1;
-			break;
-		}
-	}
-
-	if (!found) {
-		for (const auto &pair : MOUSEKEY_2_STRING) {
-			if (pair.second == s) {
-				key = int(pair.first);
-				found = true;
-				key_type = 2;
-				break;
-			}
-		}
-	}
-
-	if (!found) {
-		for (const auto &pair : MODS_2_STRING) {
-			if (pair.second == s) {
-				mods |= int(pair.first);
-				found = true;
-				break;
-			}
-		}
-	}
-
-	if (!found) {
-		fully_parsed = false;
-		return;
-	}
+	delete g_action_settings_config;
+	g_action_settings_config = nullptr;
 }
 
 } // namespace voxen::client
