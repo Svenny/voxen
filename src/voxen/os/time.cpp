@@ -82,7 +82,7 @@ struct TimerHandle {
 };
 
 // Created on thread-first call to `nanosleepFor()`, destroyed automatically at thread exit
-static thread_local TimerHandle t_sleep_timer;
+thread_local TimerHandle t_sleep_timer;
 
 } // namespace
 

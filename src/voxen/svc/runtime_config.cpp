@@ -9,7 +9,12 @@ struct RuntimeConfig::Impl {
 	gfx::GfxOptions gfx_options;
 };
 
-static RuntimeConfig g_instance;
+namespace
+{
+
+RuntimeConfig g_instance;
+
+} // namespace
 
 RuntimeConfig::RuntimeConfig() = default;
 RuntimeConfig::~RuntimeConfig() noexcept = default;

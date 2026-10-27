@@ -30,13 +30,15 @@ namespace voxen::os
 static_assert(std::is_same_v<HANDLE, void *>, "HANDLE is not equal to void *");
 
 const File::NativeHandle File::INVALID_HANDLE = reinterpret_cast<void *>(~uintptr_t(0));
-
-// Global storage to help generate random temporary file names, see `doOpen()`
-static std::atomic_uint64_t g_temp_file_randomizer = 0;
 #endif
 
 namespace
 {
+
+#ifdef _WIN32
+// Global storage to help generate random temporary file names, see `doOpen()`
+std::atomic_uint64_t g_temp_file_randomizer = 0;
+#endif
 
 bool sanitizeOpenFlags(FileFlags &flags) noexcept
 {
