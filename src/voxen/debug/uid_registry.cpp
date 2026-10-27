@@ -133,13 +133,13 @@ void UidRegistry::lookup(UID id, std::string &out, Format format)
 	auto iter = shard.data.find(id);
 
 	if (iter != shard.data.end()) {
-		if (format == FORMAT_STRING_AND_UID) {
+		if (format == Format::StringAndUid) {
 			out = fmt::format("{} ({})", std::string_view(iter->second), id);
 		} else {
 			out = std::string_view(iter->second);
 		}
 	} else {
-		if (format != FORMAT_STRING_ONLY) {
+		if (format != Format::StringOnly) {
 			char uid_chars[UID::CHAR_REPR_LENGTH];
 			id.toChars(uid_chars);
 			out = uid_chars;

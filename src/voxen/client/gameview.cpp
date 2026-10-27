@@ -49,35 +49,35 @@ bool GameView::handleEvent(client::PlayerActionEvent event, bool is_activate) no
 {
 	switch (event) {
 	case client::PlayerActionEvent::MoveForward:
-		m_state[Direction::Forward] = is_activate;
+		m_state[DirectionForward] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::MoveBackward:
-		m_state[Direction::Backward] = is_activate;
+		m_state[DirectionBackward] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::MoveRight:
-		m_state[Direction::Right] = is_activate;
+		m_state[DirectionRight] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::MoveLeft:
-		m_state[Direction::Left] = is_activate;
+		m_state[DirectionLeft] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::MoveUp:
-		m_state[Direction::Up] = is_activate;
+		m_state[DirectionUp] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::MoveDown:
-		m_state[Direction::Down] = is_activate;
+		m_state[DirectionDown] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::RollRight:
-		m_state[Direction::RollRight] = is_activate;
+		m_state[DirectionRollRight] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::RollLeft:
-		m_state[Direction::RollLeft] = is_activate;
+		m_state[DirectionRollLeft] = is_activate;
 		return true;
 
 	case client::PlayerActionEvent::PauseGame:
@@ -178,7 +178,7 @@ void GameView::updateMatrices() noexcept
 
 void GameView::resetKeyState() noexcept
 {
-	for (int i = 0; i < Direction::Count; i++) {
+	for (int i = 0; i < DirectionCount; i++) {
 		m_state[i] = false;
 	}
 }
@@ -212,28 +212,28 @@ void GameView::update(const world::Player &player, WorldTickId tick_id, double d
 		}
 
 		double dx = 0;
-		if (m_state[Direction::Left]) {
+		if (m_state[DirectionLeft]) {
 			dx -= dt;
 		}
-		if (m_state[Direction::Right]) {
+		if (m_state[DirectionRight]) {
 			dx += dt;
 		}
 		move_strafe_direction += dx * m_local_player.rightVector();
 
 		double dy = 0;
-		if (m_state[Direction::Down]) {
+		if (m_state[DirectionDown]) {
 			dy -= dt;
 		}
-		if (m_state[Direction::Up]) {
+		if (m_state[DirectionUp]) {
 			dy += dt;
 		}
 		move_strafe_direction += dy * m_local_player.upVector();
 
 		double dl = 0;
-		if (m_state[Direction::Backward]) {
+		if (m_state[DirectionBackward]) {
 			dl -= dt;
 		}
-		if (m_state[Direction::Forward]) {
+		if (m_state[DirectionForward]) {
 			dl += dt;
 		}
 		move_forward_direction += dl * m_local_player.lookVector();
@@ -249,10 +249,10 @@ void GameView::update(const world::Player &player, WorldTickId tick_id, double d
 		m_mouse_delta = m::double2();
 
 		double roll_angle = 0;
-		if (m_state[Direction::RollLeft]) {
+		if (m_state[DirectionRollLeft]) {
 			roll_angle -= m_roll_speed * dt;
 		}
-		if (m_state[Direction::RollRight]) {
+		if (m_state[DirectionRollRight]) {
 			roll_angle += m_roll_speed * dt;
 		}
 

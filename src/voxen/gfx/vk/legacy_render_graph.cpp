@@ -245,7 +245,7 @@ void LegacyRenderGraph::doFrustumCullingPass(RenderGraphExecution &exec)
 	VkPipelineLayout layout = legacy_layout_collection.landFrustumCullLayout();
 
 	ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE,
-		legacy_pipeline_collection[PipelineCollection::LAND_FRUSTUM_CULL_PIPELINE]);
+		legacy_pipeline_collection[PipelineCollection::ComputePipelineLandFrustumCull]);
 	ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1, &m_main_scene_dset, 0, nullptr);
 
 	// Clear all draw counters to zero first, then wait for all clears with one barrier
@@ -329,7 +329,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		VkPipelineLayout chunk_mesh_pipeline_layout = legacy_layout_collection.landChunkMeshLayout();
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[PipelineCollection::LAND_CHUNK_MESH_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::GraphicsPipelineLandChunkMesh]);
 
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, chunk_mesh_pipeline_layout, 0, 1,
 			&m_main_scene_dset, 0, nullptr);
@@ -379,7 +379,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer.buffer, index_buffer.buffer_offset, VK_INDEX_TYPE_UINT16);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[PipelineCollection::LAND_DEBUG_CHUNK_BOUNDS_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::GraphicsPipelineLandDebugChunkBounds]);
 
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &m_main_scene_dset,
 			0, nullptr);
@@ -452,7 +452,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		ddt.vkCmdBindIndexBuffer(cmd_buf, index_buffer.buffer, index_buffer.buffer_offset, VK_INDEX_TYPE_UINT16);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[PipelineCollection::LAND_SELECTOR_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::GraphicsPipelineLandSelector]);
 		ddt.vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &m_main_scene_dset, 0,
 			nullptr);
 		ddt.vkCmdPushConstants(cmd_buf, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_const), &push_const);
@@ -577,7 +577,7 @@ void LegacyRenderGraph::doMainPass(RenderGraphExecution &exec)
 		const m::float2 inv_screen_size = m::float2(1.0f) / m::float2(viewport.width, viewport.height);
 
 		ddt.vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			legacy_pipeline_collection[PipelineCollection::UI_BASIC_PIPELINE]);
+			legacy_pipeline_collection[PipelineCollection::GraphicsPipelineUiBasic]);
 		ddt.vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(m::float2),
 			&inv_screen_size);
 		ddt.vkCmdPushDescriptorSetKHR(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,

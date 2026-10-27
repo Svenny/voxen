@@ -41,16 +41,16 @@ public:
 
 private:
 	enum Direction : int {
-		Forward = 0,
-		Backward,
-		Left,
-		Right,
-		Up,
-		Down,
-		RollLeft,
-		RollRight,
+		DirectionForward = 0,
+		DirectionBackward,
+		DirectionLeft,
+		DirectionRight,
+		DirectionUp,
+		DirectionDown,
+		DirectionRollLeft,
+		DirectionRollRight,
 
-		Count
+		DirectionCount
 	};
 
 	m::double2 m_window_size;
@@ -86,7 +86,7 @@ private:
 	bool m_block_modify_requested = false;
 	land::Chunk::BlockId m_current_block_id = 0;
 
-	bool m_state[Direction::Count];
+	bool m_state[DirectionCount];
 
 private:
 	void setWindowSize(m::int2 size) noexcept;
