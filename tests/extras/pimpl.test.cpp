@@ -6,6 +6,9 @@
 #include <type_traits>
 #include <utility>
 
+namespace extras
+{
+
 namespace
 {
 
@@ -86,3 +89,5 @@ TEST_CASE("'pimpl' constructs, copies, moves and destroys the object", "[extras:
 	// a, b (moved-from), d, e, f (moved-from), g
 	CHECK(c.destructions == 6);
 }
+
+} // namespace extras

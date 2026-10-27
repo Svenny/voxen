@@ -6,6 +6,9 @@
 #include <limits>
 #include <vector>
 
+namespace extras
+{
+
 namespace
 {
 
@@ -178,3 +181,5 @@ TEST_CASE("'linear_allocator' doesn't reallocate in free()", "[extras::linear_al
 
 	CHECK(alloc.is_free());
 }
+
+} // namespace extras

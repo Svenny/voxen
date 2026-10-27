@@ -2,6 +2,9 @@
 
 #include "../test_common.hpp"
 
+namespace extras
+{
+
 TEST_CASE("'defer' works properly", "[extras::defer]")
 {
 	SECTION("exiting scope normally")
@@ -91,3 +94,5 @@ TEST_CASE("'defer_fail' ignores exceptions that were in flight before it", "[ext
 		REQUIRE(fired == false);
 	}
 }
+
+} // namespace extras
