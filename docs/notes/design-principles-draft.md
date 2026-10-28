@@ -75,9 +75,24 @@ commit `93967d4`.
   scheduler (time stretch: fewer ticks per wall second) without the simulation noticing. The
   render thread interpolates between snapshots using wall time. System calendar time may enter
   the simulation only as an explicit input (calendar-based events), never as a measure of tick
+  duration. The simulated time per tick may still vary when a project needs it (slow motion,
+  rewind): that is a controlled scaling multiplier passed in as tick input, never a measured
   duration.
+- **D1.12 Timelines above the simulation.** Pause means there is at least one more timeline:
+  the *session* (process lifetime, event-driven: menus, pause, time scale, which world is
+  loaded, settings, profile and meta-state). The *presentation* timeline (frames: render,
+  audio, UI) is another and need not coincide with the session one. Session values that affect
+  gameplay (difficulty, rule toggles) enter the simulation only as explicit tick inputs, recorded
+  in the snapshot like any input (S1.11), so a save or replay carries the difficulty in force at
+  each tick; the sim never reads settings directly. The editor timeline (S9.4) is a fourth,
+  stepped by `edit()`.
 
 ## 2. State storage (V8G and beyond)
+
+V8G ("VersioninG") is the working name for the component storage backbone: copy-on-write values,
+snapshots and diffs, whatever the implementation. `V8gHashTrie` and `V8gFlatMap` are two
+implementations behind common concepts, helpers and storage policies; the name stays through the
+redesign, whether or not any of today's code survives it.
 
 - **P2.1 Snapshots are the integration contract.** Render, replication, saving, undo, tools and
   tests all consume immutable snapshots; nothing but the tick function ever sees mutable state.
@@ -159,7 +174,7 @@ work itself: 2.4 allocations per update (one value, plus the copy-on-write of ne
 the ~65k leaf-level nodes, each of which is hit by random keys every tick) and the matching frees
 one snapshot later. Peak RSS is also inflated by fragmentation from this churn (1.7 GiB at
 500k updates with 140 MiB live). The scaling is linear in the update count, so no tuning of
-node size or root fan-out closes a 6.5x gap; P2.2 stands.
+node size or root fan-out closes a 6.5x gap; S2.2 stands.
 
 **Paged copy-on-write, by what factor.** Pages are 2x faster at 10k updates, 12x at 100k and
 22x at 500k, with 978 allocations per tick at every size, and their diff is 20-35x faster. The
@@ -193,21 +208,71 @@ once cells exist, and this table should be read as the random-access worst case 
 
 ## 4. Entities, components, scenes
 
-- **D4.1 Entity = id; component = plain data; system = function.** Components are trivially
-  serializable records (no pointers, no owning handles, references by entity index or asset id).
+- **S4.1 Entity = id; component = plain data; system = function.** Components are trivially
+  serializable records (no pointers, no owning handles, references by entity key or asset id).
   Layout is defined in the schema (section 7), generated for C++ and for scripting.
-- **D4.2 Scene is a snapshot, prefab is a document.** A scene file is a serialized snapshot (set
+- **D4.1a Project component layouts need an add-on rebuild, never an engine rebuild.** The
+  engine stores project components opaquely (size, alignment, type UID, a generated function
+  table for copy, serialize, diff and inspect), so a project component never requires an engine
+  rebuild; P5.1 and P5.5 demand that. A layout change is a schema change: it regenerates code,
+  rebuilds the project add-on (seconds, with hot-reloadable plugins per S5.2) and migrates live
+  state through the document versioning path (P7.6): serialize out, reload, deserialize in.
+  Dynamic-layout components (script- or DSL-defined, no rebuild) are not a second component kind:
+  the schema's reflection tables, needed anyway by the editor, serialization and replication,
+  give interpreted field access to any component, which covers tools and prototyping and costs
+  only where used. Hot paths are typed code over generated layouts.
+- **S4.2 Scene is a snapshot, prefab is a document.** A scene file is a serialized snapshot (set
   of entities with components). A prefab is a document whose instantiation is a DOM merge
   (base document + instance overrides), so prefab overrides, asset-meta inheritance and settings
   layering are one mechanism. Nested scenes are prefabs that happen to be large.
-- **D4.3 Hierarchy is data.** `Parent`/`Children` components and a propagation system (P1.5).
-  Streaming, LOD and ownership rules attach to cells (P3.2), not to the hierarchy.
-- **?4.4** Archetype (table per component set) vs sparse-set (table per component) storage. Pages
-  (P2.2) work with either; archetypes favour systems, sparse sets favour reactive entities with
-  frequently added/removed components. Decide after the benchmark in P2.6.
-- **?4.5** Spatial queries ("what is near me") are needed by nearly every gameplay script; they
-  must be served from the snapshot by an accelerated structure maintained as a system. Not
-  drafted anywhere yet.
+- **S4.3 Hierarchy is data.** `Parent` is a component (`parent key, order`) and the single
+  source of truth. `Children` is not stored: it is a reverse index of `Parent` maintained from
+  diffs (S4.5), which removes both the variable-length component and the two-sources consistency
+  problem. `Transform` stays purely spatial and does not absorb the parent link: non-spatial
+  entities (a machine's logic holder, groups, UI nodes) take part in the hierarchy for ownership
+  and active/disabled propagation without carrying a transform, and a spatial entity resolves
+  its world transform against its nearest spatial ancestor. Propagation (transforms, active
+  state) is a system phase (S1.5). Streaming, LOD and replication ownership attach to cells
+  (P3.2), not to the hierarchy.
+- **D4.3a Variable-length data in components.** Not every component is a fixed-layout POD
+  (inventories, names, scripted tables). The schema distinguishes *inline* fields (fixed layout,
+  in the page) from *blob* fields: a handle to an immutable, reference-counted buffer copied on
+  write, which the Immutable/Shared storage policies of V8G already model. Blobs keep components
+  trivially copyable and snapshot-safe (a copy is a reference bump) at the price of an
+  indirection; the rule that a component never points into another entity or component still
+  holds.
+- **D4.4 One paged table per component type, indexed by entity index.** With dense keys (S2.3)
+  the archetype-vs-sparse-set choice mostly dissolves: every component type is a paged array
+  indexed directly by entity index (a radix tree of pages over the 48-bit index space, presence
+  bitmap per page), so a lookup is two loads, iteration walks the pages of one type and joins
+  other types by index, and pages are also the copy-on-write unit (S2.2). Locality, which is
+  what archetypes buy, comes from the key allocator instead: entities of one cell or one prefab
+  instance get contiguous indices, so the pages of the types they share are dense and iterate
+  like an archetype table. A schema-declared archetype is then an allocation hint plus a
+  guarantee that its types are always attached together; a rarely attached component is a type
+  whose pages are mostly absent. The explicit entity-to-components mapping is the entity header
+  table (one more paged table, always present): generation, alive flag and the set of attached
+  types as a bitset or, past a type count worth measuring, a small sorted list or archetype id.
+  Adding or removing a component is a header diff plus a page write; nothing moves. To validate
+  by extending the P2.6 benchmark with an entity-index radix tree next to the hash trie and the
+  flat paged table it already measures.
+- **S4.5 Indices are views of a snapshot.** Primary storage (V8G) is the only authoritative
+  state; anything that answers a query faster is an index in the database sense: a spatial hash
+  or BVH for "what is near me", the `Children` reverse index, name and tag lookups, "machines
+  waiting for power" lists. An index is maintained by a system from diffs (P2.4) in a phase after
+  its sources' writers, is published with the snapshot it describes (immutable and versioned
+  like a component page) and is never saved or replicated: losing it is a rebuild, never data
+  loss. An index is copy-on-write when it is large and rebuilt per tick when it is small; which
+  one is a per-index decision measured against the P0.5 workload.
+- **D4.6 Large-world coordinates from day one.** Retrofitting is the lesson of Unreal's LWC, so
+  the sim transform is split from the start: an integer frame (cell coordinate, as
+  `land::ChunkKey` already is) plus a local offset, and only the combined position crosses
+  cells, saves or the network. Recommendation: `int32` frame on the chunk grid plus `float`
+  local offset, rebased on cell crossing, which keeps a position 16 bytes and SIMD-friendly;
+  `double` only where a solver integrates over many ticks (physics), and strict-tier logic on
+  integer block coordinates anyway (S1.4). Render has no choice: camera-relative translation
+  computed once per frame on the CPU (frame difference in integers, remainder in `float`), and
+  `float` in everything that reaches a shader.
 
 ## 5. Scripting and plugins
 
@@ -263,6 +328,13 @@ once cells exist, and this table should be read as the random-access worst case 
   converters with a regression corpus of old files.
 - **P7.7 Codegen is the plumbing.** New fields are declared once in the schema and reach C++,
   scripting, serialization, replication and the editor through generated code.
+- **D7.8 Settings are one layered document.** Console variables, options and engine
+  configuration are one schema-backed DOM document (today split across `svc::Config` and
+  `RuntimeConfig`) with layers per P7.2: defaults → platform → user → save or session → command
+  line. Per-field schema flags pick the consumer: restart-required, read by a service on the
+  session timeline (render, audio), or *sim input* (D1.12), which turns a change into a tick input
+  instead of a direct read; cheat and replicated flags cover multiplayer. There is no separate
+  cvar system: a cvar is a settings field with a console path.
 
 ## 8. Assets
 
@@ -306,6 +378,34 @@ once cells exist, and this table should be read as the random-access worst case 
 - **S10.2 Immediate-mode UI with derived state.** UI is rebuilt every frame from snapshots and
   input; whatever state it keeps (focus, scroll, text edit, animation) is derived, discardable and
   keyed by stable ids. The claim is "no authoritative UI state", not "no state".
+- **S10.3 Multi-backend render graph from day one.** The state of Windows Vulkan drivers
+  (`docs/notes/bug-reports`: AMD crashes and silent zeros on pointer use, Intel crashes on 16-bit
+  loads; all fine on Linux) makes a second backend (D3D12) a shipping requirement. The
+  abstraction boundary is the render graph: resources, passes and dependencies are declared
+  once, barriers and transient allocation are derived, and a backend only executes graphs. Of
+  the two drafts (`include/voxen/gfx/graph/`, the Vulkan-specific
+  `include/voxen/gfx/vk/render_graph_*.hpp`) the backend-neutral one is the direction. Shaders
+  stay Slang, which targets SPIR-V and DXIL; the consequence for shader style is bindless
+  descriptors and structured buffers as the portable path, with buffer-device-address pointers
+  at most an optional Vulkan-only fast path, since DXIL has no equivalent and pointers are
+  exactly what the drivers break on.
+- **D10.4 One GPU layer, many consumers.** Rendering, ray-traced audio, neural inference and GPU
+  physics all want the device, so one common layer serves all of them: device, queues, memory
+  and a graph of work that is not render-specific (render graphs become work graphs), with
+  shared structures (ray-tracing BVHs of the scene) falling out of it. A separate device (iGPU
+  for compute) is a deployment option the layer allows, not an architecture: the common machine
+  has one GPU, so contention is managed with queue priorities and per-consumer budgets rather
+  than avoided. Sim-side consumers get a stricter rule: a tick never waits for the GPU. Results
+  enter the simulation pipelined, N ticks later, as inputs (the pattern of messages and D1.12),
+  their producers are tolerant-tier by definition (S1.4), and every such consumer has a CPU
+  fallback or is optional, because headless servers and tests (P9.2) run without a GPU.
+- **D10.5 Passes in C++, pipeline in data.** The render pipeline is neither fully baked nor
+  fully scripted: passes are C++ (plugin code, hot-reloadable, S5.2); the graph that assembles
+  them is a document (P7.1) that projects and mods compose, reorder and parameterize without an
+  engine rebuild; shaders are hot-reloaded assets. A scripted pass language is a non-goal: C++
+  plugins already give the iteration speed, and the render thread's budget has no room for an
+  interpreter. The base renderer is itself such a plugin (P5.5): whatever it can do, a project
+  renderer can do.
 
 ## 11. Build and distribution
 
@@ -323,7 +423,20 @@ once cells exist, and this table should be read as the random-access worst case 
   (P2.5) the base for reconciliation. Interest management, prediction scope and the key allocation
   split (S2.3) are not drafted.
 
-Physics and collision; spatial indexing; networking interest management; audio; input mapping;
-pause and replay on top of the fixed tick (S1.10, S1.11); memory budgets and large-world
-coordinates (sim in `double`, render-relative `float`); localization; the test and benchmark
-strategy for the simulation core; crash and telemetry policy for shipped builds.
+Physics and collision; networking interest management; input mapping; replay on top of the
+fixed tick (S1.10, S1.11, D1.12); memory budgets; localization; the test and benchmark strategy
+for the simulation core; crash and telemetry policy for shipped builds.
+
+## 13. Audio
+
+- **P13.1 Audio is a presentation consumer.** Like render (P10.1), audio reads snapshots and tick
+  events, interpolates with wall time and runs on its own timeline: a real-time callback thread
+  fed lock-free from presentation-side tasks, which never waits on the sim or the task system.
+- **P13.2 Import the mixing, own the propagation.** Mixing and mastering are solved outside the
+  engine (DAW-authored content; an existing backend and a borrowed mixer design rather than our
+  own). The engine's own ambition is physically based propagation modelled live from the world:
+  line-of-sight occlusion, reverb, echo and delay, Doppler; "ray-traced audio". That is a GPU
+  compute consumer (D10.4) and one more reason to share acceleration structures with rendering.
+- **?13.3** Nobody on the project has mixing or mastering experience. The first audio milestone
+  is a conventional mixer graph (buses, snapshots, ducking) with a design borrowed wholesale,
+  before any propagation work starts.
