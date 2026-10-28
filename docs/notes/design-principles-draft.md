@@ -58,7 +58,7 @@ commit `93967d4`.
   example into systems-over-arrays, nor the crowd example into per-entity actors.
 - **P1.7 Scheduling policies.** Per entity-system pair: always, periodic (`T` ticks, with a
   phase offset derived from the entity id so periodic load spreads evenly), reactive (on message
-  or timer). Strict vs relaxed timing is allowed only if the relaxation is deterministic (P1.4).
+  or timer). Strict vs relaxed timing is allowed only if the relaxation is deterministic (S1.4).
 - **S1.8 Behaviour is state machines, not stacks.** A "wait for reply" inside entity logic spans
   ticks, so it is serializable state in a component, not a suspended native coroutine. C++
   coroutines remain the tool for service-level I/O and asset streaming (they are not simulation
@@ -416,16 +416,32 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P11.3 Development builds are profiled.** A development/shipping switch is independent of the
   optimization level (design-drafts "Shipping builds").
 
-## 12. Not yet covered anywhere
+## 12. Networking
 
 - **S12.1 Networking model.** Server-authoritative state replication with client-side prediction
   is the main target; snapshot diffs (P2.4) are the server-side delta source, retained snapshots
-  (P2.5) the base for reconciliation. Interest management, prediction scope and the key allocation
-  split (S2.3) are not drafted.
-
-Physics and collision; networking interest management; input mapping; replay on top of the
-fixed tick (S1.10, S1.11, D1.12); memory budgets; localization; the test and benchmark strategy
-for the simulation core; crash and telemetry policy for shipped builds.
+  (P2.5) the base for reconciliation. Lockstep is a niche fallout of a fully strict sim (S1.4).
+- **D12.2 Interest is cells.** The unit of interest management is the cell (P3.2): a client
+  subscribes to a set of cells (around its avatars, plus whatever the game pins: a remote camera,
+  an owned base) with hysteresis on the boundary, and receives per-cell diffs. The server never
+  evaluates per-entity relevance; a cell is in or out. Replication priority and bandwidth
+  budgeting are per cell per client (nearest first, stale-longest first), so the P0.5 world
+  with thousands of machines costs a client only the cells it looks at.
+- **D12.3 Clients send inputs, never state.** The wire carries the client's input records
+  (P15.1) up and cell diffs down. Prediction scope is the client's own avatar and what it
+  directly manipulates in the same tick (strict-tier interactions it initiates: a door, a
+  pickup); everything else is interpolated from server snapshots and never predicted.
+  Reconciliation is "retain snapshots, re-tick from the last confirmed one with the pending
+  inputs" (P2.5), which bounds the retention count by round-trip time in ticks.
+- **D12.4 The protocol is generated.** Diff encoding, input records and the session handshake
+  come from the schema (P7.7) with a protocol version derived from the schema hash; mismatched
+  versions refuse to connect rather than negotiate. One unreliable-ordered channel with
+  acknowledged baselines for cell diffs, one reliable channel for session control. Transport
+  (UDP, a relay, in-process loopback for tests) sits below both.
+- **D12.5 Mods on the server are the trust model.** Simulation mods run on the server; clients
+  must have the same mod set (checked in the handshake) for prediction and presentation, and a
+  mismatch is a refusal, not a download. Native plugins are not sandboxed (P5.5): installing a
+  mod is trusting its author, as on every other PC platform.
 
 ## 13. Audio
 
@@ -440,3 +456,146 @@ for the simulation core; crash and telemetry policy for shipped builds.
 - **?13.3** Nobody on the project has mixing or mastering experience. The first audio milestone
   is a conventional mixer graph (buses, snapshots, ducking) with a design borrowed wholesale,
   before any propagation work starts.
+
+## 14. Physics and collision
+
+- **P14.1 Physics is a tolerant-tier system.** One solver step per tick on the fixed rate
+  (S1.10), reading snapshot `i` and writing components for `i+1` (P1.9), with its internal
+  parallelism on the task system (P3.3). The authoritative state is components (`RigidBody`,
+  `Collider`, `Transform`); the solver's own world (broad phase, contact cache, islands) is an
+  index (S4.5) kept in sync from diffs, not the truth.
+- **D14.2 Import the solver.** A continuous rigid-body solver is not engine work; Jolt is the
+  candidate (multithreaded, cross-platform deterministic per binary, optional double precision,
+  save/restore of its internal state). The import boundary is the index framing above, and the
+  open point is rollback (D12.3): a solver whose internal state cannot be restored to snapshot
+  `i` makes predicted bodies diverge, so solver state save/restore is a selection criterion.
+- **D14.3 Voxels are their own collision shape.** Terrain collision queries the chunk storage
+  directly through a custom shape, never a cooked mesh; a chunk edit is collision-visible on
+  the next tick with no bake step. Large-world positions (D4.6) mean the solver works in
+  cell-local coordinates and bodies rebase on crossing, or the solver is instanced per region.
+- **P14.4 Two physics.** Grid-aligned machine logic (belts, fluids in pipes, circuits) is
+  integer, strict-tier logic in gameplay systems (S1.4), never the continuous solver. The
+  solver is for bodies that move freely; the two meet only through components.
+
+## 15. Input
+
+- **P15.1 Devices never reach the simulation.** Raw device events (SDL today) are mapped on the
+  presentation side to *actions*: project-declared in the schema, rebindable through the
+  settings document (D7.8). Per tick the mapping produces an *input record* (action states and
+  edges, tick-stamped, per player); that record is the `inputs[i]` of P1.1 and the only input
+  the simulation ever sees. Immediate-mode UI (S10.2) consumes events before the mapping,
+  so focus and capture are a presentation concern.
+- **P15.2 Input records are the replay format.** Recording the records (plus the initial
+  snapshot) is a replay; it is exact for the strict tier and the measuring stick for the
+  tolerant tier (S1.4). The same records are the client's upstream traffic (D12.3) and the
+  scripted driver for tests (section 19).
+
+## 16. Persistence, streaming and replays
+
+- **P16.1 A save is a snapshot plus its inputs.** Components, in-flight messages (S1.3), the
+  key allocator (S2.3), session values in force (D1.12) and the tick id; never the indices
+  (S4.5). Schema-generated binary with a version (P7.6) and a text export for diffing and
+  inspection (P7.3). The tick function must be able to resume from a save bit-for-bit as it
+  would have from the live snapshot.
+- **D16.2 Saves are journals of cells.** The P0.5 world cannot be written whole, so the unit of
+  persistence is the cell (P3.2): a save is a base plus an append-only journal of cell diffs
+  (P2.4) with compaction in the background, and autosave is "flush the dirty cells". Land
+  chunks are already shaped this way; entities follow.
+- **D16.3 Streaming is the same mechanism.** A cell outside every interest set (players,
+  pinned loaders) is written out and dropped; reloading reads the same format. Unloaded cells
+  do not tick, and catch-up on reload is an explicit game rule (nothing, or an approximation),
+  never implicit "simulate the elapsed time". The loaded set is itself derived from state, so
+  it is reproducible (S1.4).
+- **P16.4 Replays are first-class.** A replay (P15.2) is also a bug report (P18.3), a test
+  (P19.1) and the base of a spectator or demo mode; the format is the save format plus input
+  records, so there is one serializer.
+
+## 17. Memory
+
+- **P17.1 Budgets are explicit and per subsystem.** Snapshot retention (P2.5), component pages,
+  loaded cells, GPU resources, asset cache and transient per-tick memory each have a budget,
+  and the budget view is a tool, not a heuristic: every allocation is attributable to a
+  subsystem tag. The sim's steady-state budget is dominated by retention count times the
+  per-tick change, so retention is the first knob.
+- **D17.2 Arenas, not a global allocator.** No engine-wide replacement of `operator new`
+  (hooking it is a sandbox trick, P2.6). Subsystems allocate from their own arenas: pipe memory
+  for messages and tasks, scratch memory for per-tick temporaries, pools for objects, and a
+  page allocator for component pages (fixed size, later NUMA-aware, P3.1). Entity code
+  allocates nothing per tick in steady state (D5.3 says the same for C#); a per-tick allocation
+  in a system is a profiler finding.
+- **P17.3 The working set is cells, not the world.** Memory scales with the loaded cells
+  (D16.3), not with the world; the 100 GiB of P0.5 is on disk, and the budget decides how
+  much of it is live.
+
+## 18. Observability: logging, profiling, crashes
+
+- **P18.1 Profiling is always on in development builds.** Instrumentation of ticks, phases,
+  tasks and cells (P11.3) is built in, not a debug add-on, exported to an external viewer
+  (Tracy-style) rather than an in-house one (P0.3). A tick over budget is an event with its
+  phase breakdown attached. Timings feed tools only, never the sim (S1.4).
+- **P18.2 Logging is structured and categorized.** Per-category levels, per-world and per-tick
+  context on sim-side messages, a ring buffer in shipping builds that is dumped on a crash,
+  and machine-readable output as an option for agents (P9.3).
+- **P18.3 A crash report is a replay seed.** Because the sim is reproducible, the useful crash
+  payload is the last retained snapshot plus the input records since, together with the stack
+  and the log ring: a crash can be re-ticked under a debugger. Shipped builds send that only on
+  opt-in, with no identifying data beyond a build id and the hardware class.
+- **P18.4 Invariants are checked, not assumed.** Development builds verify the contracts that
+  the design relies on: no write to a published snapshot (P2.7), deterministic message order,
+  no per-tick allocation in systems, index consistency with its source (S4.5). Shipping builds
+  compile them out.
+
+## 19. Testing and benchmarks
+
+- **P19.1 The sim is tested as a pure function.** A test is a scenario document (initial
+  snapshot or prefab set), input records and an expectation: a strict-tier state hash, or a
+  property checked on the resulting snapshot. Tests are data files run by one harness, so
+  agents and tools (P9.3) can write them.
+- **P19.2 The determinism suite is a gate.** The same scenarios run with 1, 4 and 32 threads
+  and with shuffled cell-to-task assignment: strict-tier hashes must match, tolerant-tier
+  divergence is measured against per-system thresholds over long runs (S1.4). It runs nightly
+  with the benchmarks, not per commit.
+- **P19.3 Benchmarks are tracked, not just run.** The P0.5 scale scenario (synthetic machines
+  and crowds) and the storage benchmark (P2.6) report numbers that CI records over time, with
+  thresholds that fail on regression; ad-hoc measurements live in `src/sandbox/`.
+- **P19.4 Rendering is tested by image.** Headless rendering (P9.2) to an image with per-backend
+  (S10.3) tolerances, since no two drivers agree bit-for-bit; a mismatch beyond tolerance is a
+  failure, within it a warning with the diff image kept.
+
+## 20. Localization
+
+- **P20.1 Text is an asset, keyed, layered.** User-visible strings are never literals: they are
+  keys into per-locale string tables that are assets (section 8) in a locale mount layer
+  (P8.2), so a translation is an overlay and mods localize like the base game. Message
+  formatting (plurals, gender, number and date formats) uses a standard format, not
+  `fmt`-style positional substitution.
+- **P20.2 Text rendering is not Latin-only from day one.** Shaping and bidirectional text are
+  in the UI stack from the start (HarfBuzz and FreeType are already dependencies); fonts are
+  assets with fallback chains per script.
+
+## 21. Worlds and process lifecycle
+
+- **D21.1 A world is an object, not a global.** Play-in-editor (S9.4), a server hosting several
+  instances, and tests all put more than one simulation in one process. Services are
+  process-level (section 6); a world owns its timeline, snapshots, cells and key allocator, and
+  every snapshot and message carries its world. Nothing simulation-side is a singleton.
+- **P21.2 Startup is services, then worlds.** The engine constructs services (P6.3) from the
+  settings document (D7.8), then worlds from documents (S4.2); shutdown is the reverse, and a
+  world can be destroyed and recreated without restarting services (editor reload, server map
+  change).
+
+## 22. Remaining domains, in one line each
+
+- **D22.1 Procedural generation is strict-tier.** Generation is a pure function of seed and
+  cell, bit-exact across platforms, because it is content: two players must see the same world.
+  Floating point in generators is therefore fixed-point or integer, or tested as strict.
+- **D22.2 Navigation is an index, pathfinding a solver.** The navmesh or voxel nav-grid is an
+  index (S4.5) over the world, rebuilt incrementally from chunk diffs; pathfinding is a global
+  solver (P1.9) answering requests as messages; neural inference for agents is a GPU consumer
+  (D10.4) in the tolerant tier.
+- **D22.3 Animation splits across timelines.** The sim owns animation *state* (clip, time,
+  blend weights, as components, strict-tier where gameplay depends on it: hit frames); the
+  presentation evaluates poses from that state per frame and never feeds back.
+- **D22.4 Scripting debugging goes through the control plane.** Breakpoints, watches and
+  stepping of entity logic are commands (P9.3) on a paused world (D1.12); native debuggers
+  attach to C++ plugins as usual, and `edit()` (S9.4) is how a tool mutates a paused world.
