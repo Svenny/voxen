@@ -204,7 +204,7 @@ CompressedChunkStorage<T>::CompressedChunkStorage(const CompressedChunkStorage &
 
 		node.nonuniform_leaf_mask = other_node.nonuniform_leaf_mask;
 		node.leaves = std::make_unique<Leaf[]>(num_leaves);
-		std::copy(node.leaves.get(), node.leaves.get() + num_leaves, other_node.leaves.get());
+		std::copy(other_node.leaves.get(), other_node.leaves.get() + num_leaves, node.leaves.get());
 	}
 }
 
@@ -419,16 +419,19 @@ void CompressedChunkStorage<bool>::expand(ExpandedView expanded) const noexcept
 			continue;
 		}
 
+		// Same YXZ iteration order as the compressing constructor
 		uint32_t j = 0;
-		for (uint32_t y = base.y; y <= base.y + 8; y++) {
-			for (uint32_t x = base.x; x <= base.x + 8; x++) {
+		for (uint32_t y = base.y; y < base.y + 8; y++) {
+			for (uint32_t x = base.x; x < base.x + 8; x++) {
 				// TODO: optimize: uint64_t(mask) -> spread bits to bytes -> store 8 bools at once
-				for (uint32_t z = base.z; z <= base.z + 8; z++) {
-					expanded[m::uint3(x, y, z)] = !!(node->m_leaf_mask[j / 8] & (1u << j));
+				for (uint32_t z = base.z; z < base.z + 8; z++) {
+					expanded[m::uint3(x, y, z)] = !!(node->m_leaf_mask[j / 8] & (1u << (j % 8)));
 					j++;
 				}
 			}
 		}
+
+		node++;
 	}
 }
 
@@ -446,17 +449,18 @@ bool CompressedChunkStorage<bool>::load(uint32_t x, uint32_t y, uint32_t z) cons
 	uint64_t node_bit = uint64_t(1) << node_id;
 	uint64_t node_tail_mask = node_bit - 1;
 
-	if (!m_nodes) {
+	if (!(m_nonuniform_node_mask & node_bit)) {
+		// Uniform node, its value is stored in the mask
 		return !!(m_uniform_value_mask & node_bit);
 	}
 
 	uint32_t array_index = uint32_t(std::popcount(m_nonuniform_node_mask & node_tail_mask));
 	const Node &node = m_nodes[array_index];
 
-	uint32_t leaf_id = z % 8 / 2 + (x % 8 / 2) * 4 + (y % 8 / 2) * 16;
-	uint32_t leaf_bit_id = z % 2 + (x % 2) * 2 + (y % 2) * 4;
+	// Bits are packed in YXZ order, same as the compressing constructor
+	uint32_t j = (z % 8) + (x % 8) * 8 + (y % 8) * 64;
 
-	return !!(node.m_leaf_mask[leaf_id] & (1u << leaf_bit_id));
+	return !!(node.m_leaf_mask[j / 8] & (1u << (j % 8)));
 }
 
 template class VOXEN_API CompressedChunkStorage<uint8_t>;

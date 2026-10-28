@@ -123,7 +123,11 @@ void generatePseudoChunkSurface(ChunkKey key, std::array<PseudoDataPtr, 19> ref,
 	}
 }
 
-void editBlock(ChunkKey key, ChunkPtr chunk, m::int3 position, Chunk::BlockId block_id, svc::MessageSender *sender)
+// Edit a single block, writing the result into a fresh chunk object `out`.
+// `source` is the current (possibly already published) chunk - it must never
+// be modified in place as snapshots and other jobs can be reading it concurrently.
+void editBlock(ChunkKey key, ChunkPtr source, ChunkPtr out, m::int3 position, Chunk::BlockId block_id,
+	svc::MessageSender *sender)
 {
 	assert(m::all(m::greaterThanEqual(position, m::int3(0))));
 	assert(m::all(m::lessThan(position, m::int3(Consts::CHUNK_SIZE_BLOCKS))));
@@ -132,16 +136,19 @@ void editBlock(ChunkKey key, ChunkPtr chunk, m::int3 position, Chunk::BlockId bl
 	// That won't scale... at all.
 
 	auto expanded = std::make_unique<Chunk::BlockIdArray>();
-	chunk->blockIds().expand(expanded->view());
+	source->blockIds().expand(expanded->view());
 
 	if (expanded->load(position.x, position.y, position.z) == block_id) {
-		// Not changed, discard this operation
-		return;
+		// Not changed, the new chunk is just a copy of the old one.
+		// The completion message must still be sent: `out` is already
+		// registered as the latest chunk pointer and has a pending task.
+		*out = *source;
+	} else {
+		expanded->store(position.x, position.y, position.z, block_id);
+		out->setAllBlocks(expanded->cview());
 	}
 
-	expanded->store(position.x, position.y, position.z, block_id);
-	chunk->setAllBlocks(expanded->cview());
-	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key);
+	sender->send<detail::ChunkLoadCompletionMessage>(LandService::SERVICE_UID, key, std::move(out));
 }
 
 constexpr int64_t STALE_CHUNK_AGE_THRESHOLD = 750;
@@ -848,12 +855,20 @@ private:
 
 		m::int3 edit_position = msg.position - chunk_lowest_block;
 
+		// The edited chunk is a new object; the previous one stays immutable
+		// as it can be published in world state snapshots and read by other jobs.
+		// Switch the latest pointer now so that dependent jobs enqueued later
+		// (e.g. pseudo-surface gen below) reference the edited version.
+		ChunkPtr source_ptr = std::move(m.latest_chunk_ptr);
+		m.latest_chunk_ptr = LandState::ChunkTable::makeValuePtr();
+
 		svc::TaskBuilder bld(m_task_service);
 		// This will ensure successive chunk gen/edit tasks complete in order
 		bld.addWait(m.chunk_gen_task_counter);
-		bld.enqueueTask(
-			[chunk_key, position = edit_position, new_block = msg.new_id, snd = &m_sender, ptr = m.latest_chunk_ptr](
-				svc::TaskContext &) { editBlock(chunk_key, std::move(ptr), position, new_block, snd); });
+		bld.enqueueTask([chunk_key, position = edit_position, new_block = msg.new_id, snd = &m_sender,
+								 src = std::move(source_ptr), out = m.latest_chunk_ptr](svc::TaskContext &) {
+			editBlock(chunk_key, std::move(src), std::move(out), position, new_block, snd);
+		});
 
 		m.pending_task_count++;
 		m.chunk_gen_task_counter = bld.getLastTaskCounter();
