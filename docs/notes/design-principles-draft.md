@@ -199,6 +199,20 @@ once cells exist, and this table should be read as the random-access worst case 
   unit for work stealing, for save/stream granularity and for replication interest. Sticky
   thread assignment and dynamic communication-graph clustering are deferred until a profile of
   real workloads shows cells are not enough.
+- **D3.2a Cells are ownership, frames are coordinates.** A large-world frame (D4.6) is a fixed,
+  regular grid cell of the coordinate system; a sim cell is a unit of ownership: scheduling,
+  persistence (D16.2), replication interest (D12.2). They are not the same thing but spatial
+  cells align to the frame grid: a spatial cell is a frame-aligned region at some scale (as
+  `land::ChunkKey` with `scale_log2` already is), so a spatial entity's cell is derived from its
+  frame coordinate and the cell scale. Cells are variable-size (scale per region, coarser where
+  nothing happens), created and removed programmatically (a logical cell for a factory network
+  or a vehicle interior; a spatial cell split when it gets too busy), and may overlap in space (a
+  moving vehicle's cell crosses terrain cells). An entity belongs to exactly one cell: single
+  ownership is what keeps persistence and replication unambiguous, and any other grouping
+  (tags, "all machines of this network") is an index (S4.5), not membership. Moving between
+  cells is an ownership transfer at the tick boundary, driven by state (position, an explicit
+  reparent), so it is deterministic (S1.4). Cell boundaries are visible to nothing but the
+  scheduler, the saver and the replicator: entity logic never sees them.
 - **P3.3 Task system stays generic.** `TaskService` (counters, dynamic graphs, continuations,
   coroutines) is the only thread pool. Sim scheduling, asset streaming, render preparation and
   tools all launch into it; no subsystem owns threads except the ones with external constraints
@@ -350,6 +364,14 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P8.4 Loading is streaming.** Every load is an asynchronous task (coroutine) with partial
   results (LOD levels, texture tiles, chunk ranges) as first-class outcomes; synchronous load is a
   test-only convenience.
+- **D8.4a Hot reload is streaming along the version axis.** A changed asset (editor edit, mod
+  update, a locale switch, P20.1) is one more residency change, like a new LOD level or a
+  partially resident region: the handle stays, a new version of the contents becomes resident,
+  consumers observe "version changed" through the same path they observe "level N arrived",
+  and the old version is released when no consumer references it. Consequences: hot reload is
+  a shipping feature, not a development one; no consumer caches a raw pointer into asset
+  contents across the point where it could observe a version change; GPU residency is the same
+  mechanism one level down.
 - **P8.5 Immutable assets, mutable documents.** Assets never change at runtime; documents (scenes,
   saves, profiles) do. The storage layer treats them differently (P7.4, design-drafts "Data and
   storage").
@@ -375,6 +397,19 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P10.1 Render reads snapshots.** The renderer consumes the latest published snapshot and
   diffs (P2.4) to update GPU-side state; it never touches mutable simulation data and runs on its
   own timeline.
+- **D10.1a Presentation predicts and reconciles, networking or not.** A 144 Hz presentation of
+  a 60 Hz sim that only interpolates between snapshots adds a tick of latency and quantizes
+  input to the tick rate; for camera rotation that is visible jag and lag. So the presentation
+  timeline owns a *predicted state*: each frame it starts from the latest snapshot, applies the
+  input records not yet consumed by the sim (P15.1) and the sub-tick remainder, and renders
+  that; when the next snapshot arrives the pending set shrinks and the prediction is rebuilt
+  from it. This is the structure of client prediction (D12.3) with the local sim thread in the
+  role of the server, one tick of latency instead of a round trip, so the scope rule is shared:
+  own camera and avatar are predicted, everything else is interpolated. The predict function
+  is project code (a plugin, like the sim), runs on the presentation timeline, is tolerant-tier
+  by nature and feeds nothing back. The pure camera case has a cheaper special form: the camera
+  orientation is presentation state that the sim receives as an input field, so mouse look is
+  never tick-rate-limited at all.
 - **S10.2 Immediate-mode UI with derived state.** UI is rebuilt every frame from snapshots and
   input; whatever state it keeps (focus, scroll, text edit, animation) is derived, discardable and
   keyed by stable ids. The claim is "no authoritative UI state", not "no state".
@@ -564,11 +599,21 @@ once cells exist, and this table should be read as the random-access worst case 
 
 ## 20. Localization
 
-- **P20.1 Text is an asset, keyed, layered.** User-visible strings are never literals: they are
-  keys into per-locale string tables that are assets (section 8) in a locale mount layer
-  (P8.2), so a translation is an overlay and mods localize like the base game. Message
-  formatting (plurals, gender, number and date formats) uses a standard format, not
-  `fmt`-style positional substitution.
+- **P20.1 Text is an asset, keyed, addressable per locale.** User-visible strings are never
+  literals: they are keys into per-locale string tables that are assets (section 8). A locale
+  is a mount layer (P8.2) only as the *default resolution*: every locale's table is addressable
+  by itself, so two locales can be resident at once (a dialogue that flips between English and
+  the native language on a key press) and switching the language in settings is a hot reload
+  (D8.4a) of the string tables, never a restart. Mods localize like the base game: one more
+  layer.
+- **D20.1a Formatted text is a small expression language.** Strings with variable content carry
+  inline expressions evaluated at runtime, written by the translator, since word order, plural
+  forms and case agreement differ per language: `you have {x} {plural(x, item)} in your pocket`.
+  The functions are backed by data, not code: plural categories per locale from CLDR rules
+  (Russian: one for 1, 21, 31; few for 2-4, 22-24; many for 0, 5-20, 11-14), noun forms per
+  key (singular/plural, cases, gender) from the string table, numbers and dates from locale
+  data. The translator chooses the forms, the rules say which applies; no translator writes the
+  21-24 rule by hand. Nothing `fmt`-style with positional arguments reaches content.
 - **P20.2 Text rendering is not Latin-only from day one.** Shaping and bidirectional text are
   in the UI stack from the start (HarfBuzz and FreeType are already dependencies); fonts are
   assets with fallback chains per script.
