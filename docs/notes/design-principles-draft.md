@@ -59,11 +59,29 @@ commit `93967d4`.
 - **P1.7 Scheduling policies.** Per entity-system pair: always, periodic (`T` ticks, with a
   phase offset derived from the entity id so periodic load spreads evenly), reactive (on message
   or timer). Strict vs relaxed timing is allowed only if the relaxation is deterministic (S1.4).
+  These policies are also the engine's half of *simulation LOD*: an unwatched region can run its
+  systems on longer periods with a larger step. The other half, behaviour-level LOD (an abstract
+  "went to work, earned 200" instead of pathing there), is game logic, and the attention that
+  drives both (which lots or regions are watched) is session state (D1.12) entering as a
+  recorded tick input, so the outcome legitimately depends on what was watched and the replay
+  still reproduces it.
 - **S1.8 Behaviour is state machines, not stacks.** A "wait for reply" inside entity logic spans
   ticks, so it is serializable state in a component, not a suspended native coroutine. C++
   coroutines remain the tool for service-level I/O and asset streaming (they are not simulation
-  state). If a scripting layer offers `await`-style syntax for entities, it must lower to
-  serializable state machines (source generation), never to runtime stacks.
+  state). Content-heavy games (a Sims-like with a thousand interactions) cannot author
+  behaviours as hand-written state machines, so a serializable form of sequential code is a
+  deliverable of the first content milestone, not an option: either a DSL with `await`-style
+  syntax lowered to state machines by source generation, or a bytecode VM whose frames and stack
+  are data in a blob component (what SimAntics was). Both satisfy this item, which forbids
+  *native* stacks, not serializable ones. Cancellation is part of the same deliverable: an
+  interrupted behaviour unwinds through declared cleanup steps, not by being dropped mid-state.
+- **P1.13 One writer per component.** In any tick a component instance is written by exactly
+  one party: the system that owns the type in its phase, or the owning entity's own logic.
+  Everything else reads it (S1.2) or sends a message (S1.3). Control therefore flows by the
+  controlled reading its controller: an interaction entity that drives two interacting entitites
+  reads both freely and writes only itself, and each interacted one's movement and animation
+  systems read "my interaction says go here, do this". This is what makes free reads safe
+  without locks and keeps the writer of any value identifiable in a diff.
 - **P1.9 Global solvers are systems.** Physics, pathfinding, fluid or power-network solving are
   whole-world algorithms with their own internal parallelism. They consume snapshot `i` and
   produce components for `i+1` like any system; entities interact with them through components
@@ -111,6 +129,20 @@ redesign, whether or not any of today's code survives it.
   generations) is part of the saved world, indices are never compacted, prefab-internal references
   are remapped at instantiation, and in multiplayer the server allocates keys while clients use a
   reserved range for predicted entities until confirmed.
+- **D2.3a Generations must not wrap.** With 24-bit generations, LIFO reuse of freed indices
+  would recycle one hot slot per spawn: at 1000 spawns per second it wraps in under five hours,
+  and a wrapped generation silently revives a stale reference, the worst class of bug for a
+  long-running world. Design: freed indices go to a FIFO queue and are reused only while the
+  free pool holds at least a minimum count (64k, or a fraction of the live population), so each
+  slot's generation advances once per that many spawns (2^40 spawns to wrap one slot at 64k);
+  a slot whose generation reaches its maximum is *retired* permanently, which is harmless in a
+  48-bit index space, so wrapping cannot happen at all. A dead header entry (D4.4) keeps its
+  generation and the tick it was freed at, so the queue is reconstructable from the header
+  table on load and reuse order is deterministic (S1.4). 64:64 remains the fallback if a
+  profile shows the 8 extra bytes per reference do not matter; generation resets or index
+  compaction are rejected as world-wide reference rewrites. A key whose generation no longer
+  matches resolves to "dead", never to another entity, so a memory of a dead sim is safe; the
+  game decides what to keep (a never-deleted record entity) for things that matter after death.
 - **P2.4 Diffs are first-class.** Every versioned structure can enumerate changes between two
   snapshots in time proportional to the change (`visitDiff` today). Replication, render upload,
   save deltas and editor change tracking are all diff consumers.
@@ -200,7 +232,11 @@ once cells exist, and this table should be read as the random-access worst case 
   updated by one task. Messages between entities of one cell stay local; cells are the natural
   unit for work stealing, for save/stream granularity and for replication interest. Sticky
   thread assignment and dynamic communication-graph clustering are deferred until a profile of
-  real workloads shows cells are not enough.
+  real workloads shows cells are not enough. The two compute models (P1.6) are scheduled at two
+  granularities: reactive entity logic per cell (one task per cell per phase), bulk systems per
+  page range of the tables they iterate (D4.4). The key allocator co-locates a cell's entities
+  so the two coincide, which is the real reason for that co-location; a system iterating a
+  table never knows which cells it crosses.
 - **D3.2a Cells are ownership, frames are coordinates.** A large-world frame (D4.6) is a fixed,
   regular grid cell of the coordinate system; a sim cell is a unit of ownership: scheduling,
   persistence (D16.2), replication interest (D12.2). They are not the same thing but spatial
@@ -214,7 +250,12 @@ once cells exist, and this table should be read as the random-access worst case 
   (tags, "all machines of this network") is an index (S4.5), not membership. Moving between
   cells is an ownership transfer at the tick boundary, driven by state (position, an explicit
   reparent), so it is deterministic (S1.4). Cell boundaries are visible to nothing but the
-  scheduler, the saver and the replicator: entity logic never sees them.
+  scheduler, the saver and the replicator: entity logic never sees them. A child in the
+  hierarchy (S4.3) is in its root ancestor's cell and moves with it. A world may hold several
+  *spaces* (disjoint coordinate systems: a city, a resort, another dimension) at once as
+  separate scene roots (S4.2): a space is a property of the cell, not of the position, so
+  positions stay frame plus offset (D4.6) and nothing pays for spaces it does not use;
+  travel between spaces is a cell transfer like any other.
 - **P3.3 Task system stays generic.** `TaskService` (counters, dynamic graphs, continuations,
   coroutines) is the only thread pool. Sim scheduling, asset streaming, render preparation and
   tools all launch into it; no subsystem owns threads except the ones with external constraints
@@ -240,7 +281,8 @@ once cells exist, and this table should be read as the random-access worst case 
 - **S4.2 Scene is a snapshot, prefab is a document.** A scene file is a serialized snapshot (set
   of entities with components). A prefab is a document whose instantiation is a DOM merge
   (base document + instance overrides), so prefab overrides, asset-meta inheritance and settings
-  layering are one mechanism. Nested scenes are prefabs that happen to be large.
+  layering are one mechanism. Nested scenes are prefabs that happen to be large. A world has any
+  number of scene roots resident at once, each a space of its own (D3.2a).
 - **S4.3 Hierarchy is data.** `Parent` is a component (`parent key, order`) and the single
   source of truth. `Children` is not stored: it is a reverse index of `Parent` maintained from
   diffs (S4.5), which removes both the variable-length component and the two-sources consistency
@@ -249,7 +291,11 @@ once cells exist, and this table should be read as the random-access worst case 
   and active/disabled propagation without carrying a transform, and a spatial entity resolves
   its world transform against its nearest spatial ancestor. Propagation (transforms, active
   state) is a system phase (S1.5). Streaming, LOD and replication ownership attach to cells
-  (P3.2), not to the hierarchy.
+  (P3.2), not to the hierarchy. `Parent` means exactly "moves with and dies with" (transform
+  attachment and lifetime, including the cell, D3.2a): a character riding a vehicle, an item
+  in an inventory. Every other relation (faction membership, employment, property ownership)
+  is a reference component (`Member { faction }`) with a reverse index (S4.5); a project defines
+  as many such hierarchies as it needs on the same machinery, and none of them is the engine's.
 - **D4.3a Variable-length data in components.** Not every component is a fixed-layout POD
   (inventories, names, scripted tables). The schema distinguishes *inline* fields (fixed layout,
   in the page) from *blob* fields: a handle to an immutable, reference-counted buffer copied on
@@ -304,6 +350,16 @@ once cells exist, and this table should be read as the random-access worst case 
   integer block coordinates anyway (S1.4). Render has no choice: camera-relative translation
   computed once per frame on the CPU (frame difference in integers, remainder in `float`), and
   `float` in everything that reaches a shader.
+- **P4.7 The core is geometry-agnostic.** The engine core knows cells, frames, components and
+  indices; it does not know blocks, heightmaps or meshes. Voxel land is the terrain plugin that
+  happened to exist when this draft started (P6.3), a heightmap terrain would be another, and a
+  project with neither (a space game) loads none. D14.3 describes one collision shape, not a
+  core assumption.
+- **P4.8 Global and per-region state are components on well-known entities.** Weather of a
+  location, the price table of a town, the rules of a world: components on the location, town
+  and world entities, written by their systems (P1.13) and read freely by everyone (S1.2).
+  There is no separate singleton or "resource" concept; "which location am I in" is answered by
+  the cell (D3.2a), which knows its location entity.
 
 ## 5. Scripting and plugins
 
@@ -395,7 +451,10 @@ once cells exist, and this table should be read as the random-access worst case 
 
 ## 9. Tools, editor, agents
 
-- **P9.1 Editor = player + plugins.** One binary; editor features are plugins using public APIs.
+- **P9.1 Editor = player + plugins, and everything ships.** One binary; editor features are
+  plugins using public APIs, and nothing is tool-only: what the editor can do, the game can do
+  if the project wants it to (an in-game build mode can be `edit()` of S9.4 on a paused world).
+  The development/shipping switch (P11.3) strips diagnostics rather than capabilities.
 - **P9.2 Headless first.** The engine runs without a window or GPU (the core/sim/gfx library split
   from design-drafts). Tests, servers, asset cooking and agents all use the headless mode.
 - **P9.3 Everything callable is a command.** Editor operations are messages (P6.2) with text
