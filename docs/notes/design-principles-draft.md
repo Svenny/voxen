@@ -119,7 +119,9 @@ redesign, whether or not any of today's code survives it.
 - **P2.6 Measure before building on it.** A benchmark that updates 100k components per tick
   through the storage layer, with snapshot retention of 1, 4 and 64 ticks, is the gate for the ECS
   design. The storage half exists as `src/sandbox/bench_v8g.cpp` (target `bench-v8g`); its results
-  are in "P2.6 results" at the end of this section. No messaging benchmark exists yet.
+  are in "P2.6 results" at the end of this section. Still to measure there: an entity-index
+  radix tree of pages (D4.4) and compacted pages at several densities (S4.4a). No messaging
+  benchmark exists yet.
 - **P2.7 Immutability is enforced, not promised.** The one real V8G consumer broke the contract
   until 2026-10-28: `editBlock` in `src/voxen/land/land_service.cpp` mutated a published chunk in
   place and then inserted a null value for its key. Published values must be `const` all the way
@@ -270,6 +272,21 @@ once cells exist, and this table should be read as the random-access worst case 
   Adding or removing a component is a header diff plus a page write; nothing moves. To validate
   by extending the P2.6 benchmark with an entity-index radix tree next to the hash trie and the
   flat paged table it already measures.
+- **S4.4a Sparse types do not pay for full pages.** A rare component (a trait of one mob type)
+  on scattered indices would cost a whole page per resident entry (64x for 64-entry pages).
+  The escape hatches change the page leaf, never the key, the directory or the API, and are
+  chosen per type. Default: *compacted pages*, a 64-bit presence mask plus an array of only the
+  present entries, slot = `popcount(mask & below)`, the node layout of `CompressedChunkStorage`
+  and of the hash trie; a full page has an all-ones mask and costs one popcount over a dense
+  page, memory is proportional to present entries at any density, and the shifting insert is
+  already paid by the copy-on-write page copy (handles into a mutable page are index-based,
+  never pointers). Per-type page size (down to single entries) and per-type *sparse* storage
+  (a map keyed by entity index: the hash trie, which measured fine at low update rates) are the
+  schema-level policies for what compaction does not cover, such as very large components.
+  Switching a type's representation is a whole-table rebuild at a tick boundary; older
+  snapshots keep their own tables. Not done: reserving index sub-ranges per subtype, which
+  fights spawn/despawn churn that LIFO reuse of freed indices (S2.3 generations) already
+  handles.
 - **S4.5 Indices are views of a snapshot.** Primary storage (V8G) is the only authoritative
   state; anything that answers a query faster is an index in the database sense: a spatial hash
   or BVH for "what is near me", the `Children` reverse index, name and tag lookups, "machines
