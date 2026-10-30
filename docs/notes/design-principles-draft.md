@@ -120,37 +120,10 @@ commit `93967d4`.
   Failure policy is per kind (P5.4): a content VM logs and continues (a failed condition is false, a
   failed effect is skipped) and only native entity code is quarantined, or a writer's typo stops the
   game.
-- **P1.13 One writer per component.** In any tick a component instance is written by exactly one
-  party: the system that owns the type in its phase, or the owning entity's own logic. Everything
-  else reads it (S1.2) or sends a message (S1.3). Control therefore flows by the controlled reading
-  its controller: an interaction entity that drives two interacting entities reads both freely and
-  writes only itself, and each interacted one's movement and animation systems read "my interaction
-  says go here, do this". This is what makes free reads safe without locks and keeps the writer of
-  any value identifiable in a diff. A content runtime (S1.8) is the system-side case of this rule:
-  it owns every component type it exposes to content as a variable, on whatever entity that
-  component sits, so the effects of one behaviour step apply in program order and a condition that
-  follows an effect reads it in the same tick (`kim.trust += 1; if kim.trust > 3` is one choice, not
-  ten ticks of message hops). Other systems and entities change those variables only by message to
-  the runtime (S1.2); the schema declares which types a runtime owns.
 - **P1.9 Global solvers are systems.** Physics, pathfinding, fluid or power-network solving are
   whole-world algorithms with their own internal parallelism. They consume snapshot `i` and
   produce components for `i+1` like any system; entities interact with them through components
   (a `RigidBody` is data, not a message exchange).
-- **D1.14 Same-tick dataflow is a phase order or a solver, never a message chain.** Where players
-  expect intra-tick evaluation order (an inserter sees the belt it feeds this tick, a signal network
-  settles before the piston reads it), one message hop per link (S1.2: a tick each, 33 ms per
-  hand-off, a second across a thirty-stage line, unplayable for a timing contraption) is the wrong
-  model, and P1.6 promises not to force the factory into systems-over-arrays. The draft's own tools
-  answer it. A system may read, in its phase, components written by an earlier phase of the same
-  tick: that is what the phase graph (S1.5) exists for and the one place P1.1's "never observes
-  `i+1` state" is relaxed, for systems in declared order, never for entities. A connected network
-  (belt lanes, signal nets, power grids) is an index (S4.5) of connected components rebuilt from
-  grid and component diffs, and one system (P1.9) owns the per-node component for the whole network,
-  evaluating each component in a defined order inside its phase, one task per component batched by
-  the cell of its lowest key (a 50k-node grid is about 1 ms serial). Entities at the edges see the
-  result next tick as usual. Networks are therefore never cells: D3.2a's logical cells are for
-  ownership (a vehicle interior), and a machine that sits in a power grid, a pipe network and a
-  signal net at once belongs to one cell and three indices.
 - **P1.9a Solvers declare their throughput.** A global solver answering requests (D22.2) serves at
   most a declared number of requests per tick, drained in data-defined order, with the backlog in
   its own component so it is state (S1.3). The cap is a schema constant tuned against the P0.5
@@ -188,6 +161,33 @@ commit `93967d4`.
   (difficulty, rule toggles, time scale) enter a world only as explicit tick inputs, recorded in the
   snapshot like any input (S1.11), so a save or replay carries the difficulty in force at each tick;
   the sim never reads settings directly.
+- **P1.13 One writer per component.** In any tick a component instance is written by exactly one
+  party: the system that owns the type in its phase, or the owning entity's own logic. Everything
+  else reads it (S1.2) or sends a message (S1.3). Control therefore flows by the controlled reading
+  its controller: an interaction entity that drives two interacting entities reads both freely and
+  writes only itself, and each interacted one's movement and animation systems read "my interaction
+  says go here, do this". This is what makes free reads safe without locks and keeps the writer of
+  any value identifiable in a diff. A content runtime (S1.8) is the system-side case of this rule:
+  it owns every component type it exposes to content as a variable, on whatever entity that
+  component sits, so the effects of one behaviour step apply in program order and a condition that
+  follows an effect reads it in the same tick (`kim.trust += 1; if kim.trust > 3` is one choice, not
+  ten ticks of message hops). Other systems and entities change those variables only by message to
+  the runtime (S1.2); the schema declares which types a runtime owns.
+- **D1.14 Same-tick dataflow is a phase order or a solver, never a message chain.** Where players
+  expect intra-tick evaluation order (an inserter sees the belt it feeds this tick, a signal network
+  settles before the piston reads it), one message hop per link (S1.2: a tick each, 33 ms per
+  hand-off, a second across a thirty-stage line, unplayable for a timing contraption) is the wrong
+  model, and P1.6 promises not to force the factory into systems-over-arrays. The draft's own tools
+  answer it. A system may read, in its phase, components written by an earlier phase of the same
+  tick: that is what the phase graph (S1.5) exists for and the one place P1.1's "never observes
+  `i+1` state" is relaxed, for systems in declared order, never for entities. A connected network
+  (belt lanes, signal nets, power grids) is an index (S4.5) of connected components rebuilt from
+  grid and component diffs, and one system (P1.9) owns the per-node component for the whole network,
+  evaluating each component in a defined order inside its phase, one task per component batched by
+  the cell of its lowest key (a 50k-node grid is about 1 ms serial). Entities at the edges see the
+  result next tick as usual. Networks are therefore never cells: D3.2a's logical cells are for
+  ownership (a vehicle interior), and a machine that sits in a power grid, a pipe network and a
+  signal net at once belongs to one cell and three indices.
 - **S1.15 One step function, five parameters.** `tick()` and `edit()` (S9.4) have the same shape,
   snapshot plus inputs to snapshot, and are one function configured by: *when* to step (fixed-rate,
   or demand-driven when nothing moves, D1.11a); *how much simulated time* advances (one base period
@@ -224,58 +224,44 @@ redesign, whether or not any of today's code survives it.
   ~105 ms per tick for 100k random updates against 7-12 ms for pages. The open cost of pages is
   retention: random writes touch every page, so a snapshot retains the whole table; page size
   and write locality (cells, P3.2) are the levers.
-- **S2.3 One dense key per entity.** Entities (and components) are addressed by a dense key with
-  an index:generation split (48:24 in 64 bits, or 64:64), used for tables, iteration, references,
-  files and network alike. There is no per-entity random `UID`; `UID` remains the identity of
-  things authored independently and merged without a central allocator: assets, prefabs,
-  component and message types, services. Consequences: the key allocator's state (free list,
-  generations) is part of the saved world, indices are never compacted, prefab-internal references
+- **S2.3 Identity and placement are separate.** An entity's *key* is its identity: a 64-bit value
+  from a per-world monotonic counter, never reused (48 bits last nine thousand years at a thousand
+  spawns per second), used in references, files and on the network alike. There are no generations,
+  because a key is never reissued; a reference to a dead entity resolves to "dead", never to another
+  entity. An entity's *slot* is its placement: the row its components occupy in the paged tables
+  (D4.4), assigned by a deterministic rule from state (its cell, D3.2b, then key order), dense per
+  cell, and repacked at the tick boundary by the step that already performs cell transfer and death,
+  so within a tick slots are stable and nothing persistent holds one. A slot is derived state in the
+  sense of S4.5: never saved, never replicated, rebuilt on load, and a client assigns its own slots,
+  so its tables hold its interest set densely instead of mirroring the server's key space. The
+  key-to-slot map is one more compacted paged table (S4.4a) keyed by key; a dead key's entry says
+  dead, and a page whose keys are all dead is freed, so the map tracks live entities, not total
+  spawns. The cost is one extra load when a reference is followed; bulk iteration walks slots and
+  never resolves a key. There is no per-entity random `UID`; `UID` remains the identity of things
+  authored independently and merged without a central allocator: assets, prefabs, component and
+  message types, services. The key counter is part of the saved world, prefab-internal references
   are remapped at instantiation, and in multiplayer the server allocates keys while clients use a
-  reserved range for predicted entities until confirmed.
-- **D2.3a Generations must not wrap.** With 24-bit generations, LIFO reuse of freed indices
-  would recycle one hot slot per spawn: at 1000 spawns per second it wraps in under five hours,
-  and a wrapped generation silently revives a stale reference, the worst class of bug for a
-  long-running world. Design: freed indices go to a FIFO queue and are reused only while the
-  free pool holds at least a minimum count (64k, or a fraction of the live population), so each
-  slot's generation advances once per that many spawns (2^40 spawns to wrap one slot at 64k);
-  a slot whose generation reaches its maximum is *retired* permanently, which is harmless in a
-  48-bit index space, so wrapping cannot happen at all. A dead header entry (D4.4) keeps its
-  generation and the tick it was freed at, so the queue is reconstructable from the header
-  table on load and reuse order is deterministic (S1.4). 64:64 remains the fallback if a
-  profile shows the 8 extra bytes per reference do not matter; generation resets or index
-  compaction are rejected as world-wide reference rewrites. A key whose generation no longer
-  matches resolves to "dead", never to another entity, so a memory of a dead sim is safe; the
-  game decides what to keep (a never-deleted record entity) for things that matter after death.
-- **D2.3b Allocation classes.** The FIFO reuse of D2.3a is per *allocation class*, not per world. A
-  world that spawns and despawns a thousand vehicles per second fills one shared free queue with
-  recycled vehicle slots within a minute, after which every building, citizen or company allocated
-  lands next to 63 vehicles and the co-location D4.4 promises is gone: a full scan of a 200k-row
-  table becomes 150k random page fetches (12-16 ms instead of 3). The schema declares classes (at
-  least *transient* and *persistent*; an archetype may name its own), each with its own free queue
-  and a coarse index sub-range (the class is the top bits of the key: 2^40 per class leaves 256
-  classes in 48 bits, references carry it for free and the header table stays one table).
-  Co-location applies within a class, churn in one class never fragments another, and *transient* is
-  also the class the saver may skip (D16.2a). Coarse per-class ranges are not the fine per-subtype
-  sub-ranges S4.4a rejects: those fight churn, these contain it. The P2.6 benchmark gains a churn
-  scenario, since without one the fragmentation never shows.
+  reserved range for predicted entities until confirmed. Rejected on the way here: index:generation
+  keys with reuse, which needed FIFO queues with minimum pools against generation wrap and then
+  per-class pools against fragmentation, a stack of patches for using one number as both identity
+  and placement.
 - **P2.4 Diffs are first-class.** Every versioned structure can enumerate changes between two
   snapshots in time proportional to the change (`visitDiff` today). Replication, render upload,
   save deltas and editor change tracking are all diff consumers.
 - **P2.5 Retention is explicit.** Snapshots stay alive while referenced; the cost is proportional
   to retained changes. Rollback netcode and editor undo are "keep N snapshots and replay".
-- **P2.6 Measure before building on it.** A benchmark that updates 100k components per tick
-  through the storage layer, with snapshot retention of 1, 4 and 64 ticks, is the gate for the ECS
-  design. The storage half exists as `src/sandbox/bench_v8g.cpp` (target `bench-v8g`); its results
-  are in "P2.6 results" at the end of this section. Still to measure there: an entity-index
-  radix tree of pages (D4.4) and compacted pages at several densities (S4.4a). No messaging
-  benchmark exists yet.
+- **P2.6 Measure before building on it.** A benchmark that updates 100k components per tick through
+  the storage layer, with snapshot retention of 1, 4 and 64 ticks, is the gate for the ECS design.
+  The storage half exists as `src/sandbox/bench_v8g.cpp` (target `bench-v8g`); its results are in
+  "P2.6 results" at the end of this section. Still to measure there: slot-indexed pages behind a
+  key-to-slot map, with repacking under spawn/despawn churn (D4.4), and compacted pages at several
+  densities (S4.4a). No messaging benchmark exists yet.
 - **P2.7 Immutability is enforced, not promised.** The one real V8G consumer broke the contract
   until 2026-10-28: `editBlock` in `src/voxen/land/land_service.cpp` mutated a published chunk in
   place and then inserted a null value for its key. Published values must be `const` all the way
   down (snapshot access returns `const` only; mutation goes through a copy-on-write handle that the
   storage hands out for the current tick). Debug builds can additionally verify that no snapshot
   older than the current tick is written.
-
 - **D2.8 Grids are the third storage shape.** V8G has tables keyed by entity index (D4.4) and blobs
   (D4.3a); neither holds a voxel world's block layers (hundreds of millions of blocks, copied whole
   per chunk edit today: 64 KiB expanded and recompressed per block, 50-100 ms for a thousand edits
@@ -309,6 +295,7 @@ redesign, whether or not any of today's code survives it.
   layer is its active fraction (0.5-5% for a flood against a steady state: 3-32 MiB per tick) times
   page size times retention, budgeted per layer (P17.1). P1.7's per-entity phase offset is opt-out
   for such systems: neighbouring pages must step on the same tick.
+
 ### P2.6 results: V8G hash trie vs paged copy-on-write (2026-10-28)
 
 `bench-v8g` (`src/sandbox/bench_v8g.cpp`; `cmake --build --preset linux-release --target bench-v8g`,
@@ -375,16 +362,16 @@ once cells exist, and this table should be read as the random-access worst case 
 
 - **P3.1 Threads are invisible to simulation code.** Entities and systems never see thread ids,
   affinities or queues. The scheduler owns topology awareness (NUMA, cache sharing, core parking).
-- **P3.2 Locality comes from data layout, not thread pinning.** The unit of scheduling is a
-  *cell*: a spatial or logical group (chunk, region, explicitly declared group) whose entities are
-  updated by one task. Messages between entities of one cell stay local; cells are the natural
-  unit for work stealing, for save/stream granularity and for replication interest. Sticky
-  thread assignment and dynamic communication-graph clustering are deferred until a profile of
-  real workloads shows cells are not enough. The two compute models (P1.6) are scheduled at two
-  granularities: reactive entity logic per cell (one task per cell per phase), bulk systems per
-  page range of the tables they iterate (D4.4). The key allocator co-locates a cell's entities
-  so the two coincide, which is the real reason for that co-location; a system iterating a
-  table never knows which cells it crosses.
+- **P3.2 Locality comes from data layout, not thread pinning.** The unit of scheduling is a *cell*:
+  a spatial or logical group (chunk, region, explicitly declared group) whose entities are updated
+  by one task. Messages between entities of one cell stay local; cells are the natural unit for work
+  stealing, for save/stream granularity and for replication interest. Sticky thread assignment and
+  dynamic communication-graph clustering are deferred until a profile of real workloads shows cells
+  are not enough. The two compute models (P1.6) are scheduled at two granularities: reactive entity
+  logic per cell (one task per cell per phase), bulk systems per page range of the tables they
+  iterate (D4.4). Slot assignment (S2.3) packs a cell's entities into one range so the two coincide,
+  which is the real reason for that packing; a system iterating a table never knows which cells it
+  crosses.
 - **D3.2a Cells are ownership, frames are coordinates.** A large-world frame (D4.6) is a fixed,
   regular grid cell of the coordinate system; a sim cell is a unit of ownership: scheduling,
   persistence (D16.2), replication interest (D12.2). They are not the same thing but spatial
@@ -405,24 +392,23 @@ once cells exist, and this table should be read as the random-access worst case 
   positions stay frame plus offset (D4.6) and nothing pays for spaces it does not use;
   travel between spaces is a cell transfer like any other.
 - **D3.2b What a cell holds, and how an entity gets one.** A cell owns two things: the entities
-  whose keys the allocator placed in its index block (S2.3, D4.4), and, for every grid (D2.8), the
-  Morton range of its region at its scale. Both are contiguous ranges, so a cell's save, drop, diff,
-  replication and ownership transfer are range operations with no per-plugin hook: a terrain plugin
-  declares its layers as grids and gets persistence (D16.2), interest (D12.2) and scheduling (P3.2)
-  for them without the core knowing what a block is (P4.7). The frame unit (a chunk, scale 0) is the
-  granule of generation, LOD and meshing and has no ownership role; a cell at scale n holds 8^n of
-  them. Which cell an entity is in is a declared *cell rule* per archetype: `spatial` (from the
-  frame coordinate), `parent` (from the root ancestor, S4.3), `follow(field)` (the cell of the
-  entity a reference field names: a citizen is in the cell of its home and moves cell when it moves
-  house, which is state, so the transfer is deterministic), or `shard(n)` (key-range shards of n
-  entities for populations with no anchor, split and merged by the allocator). Every entity has
-  exactly one cell at every moment, including allocation: there is no cell-less entity, because the
-  allocator needs the cell for co-location and a class of entities no saver or replicator sees is a
-  class of bugs. Entities in limbo (a logged-off player's belongings, something in transit between
-  spaces) live in a logical cell that persists and replicates like any other. The cell lives in the
-  entity header (D4.4), written only by the ownership-transfer step at the tick boundary; a migrant
-  keeps its key and loses co-location with its new cell, which is accepted since migrants are rare
-  and the cells that migrate most (vehicles) are small.
+  whose slots lie in its slot range (S2.3, D4.4), and, for every grid (D2.8), the Morton range of
+  its region at its scale. Both are contiguous ranges, so a cell's save, drop, diff, replication and
+  ownership transfer are range operations with no per-plugin hook: a terrain plugin declares its
+  layers as grids and gets persistence (D16.2), interest (D12.2) and scheduling (P3.2) for them
+  without the core knowing what a block is (P4.7). The frame unit (a chunk, scale 0) is the granule
+  of generation, LOD and meshing and has no ownership role; a cell at scale n holds 8^n of them.
+  Which cell an entity is in is a declared *cell rule* per archetype: `spatial` (from the frame
+  coordinate), `parent` (from the root ancestor, S4.3), `follow(field)` (the cell of the entity a
+  reference field names: a citizen is in the cell of its home and moves cell when it moves house,
+  which is state, so the transfer is deterministic), or `shard(n)` (shards of n entities for
+  populations with no anchor, split and merged by the placement step). Every entity has exactly one
+  cell at every moment, including creation: there is no cell-less entity, because placement needs
+  the cell and a class of entities no saver or replicator sees is a class of bugs. Entities in limbo
+  (a logged-off player's belongings, something in transit between spaces) live in a logical cell
+  that persists and replicates like any other. The cell lives in the entity header (D4.4), written
+  only by the ownership-transfer step at the tick boundary, which re-slots a migrant into its new
+  cell's range, so locality follows ownership and a migrant keeps nothing but its key.
 - **D3.2c Cells are split for scheduling and grouped for everything else.** A single arena or
   campaign section is one spatial cell, which makes its reactive logic (P3.2: one task per cell per
   phase) single-threaded: forty AI and twenty scripted entities at 50-150 us each are 3-9 ms in one
@@ -500,36 +486,36 @@ once cells exist, and this table should be read as the random-access worst case 
   trivially copyable and snapshot-safe (a copy is a reference bump) at the price of an
   indirection; the rule that a component never points into another entity or component still
   holds.
-- **D4.4 One paged table per component type, indexed by entity index.** With dense keys (S2.3)
-  the archetype-vs-sparse-set choice mostly dissolves: every component type is a paged array
-  indexed directly by entity index (a radix tree of pages over the 48-bit index space, presence
-  bitmap per page), so a lookup is two loads, iteration walks the pages of one type and joins
-  other types by index, and pages are also the copy-on-write unit (S2.2). Locality, which is
-  what archetypes buy, comes from the key allocator instead: entities of one cell or one prefab
-  instance get contiguous indices, so the pages of the types they share are dense and iterate
-  like an archetype table. A schema-declared archetype is then an allocation hint plus a
-  guarantee that its types are always attached together; a rarely attached component is a type
-  whose pages are mostly absent. The explicit entity-to-components mapping is the entity header
-  table (one more paged table, always present): generation, alive flag and the set of attached
-  types as a bitset or, past a type count worth measuring, a small sorted list or archetype id.
-  Adding or removing a component is a header diff plus a page write; nothing moves. To validate
-  by extending the P2.6 benchmark with an entity-index radix tree next to the hash trie and the
-  flat paged table it already measures.
-- **S4.4a Sparse types do not pay for full pages.** A rare component (a trait of one mob type)
-  on scattered indices would cost a whole page per resident entry (64x for 64-entry pages).
-  The escape hatches change the page leaf, never the key, the directory or the API, and are
-  chosen per type. Default: *compacted pages*, a 64-bit presence mask plus an array of only the
-  present entries, slot = `popcount(mask & below)`, the node layout of `CompressedChunkStorage`
-  and of the hash trie; a full page has an all-ones mask and costs one popcount over a dense
-  page, memory is proportional to present entries at any density, and the shifting insert is
-  already paid by the copy-on-write page copy (handles into a mutable page are index-based,
-  never pointers). Per-type page size (down to single entries) and per-type *sparse* storage
-  (a map keyed by entity index: the hash trie, which measured fine at low update rates) are the
-  schema-level policies for what compaction does not cover, such as very large components.
-  Switching a type's representation is a whole-table rebuild at a tick boundary; older
-  snapshots keep their own tables. Not done: fine-grained index sub-ranges per subtype, which
-  fight spawn/despawn churn; the coarse per-class ranges of D2.3b are the opposite case and are
-  what keeps churn from fragmenting the tables.
+- **D4.4 One paged table per component type, indexed by slot.** With placement separated from
+  identity (S2.3) the archetype-vs-sparse-set choice mostly dissolves: every component type is a
+  paged array indexed directly by slot (a radix tree of pages over the slot space, presence bitmap
+  per page), so a lookup by slot is two loads (three from a key), iteration walks the pages of one
+  type and joins other types by slot, and pages are also the copy-on-write unit (S2.2). Locality,
+  which is what archetypes buy, comes from slot assignment: a cell's entities occupy a dense slot
+  range, ordered by archetype within it, so the pages of the types they share are dense and iterate
+  like an archetype table, and a cell transfer or a prefab instantiation is a slot assignment in the
+  target cell. A schema-declared archetype is then a placement hint plus a guarantee that its types
+  are always attached together; a rarely attached component is a type whose pages are mostly absent.
+  The explicit entity-to-components mapping is the entity header table (one more slot-indexed table,
+  always present): key, cell and the set of attached types as a bitset or, past a type count worth
+  measuring, a small sorted list or archetype id. Adding or removing a component is a header diff
+  plus a page write; nothing moves except at the boundary repack. To validate by extending the P2.6
+  benchmark with slot-indexed pages behind a key-to-slot map, repacking under spawn/despawn churn,
+  next to the hash trie and the flat paged table it already measures.
+- **S4.4a Sparse types do not pay for full pages.** A rare component (a trait of one mob type) on
+  scattered slots would cost a whole page per resident entry (64x for 64-entry pages). The escape
+  hatches change the page leaf, never the key, the directory or the API, and are chosen per type.
+  Default: *compacted pages*, a 64-bit presence mask plus an array of only the present entries,
+  entry = `popcount(mask & below)`, the node layout of `CompressedChunkStorage` and of the hash
+  trie; a full page has an all-ones mask and costs one popcount over a dense page, memory is
+  proportional to present entries at any density, and the shifting insert is already paid by the
+  copy-on-write page copy (handles into a mutable page are index-based, never pointers). Per-type
+  page size (down to single entries) and per-type *sparse* storage (a map keyed by slot: the hash
+  trie, which measured fine at low update rates) are the schema-level policies for what compaction
+  does not cover, such as very large components. Switching a type's representation is a whole-table
+  rebuild at a tick boundary; older snapshots keep their own tables. Index sub-ranges per subtype
+  are not needed: placement is repacked per cell (S2.3), so spawn/despawn churn never fragments a
+  table.
 - **S4.5 Indices are views of a snapshot.** Primary storage (V8G) is the only authoritative
   state; anything that answers a query faster is an index in the database sense: a spatial hash
   or BVH for "what is near me", the `Children` reverse index, name and tag lookups, "machines
@@ -587,7 +573,6 @@ once cells exist, and this table should be read as the random-access worst case 
   quarantined (entity skipped, flagged) and does not kill the tick.
 - **P5.5 Mods and the base game are peers.** The base game is a plugin; whatever the base game
   can do, a mod can do.
-
 - **D5.6 Behaviour mods replace systems and insert phases.** A native plugin cannot patch another
   plugin's code (the Harmony patches a Cities: Skylines workshop runs on have no equivalent), and
   P1.13 means a mod cannot "also" adjust a component: it must be the writer. The base game is
@@ -614,7 +599,6 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P6.3 Services own lifecycle, not logic.** Services initialize, expose state and launch tasks;
   simulation logic does not live in services. `land::LandService` doing ticks is an interim
   state to dissolve into the ECS.
-
 - **D6.4 Capabilities of the two buses.** They do not share a capability list because they answer
   different questions: the control plane asks "who serves this request", the data plane "what does
   entity X see at tick `i+1`". Control plane (P6.2): unicast *request/reply* with a correlation id,
@@ -626,9 +610,9 @@ once cells exist, and this table should be read as the random-access worst case 
   structs in-process; a pure signal is a type with no fields, and one declared opaque-bytes type
   covers crash dumps and asset bytes. Ordering is FIFO per sender-receiver pair and nothing more.
   Data plane (S6.1): *unicast to an entity key* is the only transport primitive, delivered at `i+1`
-  in (sender key, sequence) order (S1.4), dropped on a generation mismatch with an opt-in bounce to
-  the sender; *timers* are unicasts to self stamped with a future tick, stored in the outbox like
-  any message; request/reply is two unicasts plus a state machine (S1.8), with "reply to" free since
+  in (sender key, sequence) order (S1.4), dropped when the key is dead, with an opt-in bounce to the
+  sender; *timers* are unicasts to self stamped with a future tick, stored in the outbox like any
+  message; request/reply is two unicasts plus a state machine (S1.8), with "reply to" free since
   every message carries sender and sequence; *no multicast and no broadcast*, because reads are free
   (S1.2): anything many entities care about is written once as state, an event log component on a
   well-known entity (P4.8) or on the cell, and scanned next tick, since expanding a multicast at
@@ -668,18 +652,17 @@ once cells exist, and this table should be read as the random-access worst case 
   session timeline (render, audio), or *sim input* (S1.12), which turns a change into a tick input
   instead of a direct read; cheat and replicated flags cover multiplayer. There is no separate
   cvar system: a cvar is a settings field with a console path.
-
 - **D7.9 Registries map authored UIDs to per-world dense ids.** Block ids live in grid tiles by the
   hundred million and item ids in every stack, so they must be small dense integers, while the types
   are authored by hundreds of mods and identified by UID (S2.3); nothing mapped one to the other,
   and the mapping is world state. A registry is a schema-declared table from type UID (block type
   and state, item, recipe, biome: anything stored by id in bulk data) to a dense integer allocated
-  per world on first use and saved with it (P16.1), like the key allocator. Ids are never reassigned
-  (the id-shift corruption of early modded Minecraft is the lesson); a UID whose mod is absent on
-  load maps to a schema-declared placeholder and keeps its id, so returning the mod restores the
-  content. The same table drives the generated protocol (D12.4): the handshake exchanges registries,
-  not only the schema hash, and the client uses the server's ids. Bulk data stores registry ids
-  (through palettes, D2.8), never UIDs; UIDs appear only in documents.
+  per world on first use and saved with it (P16.1), like entity keys. Ids are never reassigned (the
+  id-shift corruption of early modded Minecraft is the lesson); a UID whose mod is absent on load
+  maps to a schema-declared placeholder and keeps its id, so returning the mod restores the content.
+  The same table drives the generated protocol (D12.4): the handshake exchanges registries, not only
+  the schema hash, and the client uses the server's ids. Bulk data stores registry ids (through
+  palettes, D2.8), never UIDs; UIDs appear only in documents.
 
 ## 8. Assets
 
@@ -871,7 +854,6 @@ once cells exist, and this table should be read as the random-access worst case 
   must have the same mod set (checked in the handshake) for prediction and presentation, and a
   mismatch is a refusal, not a download. Native plugins are not sandboxed (P5.5): installing a
   mod is trusting its author, as on every other PC platform.
-
 - **D12.5a Anti-cheat scope.** The engine's contribution is exactly: authority (D12.3: the server
   accepts inputs, never state); input validation hooks (edge rate, angular velocity, sub-tick stamps
   monotonic within the tick, the rewind window of P1.1a bounded by *measured* round-trip time plus
@@ -938,7 +920,6 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P14.4 Two physics.** Grid-aligned machine logic (belts, fluids in pipes, circuits) is
   integer, strict-tier logic in gameplay systems (S1.4), never the continuous solver. The
   solver is for bodies that move freely; the two meet only through components.
-
 - **D14.5 Avatar movement need not be solver work, and the solver is instanced per cell.** Avatar
   movement (walk, slide, mantle, riding) can be a kinematic controller system in the sense of P14.4
   rather than tolerant physics: integration in fixed point or on an integer grid, with shape casts
@@ -998,7 +979,6 @@ once cells exist, and this table should be read as the random-access worst case 
   snapshot) is a replay; it is exact for the strict tier and the measuring stick for the
   tolerant tier (S1.4). The same records are the client's upstream traffic (D12.3) and the
   scripted driver for tests (section 19).
-
 - **P15.2a Everything the tick reads that is not the snapshot is a recorded input.** Three things
   the tick reads were implicit. *Asset versions*: the sim reads bytecode, tables, hitbox skeletons,
   root-motion curves and weapon data, and D8.4a lets their version change under hot reload between
@@ -1022,11 +1002,11 @@ once cells exist, and this table should be read as the random-access worst case 
 
 ## 16. Persistence, streaming and replays
 
-- **P16.1 A save is a snapshot plus its inputs.** Components, in-flight messages (S1.3), the
-  key allocator (S2.3), session values in force (S1.12) and the tick id; never the indices
-  (S4.5). Schema-generated binary with a version (P7.6) and a text export for diffing and
-  inspection (P7.3). The tick function must be able to resume from a save bit-for-bit as it
-  would have from the live snapshot.
+- **P16.1 A save is a snapshot plus its inputs.** Components, in-flight messages (S1.3), the key
+  counter (S2.3), session values in force (S1.12) and the tick id; never the indices (S4.5).
+  Schema-generated binary with a version (P7.6) and a text export for diffing and inspection (P7.3).
+  The tick function must be able to resume from a save bit-for-bit as it would have from the live
+  snapshot.
 - **D16.2 Saves are journals of cells.** The P0.5 world cannot be written whole, so the unit of
   persistence is the cell (D3.2b): a save is a base plus an append-only journal of cell *flushes*,
   each the set of pages (entity and grid, D2.8) whose version is newer than the cell's last flush,
@@ -1052,9 +1032,8 @@ once cells exist, and this table should be read as the random-access worst case 
   diffs per playthrough, and a fully live city where every cell is dirty every interval, so a
   journal entry is the full cell, the journal is a sequence of full snapshots and compaction is
   "keep the last" (190 MB per five minutes, 0.6 MB/s). A project declares per component type whether
-  it is persisted: a *transient* type (vehicle lane state, the allocation class of D2.3b) is
-  excluded and reconstructed by a game rule on load, like D16.3's catch-up, at the price of P16.1's
-  bit-for-bit resume for what it holds.
+  it is persisted: a *transient* type (vehicle lane state) is excluded and reconstructed by a game
+  rule on load, like D16.3's catch-up, at the price of P16.1's bit-for-bit resume for what it holds.
 - **D16.3 Streaming is the same mechanism.** A cell outside every interest set (players,
   pinned loaders) is written out and dropped; reloading reads the same format. Unloaded cells
   do not tick, and catch-up on reload is an explicit game rule (nothing, or an approximation),
@@ -1063,7 +1042,6 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P16.4 Replays are first-class.** A replay (P15.2) is also a bug report (P18.3), a test
   (P19.1) and the base of a spectator or demo mode; the format is the save format plus input
   records, so there is one serializer.
-
 - **D16.5 Saves outlive plugins.** Over four hundred hours a player installs, updates and removes
   mods, and half the lost-save stories of the modded genres are a type whose plugin is absent on
   load. A save records the plugin set and schema hashes in force (the protocol version of D12.4,
@@ -1167,7 +1145,6 @@ once cells exist, and this table should be read as the random-access worst case 
 - **P20.2 Text rendering is not Latin-only from day one.** Shaping and bidirectional text are
   in the UI stack from the start (HarfBuzz and FreeType are already dependencies); fonts are
   assets with fallback chains per script.
-
 - **D20.3 Paragraph layout is an engine deliverable with a cache.** Today `FontRenderer` draws from
   a PNG atlas and calls neither FreeType nor HarfBuzz, and the UI has no notion of runs, spans or
   direction. The text stack is the standard pipeline: itemization by script, bidi level (UAX #9) and
@@ -1186,9 +1163,9 @@ once cells exist, and this table should be read as the random-access worst case 
 ## 21. Worlds and process lifecycle
 
 - **D21.1 A world is an object, not a global.** Play-in-editor (S9.4), a server hosting several
-  instances, and tests all put more than one simulation in one process. Services are
-  process-level (section 6); a world owns its timeline, snapshots, cells and key allocator, and
-  every snapshot and message carries its world. Nothing simulation-side is a singleton.
+  instances, and tests all put more than one simulation in one process. Services are process-level
+  (section 6); a world owns its timeline, snapshots, cells and key counter, and every snapshot and
+  message carries its world. Nothing simulation-side is a singleton.
 - **P21.2 Startup is services, then worlds.** The engine constructs services (P6.3) from the
   settings document (D7.8), then worlds from documents (S4.2); shutdown is the reverse, and a
   world can be destroyed and recreated without restarting services (editor reload, server map
