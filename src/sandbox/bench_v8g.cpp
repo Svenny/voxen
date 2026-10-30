@@ -1,5 +1,5 @@
 // Micro-benchmark of `V8gHashTrie` as a per-component ECS store against a paged
-// copy-on-write baseline (design-principles draft, P2.2 and P2.6).
+// copy-on-write baseline.
 //
 // Workload: `--items` components of 64 bytes keyed by a dense 64-bit index. Every tick
 // updates `--updates` random keys, publishes a snapshot (a copy of the container) and
@@ -135,7 +135,7 @@ uint64_t readPeakRssBytes()
 
 // --- Workload types ------------------------------------------------------------------
 
-// Dense runtime index (P2.3): the trie demands collision-free 64-bit hashes,
+// Dense 64-bit key: the trie demands collision-free 64-bit hashes,
 // `xxh64Fixed` is a bijection on `uint64_t` (see `land::ChunkKey`).
 struct DenseKey {
 	uint64_t index = 0;
