@@ -629,7 +629,7 @@ once cells exist, and this table should be read as the random-access worst case 
   `svc::Config`, `tk::toml` and `tk::json`) with readers and writers per format, and a schema
   layer that validates, applies defaults, merges layers and drives codegen (`DOM ↔ struct`).
 - **P7.2 Layered merge is the universal override mechanism.** Settings (defaults → user → saved),
-  asset meta (template → directory → asset), prefabs (base → instance), platform variants: one
+  asset data (template → directory → asset), prefabs (base → instance), platform variants: one
   merge algorithm with per-field policy (replace, concatenate, delete).
 - **P7.3 Format by shape.** TOML for configuration, JSON5 for authored data definitions, JSON for
   interchange, custom text for high-volume machine-owned files (scenes). KDL only if JSON5 proves

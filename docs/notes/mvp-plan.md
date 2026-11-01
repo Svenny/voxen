@@ -18,16 +18,17 @@ architecture, as a vertical slice through every backbone:
 - **Terrain is a plugin** (P4.7). Land declares a block-id grid (D2.8) owned by a well-known
   entity (P4.8). Generation is a pure function run off-tick (D22.1); a chunk enters the world only
   as a recorded admission input (P15.2a).
-- **The player is an avatar entity** (S2.3) moved by a fixed-point controller system driven by
-  per-step input records (P15.1). Block placement is a command (P15.1a) validated by the avatar's
-  system and applied by the grid's single writer (P1.13) one step later (S1.2).
+- **The player is an avatar entity** (S2.3) moved by a float controller system in the tolerant tier
+  (S1.4a), driven by per-step input records (P15.1). Block placement is a command (P15.1a) validated
+  by the avatar's system and applied by the grid's single writer (P1.13) one step later (S1.2).
 - **The sim is one step function** (S1.15) scheduled as jobs on the task pool (P3.3), publishing
   immutable snapshots (P2.1). The presentation interpolates between the two newest (S1.11) and
   renders land meshes rebuilt from grid diffs (P2.4).
 - **Schemas drive data** (draft section 7): settings, components, messages, commands, actions,
   registries and asset meta are declared once and reach C++ through codegen and one DOM. Assets
-  resolve through a mount stack (P8.2); shaders and block definitions hot reload (D8.4a), and a
-  block-definition change reaches the sim as a recorded input (P15.2a).
+  resolve through a mount stack (P8.2) of source directories cooked on the fly; shaders and block
+  definitions hot reload on save (D8.4a), and a block-definition change reaches the sim as a
+  recorded input (P15.2a).
 - **A headless test** runs the sim from a scenario document (P19.1), checks a strict-tier digest
   across thread counts (P19.2), saves a whole snapshot (D16.2a), reloads it and continues
   bit-for-bit (P16.1).
@@ -37,12 +38,12 @@ architecture, as a vertical slice through every backbone:
 "Done" is these tests green on the Linux, Windows and headless CI jobs, plus the two manual checks.
 
 - **`scenario:fly_place:t1`, `:t4`** (`plugins/game/tests/scenarios/fly_place.scenario.json5`).
-  Joins player 0, flies, places a block at step 92, changes `game.fly.forward_mm_per_s` at step
-  120 through the session layer and runs to step 300. Each invocation runs five variants:
+  Joins player 0, flies, places a block at step 92, changes `game.fly.forward_speed` at step 120
+  through the session layer and runs to step 300. Each invocation runs five variants:
   continuous, save/reload at 92 (a `SetBlock` in flight) and at 150, an in-process replay of the
   recorded `StepInputs`, and a shuffled system order. All give equal Full digests at every expect
-  point, equal to the golden sidecar; both thread counts give the same Strict digest; the
-  `game.fly` change appears in step 120's recorded inputs.
+  point, equal to the golden sidecar (per OS: the avatar is tolerant); both thread counts give the
+  same Strict digest; the `game.fly` change appears in step 120's recorded inputs.
 - **`scenario:block_def_reload:t1`, `:t4`.** A scenario asset event makes stone unplaceable at
   step 200; a placement at 210 is rejected; replay and a save/reload at 205 reproduce it; the
   content-set hash differs before and after.
@@ -53,9 +54,10 @@ architecture, as a vertical slice through every backbone:
   without a device), `test-plugin-land`, `test-plugin-game`, `test-tools`.
 - **Manual: parity.** `voxen` on Linux and the winbox (Intel and AMD): fly, place, hotbar, main
   menu (Single player, Exit), pause menu (Resume, Exit); a window screenshot by PID.
-- **Manual: hot reload.** Edit `chunk_mesh.slang` and `grass.asset.json5`, run
-  `cmake --build <dir> --target voxen-data`: the running `voxen` rebuilds the pipeline within a
-  second and recolours the terrain through the material table without remeshing.
+- **Manual: hot reload.** Save an edited `chunk_mesh.slang`, then `grass.json5`: the running
+  `voxen` rebuilds the pipeline within a second and recolours the terrain through the material
+  table without remeshing. Dropping a new block definition into the land assets makes it
+  placeable, and its generated meta appears next to it.
 
 "Continues bit-for-bit" is checked with the Full digest on one binary; the cross-thread S1.4 gate
 is the Strict digest. Scenarios use the deterministic admission policy throughout, so generation
@@ -77,7 +79,8 @@ timing cannot reach the record.
   `plugins/<id>/<id>-gfx.so` (presentation part), `.dll` on Windows.
 - **Executables**: `voxen` (launcher), `voxen-headless` (scenarios, save dumps), the test
   executables, `bench-v8g`, `bench-ecs`.
-- **Tools**, linking `tk` only: `schemac` (new), `assetc`, `uidgen`.
+- **Tools**, linking `tk` only: `schemac` (new), `uidgen`. Asset cooking and meta generation are
+  engine capabilities (section 4.3), so `assetc` goes.
 
 `VOXEN_BUILD_GFX=OFF` builds core, plugin sim parts, `voxen-headless` and the core tests with no
 SDL, Vulkan, slangc or Git LFS objects (P9.2). A separate sim DSO is not made: nothing links sim
@@ -130,8 +133,8 @@ GPU recording), one blocking file-I/O thread, and the pipe-memory GC thread (rew
 
 ```
 cmake/            VoxenModules (voxen_module, layering.json), VoxenPlugins, VoxenCodegen
-                  (voxen_add_schemas), VoxenAssets (voxen_add_asset_pack, voxen_add_shaders
-                  PACK), VoxenTesting (voxen_add_test_executable, voxen_add_scenario_test)
+                  (voxen_add_schemas), VoxenAssets (voxen_add_asset_mount, the slangc copy),
+                  VoxenTesting (voxen_add_test_executable, voxen_add_scenario_test)
 include/tk/       dom dom_path json toml hash bin schema schema_ops schema_model schema_gen
                   vpath container
 include/voxen/
@@ -144,8 +147,8 @@ include/voxen/
                   install_layout, user_storage, settings
   plugin/         plugin_manifest plugin_entry plugin_registrar plugin_host
   types/          type_registry action_table dense_id_table type_table_record
-  assets/         asset_handle asset_ref asset_loader asset_mount asset_catalog asset_service
-                  content_set
+  assets/         asset_handle asset_ref asset_loader asset_cooker asset_mount asset_catalog
+                  asset_service content_set
   ecs/            entity_key ecs_slot ecs_cell frame_pos entity_header component_table
                   entity_snapshot entity_store structural transform_source ecs_index
                   well_known_index prefab entity_io
@@ -156,14 +159,14 @@ include/voxen/
   window/ input/ text/ ui/ gfx/ gfx/vk/ client/        (voxen-gfx)
 src/voxen/<mod>/  sources, *_priv.hpp, *.schema.json5 next to their module
 src/app/          voxen_main.cpp, headless_main.cpp
-src/shaders/      engine shaders (ui, debug, util, shared) -> core pack
+src/shaders/      engine shaders (ui, debug, util, shared) with metas; mounted at /core/shaders
 src/sandbox/      bench_v8g.cpp (reworked), bench_ecs.cpp
-data/core/        core pack sources: pack.json5, fonts/
+data/core/        core source mount (/core): fonts/ with metas
 plugins/<id>/     plugin.json5, CMakeLists.txt, schema/, include/<id>/, src/sim/, src/gfx/,
                   shaders/, assets/, tests/ (+ tests/scenarios/)
 tests/            tk/, voxen/ (-> test-voxen-core), voxen-gfx/, tools/, plugins/ (loader and
-                  sim test plugins), data/ (schemas, fixture pack sources), scenarios/
-tools/            schemac/, assetc/, uidgen/, scripts/check_layering.py
+                  sim test plugins), data/ (schemas, fixture mounts), scenarios/
+tools/            schemac/, uidgen/, scripts/check_layering.py
 ```
 
 ### Directory table (build tree = install layout)
@@ -172,19 +175,20 @@ tools/            schemac/, assetc/, uidgen/, scripts/check_layering.py
 derived from the location of the `voxen-core` DSO (`os::Process::getModulePath`), never argv0;
 `--root` overrides it.
 
-- `bin/`: executables, `voxen-core`, `voxen-gfx`, tools (build).
-- `data/packs/core/`: the cooked core pack, `pack.json5`, `pack.index`, `*.vxa` and raw files;
-  vpaths `/core/...`, mount layer 0 (assets).
+- `bin/`: executables, `voxen-core`, `voxen-gfx`, tools, `slangc` with gfx (build).
+- `data/mounts.json5`: core's source mounts, `/core/...`, mount layer 0 (assets).
 - `data/settings/platform-<os>.toml`: optional platform layer, read as a plain file by the
   settings loader, never through mounts (settings).
 - `plugins/<id>/`: `plugin.json5`, `<id>.so|dll`, `<id>-gfx.so|dll` (build, `PluginHost`).
-- `plugins/<id>/pack/`: the cooked plugin pack; vpaths `/<id>/...`, layer 1 + load index (assets).
+- `plugins/<id>/mounts.json5`: the plugin's source mounts, `/<id>/...`, layer 1 + load index.
+- `cache/<mount uid>/`: the cooked cache of each source mount, machine-owned and disposable.
 - `user/<profile>/`: `settings.toml` (human-owned user layer), `pipeline.cache`, `saves/`
   (`svc::UserStorage`).
-- `tests/plugins/<id>/`, `tests/packs/<name>/`: test plugins and cooked fixture packs, build tree
+- `tests/plugins/<id>/`, `tests/data/mounts.json5`: test plugins and the fixture mounts, build tree
   only.
 
-Nothing under `data/` is written at run time. The user directory is outside every mounted tree.
+The engine writes `cache/`, `user/` and generated metas in writable source mounts, nothing else.
+The user directory is outside every mounted tree.
 The default profile is `default`.
 
 ## 3. Shared vocabulary and contracts
@@ -197,7 +201,7 @@ Each name has one owner (in parentheses); other pieces use it as written.
   primitives. `tk::schema::TypeInfo`: the one per-type descriptor (D4.1a). (codegen)
 - `tk::container`: the one chunked binary container, for cooked assets and saves; chunks are
   addressed by a 4-char tag plus an optional 16-byte id. `tk::vpath::Path`: the one virtual path
-  grammar (`/core/shaders/ui/ui_basic.vert.spv`, `/land/blocks/stone`). (assets)
+  grammar (`/core/shaders/ui/ui_basic.slang`, `/land/blocks/stone.json5`). (assets)
 - `types::TypeId`/`ArchetypeId`: dense per `TypeRegistry`, one registry per Engine, assigned in
   type-UID order at freeze. `types::ActionTable`: the one action index space.
   `types::DenseIdTable<Id>`: the D7.9 registry type. (codegen)
@@ -264,7 +268,7 @@ in section 6.
   `lfs: false` checkout, a step asserting no file under `data/` or `plugins/` is an LFS pointer);
   the layering check in `check-format`; `VOXEN_SHIPPING` through a generated
   `voxen/build_config.hpp` (P11.3).
-- **DOM** (P7.1): `tk::dom::Value` (null, bool, int, uint, float, string, array, ordered object),
+- **DOM** (P7.1): `tk::dom::Value` (null, bool, int64, float, string, array, ordered object),
   each node with a `SourceRef`; `tk::json` (JSON, JSON5) and `tk::toml` read and write onto it.
 - **Merge** (P7.2): one `tk::schema::mergeInto` with policies `replace` and `merge` and the
   `$delete` directive.
@@ -316,8 +320,8 @@ Schema kinds: `struct`, `enum`, `id`, `constant` (P1.9a caps only); `component`,
     a PCH. *Rejected:* a config-independent `gen/` (ill-defined under Ninja Multi-Config).
 13. **schemac emits the owner's export macro** (`VOXEN_API`, `VOXEN_GFX_API`, `<ID>_API`), so
     gfx and plugins link core's generated accessors under hidden visibility and `--no-undefined`.
-14. **A `UInt` DOM kind above `INT64_MAX` only**, so u64 seeds survive JSON; TOML-facing `uint64`
-    fields also accept `"0x..."`.
+14. **`int64` is the only integer DOM kind**: a `uint64` field above `INT64_MAX` reads and writes
+    as a `"0x..."` string in every format. *Rejected:* a separate unsigned kind.
 15. **TOML keeps its parser-internal tree**, made private, and converts at the end (1364 tested
     lines stay).
 
@@ -395,7 +399,7 @@ Schema excerpt; every piece writes in this grammar:
 { schema_language: 1, module: "land", namespace: "land", uid: "…", tier: "strict",
   imports: ["voxen.ecs"],
   types: {
-    BlockDef:   { kind: "asset", uid: "…", version: 1, section: "block", sim_consumed: true,
+    BlockDef:   { kind: "asset", uid: "…", version: 1, sim_consumed: true,
                   fields: { display_name: "string", color: "uint8x3",
                             placeable: { type: "bool", default: true } } },
     BlockTypes: { kind: "registry", uid: "…", key: "BlockDef", id: "BlockId", id_type: "uint16",
@@ -589,40 +593,73 @@ legacy 1024-item store as the baseline.
 
 ### 4.3 Assets
 
-**Scope.** `tk::vpath` and `tk::container`; a static mount stack of cooked packs (P8.2); a
-registry with a dual index (P8.1); cook-time meta layering (P7.2); stable handles over refcounted
-immutable versions (D8.4a); coroutine loaders (P8.4); hot reload by `pack.index`; the content set
-of sim-consumed assets (P15.2a); `svc::UserStorage`; `assetc` as the cooker, CMake as the DAG
-executor (P8.3).
+**Scope.** `tk::vpath` and `tk::container`; a mount stack (P8.2) of source mounts cooked on the fly
+into a per-mount cache, under a registry with a dual index (P8.1); cookers registered per asset type
+next to loaders; cook-time meta layering (P7.2); input hashes and recorded dependencies (P8.3);
+stable handles over refcounted immutable versions (D8.4a); coroutine loaders (P8.4); hot reload of
+edited, added and removed source files; the content set of sim-consumed assets (P15.2a);
+`svc::UserStorage`.
 
-- **Packs**: `core` (UI and debug shaders, fonts; only with gfx), `land` (block definitions; land
-  shaders with gfx), fixture packs (documents only, no SPIR-V, no LFS).
-- **Document assets**: `<stem>.asset.json5` metas merged at cook time (schema defaults, the
-  `_dir.meta.json5` chain outer to inner, the asset meta) with codegen's `mergeInto`.
-- **Raw assets**: files whose bytes are the asset (SPIR-V, fonts); the pack manifest maps the
-  extension to a type UID; UID = `tk::deriveUid(type_uid, vpath)`.
-- **No asset types in core**: presentation registers `shader.spirv` and `font.sfnt`, land
-  `land.BlockDef`. A headless process indexes shader and font entries but never loads them.
+- **Source mounts**: an authored directory mounted at a vpath prefix: `/core` (engine fonts),
+  `/core/shaders` (engine shaders), `/land` (block definitions, land shaders), fixture mounts in
+  tests. In the build tree they point into the source checkout, so saving a file is the whole edit
+  loop, and live import is dropping a file into a mounted directory.
+- **Every asset is a content file plus a meta.** The content file is the asset's source: a `.slang`
+  file, a font, or a `*.json5` document typed by its `$type` and holding only data. The meta
+  `<file>.meta.toml` next to it holds the identity and import settings: the UID, the type where
+  the extension does not decide it, cook settings. Metas are machine-owned (P7.4): the engine
+  writes one for a new file, the editor (GUI) and commands (agents) edit them later, and hand
+  editing is the escape hatch.
+- **Directory defaults** `_defaults.json5` are content, not metas: a human-owned P7.2 layer of
+  document data per type. Names starting with `_` are reserved.
+- **The cache is a cooked pack**: each source mount cooks into `<root>/cache/<mount uid>/`, a loose
+  pack that a `PackMount` reads. A source mount is a pack mount plus a cooker keeping it current, so
+  loaders have one read path, and packs stay the shipping form (section 6).
+- **Cookers per asset type**, pure functions of their recorded inputs: the generic document cooker
+  (registered for every `asset` schema type, so a plugin writes no code for document assets),
+  `RawCooker` (bytes as-is: fonts) and `ShaderCooker` (gfx). A headless process registers no shader
+  or font cooker: those entries are indexed and never cooked or loaded.
+- **Asset types**: presentation registers `shader.slang` and `font.sfnt`, land `land.BlockDef`.
 
 **Decisions.**
 
-1. **Merge at cook time**: the build is the place for derivation (P8.3), archives must be
-   self-contained, and the runtime needs no schema model to resolve an asset.
-2. **Mounts are cooked packs only**; the reload loop is edit, `cmake --build --target voxen-data`,
-   reload. *Rejected:* development source mounts (two code paths per type; P8.2, P9.1).
-3. **Change detection is a stat of each loose pack's `pack.index`** at most every
-   `assets.poll_interval_ms`; `assetc index` writes it last and atomically, a content-hash diff
-   bumps exactly the changed assets, and the load re-checks the hash of what it read. *Rejected:*
-   watching every cooked file; a native watcher with two OS backends.
-4. **Override by UID; the path is the human index** (P8.1, D5.6). Two mounts on one layer
-   providing one UID is a startup error naming both.
-5. **Strict lowercase ASCII vpaths fixed at cook time** from `mount_point`: one spelling
-   (`/core/x`, never `core:/x`), byte equality everywhere.
-6. **Shaders and fonts are raw assets with vpath-derived UIDs.** One `.spv` per entry point from
-   today's slangc rule (now `voxen_add_shaders(... PACK ...)`), the font file as-is. P8.1 holds:
-   every asset has a UID and a path, no data refers to a shader or font by UID, and one vpath
-   derives one UID. *Rejected:* `assetc` running slangc into per-module containers with authored
-   meta UIDs (duplicates a working rule); an SDF ASCII atlas (the design D20.3 replaces).
+1. **Cooking is in-process and on demand**: an asset is cooked on its first load or when its input
+   hash changes, on a Background task; `voxen-headless cook` cooks everything cookable (cache
+   warm-up and the CI cookability check). *Rejected:* CMake as the cooking DAG executor with cooked
+   packs as the only mounts (hot reload behind a build step, no live import).
+2. **The input hash covers the cooker UID and version, the cook settings, the meta chain and the
+   content hash of every recorded dependency.** A cooker reads only through `CookContext`, which
+   records each file it reads; the cache index stores the hash and the dependency list, so a restart
+   recooks nothing unchanged and an edited Slang import recooks its importers (P8.3). Cook output is
+   deterministic bytes.
+3. **Change detection is a polled stat walk** (size, mtime) of each source mount every
+   `assets.poll_interval_ms`, mapped through the dependency table to the affected assets.
+   *Rejected for the MVP:* native watchers (two OS backends; they slot in behind `IChangeSource`).
+4. **Override by UID; one vpath names one UID** (P8.1, D5.6). Two UIDs at one vpath anywhere in the
+   stack is an error naming both providers, since a path lookup would be ambiguous. One UID at
+   several vpaths is allowed, the "new name" case (a rename, or a mod providing an asset under a
+   new path): every such path resolves to the UID, whose version comes from the highest layer
+   providing it. Two providers of one UID in one layer (a copied meta) is an error. A rescan that
+   would introduce an error keeps the previous index and reports it.
+5. **Vpaths are strict lowercase ASCII; source names may use any case.** A vpath is the
+   ASCII-lowercased source path under the mount point (`Fonts/NotoSans-wdth-wght.ttf` at `/core`
+   is `/core/fonts/notosans-wdth-wght.ttf`), and the index keeps the original spelling for display
+   and diagnostics. Names that differ only by case fold to one vpath, which decision 4 turns into an
+   error, so a tree stays portable to case-insensitive file systems; a case-only rename changes
+   neither the vpath nor the UID. Wherever a vpath is written (code, data, CLI, logs) it is the
+   lowercase form: the parser rejects uppercase and suggests the folded path rather than folding
+   silently. Source names are rejected, with a diagnostic naming the file, for the characters
+   Windows forbids (`<>:"|?*`), a trailing dot or space, reserved device names and, until Unicode
+   folding exists, non-ASCII characters; spaces are allowed.
+   *Rejected:* lowercase-only file names (every imported file renamed by hand, for nothing the
+   folded key does not already give: data references assets by UID, P8.1).
+6. **One shader asset per Slang file**, its meta declaring the stages (`["vert", "frag"]`, entry
+   points `vertexMain`, `fragmentMain`, `computeMain` as today); a file with no stages is a library
+   module, cooked to nothing and tracked as a dependency. `ShaderCooker` spawns the vendored
+   `slangc` with today's flags and `-depfile`, one SPIR-V chunk per stage; the debug-info level is a
+   cook setting (P11.3). *Rejected:* linking `slang-compiler` (no headers or import library are
+   vendored, and a compiler crash would take the engine down; it can replace the spawn inside
+   `ShaderCooker`).
 7. **One asset per block type, asset UID = block type UID** (D7.9).
 8. **Loaders are coroutines over a `LoadContext`**, so progressive loads (P8.4) change no loader.
 9. **Handles are slot indices, contents intrusively refcounted versions**; consumers poll a stamp
@@ -630,9 +667,23 @@ executor (P8.3).
    free (P2.5).
 10. **The content-set hash covers `(uid, content_hash)` of sim-consumed assets in UID order**;
     content hashes exclude cooker versions. Saves store the key list, so a mismatch names the asset.
-11. **`UserStorage` is synchronous, not a service**: the user settings layer needs it before
+11. **Metas are written by the engine, canonically**, through `tk::toml`'s writer: fixed key order,
+    one key per line (P7.5), so a conflict stays local; the realistic one, two people importing one
+    file, is resolved by keeping either UID. A file with an asset extension and no meta gets one
+    with a fresh random UID on the next scan. A hand-edited meta is read as is and rewritten
+    canonically on the engine's next write to it. A mount flagged read-only never writes: a missing
+    meta there is an error, which is how CI and headless tests run, so a meta nobody committed fails
+    the build instead of being generated on a runner. In one scan, a new file without a meta whose
+    content hash equals the file behind an orphaned meta is a move, and the meta follows it, so a
+    file moved outside the editor keeps its UID; other orphaned metas are reported, never deleted.
+    *Rejected:* human-owned metas (no live import without a hand-made UID); UIDs inside document
+    content (one file both human- and machine-owned, against P7.4).
+12. **The cache is machine-owned and disposable** (P7.4): deleting `cache/` costs a recook, and
+    nothing but cookers reads source files. Entries and the index are written atomically and cooks
+    are deterministic, so processes sharing a cache (parallel tests) at worst cook twice.
+13. **`UserStorage` is synchronous, not a service**: the user settings layer needs it before
     services exist.
-12. **`runtime::AssetInputSource` lives in `runtime`**: it implements a sim interface and calls a
+14. **`runtime::AssetInputSource` lives in `runtime`**: it implements a sim interface and calls a
     service, and only `runtime` sits above both.
 
 **Interfaces.**
@@ -660,20 +711,27 @@ public:
 namespace voxen::assets {
 template<CAssetType T> class Asset { public: uint32_t stamp(const AssetService &) const noexcept; };
 template<typename T = void> class AssetRef;   // refcounted, immutable AssetVersion<T>
+class IAssetCooker { public: virtual UID cookerUid() const noexcept = 0;
+  virtual uint32_t version() const noexcept = 0;
+  // Reads only through the context, which records dependencies; adds chunks to the output
+  virtual svc::CoroSubTask<std::expected<void, CookError>> cook(CookContext &) = 0; };
 class IAssetLoader { public: virtual UID assetTypeUid() const noexcept = 0;
   virtual svc::CoroSubTask<std::expected<AssetRef<>, std::error_condition>>
   load(LoadContext &) = 0; };
 template<CAssetType T> class DocumentAssetLoader;   // META -> generated fromDom<T>()
 template<CAssetType T> class BytesAssetLoader;      // T(svc::IoBuffer &&)
 class VOXEN_API AssetCatalog final : public plugin::IRegistry { public:
-  void addLoader(plugin::PluginId owner, std::unique_ptr<IAssetLoader>);   // one per type
-  void commit(const plugin::PluginHost &) override; };   // packs: core 0, plugins 1 + index
+  // One cooker and one loader per type; document types get both from the type registry
+  void addType(plugin::PluginId owner, UID type_uid, std::span<const std::string_view> extensions,
+    std::unique_ptr<IAssetCooker>, std::unique_ptr<IAssetLoader>);
+  void addMount(plugin::PluginId owner, const MountDesc &);   // mount point, source dir
+  void commit(const plugin::PluginHost &) override; };          // layers: core 0, plugins 1 + index
 class VOXEN_API AssetService final : public svc::IService {
 public:
   template<CAssetType T> Asset<T> find(UID) const;
   template<CAssetType T> Asset<T> findByPath(const tk::vpath::Path &) const;
   template<CAssetType T> AssetRef<T> acquire(Asset<T>) const;            // never blocks
-  uint64_t whenResident(std::span<const AssetSlot>, svc::TaskPriority);  // one counter
+  uint64_t whenResident(std::span<const AssetSlot>, svc::TaskPriority);  // cooks if needed
   void poll();                                              // thread-safe, rate-limited
   void drainSimChanges(uint64_t &cursor, std::vector<AssetRef<>> &out);
   svc::CoroSubTask<std::expected<InitialContent, std::error_condition>>
@@ -693,55 +751,77 @@ template<CAssetType T> AssetRef<T> makeDetachedVersion(UID, T contents, tk::hash
 
 Formats (all with `$type` and `$version`, C-4):
 
-- **Pack manifest** `pack.json5`: `{ $type: "voxen.assets.Pack", $version: 1, uid, name: "land",
-  mount_point: "/land", raw: { ".spv": "<shader.spirv uid>" } }`.
-- **Asset meta** `plugins/land/assets/blocks/stone.asset.json5`: `{ $type: "land.BlockDef",
-  $version: 1, uid: "…", block: { display_name: "Stone", color: [120, 120, 120] } }`; data under
-  the type's `section` key; vpath `/land/blocks/stone`. **Directory meta** `_dir.meta.json5`:
-  `{ $type: "voxen.assets.DirMeta", $version: 1, block: { solid: true, opaque: true } }`.
-- **Cooked asset** `<pack>/<dir>/<stem>.vxa`: chunks `AHDR` (UIDs, schema version, content hash,
-  reserved input hash, vpath, `SIM` flag) and `META` (merged data as canonical compact JSON).
-- **Index** `<pack>/pack.index`: machine-owned JSON, one record per line sorted by path,
-  `{ uid, path, type, file, size, hash, sim, raw? }`; an LFS pointer file is refused.
-- **Content hash**: `hash128` of `META` for documents, of the file for raw assets.
+- **Mount list** `<root>/data/mounts.json5` and `<root>/plugins/<id>/mounts.json5`: machine-owned,
+  written by CMake: `{ $type: "voxen.assets.Mounts", $version: 1, mounts: [{ uid, mount_point:
+  "/land", source: "<absolute source dir>" }] }`.
+- **Document content** `plugins/land/assets/blocks/stone.json5`: `{ $type: "land.BlockDef",
+  $version: 1, display_name: "Stone", color: [120, 120, 120] }`; vpath `/land/blocks/stone.json5`.
+  **Directory defaults** `_defaults.json5`: `{ $type: "voxen.assets.Defaults", $version: 1,
+  "land.BlockDef": { solid: true, opaque: true } }`.
+- **Meta** `src/shaders/ui/ui_basic.slang.meta.toml` (C-4 header keys quoted in TOML):
 
-CMake: `voxen_add_asset_pack(<target> NAME n MANIFEST m OUTPUT_DIR d [SOURCES dir [PREFIX p]]...
-[RAW src dest]...)` adds one `assetc cook` per meta with a depfile and makes the index depend on
-every output; `voxen_add_shaders(<target> PACK <pack> SOURCE_DIR ... SHADERS ...)` appends `.spv`
-outputs. slangc discovery and the LFS check run on the first `voxen_add_shaders` call, which only
-gfx `CMakeLists.txt` make. `voxen-data` (ALL) aggregates packs; executables depend on it.
+  ```toml
+  "$type" = "voxen.assets.Meta"
+  "$version" = 1
+  uid = "…"
+  type = "shader.slang"
 
-Hot-reload flow for a sim-consumed asset: `pack.index` rewritten, `poll()` re-reads it and loads
-the new version on a Background task; the session hook posts `AssetVersion{uid, hash}` with the
-`AssetRef<>` as payload; the consuming step switches `snapshot.contentSet()` (section 4.5).
-Scenario asset events bypass the service: the runner builds a detached version (contents to DOM,
-merged with the override, `fromDom`) and posts the same entry.
+  [shader]
+  stages = ["vert", "frag"]
+  ```
+- **Cooked asset** `<cache>/<dir>/<stem>.vxa`: chunk `AHDR` (UID, type UID, content hash, input
+  hash, cooker version, vpath, `SIM` flag), then `META` (documents: merged data as canonical
+  compact JSON), `DATA` (raw bytes) or one `SPV ` per stage (chunk id = stage).
+- **Cache index** `<cache>/pack.index`: machine-owned JSON, one record per line sorted by path,
+  `{ uid, path, type, file, size, hash, input_hash, deps: [{ path, hash }], sim }`.
+- **Content hash**: `hash128` of `META` for documents, of the payload chunks otherwise.
+
+CMake: `voxen_add_asset_mount(<target> MOUNT_POINT p SOURCE_DIR d)` records a mount in the target's
+mount list. The per-shader `slangc` rule goes; gfx builds copy the vendored `slangc` and its
+libraries into `bin/`. No target cooks assets.
+
+Hot-reload flow for a sim-consumed asset: `poll()` finds the changed source, recooks the asset on a
+Background task, rewrites its cache entry and publishes the new version; the session hook posts
+`AssetVersion{uid, hash}` with the `AssetRef<>` as payload; the consuming step switches
+`snapshot.contentSet()` (section 4.5). Scenario asset events bypass the service: the runner builds
+a detached version (contents to DOM, merged with the override, `fromDom`) and posts the same entry.
 
 **Rework.** `assets/asset_base.hpp`, `asset_decoder.*`: deleted; `asset_service.*`: replaced
 (`SERVICE_UID` kept). `svc::FileManager`: deleted; its users are `vk_pipeline.cpp:85` (shader
 assets), `font_renderer.cpp:276` (deleted), `vk_pipeline_cache.cpp:35,82` (`UserStorage`) and
-`config.cpp` (deleted). `os::File`: `FileFlagsBit::AsyncIo` removed. `tools/assetc`: `cook`,
-`index`, `dump`; `font_atlas.*` and the FreeType link go; split into `assetc-lib` + `assetc`.
-`cmake/VoxenAssets.cmake` replaced, `VoxenShaders.cmake` folded in, `add_dependencies(voxen
-voxen-shaders)` becomes `voxen-data`. `data/core-assets/` becomes `data/core/` (fonts with
-lowercase destination names; the font meta and `core-assets.json5` go).
+`config.cpp` (deleted). `os::File`: `FileFlagsBit::AsyncIo` removed. `os::ChildProcess` added
+(`posix_spawn`, `CreateProcessW`) for `ShaderCooker`. `tools/assetc` is deleted with its font atlas
+and FreeType link; its container dump becomes `voxen-headless dump-asset`. `cmake/VoxenAssets.cmake`
+and `VoxenShaders.cmake` are replaced by mount registration; `VOXEN_SHADER_DEBUG_INFO` becomes the
+`assets.shader.debug_info` setting. `data/core-assets/` becomes `data/core/`: font files keep their
+names and get generated metas, while `core-assets.json5` and the SourceCodePro atlas meta go. Every
+`.slang` file gains a generated meta, committed with it.
 
 **Work items.**
 
-- `as-1` `tk::vpath`, `tk::container`. Exit: bad paths rejected (`..`, uppercase, device names);
-  container round trip with ids; truncated tables rejected; deterministic bytes.
+- `as-1` `tk::vpath`, `tk::container`. Exit: bad vpaths rejected (`..`, uppercase); source names
+  folded, with Windows-forbidden characters, device names and non-ASCII rejected; container round
+  trip with ids; truncated tables rejected; deterministic bytes.
 - `as-2` `UserStorage` (needs `build-4`). Exit: escaping names rejected; atomic writes leave no temp
   file.
-- `as-3` `assetc`, `voxen_add_asset_pack`, `voxen_add_shaders(PACK)`, packs (needs `cg-5`). Exit:
-  merge order asset > inner dir > outer dir > default; `$delete`; a missing `$version`, duplicate
-  UID and bad vpath fail with file:line; a headless configure never runs slangc.
-- `as-4` `AssetService` (needs `rt-4`, `build-6`). Exit: lookup by UID and path; override across
-  layers; same-layer conflict; two loaders for one type rejected; a corrupted file never publishes.
-- `as-5` Presentation wiring, in the series of `pr-3`: pipelines and the text face resolve through
-  `findByPath`, startup waits on `whenResident`. Exit: `voxen` renders on Linux and the winbox; no
-  `FileManager` remains.
-- `as-6` Hot reload. Exit: one changed hash in a fixture index bumps exactly that stamp while an old
-  `AssetRef` stays valid.
+- `as-3` Mounts, index, metas and cache (needs `cg-5`): the source scan, meta generation, moves and
+  orphans, read-only mounts, `PackMount` over the cache. Exit: two UIDs at one vpath, names
+  differing only by case, a copied meta and a missing meta on a read-only mount each produce a
+  diagnostic naming the files; one UID at two vpaths resolves from both; a new file gets a meta
+  byte-identical to its canonical rewrite; a file moved without its meta keeps its UID.
+- `as-4` `AssetService`, `CookContext`, the document and raw cookers, `voxen-headless cook` (needs
+  `rt-4`, `build-6`, `cg-9`). Exit: merge order asset > inner dir > outer dir > default; `$delete`;
+  a missing `$version` fails with file:line; override across layers; two cookers or loaders for one
+  type rejected; a restart cooks nothing; a corrupted cache entry is recooked, never published;
+  document cook bytes equal on both OSes.
+- `as-5` Presentation wiring and `ShaderCooker`, in the series of `pr-3`: pipelines and the text
+  face resolve through `findByPath`, startup waits on `whenResident`. Exit: `voxen` renders on
+  Linux and the winbox; no `FileManager` remains; an edited `util/*.slang` recooks its importers; a
+  `slangc` error keeps the old version and logs the diagnostic.
+- `as-6` Hot reload and live import. Exit: one changed file bumps exactly the dependent stamps
+  while an old `AssetRef` stays valid; a new file without a meta appears with a generated one; a
+  deleted file falls back to
+  a lower layer or becomes missing; a rescan introducing a vpath conflict is rejected.
 - `as-7` Content set and sim inputs (with sim, runtime, slice). Exit: the hash is independent of
   mount and load order; a released snapshot frees the old version; loading a save against a changed
   definition reports the UID.
@@ -1110,11 +1190,11 @@ Scenario document (codegen `document` kind `sim.Scenario`, human-owned):
   admission: { policy: "deterministic", delay_steps: 0 },   // passed to every source
   players: [0], steps: 300,                                  // players join at step 1
   inputs: [   // keyed by StepId; held sets and payloads persist until the player's next entry
-    { step: 4, player: 0, hold: ["game.move_forward"], payload: { orient_q: [0, 0, 0, 32767] } },
+    { step: 4, player: 0, hold: ["game.move_forward"], payload: { orientation: [0, 0, 0, 1] } },
     { step: 90, player: 0, hold: [] },
     { step: 92, player: 0, commands: [{ type: "game.PlaceBlock",
         value: { block: [-1990, 330, -1467], id: "<stone uid>" } }] } ],
-  settings: [{ step: 120, set: { "game.fly.forward_mm_per_s": 200000 } }],
+  settings: [{ step: 120, set: { "game.fly.forward_speed": 200.0 } }],
   asset_events: [],   // { step, asset: uid | vpath, override: {...} }
   save_reload: { at: [92, 150] },
   expect: [{ at: 300, check: "land.block_at", args: { block: [-1990, 330, -1467] },
@@ -1323,8 +1403,9 @@ caller-buffer read go. `pipe_memory_allocator.*`: kept with its GC thread.
 - **Neutral declaration facade** (S10.3 hook): `IRenderFeature::declare(gfx::GraphBuilder &)` with
   neutral usage kinds and `gfx::Format`, forwarding to the kept `vk::RenderGraphBuilder`; pass
   bodies record through `PassContext::vk()`, each use a marked porting site.
-- **Shaders as assets** (D10.5, D8.4a): `gfx::ShaderAsset` (`shader.spirv`); `PipelineRegistry`
-  rebuilds on a Background task when a stamp changes and keeps the old pipeline bound meanwhile.
+- **Shaders as assets** (D10.5, D8.4a): `gfx::ShaderAsset` (`shader.slang`, cooked by
+  `ShaderCooker`, section 4.3); `PipelineRegistry` rebuilds on a Background task when a stamp
+  changes and keeps the old pipeline bound meanwhile.
   Per-pipeline layouts (push descriptors) and BDA stay.
 - **UI** in `voxen::ui`: event-driven input, a consumption mask per event with modal capture, stable
   ids (`tk::hash`), shaped text.
@@ -1462,8 +1543,8 @@ are copied into the land plugin; `selector.slang` becomes `src/shaders/debug/deb
   without a session; the debug overlay. Exit: `voxen` with no plugins shows the overlay on Linux
   and the winbox (Intel, AMD); minimizing idles; CPU tests for key names, event times, UI
   press-and-release and capture, the usage table and shared `scene.depth`.
-- `pr-3` `PipelineRegistry` with hot reload (needs `as-3`..`as-6`). Exit: editing `ui_basic.slang`
-  and building `voxen-data` changes the running `voxen`; a broken shader keeps the old pipeline.
+- `pr-3` `PipelineRegistry` with hot reload (needs `as-3`..`as-6`). Exit: saving `ui_basic.slang`
+  changes the running `voxen`; a broken shader keeps the old pipeline.
 - `pr-4` The remaining presentation settings sections (`gfx` exists since `cg-10`). Exit:
   `--set present.interpolation_delay_ticks=2` and a user-layer binding take effect.
 - `pr-5` Input module. Exit: binding diagnostics; consumed events never press but a release is
@@ -1528,12 +1609,12 @@ class VOXEN_API PluginHost { public:
 ```
 
 Registries: `types::TypeRegistry` (`addModule`), `sim::SystemCatalog` (phases, systems, transform
-and external sources), `assets::AssetCatalog` (loaders; packs from `plugins/<id>/pack/`),
+and external sources), `assets::AssetCatalog` (cookers, loaders, mounts),
 `client::PresentationRegistry` (extensions). A part function touches no service: none exist yet.
 Manifest: `{ $type: "voxen.plugin.Manifest", $version: 1, uid, id: "game", name, version,
 parts: ["sim", "presentation"], requires: [{ id: "land", uid }] }`.
 
-CMake: `voxen_add_plugin(id MANIFEST f)` creates `plugin-<id>` and INTERFACE
+CMake: `voxen_add_plugin(id MANIFEST f [MOUNT point dir]...)` creates `plugin-<id>` and INTERFACE
 `plugin-<id>-headers`; `voxen_add_plugin_part(id SIM|PRESENTATION SOURCES ... [SCHEMAS ...]
 [USES id...])` creates OBJECT `plugin-<id>-sim-objects`/`-gfx-objects` and SHARED
 `plugin-<id>-sim`/`-gfx` (no prefix, output in the plugin dir, `INSTALL_RPATH
@@ -1565,8 +1646,9 @@ gfx. Windows parts open with `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR`, so `land-gfx.dl
   `land::GridKeys` share one layout and every 2^n-aligned chunk cell is one key range.
 - **Generator** (D22.1): pure `(GeneratorContext{seed, identity, material ids}, ChunkKey) ->
   ChunkBlocks` with two built-in stages; identity = hashed ordered stage list plus the material id
-  map; generator and geometry TUs compile with per-source `-ffp-contract=off` (pragmas do not
-  reach header-inline `m::` math); golden hashes on Linux and the winbox.
+  map; rewritten in fixed point: integer lattice hashing, noise and height shaping in
+  `int32`/`int64` Q formats, no floating point in generator code; golden hashes on Linux and the
+  winbox.
 - **Admission** (P15.2a): off-tick generation; a chunk enters only as a recorded
   `land.ChunkAdmit{chunk, generator_identity}` with 64 `DetachedTile`s as the payload, from
   `land::AdmissionSource`. The wanted set (radius 3 around `land.ResidencyAnchor` entities, from
@@ -1580,15 +1662,15 @@ gfx. Windows parts open with `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR`, so `land-gfx.dl
   the presentation timeline: diffs both grids between presented snapshots and reuses today's DAG
   with aggregation; non-resident regions come from its own generator cache (pristine, since nothing
   is dropped); mesh versions are a mesher-local counter.
-- **Game, sim part**: archetype `game.Avatar` (`Transform`, fixed-point `AvatarMotion` with an
-  `epoch`, `FlyController`, `land.ResidencyAnchor`) in `game.Players`. `game.init` (Init trait;
-  `game.WorldRules` from the `WorldSetup` record); `game.spawn` (`PHASE_CONTROL`; for each player
-  whose `PlayerControl.avatar` is null, read from the head after `sim.PlayerSystem`, spawns an
-  avatar with origin = the player entity and `notifyOrigin(POSSESS)`); `game.controller`
-  (`PHASE_CONTROL`; owns `AvatarMotion` and `FlyController`; `FlyMath::step` from the record and
-  `FlyRulesSessionValues`); `game.commands` (`PHASE_GAMEPLAY`; validates `PlaceBlock` for reach,
-  residency, a registered id and `placeable`, then sends `land.SetBlock`). The source
-  `game.FlySource` derives `Transform` exactly.
+- **Game, sim part**: archetype `game.Avatar` (`Transform`, float `AvatarMotion` with an `epoch`,
+  `FlyController`, `land.ResidencyAnchor`) in `game.Players`, all tolerant except the anchor.
+  `game.init` (Init trait; `game.WorldRules` from the `WorldSetup` record); `game.spawn`
+  (`PHASE_CONTROL`; for each player whose `PlayerControl.avatar` is null, read from the head after
+  `sim.PlayerSystem`, spawns an avatar with origin = the player entity and `notifyOrigin(POSSESS)`);
+  `game.controller` (`PHASE_CONTROL`; owns `AvatarMotion` and `FlyController`; `FlyMath::step` from
+  the record and `FlyRulesSessionValues`); `game.commands` (`PHASE_GAMEPLAY`; validates `PlaceBlock`
+  for reach, residency, a registered id and `placeable`, then sends `land.SetBlock`). The source
+  `game.FlySource` copies `AvatarMotion` into `Transform`.
 - **Presentation parts**: `land::gfx::LandPresenter` (consumer and hook: feeds the mesher, uploads
   by (chunk, version)), `LandRenderFeature` (cull compute and draw), `BlockMaterialTable` (colours
   from the registry and `contentSet()`, magenta for missing definitions, read by `chunk_mesh.slang`,
@@ -1608,17 +1690,24 @@ gfx. Windows parts open with `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR`, so `land-gfx.dl
    from the generator, so sim, save and hash stay small.
 6. **Edits go avatar -> `SetBlock` -> grid at i+1**, exercising S1.3: the save at 92 lands between
    validation and apply. *Rejected:* a same-step phase read (D1.14).
-7. **Fixed-point controller**: every value the slice decides on is strict (`AvatarMotion`, grids,
-   `TerrainInfo`); no system reads `Transform` in the tick, and residency uses only the strict
-   frame (S1.4a).
+7. **A float controller in the tolerant tier** (S1.4a): `AvatarMotion` and the payload's
+   orientation are floats, and what reads them inherits the taint: reach validation, residency
+   anchors, and through them grid edits and admissions. Replays and the cross-thread Strict digest
+   still agree on one binary; goldens are per OS, and the cross-OS gates are the generator goldens
+   and the codec digests. A project that wants strict movement replaces the controller (D5.6).
+   *Rejected:* a fixed-point controller (an authoring cost the base game does not need).
 8. **Tunables are layered documents** (D5.6): speeds in `game.fly`, reach in `game.build` (both
-   `sim_input`, fixed point), the spawn in the world document; only `MAX_ADMISSIONS_PER_STEP` is a
-   constant (P1.9a).
+   `sim_input`), the spawn in the world document; only `MAX_ADMISSIONS_PER_STEP` is a constant
+   (P1.9a).
 9. **Two generator caches (admission, mesher) over one memoized `GeneratorContext`**: no tile
    crosses between sim and presentation; mesher tasks hold a `SnapshotRef`; generated data is the
    land value `ChunkBlocks` (uniform or `shared_ptr` dense tiles), never a v8g page.
 10. **Port, do not move**, with characterization tests against the legacy classes, which stay until
-    M8.
+    M8. The generator is the exception: its fixed-point rewrite matches the legacy terrain in
+    character, not block for block.
+11. **The generator is fixed point** (D22.1): bit-exact by construction on every platform and
+    compiler setting. *Rejected:* keeping `float` under `-ffp-contract=off` and goldens (strictness
+    by build flags, broken by any header-inline math).
 
 **Interfaces.**
 
@@ -1655,20 +1744,22 @@ namespace lod { class LAND_API LandMesher { public:
 { schema_language: 1, module: "game", namespace: "game", uid: "…", tier: "strict",
   imports: ["land", "voxen.ecs"],
   types: {
-    AvatarMotion: { kind: "component", uid: "…", version: 1,   // pos_q in 1/4096 block units
-                    fields: { pos_q: "int64x3", orient_q: "int16x4", epoch: "uint32" } },
+    AvatarMotion: { kind: "component", uid: "…", version: 1, tier: "tolerant",
+                    fields: { position: "voxen.ecs.FramePos", orientation: "quat",
+                              epoch: "uint32" } },
     Avatar:      { kind: "archetype", uid: "…", cell_rule: { kind: "logical", cell: "Players" },
                    components: ["voxen.ecs.Transform", "AvatarMotion", "FlyController",
                                 "land.ResidencyAnchor"] },
-    AvatarInput: { kind: "struct", uid: "…", version: 1, fields: { orient_q: "int16x4" } },
+    AvatarInput: { kind: "struct", uid: "…", version: 1, tier: "tolerant",
+                   fields: { orientation: "quat" } },
     FlyActions:  { kind: "actions", uid: "…", payload: "AvatarInput", actions: {
                    move_forward: { uid: "…", domain: "sim", bindings: ["Key:W", "Key:Up"] },
                    place:        { uid: "…", domain: "presentation", bindings: ["Mouse:Left"] } } },
     PlaceBlock:  { kind: "command", uid: "…", version: 1, predictable: true,
                    fields: { block: "int32x3", id: "ref<registry:land.BlockTypes>" } },
     FlyRules:    { kind: "settings", uid: "…", version: 1, path: "game.fly",
-                   fields: { forward_mm_per_s: { type: "int32", default: 100000,
-                                                 sim_input: true } } },
+                   fields: { forward_speed: { type: "float32", default: 100.0,   // m/s
+                                              sim_input: true } } },
     WorldSetup:  { kind: "struct", uid: "…", version: 1, init_section: "game",
                    fields: { spawn_block: { type: "int32x3", default: [-2000, 334, -1467] } } },
   } }
@@ -1678,9 +1769,9 @@ namespace lod { class LAND_API LandMesher { public:
 converts it through `from_dom` into a `NewWorld::params` record, and Init-trait systems read it
 with `ctx.inputs().initRecord<game::WorldSetup>()`.
 
-**Rework.** One destination per legacy file: `chunk_key`, `land_consts`, `cube_array`,
-`land_utils` are copied into `plugins/land/include/land/`; `compressed_chunk_storage` and
-`land_chunk` become `ChunkBlocks`/`ChunkStencil`; `land_generator` becomes `GeneratorContext` and
+**Rework.** One destination per legacy file: `chunk_key`, `land_consts`, `cube_array`, `land_utils`
+are copied into `plugins/land/include/land/`; `compressed_chunk_storage` and `land_chunk` become
+`ChunkBlocks`/`ChunkStencil`; `land_generator` is rewritten in fixed point as `GeneratorContext` and
 `Generator::` (ids, not colours; the tick hooks and regional map dropped); `pseudo_chunk_*` and
 `land_geometry_utils*` go to `plugins/land/src/sim/lod/`; `land_service` dissolves (DAG and LRU into
 `LandMesher`, `editBlock` into `BlockGridSystem`, `doTick` admission into `AdmissionSource`);
@@ -1694,12 +1785,14 @@ splits into `FlyMath`, `FlyCamera`, `GameHud` and `GameMenus`; `src/game/game_ui
 
 - `sl-1` Keys and tiles. Exit: contiguity of scale-n ranges (n = 0..9); wrap; `ChunkStencil`
   byte-equal to legacy `ChunkAdjacencyRef`.
-- `sl-2` Pure generator. Exit: golden hashes (16 chunks, 4 pseudo chunks) on both OSes; at least
-  99.9% equal ids against the legacy generator, which contracts FMAs.
+- `sl-2` Fixed-point generator. Exit: golden hashes (16 chunks, 4 pseudo chunks) equal on both OSes
+  and at `-O0` and `-O3`; no floating-point instruction in the generator objects (a disassembly
+  check); a height histogram close to the legacy generator's.
 - `sl-3` Land sim part. Exit: a headless world reaches a full resident box; a no-op `SetBlock` gives
   an empty diff and no findings; A->B->A in one step publishes nothing; deterministic admission is
   independent of thread count; rematerialized payloads equal the originals.
-- `sl-4` Game sim part and `fly_place`. Exit: section 1; `FlyMath` exact.
+- `sl-4` Game sim part and `fly_place`. Exit: section 1; `FlyMath` reproduces the legacy
+  `GameView` motion for the same inputs within float tolerance.
 - `sl-5` Block definitions as assets and `block_def_reload`. Exit: section 1.
 - `sl-6` `LandMesher` port. Exit: one edit invalidates the 6 neighbour surfaces and 8 parent
   entries; an unchanged snapshot enqueues nothing; surfaces equal legacy `PseudoChunkSurface`.
@@ -1735,8 +1828,8 @@ reference for characterization tests, and is deleted in M8.
   Linux and the winbox; `voxen-headless list-plugins` lists the test plugins; the test plugin and
   core resolve one `TypeId`. Old `game`: deleted here.
 - **M4 Assets and shader hot reload.** `as-3`..`as-6`, `pr-3`, `pr-4`, `pr-5`. Exit: editing
-  `ui_basic.slang` and building `voxen-data` changes the running `voxen`; a user-layer binding and
-  `--set` take effect; a headless configure never runs slangc. `voxen`: overlay only.
+  `ui_basic.slang` and saving it changes the running `voxen`; a user-layer binding and `--set` take
+  effect; `voxen-headless cook` cooks the fixture mounts with no `slangc`. `voxen`: overlay only.
 - **M5 ECS and sim core.** `ecs-3`..`ecs-9`, `sim-2`..`sim-10`, `v8g-6`, `v8g-7`. Exit:
   `scenario:empty` at 1 and 4 threads against one golden in every job; save, load and 500 more
   steps equal the unbroken run; the P2.6 results table updated. `voxen`: overlay only.
@@ -1745,7 +1838,8 @@ reference for characterization tests, and is deleted in M8.
   reload of a sim-consumed type appears as an `AssetVersion` entry. `voxen`: overlay only.
 - **M7 The slice, sim side: the headless acceptance gate.** `sl-1`..`sl-5`, `cg-11`, `build-9`.
   Exit: `scenario:fly_place` and `scenario:block_def_reload` pass at 1 and 4 threads in the Linux,
-  Windows and headless jobs, with the same goldens on both OSes. `voxen`: overlay only.
+  Windows and headless jobs against per-OS goldens; the generator goldens are shared. `voxen`:
+  overlay only.
 - **M8 Parity and cleanup.** `sl-6`..`sl-8`, `pr-7`, `build-10` (delete legacy `land/`, the
   layering allow-list and the hash trie's last users; finish `architecture.md` and
   `conventions.md`; move the deferred CI rows to `todo.md`). Exit: the manual parity and hot-reload
@@ -1812,11 +1906,13 @@ menu-written settings layer, `pendingRestart`, provenance; a GPU struct emitter.
 is required and saves record UID, version and schema hash; enums grow additively; unknown attributes
 are rejected; `SourceRef` names file and line.
 
-**8. Assets**: archive mounts (P11.1), locale variants (P20.1), partial levels (P8.4), the P7.2
-template layer, a native watcher, unmount, shadowing warnings, authored UIDs for raw assets, a
-content-hashed DAG with dependencies (P8.3), rematerialization. Hook: index-plus-ranges `IMount`;
-`MountDesc::variant`; `LoadContext::readChunk()`; an ordered cook layer list; `indexStamp()`;
-explicit `uid` in index records; reserved input hash and `deps`; `acquireVersion(uid, hash)`.
+**8. Assets**: packing and archive mounts for shipping (P11.1), locale variants (P20.1), partial
+levels (P8.4), the P7.2 template layer, import-setting presets per directory, native watchers,
+unmount, shadowing warnings, the editor's UID-to-paths view and meta editing (GUI and commands),
+Unicode source names (NFC and case folding), a linked Slang compiler, rematerialization. Hook:
+`PackMount` is the archive read path and `voxen-headless cook` the packer's front end;
+`MountDesc::variant`; `LoadContext::readChunk()`; an ordered cook layer list; `IChangeSource`;
+`ShaderCooker` behind `IAssetCooker`; `acquireVersion(uid, hash)`.
 
 **9. Tools and editor** (S9.4, P9.3). Hook: zero-time steps, `Store::resetTo`, commands as inputs.
 
@@ -1828,7 +1924,7 @@ explicit `uid` in index records; reserved input hash and `deps`; `acquireVersion
   buffers and sampled images, update-unused-while-pending, non-uniform indexing) and limits, tested
   on the winbox Intel and AMD GPUs.
 - Prediction and predicted events (D10.1a, D10.1b). Hook: recorded `input_seq` and
-  `lastConsumedInputSeq`; `InputMapper::unconsumed()`; `FlyMath::step` reusable bit for bit.
+  `lastConsumedInputSeq`; `InputMapper::unconsumed()`; `FlyMath::step` reusable on the client.
 - Render proxies, an offscreen target and image tests (P19.4), the graph as a document (D10.5),
   more present modes, GPU recording on pool tasks, gamepads and axes. Hook: `ISnapshotConsumer`
   and `interpolate()`; the graph imports its output; `features` order; `present_mode`; a split
@@ -1871,12 +1967,13 @@ Hook: `PositionedGlyph::face`, cluster maps, run direction, the locale cache key
 
 ## 7. Decisions for the author to confirm
 
-Chosen option first, main alternative after "vs".
+Chosen option first, main alternative after "vs". Items marked **Settled** are decided and kept
+here so the numbering stays stable.
 
 1. Two engine DSOs vs core/sim/gfx.
 2. One module = one directory = one library, so `window/` (`voxen::window`) vs `os::Window` built
    into gfx.
-3. Plugins in `plugins/<id>/`, namespace `id::` vs a `voxen_<id>::` prefix.
+3. **Settled:** plugins in `plugins/<id>/`, namespace `<id>`.
 4. No plugin links another (`USES` headers) vs a `REQUIRES_LINK` exception with an rpath rule.
 5. A plain plugin array vs a keyed `{id, enabled}` list with a `keyed` merge policy.
 6. The root from the `voxen-core` DSO location vs argv0 or the executable path.
@@ -1884,8 +1981,9 @@ Chosen option first, main alternative after "vs".
 8. Per-field tiers with defaults vs project overrides of whole core types.
 9. Required `$version` in every human-owned file vs "missing means current".
 10. Field order from JSON5 key order vs arrays of `{name}`.
-11. Vendored xxHash vs an own XXH3.
-12. A `UInt` DOM kind vs int64 only with hex strings.
+11. **Settled:** vendored xxHash.
+12. **Settled:** `int64` is the only integer DOM kind, with hex strings for `uint64` values above
+    `INT64_MAX`.
 13. One action payload per plugin set vs concatenated payloads.
 14. A process-wide action index with a layout hash vs per-set indices keyed by the set's `TypeId`.
 15. Registries as snapshot side objects allocated in the prologue ("first use" = the first step a
@@ -1905,18 +2003,22 @@ Chosen option first, main alternative after "vs".
 28. `wait()` on a worker is a bug vs help-while-waiting.
 29. The I/O and pipe-GC threads kept as P3.3 exceptions.
 30. Non-`sim_input` settings restart-required except presentation's `live` fields.
-31. Asset override by UID vs by path.
-32. Raw shaders and fonts with vpath-derived UIDs vs authored meta UIDs and a shader cooker.
-33. Hot reload through a build step vs development source mounts.
-34. Strict lowercase ASCII vpaths, mod authors included.
+31. **Settled:** override by UID; two UIDs at one vpath are an error, one UID at several vpaths is
+    the allowed "new name" case. An editor view of UID-to-paths mappings comes after the MVP.
+32. **Settled:** a UID for every asset, held in a machine-owned TOML meta next to the content file
+    (documents included) and generated for a new file, and an in-process shader cooker.
+33. **Settled:** source mounts cooked on the fly, with true hot reload and live import; everything
+    is cookable at run time, at least to the engine-usable form.
+34. **Settled:** strict lowercase ASCII vpaths for everyone, folded from source names of any case;
+    names differing only by case are an error.
 35. One shaped text face now vs the baked ASCII atlas until localization.
 36. Interpolation only (about 1.25 ticks of positional lag) until D10.1a.
 37. Neutral declarations now, neutral recording, bindless and BDA removal right after the MVP.
 38. No windowed game from the cut (M3) to parity (M8); the old demo at `legacy-demo`.
-39. A fixed-point base-game controller vs a float controller and a tolerant avatar.
+39. **Settled:** a float base-game controller and a tolerant avatar.
 40. No residency drops; memory grows along the flight path.
 41. `BlockDef` sim-consumed whole vs separate sim and presentation parts.
-42. Generator strictness by `-ffp-contract=off` and goldens vs a fixed-point rewrite.
+42. **Settled:** a fixed-point generator rewrite.
 
 Left open (not needed by the MVP): the position of the menu-written settings layer relative to
 `user` (D7.8 against P7.2); what the P7.2 asset "template" layer is (type-level or per-asset
