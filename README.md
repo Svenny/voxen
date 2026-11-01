@@ -60,7 +60,7 @@ with the compiled assets next to it in `data/`.
 
 Module rules and their dependency order are described in [docs/architecture.md](docs/architecture.md),
 naming and coding conventions in [docs/conventions.md](docs/conventions.md). [docs/notes/](docs/notes/)
-holds design drafts, known bugs, the C++ modules experiment and small to-do items.
+holds the design draft, the MVP plan, known bugs, the C++ modules experiment and small to-do items.
 
 ## Git LFS
 

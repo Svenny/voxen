@@ -33,6 +33,8 @@ edges in [architecture.md](../architecture.md), the [bug notes](bug-reports/READ
   (`SDL_stb.c`), `xsettings-client.c`, `edid-parse.c`, `imKStoUCS.c`, `SDL_rotate.c`,
   `controller_type.c`, `libm/s_modf.c` (Windows). Needs an audit pass and a way to pull notices out
   of headers in `vendor.py notices` (or extra `license_files` cut from them).
+- **zlib** (used by `tk::png`, tools and startup only): consider libdeflate (whole-buffer), or
+  zstd/lz4 for chunk saves.
 
 ## Code
 

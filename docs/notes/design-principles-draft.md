@@ -3,8 +3,8 @@
 Principles and decisions for the engine's architecture, grouped by domain. Each item is marked **P**
 (principle: how we decide), **D** (decision proposed, open to challenge), **S** (settled) or **?**
 (open question). An item with a letter suffix (P1.1a) refines the item it is numbered after. "Today"
-refers to the state of the repository at commit `93967d4`; directions not covered here are in
-`docs/notes/design-drafts.md`.
+refers to the state of the repository at commit `93967d4`. The implementation plan for the first
+milestone is `docs/notes/mvp-plan.md`.
 
 ## 0. Identity and scope
 
@@ -616,6 +616,12 @@ once cells exist, and this table should be read as the random-access worst case 
   never send entity messages (D12.3: they send inputs) but do receive outboxes as replicated state
   (S1.3); which outboxes a client receives (those of predicted cells, of all replicated cells, or
   another rule) is open.
+- **D6.5 Control plane targets**, unmeasured until a messaging benchmark exists: 100K messages per
+  second without becoming a bottleneck; scaling to 32+ cores with no critical section on hot paths;
+  payloads almost always below 128 bytes; ~1000 message types (a heavily modded case); sending
+  never blocks on the receiver, which would deadlock, so bounded ring buffers are out. Messaging
+  belongs to the trusted ring of engine subsystems, so type safety against deliberate misuse is not
+  a goal.
 
 ## 7. Documents, schemas and formats
 
@@ -680,8 +686,7 @@ once cells exist, and this table should be read as the random-access worst case 
   contents across the point where it could observe a version change; GPU residency is the same
   mechanism one level down.
 - **P8.5 Immutable assets, mutable documents.** Assets never change at runtime; documents (scenes,
-  saves, profiles) do. The storage layer treats them differently (P7.4; "Data and storage" in
-  `docs/notes/design-drafts.md`).
+  saves, profiles) do. The storage layer treats them differently (P7.4).
 
 ## 9. Tools, editor, agents
 
@@ -689,9 +694,9 @@ once cells exist, and this table should be read as the random-access worst case 
   plugins using public APIs, and nothing is tool-only: what the editor can do, the game can do
   if the project wants it to (an in-game build mode can be `edit()` of S9.4 on a paused world).
   The development/shipping switch (P11.3) strips diagnostics rather than capabilities.
-- **P9.2 Headless first.** The engine runs without a window or GPU (the core/sim/gfx library split
-  of `docs/notes/design-drafts.md`). Tests, servers, asset cooking and agents all use the headless
-  mode.
+- **P9.2 Headless first.** The engine runs without a window or GPU: window and GPU code live in a
+  library of their own that headless binaries do not load. Tests, servers, asset cooking and agents
+  all use the headless mode.
 - **P9.3 Everything callable is a command.** Editor operations are messages (P6.2) with text
   encoding; the GUI is one client of them, an LLM agent another, a test another. Visual feedback
   is a command too (render a view to an image).
@@ -781,10 +786,14 @@ once cells exist, and this table should be read as the random-access worst case 
 
 - **P11.1 Three builds.** Engine + project add-ons → binaries and SDK (per commit); loose assets →
   archives (nightly, on a file share); binaries + archives → redistributable (strip and package).
-- **P11.2 Source compatibility within a major version**, no ABI promises. Plugins build in-tree
-  with the engine's build system by default.
+- **P11.2 Source compatibility within a major version**, no ABI promises. A plugin is shared
+  libraries plus an asset pack. Plugins build in-tree with the engine's build system by default;
+  building against the SDK's headers and prebuilt engine libraries with any build system is the
+  second, costlier way to maintain.
 - **P11.3 Development builds are profiled.** A development/shipping switch is independent of the
-  optimization level ("Shipping builds" in `docs/notes/design-drafts.md`).
+  optimization level, since development builds are profiled and debugged in Release too. Shipping
+  strips shader debug info as a build step: SPIR-V cannot move it to a separate file the way C++
+  debug info can.
 
 ## 12. Networking
 

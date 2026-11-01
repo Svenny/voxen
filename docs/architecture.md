@@ -43,3 +43,20 @@ Legacy edges still to be removed:
 
 - `gfx -> client`: the legacy render graph draws from `client::GameView`.
 - `svc -> gfx`: `RuntimeConfig` holds `gfx::GfxOptions`, filled by `Engine` from the command line.
+
+## Messaging
+
+`svc::MessagingService` is the control plane of S6.1 in the
+[design draft](notes/design-principles-draft.md), with the targets of D6.5:
+
+- Fine-grained locking: a futex lock per inbound queue, 512 routing table shards behind futex RW
+  locks.
+- Payload types are identified by a random 128-bit `UID` (`MESSAGE_UID`), with no registry, so
+  plugins need no lookup.
+- Any payload type up to pointer alignment, allocated from pipe memory with an optional deleter;
+  empty types (signals) allocate no payload.
+- Typed handlers registered per message type on a `MessageQueue`, one queue per agent `UID`;
+  `MessageSender` for send-only agents. Registration is explicit RAII and queue storage is reused.
+- Request messages: a shared payload, a completion status, waiting and completion messages.
+- Broadcast message types and handlers are declared, but sending a broadcast (routing to subscribed
+  agents) isn't implemented.

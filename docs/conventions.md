@@ -193,6 +193,11 @@ for HLSL functions (`saturate`, `frac`), GLSL names to fill gaps (`lessThan`), c
   `VOXEN_API void bugFound(...)`. Header-only types and templates don't need it.
 - `VOXEN_LOCAL` hides private members of exported classes (`VOXEN_LOCAL void swap(Window &)`).
 
+## Dependencies
+
+- A third-party library stays only if it is fundamental, or highly modular and encapsulated with no
+  external code on the hot path.
+
 ## Comments
 
 - `//` only. API docs are full sentences on the lines above the declaration, code in backticks.
